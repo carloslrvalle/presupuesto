@@ -177,7 +177,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .topbar.scrolled{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
   .topbar>.wrap:last-child{height:0;padding:0;margin:0;overflow:visible}.topbar{padding-bottom:0}
   main.wrap{padding-top:14px}
-  .topbar>.wrap:first-child{position:relative}.head-right .sync-badge{position:absolute;top:18px;right:16px}.topbar:has(.sync-badge:not([hidden])) .brand{max-width:calc(100% - 160px);min-width:0}.brand #appName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar>.wrap:first-child{position:relative}.head-right .top-pair{position:absolute;top:18px;right:16px;display:flex;gap:8px;align-items:center}.prof-nm,.prof-cv{display:none}.prof-chip{padding:0 5px}.head-right .sync-badge{padding:0 14px}.sync-badge .sb-t{display:none}.brand{max-width:calc(100% - 70px);min-width:0}.topbar:has(.sync-badge:not([hidden])) .brand{max-width:calc(100% - 120px)}.brand #appName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .month-nav .month-label{white-space:nowrap}
   #txDialog .row2{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
   #txDelete,#txDup{padding-left:12px;padding-right:12px}
@@ -442,6 +442,57 @@ h3>.vi{color:var(--primary);vertical-align:-3px;margin-right:4px}
 .per-day{display:block;margin-top:3px;font-size:12px;color:var(--text)}.per-day b{color:var(--accent-ink,var(--primary))}
 .plan-line{display:block;font-size:12px;font-weight:600;color:var(--primary);margin-top:3px}.plan-line.neg{color:var(--expense)}
 .app-ver{text-align:center;margin:20px 0 4px}
+/* Usuarios */
+.top-pair{display:contents}
+.prof-chip{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 10px 0 6px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-size:14px;font-weight:700;cursor:pointer;max-width:200px;transition:background-color .2s,border-color .2s}
+.prof-chip:hover{background:var(--surface-2)}
+.prof-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.prof-cv{display:grid;color:var(--muted)}.prof-cv .vi{width:16px;height:16px}
+.prof-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;overflow:hidden;background:var(--surface-2)}
+.prof-av .vi,.prof-av svg{width:17px;height:17px}.prof-av img{width:100%;height:100%;object-fit:cover;display:block}
+.prof-av.lg{width:48px;height:48px;border:0;cursor:pointer;padding:0}.prof-av.lg .vi,.prof-av.lg svg{width:24px;height:24px}
+.prof-av.both{background:var(--accent-bg,var(--primary-soft));color:var(--accent-ink,var(--primary))}.prof-av.plain{background:transparent;color:var(--muted)}
+.prof-menu{position:fixed;z-index:70;min-width:220px;padding:6px;border-radius:14px;background:var(--surface);border:1px solid var(--border);box-shadow:0 18px 40px -16px rgba(10,12,20,.45);display:grid;gap:2px;animation:rise .2s var(--ease-out)}
+.prof-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:var(--text);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer}
+.prof-menu button:hover{background:var(--surface-2)}.prof-menu button.on{background:var(--accent-bg,var(--primary-soft))}
+.prof-menu button>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.prof-menu small{font-weight:500;color:var(--muted)}
+.prof-menu button>.vi{width:16px;height:16px;color:var(--accent-ink,var(--primary))}
+.prof-menu hr{border:0;border-top:1px solid var(--border);margin:4px 2px}
+.prof-edit{display:grid;gap:10px}
+.pe-row{display:flex;align-items:center;gap:10px;min-width:0}
+.pe-row .pe-name{flex:1;min-width:0}
+.pe-cur{font-size:12px;font-weight:700;color:var(--income);white-space:nowrap}
+body.both-on #tabs,body.both-on #fab{display:none!important}
+.goal-card.shared{box-shadow:inset 0 3px 0 color-mix(in srgb,var(--primary) 55%,transparent),var(--shadow)}
+.goal-card.shared.p-crit{box-shadow:inset 3px 0 0 var(--expense),inset 0 3px 0 color-mix(in srgb,var(--primary) 55%,transparent),var(--shadow)}
+.goal-card.shared.p-high{box-shadow:inset 3px 0 0 #f59e0b,inset 0 3px 0 color-mix(in srgb,var(--primary) 55%,transparent),var(--shadow)}
+.share-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:1px 7px 1px 5px;border-radius:99px;margin-right:6px;vertical-align:1px;color:var(--accent-ink,var(--primary));background:var(--accent-bg,var(--primary-soft))}
+.share-tag .vi{width:12px;height:12px}
+.goal-split{margin-top:10px;display:grid;gap:8px}
+.bar.split{display:flex;gap:2px}.bar.split>span{border-radius:0}.bar.split>span:first-child{border-radius:99px 0 0 99px}.bar.split>span:last-child{border-radius:0 99px 99px 0}.bar.split>span[data-w="0.00"]{display:none}
+.gsp-bar{height:8px;border-radius:8px;background:var(--surface-2);overflow:hidden;display:flex}.gsp-bar i{display:block;height:100%;transition:width .6s var(--ease-out)}
+.gsp-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.gsp-leg span{display:inline-flex;align-items:center;gap:6px;min-width:0}.gsp-leg b{color:var(--text)}.gsp-leg em{font-style:normal;font-size:11.5px}
+.prof-av.xs{width:18px;height:18px}.prof-av.xs .vi,.prof-av.xs svg{width:11px;height:11px}
+.share-field .check{font-weight:600}
+.both-goals{margin-bottom:16px}.both-goals .bg-row{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;padding:12px 0;border-bottom:1px dashed var(--border)}.both-goals .bg-row:last-child{border-bottom:0}
+.both-goals .ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}.both-goals .bg-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;font-size:14px}.both-goals .bg-top span{color:var(--muted);font-size:12.5px;white-space:nowrap}
+.both-goals .gsp-leg{margin-top:8px}
+/* Cambio de usuario: el contenido entra suave */
+main.wrap.prof-swap{animation:profSwap .38s var(--ease-out)}
+@keyframes profSwap{from{opacity:.25;transform:translateY(8px)}to{opacity:1;transform:none}}
+.both-head{margin-bottom:16px}.both-head h2{margin:0;font-size:20px}
+.both-users{display:grid;gap:10px}
+.bu-row{display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border-radius:12px;background:var(--surface-2)}
+.bu-row .prof-av{width:36px;height:36px}
+.bu-name{font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.bu-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;font-size:12px;color:var(--muted)}
+.bu-stats b{display:block;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bu-share{height:6px;border-radius:6px;background:var(--border);overflow:hidden;margin-top:8px;display:flex}.bu-share i{display:block;height:100%}
+.both-top .prow{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--border)}
+.both-top .prow:last-child{border-bottom:0}.both-top .prof-av{width:26px;height:26px}.both-top .prof-av .vi,.both-top .prof-av svg{width:14px;height:14px}
+.both-top .pn{min-width:0}.both-top .pn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.both-top .pn span{font-size:12px;color:var(--muted)}
+@media (max-width:600px){.bu-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .persist-info{display:flex;align-items:center;gap:6px;margin-top:8px;color:var(--muted)}.persist-info .vi{width:15px;height:15px;flex:none}.persist-info.ok{color:var(--income)}
 .conn-box{margin-top:14px;padding:14px;border-radius:12px;background:var(--surface-2);display:grid;gap:8px}
 .conn-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}.conn-h .vi{width:16px;height:16px}
@@ -996,7 +1047,7 @@ body.sel-on .toast{bottom:150px}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.2.0'; window.__APP_DATE = '2026-10-25';
+window.__APP_VERSION = '1.4.0'; window.__APP_DATE = '2026-10-25';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1029,7 +1080,7 @@ window.addEventListener('error', function (e) {
       <span id="appName" contenteditable="true" spellcheck="false" title="Clic para cambiar el nombre">Presupuesto</span>
     </div>
     <div class="head-right">
-      <span class="sync-badge" id="syncBadge" hidden></span>
+      <div class="top-pair"><button type="button" class="prof-chip" id="profChip" aria-haspopup="true" aria-expanded="false" title="Cambiar de usuario"><span class="prof-av" id="profAv"></span><span class="prof-nm" id="profNm"></span><span class="prof-cv" id="profCv"></span></button><span class="sync-badge" id="syncBadge" hidden></span></div>
       <button class="gear-btn" id="btnSettings" title="Datos y ajustes" aria-label="Datos y ajustes"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button>
       <div class="month-nav">
         <button id="prevM" title="Mes anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
@@ -1176,8 +1227,15 @@ window.addEventListener('error', function (e) {
   </section>
 
   <!-- DATOS -->
+  <section class="tab" id="tab-both"><div id="bothBody"></div></section>
   <section class="tab" id="tab-settings">
     <div class="toolbar"><div><h2 style="margin:0">Datos y ajustes</h2><div class="small muted">Personalización, respaldo, sincronización con Google Sheets y métodos de pago.</div></div></div>
+    <div class="card" style="margin-bottom:16px" id="profCard">
+      <h3><span class="ui-ic" data-e="👥"></span>Usuarios</h3>
+      <p class="small muted" style="margin:-4px 0 12px">Cada usuario tiene sus propios movimientos, presupuestos, metas, categorías y tema, con el mismo link y la misma clave. Cambia de usuario con el botón de arriba; «Ambos» muestra un resumen de los dos.</p>
+      <div class="prof-edit" id="profEdit"></div>
+      <input type="file" id="profPhoto" accept="image/*" hidden>
+    </div>
     <div class="card" style="margin-bottom:16px">
       <h3><span class="ui-ic" data-e="🎨"></span>Personalización · Tema de colores</h3>
       <p class="small muted" id="themeNote" style="margin:-4px 0 12px"></p>
@@ -1296,6 +1354,7 @@ window.addEventListener('error', function (e) {
         <div class="field"><label>Ya ahorrado (S/)</label><input type="number" id="gInitial" min="0" step="0.01" placeholder="0.00"></div>
       </div>
       <div class="field"><label>Fecha límite (opcional)</label><input type="date" id="gDeadline"></div>
+      <div class="field share-field"><label class="check"><input type="checkbox" id="gShared"> <span id="gSharedLbl">Compartir con el otro usuario</span></label><div class="small muted" id="gSharedHint">Ambos la verán en Metas y podrán aportar; se mostrará cuánto puso cada uno.</div></div>
       <div class="field"><label>Importancia</label><div class="seg prio-seg" id="gPrio"></div><div class="small muted" id="gPrioHint" style="margin-top:6px"></div></div>
     </div>
     <div class="dlg-foot">
@@ -1343,6 +1402,15 @@ window.addEventListener('error', function (e) {
 
 <script>
 const STORE = 'budgetPlanner.v1';
+// Usuarios: cada perfil guarda sus datos aparte (mismo link y misma clave)
+const PROF_KEY = 'budgetPlanner.profiles', ACT_KEY = 'budgetPlanner.activeProfile';
+let activeProfile = (() => { try { return localStorage.getItem(ACT_KEY) === 'p2' ? 'p2' : 'p1'; } catch(e){ return 'p1'; } })();
+let bothMode = false;
+const storeKey = (id = activeProfile) => id === 'p1' ? STORE : STORE + '.' + id;
+const PROF_DEFAULT = () => ({u:0, list:[{id:'p1', name:'Usuario 1', icon:'svg:user', color:'#5e81ac', photo:''}, {id:'p2', name:'Usuario 2', icon:'svg:user-round', color:'#b48ead', photo:''}]});
+let profiles = (() => { try { const o = JSON.parse(localStorage.getItem(PROF_KEY)); if (o && Array.isArray(o.list) && o.list.length === 2) return o; } catch(e){} return PROF_DEFAULT(); })();
+function saveProfiles(touch){ if (touch) profiles.u = Date.now(); try { localStorage.setItem(PROF_KEY, JSON.stringify(profiles)); } catch(e){} }
+const profOf = id => profiles.list.find(x => x.id === id) || profiles.list[0];
 // Modo oscuro: el que fuerce el tema (Claro / Oscuro OLED) o, si no, el del sistema
 function isDarkUI(){ const m = document.documentElement.dataset.mode; return m ? m === 'dark' : !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
 const PEN = new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'});
@@ -1396,8 +1464,8 @@ function seed(){
     settings:{methods:['Efectivo','Débito','Tarjeta de crédito','Yape / Plin','Transferencia'], appIcon:'svg:coins', uiIcons:'vector', vecDone:true, pastelDone:true}
   };
 }
-function load(){ try{ const r = localStorage.getItem(STORE); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
-function saveLocal(){ try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){ toast('⚠️ No se pudo guardar en el navegador'); } }
+function load(){ try{ const r = localStorage.getItem(storeKey()); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+function saveLocal(){ try{ localStorage.setItem(storeKey(), JSON.stringify(state)); }catch(e){ toast('⚠️ No se pudo guardar en el navegador'); } }
 const qMicro = typeof queueMicrotask === 'function' ? f => queueMicrotask(f) : f => Promise.resolve().then(f);
 let _txIdx = null;
 /* Registro de cambios para sincronizar entre dispositivos: cada registro guarda cuándo cambió (u) y los borrados quedan anotados */
@@ -1453,7 +1521,7 @@ function migrateVec(){
   state.settings.uiIcons = 'vector'; state.settings.vecDone = true;
   return true;
 }
-if (migrateVec()){ state.updatedAt = Date.now(); try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){} }
+if (migrateVec()){ state.updatedAt = Date.now(); try{ localStorage.setItem(storeKey(), JSON.stringify(state)); }catch(e){} }
 
 /* ---------- Fechas ---------- */
 const ym = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
@@ -1532,7 +1600,7 @@ function iconHTML(icon, color, solidBg){
 }
 const iconText = c => isV(c.icon) ? c.name : c.icon + ' ' + c.name; // para <option> y leyendas de gráficos
 // Íconos de la interfaz (pestañas, tarjetas): emoji o vectorial según Ajustes
-const UI_MAP = {'🔤':'type','📊':'chart-pie','🧾':'receipt','🎯':'target','🔁':'repeat','🐷':'piggy-bank','📈':'chart-line','🏷️':'tags','⚙️':'settings','⬇️':'arrow-down','⬆️':'arrow-up','⚖️':'scale','🔮':'telescope','💸':'trending-down','💰':'wallet','💾':'save','☁️':'cloud','💳':'credit-card','🧹':'triangle-alert','🎨':'palette','📥':'download','❓':'circle-help','🗑️':'trash-2'};
+const UI_MAP = {'👥':'users','🔤':'type','📊':'chart-pie','🧾':'receipt','🎯':'target','🔁':'repeat','🐷':'piggy-bank','📈':'chart-line','🏷️':'tags','⚙️':'settings','⬇️':'arrow-down','⬆️':'arrow-up','⚖️':'scale','🔮':'telescope','💸':'trending-down','💰':'wallet','💾':'save','☁️':'cloud','💳':'credit-card','🧹':'triangle-alert','🎨':'palette','📥':'download','❓':'circle-help','🗑️':'trash-2'};
 const ic = n => svgIcon(n, 'currentColor');
 const pctTxt = p => p > 999 ? '+999%' : Math.round(p) + '%';
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -1625,6 +1693,8 @@ cfDialog.addEventListener('close', () => cfDone(null));
 /* ---------- Tabs y mes ---------- */
 function showTab(name){
   if (typeof selMode !== 'undefined' && selMode) setSelMode(false);
+  // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
+  if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
   const b = $(`#tabs button[data-tab="${name}"]`);
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
   $('#btnSettings').classList.toggle('active', name === 'settings');
@@ -1638,7 +1708,7 @@ function showTab(name){
   if (name === 'dashboard' || name === 'analysis') dirty.add(name); // se redibujan siempre para que los gráficos tomen su tamaño
   renderView(name);
   if (name === 'budget') animateBars($('#tab-budget'));
-  if (name === 'goals') animateBars($('#goalsGrid'));
+  if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
   if (name === 'movs') moveViewInd();
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
@@ -2305,7 +2375,7 @@ $('#movBody').addEventListener('click', async e => {
 const txDialog = $('#txDialog');
 let txType = 'expense', editingId = null, selCat = null, selMethod = null, selGoal = null, txMode = 'tx', txRecId = null;
 function renderTxChips(){
-  const gf = $('#fGoalField'), goals = state.goals.filter(g => !goalDone(g) || g.id === selGoal);
+  const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
   gf.hidden = !(txMode === 'tx' && (txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
   if (!gf.hidden) $('#fGoalChips').innerHTML = `<button type="button" class="chip${!selGoal ? ' active' : ''}" data-goal="">Ninguna</button>` +
     goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" data-goal="${g.id}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
@@ -2922,13 +2992,35 @@ $('#view-rec').addEventListener('click', async e => {
 
 /* ---------- Metas de ahorro ---------- */
 const goalOut = g => (g.out || []).reduce((a, w) => a + Number(w.a || 0), 0);
-const goalSaved = g => Number(g.initial || 0) + sum(state.transactions.filter(t => t.goalId === g.id && !isPlanned(t))) - goalOut(g);
+// Metas compartidas: la meta vive en los datos de quien la creó; ambos usuarios pueden aportar
+const otherProfile = () => activeProfile === 'p1' ? 'p2' : 'p1';
+let _oth = null;
+function otherState(){
+  if (_oth) return _oth.st;
+  let st = null; try { const r = localStorage.getItem(storeKey(otherProfile())); st = r ? cleanState(JSON.parse(r)) : null; } catch(e){}
+  _oth = {st}; qMicro(() => { _oth = null; }); return st;
+}
+const foreignGoals = () => { const o = otherState(); return o ? (o.goals || []).filter(g => g.shared).map(g => Object.assign({}, g, {_foreign:true})) : []; };
+const myGoals = () => state.goals.concat(foreignGoals());
+const goalOwner = g => g._foreign ? otherProfile() : activeProfile;
+// Aportes por persona (sin programados); el «ya ahorrado» inicial cuenta para quien creó la meta
+function goalTxs(g){
+  const mine = state.transactions.filter(t => t.goalId === g.id && !isPlanned(t)).map(t => ({t, who:activeProfile}));
+  const o = g.shared ? otherState() : null;
+  const theirs = o ? (o.transactions || []).filter(t => t.goalId === g.id && !(t.date > todayISO())).map(t => ({t, who:otherProfile()})) : [];
+  return mine.concat(theirs);
+}
+function goalSplit(g){
+  const by = {p1:0, p2:0}; goalTxs(g).forEach(x => by[x.who] += Number(x.t.amount) || 0);
+  by[goalOwner(g)] += Number(g.initial || 0); return by;
+}
+const goalSaved = g => { const sp = goalSplit(g); return sp.p1 + sp.p2 - goalOut(g); };
 const PRIO = {crit:{n:'Crítica', i:'flame', c:'var(--expense)', r:0, h:'Lo primero: fondo de emergencia, deudas o pagos que no pueden esperar.'},
   high:{n:'Alta', i:'flag', c:'#f59e0b', r:1, h:'Importante; aporta apenas cubras las críticas.'},
   norm:{n:'Normal', i:'target', c:'var(--muted)', r:2, h:'Avanza a su ritmo.'},
   low:{n:'Baja', i:'clock', c:'var(--muted)', r:3, h:'Un gusto o deseo; puede esperar.'}};
 const prioOf = g => PRIO[g.prio] ? g.prio : 'norm';
-const goalsSorted = () => state.goals.map((g, i) => ({g, i})).sort((a, b) => (goalDone(a.g) - goalDone(b.g)) || (PRIO[prioOf(a.g)].r - PRIO[prioOf(b.g)].r) || a.i - b.i).map(x => x.g);
+const goalsSorted = () => myGoals().map((g, i) => ({g, i})).sort((a, b) => (goalDone(a.g) - goalDone(b.g)) || (PRIO[prioOf(a.g)].r - PRIO[prioOf(b.g)].r) || a.i - b.i).map(x => x.g);
 const prioBadge = g => { const p = prioOf(g); return p === 'norm' || goalDone(g) ? '' : `<span class="prio" style="--pc:${PRIO[p].c}">${ic(PRIO[p].i)}${PRIO[p].n}</span>`; };
 function goalDone(g){ return Number(g.target) > 0 && goalSaved(g) >= Number(g.target); }
 const monthsBetween = (a, b) => { const [y1,m1] = a.split('-').map(Number), [y2,m2] = b.split('-').map(Number); return (y2 - y1) * 12 + (m2 - m1); };
@@ -3006,14 +3098,14 @@ const expSavingCat = () => (state.categories.find(c => c.type === 'expense' && r
 const savingsCat = () => (state.categories.find(c => c.type === 'income' && /ahorro|otro/i.test(c.name)) || catsOf('income')[0] || {}).id;
 function renderGoals(){
   const grid = $('#goalsGrid');
-  if (!state.goals.length){
+  if (!myGoals().length){
     grid.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty" style="height:160px;gap:10px"><div class="empty-ic">${ic('piggy-bank')}</div><div>Crea tu primera meta: fondo de emergencia, viaje, laptop…</div><button class="btn primary" data-goal-new>${ic('plus')} Nueva meta</button></div></div>`;
     return;
   }
   const tm = thisMonth();
   grid.innerHTML = goalsSorted().map(g => {
     const saved = goalSaved(g), target = Number(g.target) || 0, pct = target ? Math.min(saved / target * 100, 100) : 0, rem = Math.max(0, target - saved);
-    const monthAmt = sum(state.transactions.filter(t => t.goalId === g.id && t.date.slice(0,7) === tm && !isPlanned(t)));
+    const gx = goalTxs(g), monthAmt = sum(gx.filter(x => x.t.date.slice(0, 7) === tm).map(x => x.t));
     // Datos clave en tres bloques, en lugar de una frase larga
     const stat = (k, v, cls = '') => `<div class="gs"><span>${k}</span><b class="${cls}">${v}</b></div>`;
     let stats;
@@ -3021,7 +3113,7 @@ function renderGoals(){
     else {
       const ml = g.deadline ? monthsBetween(tm, g.deadline.slice(0,7)) + 1 : 0;
       // Ritmo: promedio de aportes de los últimos 3 meses (incluye este)
-      const r3 = [0, 1, 2].map(k => shiftMonth(tm, -k)).map(mm => sum(state.transactions.filter(t => t.goalId === g.id && t.date.slice(0, 7) === mm && !isPlanned(t))));
+      const r3 = [0, 1, 2].map(k => shiftMonth(tm, -k)).map(mm => sum(gx.filter(x => x.t.date.slice(0, 7) === mm).map(x => x.t)));
       const pace = r3.reduce((a, v) => a + v, 0) / 3;
       let eta = '';
       if (pace > 0){
@@ -3032,15 +3124,21 @@ function renderGoals(){
       } else eta = `<div class="goal-eta">${ic('clock')} Sin aportes en los últimos 3 meses</div>`;
       stats = eta + `<div class="goal-stats">${stat('Faltan', fmt(rem))}${g.deadline ? (ml > 0 ? stat('Ahorra al mes', fmt(rem / ml)) : stat('Plazo', 'Vencido', 'neg')) : stat('Plazo', 'Libre')}${stat('Este mes', fmt(monthAmt), monthAmt ? 'pos' : '')}</div>`;
     }
-    return `<div class="card goal-card${goalDone(g) ? '' : ' p-' + prioOf(g)}">
+    // Compartida: quién la creó y cuánto aportó cada uno
+    const owner = profOf(goalOwner(g)), other = profOf(goalOwner(g) === 'p1' ? 'p2' : 'p1'), sp = goalSplit(g), spT = sp.p1 + sp.p2;
+    const share = g.shared ? `<div class="goal-split"><div class="gsp-leg">${profiles.list.map(pr => `<span>${avatarBox(pr, 'xs')}${esc(pr.name)} <b>${fmt(sp[pr.id])}</b>${spT > 0 ? ` <em>${Math.round(sp[pr.id] / spT * 100)}%</em>` : ''}</span>`).join('')}</div></div>` : '';
+    const shareTag = g.shared ? `<span class="share-tag">${ic('users')}${g._foreign ? 'De ' + esc(owner.name) : 'Con ' + esc(other.name)}</span>` : '';
+    return `<div class="card goal-card${goalDone(g) ? '' : ' p-' + prioOf(g)}${g.shared ? ' shared' : ''}">
       <div class="goal-head"><div class="ico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</div>
-        <div style="flex:1;min-width:0"><div class="name">${esc(g.name)}</div><div class="small muted g-sub">${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
-        <button class="iconbtn" data-goal-edit="${g.id}" title="Editar">${ic('pencil')}</button></div>
+        <div style="flex:1;min-width:0"><div class="name">${esc(g.name)}</div><div class="small muted g-sub">${shareTag}${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
+        ${g._foreign ? '' : `<button class="iconbtn" data-goal-edit="${g.id}" title="Editar">${ic('pencil')}</button>`}</div>
       <div class="goal-amt"><b>${fmt(saved)}</b><span class="muted small">de ${fmt(target)}</span><span class="goal-pct" style="color:${strokeOn(dc(g.color))}">${pct.toFixed(0)}%</span></div>
-      <div class="bar big"><span data-k="goal:${g.id}" data-w="${pct.toFixed(2)}" style="width:${pct}%;background:${barFill(g.color)}"></span></div>
+      ${g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span data-k="goal:${g.id}:${pr.id}" data-w="${w.toFixed(2)}" style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
+        : `<div class="bar big"><span data-k="goal:${g.id}" data-w="${pct.toFixed(2)}" style="width:${pct}%;background:${barFill(g.color)}"></span></div>`}
+      ${share}
       ${stats}
-      ${goalOut(g) ? `<div class="goal-out">${ic('hand-coins')} Retiraste ${fmt(goalOut(g))} en total</div>` : ''}
-      <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn sm" data-goal-add="${g.id}">${ic('plus')} Aportar</button>`}${saved > 0 ? `<button class="btn sm ghost" data-goal-out="${g.id}">${ic('hand-coins')} Retirar</button>` : ''}</div>
+      ${goalOut(g) ? `<div class="goal-out">${ic('hand-coins')} ${g._foreign ? esc(owner.name) + ' retiró' : 'Retiraste'} ${fmt(goalOut(g))} en total</div>` : ''}
+      <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn sm" data-goal-add="${g.id}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn sm ghost" data-goal-out="${g.id}">${ic('hand-coins')} Retirar</button>` : ''}</div>
     </div>`;
   }).join('');
   animateBars(grid);
@@ -3057,6 +3155,7 @@ function openGoal(id){
   $('#gInitial').value = g && g.initial ? g.initial : ''; $('#gDeadline').value = (g && g.deadline) || '';
   $('#goalDelete').style.display = g ? '' : 'none';
   gPrio = g ? prioOf(g) : 'norm'; paintPrio();
+  $('#gShared').checked = !!(g && g.shared); $('#gSharedLbl').textContent = 'Compartir con ' + profOf(otherProfile()).name;
   paintGoalIcon(); goalDialog.showModal(); setTimeout(() => $('#gName').focus(), 50);
 }
 $('#gIcon').onclick = () => openIcon(ic => { gIcon = ic; paintGoalIcon(); }, {color:gColor, soft:true, themeColor: curThemeColorGoal(goalEdit), onColor: col => { gColor = col; paintGoalIcon(); }}, gIcon);
@@ -3065,7 +3164,8 @@ $('#goalForm').addEventListener('submit', e => {
   const name = $('#gName').value.trim(), target = Math.round(parseFloat($('#gTarget').value) * 100) / 100;
   if (!name) return toast('Ponle un nombre a la meta');
   if (!(target > 0)) return toast('Ingresa el monto objetivo');
-  const data = {name, target, initial: Math.max(0, parseFloat($('#gInitial').value) || 0), deadline: $('#gDeadline').value || '', icon:gIcon, color:gColor, prio:gPrio};
+  const data = {name, target, initial: Math.max(0, parseFloat($('#gInitial').value) || 0), deadline: $('#gDeadline').value || '', icon:gIcon, color:gColor, prio:gPrio, shared:$('#gShared').checked || undefined};
+  { const prev = goalEdit && state.goals.find(x => x.id === goalEdit); if (prev && prev.shared && !data.shared){ const th = goalSplit(prev)[otherProfile()]; if (th > 0) setTimeout(() => toast(`Los aportes de ${profOf(otherProfile()).name} (${fmt(th)}) dejan de sumarse a esta meta`, {icon:'users'}), 400); } }
   if (goalEdit) Object.assign(state.goals.find(g => g.id === goalEdit), data);
   else state.goals.push({id:uid(), created:Date.now(), ...data});
   save(); goalDialog.close(); renderAll(); toast(goalEdit ? 'Meta actualizada' : 'Meta creada 🎯');
@@ -3083,7 +3183,7 @@ $('#goalsGrid').addEventListener('click', e => {
   if (b.hasAttribute('data-goal-new')) openGoal();
   if (b.dataset.goalEdit) openGoal(b.dataset.goalEdit);
   if (b.dataset.goalOut) openWithdraw(b.dataset.goalOut);
-  if (b.dataset.goalAdd){ const g = state.goals.find(x => x.id === b.dataset.goalAdd); openTx(null, expSavingCat() ? {type:'expense', catId:expSavingCat(), goalId:g.id, desc:'Aporte: ' + g.name} : {type:'income', catId:savingsCat(), goalId:g.id, desc:'Aporte: ' + g.name}); }
+  if (b.dataset.goalAdd){ const g = myGoals().find(x => x.id === b.dataset.goalAdd); openTx(null, expSavingCat() ? {type:'expense', catId:expSavingCat(), goalId:g.id, desc:'Aporte: ' + g.name} : {type:'income', catId:savingsCat(), goalId:g.id, desc:'Aporte: ' + g.name}); }
 });
 
 // Retirar dinero de una meta: se descuenta de lo ahorrado (no cuenta como ingreso ni gasto del mes)
@@ -3698,6 +3798,9 @@ $('#btnWipe').onclick = async () => {
 const SYNC_KEY = 'budgetPlanner.sync';
 let sync = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch(e){ return {}; } })();
 if (sync.auto === undefined) sync.auto = true;
+// Estado de sincronización del usuario activo (cada perfil lleva su propia revisión y pendientes)
+if (sync.byProf && sync.byProf[activeProfile]) Object.assign(sync, sync.byProf[activeProfile]);
+else if (sync.byProf && activeProfile !== 'p1') Object.assign(sync, {rev:0, pending:false, lastSync:0});
 // Link de conexión (#conectar=…): configura la sincronización y luego se borra de la barra de direcciones
 (function(){
   const m = /[#&]conectar=([\w-]+)/.exec(location.hash || ''); if (!m) return;
@@ -3705,20 +3808,20 @@ if (sync.auto === undefined) sync.auto = true;
     const b = m[1].split('-').join('+').split('_').join('/'), o = JSON.parse(decodeURIComponent(escape(atob(b + '==='.slice((b.length + 3) % 4)))));
     if (!o || !/^https:[/][/]script\.google\.com[/]/.test(o.u) || !o.t) throw new Error('link');
     const changed = sync.url !== o.u || sync.token !== o.t;
-    sync.url = o.u; sync.token = o.t; if (changed) sync.rev = 0;
+    sync.url = o.u; sync.token = o.t; if (changed){ sync.rev = 0; sync.byProf = {}; }
     try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch(e){}
     window.__connFromLink = changed ? 'new' : 'same';
   } catch(e){ window.__connFromLink = 'bad'; }
   try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
 })();
-const saveSync = () => { try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch(e){} };
+const saveSync = () => { sync.byProf = sync.byProf || {}; sync.byProf[activeProfile] = {rev:Number(sync.rev) || 0, pending:!!sync.pending, lastSync:sync.lastSync || 0}; try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch(e){} };
 const syncOn = () => !!(sync.url && sync.token);
 let pushTimer = null, pushing = false, changeSeq = 0;
 
 function setBadge(kind, text){
   const b = $('#syncBadge');
   if (!syncOn()){ b.hidden = true; return; }
-  b.hidden = false; b.className = 'sync-badge ' + kind; b.textContent = text.replace(/^(☁️|⚠️)\s*/, '');
+  const t = text.replace(/^(☁️|⚠️)\s*/, ''); b.hidden = false; b.className = 'sync-badge ' + kind; b.title = t; b.innerHTML = '<span class="sb-t">' + esc(t) + '</span>';
 }
 function updateSyncInfo(err){
   $('#syncInfo').textContent = !syncOn() ? 'Sin conectar.'
@@ -3755,10 +3858,11 @@ async function askPersist(){
 }
 window.addEventListener('appinstalled', () => setTimeout(askPersist, 800));
 async function callSheets(payload){
-  const res = await fetch(sync.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({token:sync.token, ...payload})});
+  const res = await fetch(sync.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({token:sync.token, profile:activeProfile, profiles, ...payload})});
   if (!res.ok) throw new Error('HTTP ' + res.status);
   let j; try { j = await res.json(); } catch(e){ throw new Error('Respuesta inválida. Revisa la URL y que la implementación sea "Cualquier persona".'); }
   if (!j.ok) throw new Error(j.error || 'Error del script');
+  if (j.profiles && Array.isArray(j.profiles.list) && j.profiles.list.length === 2 && (Number(j.profiles.u) || 0) > (Number(profiles.u) || 0)){ profiles = j.profiles; saveProfiles(); renderProfileUI(); }
   return j;
 }
 const snapshot = () => ({categories:state.categories, transactions:state.transactions, budgets:state.budgets,
@@ -3950,17 +4054,193 @@ $('#syncAuto').addEventListener('change', e => { sync.auto = e.target.checked; s
 window.addEventListener('online', () => { if (sync.pending && sync.auto) pushNow(); });
 window.addEventListener('pagehide', () => {
   if (syncOn() && sync.auto && sync.pending && navigator.sendBeacon)
-    navigator.sendBeacon(sync.url, new Blob([JSON.stringify({token:sync.token, action:'save', data:snapshot(), base:Number(sync.rev) || 0})], {type:'text/plain;charset=utf-8'}));
+    navigator.sendBeacon(sync.url, new Blob([JSON.stringify({token:sync.token, profile:activeProfile, profiles, action:'save', data:snapshot(), base:Number(sync.rev) || 0})], {type:'text/plain;charset=utf-8'}));
 });
 // Abierta desde el enlace de Apps Script (celular): la URL de sincronización se completa sola
 const FROM_SCRIPT = typeof window.__SCRIPT_URL === 'string' && /^https:[/][/]script\.google\.com[/]/.test(window.__SCRIPT_URL);
 if (FROM_SCRIPT && !sync.url){ sync.url = window.__SCRIPT_URL; saveSync(); }
 $('#syncUrl').value = sync.url || ''; $('#syncToken').value = sync.token || ''; $('#syncAuto').checked = sync.auto;
 
+/* ---------- Usuarios: cambiar de perfil, editarlos y vista «Ambos» ---------- */
+function avatarHTML(pr){ return pr.photo ? `<img src="${pr.photo}" alt="">` : iconHTML(pr.icon || 'svg:user', pr.color); }
+function avatarBox(pr, cls = ''){ return `<span class="prof-av ${cls}" style="background:${pr.photo ? 'transparent' : soft(pr.color)}">${avatarHTML(pr)}</span>`; }
+function renderProfileUI(){
+  const chip = $('#profChip'); if (!chip) return;
+  if (bothMode){ $('#profAv').className = 'prof-av both'; $('#profAv').style.background = ''; $('#profAv').innerHTML = ic('users'); $('#profNm').textContent = 'Ambos'; }
+  else { const pr = profOf(activeProfile); $('#profAv').className = 'prof-av'; $('#profAv').style.background = pr.photo ? 'transparent' : soft(pr.color); $('#profAv').innerHTML = avatarHTML(pr); $('#profNm').textContent = pr.name; }
+  $('#profCv').innerHTML = ic('chevron-down'); chip.title = 'Usuario: ' + (bothMode ? 'Ambos' : profOf(activeProfile).name) + ' · tocar para cambiar';
+  if ($('#tab-settings').classList.contains('active')) renderProfEdit();
+}
+const profMenu = document.createElement('div'); profMenu.className = 'prof-menu'; profMenu.hidden = true; profMenu.setAttribute('role', 'menu'); document.body.appendChild(profMenu);
+function renderProfMenu(){
+  const on = id => !bothMode && id === activeProfile;
+  profMenu.innerHTML = profiles.list.map(pr => `<button type="button" role="menuitem" data-prof="${pr.id}" class="${on(pr.id) ? 'on' : ''}">${avatarBox(pr)}<span>${esc(pr.name)}</span>${on(pr.id) ? ic('check') : ''}</button>`).join('')
+    + `<button type="button" role="menuitem" data-prof="both" class="${bothMode ? 'on' : ''}"><span class="prof-av both">${ic('users')}</span><span>Ambos <small>· solo lectura</small></span>${bothMode ? ic('check') : ''}</button><hr>`
+    + `<button type="button" role="menuitem" data-prof="edit"><span class="prof-av plain">${ic('pencil')}</span><span>Editar usuarios</span></button>`;
+}
+function closeProfMenu(){ profMenu.hidden = true; $('#profChip').setAttribute('aria-expanded', 'false'); }
+$('#profChip').onclick = e => {
+  e.stopPropagation(); if (!profMenu.hidden) return closeProfMenu();
+  renderProfMenu(); profMenu.hidden = false; const r = $('#profChip').getBoundingClientRect(), w = profMenu.offsetWidth;
+  profMenu.style.top = (r.bottom + 8) + 'px'; profMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px'; $('#profChip').setAttribute('aria-expanded', 'true');
+};
+document.addEventListener('click', e => { if (!profMenu.hidden && !profMenu.contains(e.target)) closeProfMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !profMenu.hidden) closeProfMenu(); });
+window.addEventListener('resize', () => { if (!profMenu.hidden) closeProfMenu(); });
+profMenu.addEventListener('click', e => {
+  const b = e.target.closest('[data-prof]'); if (!b) return; closeProfMenu();
+  const id = b.dataset.prof;
+  if (id === 'edit'){ showTab('settings'); setTimeout(() => $('#profCard').scrollIntoView({block:'start', behavior:'smooth'}), 120); return; }
+  switchProfile(id);
+});
+function loadProfileState(){
+  state = cleanState(load()) || seed();
+  if (!state.categories || !state.categories.length) state.categories = seed().categories;
+  state.settings = state.settings || {methods:[]}; state.recurring = state.recurring || []; state.goals = state.goals || [];
+  if (!state.updatedAt) saveLocal();
+  _txIdx = null; _snapRec = snapState();
+}
+let switching = false;
+async function switchProfile(id){
+  if (switching) return;
+  if (id === 'both'){ if (!bothMode) enterBoth(); return; }
+  if (bothMode && id === activeProfile){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); showTab('dashboard'); renderAll(); return; }
+  if (id === activeProfile) return;
+  switching = true;
+  try {
+    // Antes de cambiar, se suben los cambios pendientes del usuario actual
+    if (syncOn() && (sync.pending || pushing)) { try { await pushNow(); } catch(e){} }
+    saveLocal(); saveSync();
+    activeProfile = id; try { localStorage.setItem(ACT_KEY, id); } catch(e){}
+    const bp = (sync.byProf || {})[id] || {}; sync.rev = Number(bp.rev) || 0; sync.pending = !!bp.pending; sync.lastSync = bp.lastSync || 0;
+    loadProfileState();
+    if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
+    Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
+    renderProfileUI(); if (activeTab() === 'both') showTab('dashboard'); renderAll(); updateSyncInfo();
+    { const mw = document.querySelector('main.wrap'); if (mw){ mw.classList.remove('prof-swap'); void mw.offsetWidth; mw.classList.add('prof-swap'); } }
+    if (syncOn()) setBadge('busy', '☁️ Conectando…'); else { const bd = $('#syncBadge'); if (bd) bd.hidden = true; }
+    toast(`Ahora ves: ${profOf(id).name}`, {icon:'user'});
+  } finally { switching = false; }
+  if (syncOn()) startupSync().then(() => { if (runAutoRecurring()) renderAll(); otherAt = 0; refreshOther(); });
+}
+// Edición de usuarios en Ajustes
+let photoFor = null;
+function renderProfEdit(){
+  const box = $('#profEdit'); if (!box) return;
+  box.innerHTML = profiles.list.map(pr => `<div class="pe-row" data-pid="${pr.id}">
+    <button type="button" class="prof-av lg" data-pe="icon" title="Cambiar ícono y color" style="background:${pr.photo ? 'transparent' : soft(pr.color)}">${avatarHTML(pr)}</button>
+    <input type="text" class="pe-name" data-pe="name" maxlength="24" value="${esc(pr.name)}" aria-label="Nombre del usuario">
+    <button type="button" class="btn sm" data-pe="photo" title="${pr.photo ? 'Cambiar foto' : 'Usar una foto'}">${ic('camera')}<span class="hide-m">${pr.photo ? 'Cambiar foto' : 'Foto'}</span></button>
+    ${pr.photo ? `<button type="button" class="btn sm ghost" data-pe="nophoto" title="Quitar foto y usar ícono">${ic('x')}</button>` : ''}
+    ${!bothMode && pr.id === activeProfile ? '<span class="pe-cur">En uso</span>' : ''}</div>`).join('');
+}
+function commitProfiles(){ saveProfiles(true); renderProfileUI(); renderProfEdit(); if (syncOn()) schedulePush(); }
+$('#profEdit').addEventListener('click', e => {
+  const b = e.target.closest('[data-pe]'), row = e.target.closest('[data-pid]'); if (!b || !row) return;
+  const pr = profOf(row.dataset.pid);
+  if (b.dataset.pe === 'icon') openIcon(icon => { pr.icon = icon; pr.photo = ''; commitProfiles(); }, {color:pr.color, soft:true, onColor: col => { pr.color = col; commitProfiles(); }}, pr.icon || 'svg:user');
+  else if (b.dataset.pe === 'photo'){ photoFor = pr.id; $('#profPhoto').value = ''; $('#profPhoto').click(); }
+  else if (b.dataset.pe === 'nophoto'){ pr.photo = ''; commitProfiles(); }
+});
+$('#profEdit').addEventListener('change', e => {
+  const i = e.target.closest('[data-pe="name"]'); if (!i) return;
+  const pr = profOf(i.closest('[data-pid]').dataset.pid), v = i.value.trim().slice(0, 24) || (pr.id === 'p1' ? 'Usuario 1' : 'Usuario 2');
+  if (v !== pr.name){ pr.name = v; commitProfiles(); toast('Nombre actualizado', {icon:'user'}); }
+});
+// La foto se reduce a 160 × 160 px para que viaje liviana a Sheets
+function readPhoto(file){ return new Promise((res, rej) => { const img = new Image(), url = URL.createObjectURL(file);
+  img.onload = () => { const S = 160, c = document.createElement('canvas'); c.width = c.height = S; const k = Math.max(S / img.width, S / img.height), w = img.width * k, h = img.height * k;
+    c.getContext('2d').drawImage(img, (S - w) / 2, (S - h) / 2, w, h); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', .82)); };
+  img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); }; img.src = url; }); }
+$('#profPhoto').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; if (!f || !photoFor) return;
+  try { const pr = profOf(photoFor); pr.photo = await readPhoto(f); commitProfiles(); toast('Foto actualizada', {icon:'camera'}); }
+  catch(err){ toast('⚠️ No se pudo leer esa imagen'); }
+});
+// Vista «Ambos»: resumen de solo lectura que suma a los dos usuarios
+function profileState(id){ if (id === activeProfile) return state; try { const r = localStorage.getItem(storeKey(id)); return r ? cleanState(JSON.parse(r)) : null; } catch(e){ return null; } }
+function withState(st, fn){ const prev = state; state = st; _txIdx = null; try { return fn(); } finally { state = prev; _txIdx = null; } }
+let chBoth = null;
+function sharedGoalsCard(){
+  const sts = {}; profiles.list.forEach(pr => sts[pr.id] = profileState(pr.id));
+  const list = profiles.list.flatMap(pr => ((sts[pr.id] && sts[pr.id].goals) || []).filter(g => g.shared).map(g => ({g, owner:pr.id})));
+  if (!list.length) return '';
+  const today = todayISO();
+  return `<div class="card both-goals"><h3>Metas compartidas</h3>${list.map(({g, owner}) => {
+    const sp = {p1:0, p2:0}; profiles.list.forEach(pr => { const st = sts[pr.id]; if (st) sp[pr.id] += sum((st.transactions || []).filter(t => t.goalId === g.id && !(t.date > today))); });
+    sp[owner] += Number(g.initial || 0);
+    const tot = sp.p1 + sp.p2, saved = tot - goalOut(g), tg = Number(g.target) || 0, pct = tg ? Math.min(100, saved / tg * 100) : 0;
+    return `<div class="bg-row"><div class="ico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</div><div style="min-width:0">
+      <div class="bg-top"><b>${esc(g.name)}</b><span>${fmt(saved)} de ${fmt(tg)} · ${pct.toFixed(0)}%</span></div>
+      <div class="gsp-bar">${profiles.list.map(pr => `<i style="width:${tg ? (sp[pr.id] / Math.max(tg, tot) * 100).toFixed(1) : 0}%;background:${pr.color}"></i>`).join('')}</div>
+      <div class="gsp-leg">${profiles.list.map(pr => `<span>${avatarBox(pr, 'xs')}${esc(pr.name)} <b>${fmt(sp[pr.id])}</b></span>`).join('')}</div></div></div>`; }).join('')}</div>`;
+}
+async function enterBoth(){
+  bothMode = true; document.body.classList.add('both-on'); renderProfileUI(); showTab('both');
+  { const mw = document.querySelector('main.wrap'); if (mw){ mw.classList.remove('prof-swap'); void mw.offsetWidth; mw.classList.add('prof-swap'); } }
+  refreshOther(true);
+}
+// Trae lo último del otro usuario desde Sheets (para «Ambos» y las metas compartidas), como máximo cada minuto
+let otherAt = 0;
+async function refreshOther(force){
+  const other = otherProfile(), bp = (sync.byProf || {})[other] || {};
+  if (!syncOn() || bp.pending || (!force && Date.now() - otherAt < 60000)) return;
+  otherAt = Date.now();
+  try {
+    const j = await callSheets({action:'load', profile:other});
+    if (j.data && Array.isArray(j.data.categories) && j.data.categories.length && other === otherProfile()){
+      try { localStorage.setItem(storeKey(other), JSON.stringify(cleanState(j.data))); } catch(e){}
+      sync.byProf = sync.byProf || {}; sync.byProf[other] = {rev:Number(j.data.rev) || 0, pending:false, lastSync:Date.now()}; saveSync();
+      _oth = null; dirty.add('goals'); dirty.add('both');
+      if (bothMode) renderBoth(); else if (activeTab() === 'goals') renderView('goals');
+    }
+  } catch(e){}
+}
+function renderBoth(){
+  const m = currentMonth, box = $('#bothBody'); if (!box) return;
+  const months = Array.from({length:6}, (_, i) => shiftMonth(m, i - 5));
+  const rows = profiles.list.map(pr => {
+    const st = profileState(pr.id);
+    if (!st) return {pr, empty:true, inc:0, exp:0, saved:0, rate:null, series:months.map(() => 0), top:[]};
+    return withState(st, () => {
+      const txs = txOfMonth(m), inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), sv = savingsOf(m);
+      const series = months.map(mm => sum(txOfMonth(mm).filter(t => t.type === 'expense')));
+      const top = txs.filter(t => t.type === 'expense').map(t => { const c = getCat(t.catId); return {t, c:{name:c.name, icon:c.icon, color:c.color}}; });
+      return {pr, inc, exp, saved:sv.saved || 0, rate:sv.rate, series, top};
+    });
+  });
+  const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), saved = T('saved'), bal = inc - exp;
+  const kpi = (lbl, icon, val, sub, cls, style) => `<div class="card kpi ${cls}"><div class="label"><span class="dot" style="${style}">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><div class="small muted">${sub}</div></div>`;
+  const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5);
+  box.innerHTML = `<div class="both-head"><h2>Ambos · ${monthLong(m)}</h2><div class="small muted">Solo lectura. Para registrar o editar, elige un usuario en el botón de arriba.</div></div>
+    <div class="kpis">
+      ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), rows.map(r => `${esc(r.pr.name)}: ${fmt(r.inc)}`).join(' · '), 'k-inc', 'background:var(--income-soft);color:var(--income)')}
+      ${kpi('Gastos de ambos', 'arrow-up', fmt(exp), rows.map(r => `${esc(r.pr.name)}: ${fmt(r.exp)}`).join(' · '), 'k-exp', 'background:var(--expense-soft);color:var(--expense)')}
+      ${kpi('Balance conjunto', 'scale', `<span class="${bal >= 0 ? 'pos' : 'neg'}">${fmt(bal)}</span>`, inc > 0 ? `Les sobró el ${Math.round(bal / inc * 100)}% de sus ingresos` : 'Aún sin ingresos este mes', '', '--k:var(--k-blue)')}
+      ${kpi('Ahorro conjunto', 'piggy-bank', fmt(saved), inc > 0 ? `${(saved / inc * 100).toFixed(1)}% de los ingresos de ambos` : '—', '', '--k:var(--k-violet)')}
+    </div>
+    <div class="grid2 top">
+      <div class="card"><h3>Por usuario</h3><div class="both-users">${rows.map(r => `<div class="bu-row">${avatarBox(r.pr)}<div style="min-width:0"><div class="bu-name"><span>${esc(r.pr.name)}</span>${r.empty ? '<span class="small muted">sin datos aún</span>' : ''}</div>
+        <div class="bu-stats"><div>Ingresos<b class="pos">${fmt(r.inc)}</b></div><div>Gastos<b>${fmt(r.exp)}</b></div><div>Balance<b class="${r.inc - r.exp >= 0 ? 'pos' : 'neg'}">${fmt(r.inc - r.exp)}</b></div><div>Ahorro<b>${r.rate != null ? r.rate.toFixed(1) + '%' : '—'}</b></div></div></div></div>`).join('')}
+        ${exp > 0 ? `<div class="small muted" style="margin-top:4px">Parte de los gastos del mes</div><div class="bu-share">${rows.map(r => `<i style="width:${(r.exp / exp * 100).toFixed(1)}%;background:${r.pr.color}" title="${esc(r.pr.name)}: ${(r.exp / exp * 100).toFixed(0)}%"></i>`).join('')}</div>` : ''}</div></div>
+      <div class="card"><h3>Gastos de ambos · últimos 6 meses</h3><div class="chart-wrap" id="bothWrap"><canvas id="chBoth"></canvas></div></div>
+    </div>
+    ${sharedGoalsCard()}
+    <div class="card both-top"><h3>Top 5 gastos del mes de ambos</h3>${top.length ? top.map(x => `<div class="prow">${avatarBox(x.pr)}<div class="pn"><b>${esc(x.t.desc || x.c.name)}</b><span>${esc(x.pr.name)} · ${esc(x.c.name)} · ${fmtDateLong(x.t.date)}</span></div><b>${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos este mes.</div>'}</div>`;
+  if (chBoth){ chBoth.destroy(); chBoth = null; }
+  if (typeof Chart === 'undefined') return;
+  chartTheme();
+  chBoth = new Chart($('#chBoth'), {type:'bar', plugins:[legendGap],
+    data:{labels:months.map(monthShort), datasets:rows.map(r => ({label:r.pr.name, data:r.series, backgroundColor:r.pr.color + 'cc', hoverBackgroundColor:r.pr.color, borderRadius:6, borderSkipped:false, maxBarThickness:26, stack:'g'}))},
+    options:{maintainAspectRatio:false, animation:stagger(), interaction:{mode:'index', intersect:false},
+      plugins:{legend:LEGEND, tooltip:{callbacks:{label: c => ` ${c.dataset.label}: ${fmt(c.parsed.y)}`, footer: items => 'Total: ' + fmt(items.reduce((a, i) => a + i.parsed.y, 0))}}},
+      scales:{x:{stacked:true, grid:{display:false}, border:{display:false}}, y:{stacked:true, beginAtZero:true, afterBuildTicks:trimTicks, grid:{color:cssVar('--border')}, border:{display:false}, ticks:{callback:compactS, maxTicksLimit:5, padding:8}}}}});
+}
+
 /* ---------- Render ---------- */
 let lastRenderMonth = null;
 const VIEWS = {dashboard:() => renderDashboard(), movs:() => { renderMovs(); renderRec(); if (movView === 'cal') renderCalendar(); },
-  budget:() => renderBudget(), goals:() => renderGoals(), analysis:() => renderAnalysis(), cats:() => renderCats(), settings:() => {}};
+  budget:() => renderBudget(), goals:() => renderGoals(), analysis:() => renderAnalysis(), cats:() => renderCats(), settings:() => renderProfEdit(), both:() => renderBoth()};
 let dirty = new Set(Object.keys(VIEWS));
 const activeTab = () => { const t = document.querySelector('.tab.active'); return t ? t.id.slice(4) : 'dashboard'; };
 function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n); VIEWS[n](); }
@@ -3971,6 +4251,7 @@ function renderAll(){
   methodsInput.value = (state.settings.methods||[]).join(', ');
   // Solo se dibuja la pestaña visible; las demás quedan marcadas y se dibujan al abrirlas
   dirty = new Set(Object.keys(VIEWS));
+  renderProfileUI();
   renderView(activeTab());
 }
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);

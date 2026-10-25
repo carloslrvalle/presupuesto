@@ -177,6 +177,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .topbar.scrolled{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
   .topbar>.wrap:last-child{height:0;padding:0;margin:0;overflow:visible}.topbar{padding-bottom:0}
   main.wrap{padding-top:14px}
+  .topbar>.wrap:first-child{position:relative}.head-right .sync-badge{position:absolute;top:18px;right:16px}.topbar:has(.sync-badge:not([hidden])) .brand{max-width:calc(100% - 160px);min-width:0}.brand #appName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .month-nav .month-label{white-space:nowrap}
   #txDialog .row2{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
   #txDelete,#txDup{padding-left:12px;padding-right:12px}
   html,body{background:var(--bg);overscroll-behavior-y:none}
@@ -440,6 +442,12 @@ h3>.vi{color:var(--primary);vertical-align:-3px;margin-right:4px}
 .per-day{display:block;margin-top:3px;font-size:12px;color:var(--text)}.per-day b{color:var(--accent-ink,var(--primary))}
 .plan-line{display:block;font-size:12px;font-weight:600;color:var(--primary);margin-top:3px}.plan-line.neg{color:var(--expense)}
 .app-ver{text-align:center;margin:20px 0 4px}
+.persist-info{display:flex;align-items:center;gap:6px;margin-top:8px;color:var(--muted)}.persist-info .vi{width:15px;height:15px;flex:none}.persist-info.ok{color:var(--income)}
+.conn-box{margin-top:14px;padding:14px;border-radius:12px;background:var(--surface-2);display:grid;gap:8px}
+.conn-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}.conn-h .vi{width:16px;height:16px}
+.conn-box p{margin:0;line-height:1.45}
+.conn-row{display:flex;gap:8px;min-width:0}.conn-row input{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+@media (max-width:420px){.conn-row{flex-wrap:wrap}.conn-row input{flex-basis:100%}.conn-row .btn{flex:1;justify-content:center}}
 .plan-txt{color:var(--primary);font-weight:600}
 tr.planned td{opacity:.72}tr.planned td:first-child,tr.planned td:last-child{opacity:1}
 .cal-d.planned{border-style:dashed}
@@ -988,7 +996,7 @@ body.sel-on .toast{bottom:150px}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.1.0'; window.__APP_DATE = '2026-10-25';
+window.__APP_VERSION = '1.2.0'; window.__APP_DATE = '2026-10-25';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1203,6 +1211,12 @@ window.addEventListener('error', function (e) {
             <button class="btn" id="btnSyncPull"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg> Traer de Sheets</button>
           </div>
           <div class="small muted" id="syncInfo">Sin conectar.</div>
+          <div class="persist-info small" id="persistInfo" hidden></div>
+          <div class="conn-box" id="connBox" hidden>
+            <div class="conn-h"><span id="connIc"></span>Link de conexión</div>
+            <p class="small muted">Si se borran los datos de este navegador o cambias de celular, abre este link y la app se conecta sola a tu hoja. Incluye tu clave: guárdalo solo para ti (en tus notas o en un chat contigo mismo).</p>
+            <div class="conn-row"><input type="text" id="connLink" readonly aria-label="Link de conexión"><button type="button" class="btn" id="btnConnCopy">Copiar</button><button type="button" class="btn" id="btnConnShare" hidden>Compartir</button></div>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -3684,6 +3698,19 @@ $('#btnWipe').onclick = async () => {
 const SYNC_KEY = 'budgetPlanner.sync';
 let sync = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch(e){ return {}; } })();
 if (sync.auto === undefined) sync.auto = true;
+// Link de conexión (#conectar=…): configura la sincronización y luego se borra de la barra de direcciones
+(function(){
+  const m = /[#&]conectar=([\w-]+)/.exec(location.hash || ''); if (!m) return;
+  try {
+    const b = m[1].split('-').join('+').split('_').join('/'), o = JSON.parse(decodeURIComponent(escape(atob(b + '==='.slice((b.length + 3) % 4)))));
+    if (!o || !/^https:[/][/]script\.google\.com[/]/.test(o.u) || !o.t) throw new Error('link');
+    const changed = sync.url !== o.u || sync.token !== o.t;
+    sync.url = o.u; sync.token = o.t; if (changed) sync.rev = 0;
+    try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch(e){}
+    window.__connFromLink = changed ? 'new' : 'same';
+  } catch(e){ window.__connFromLink = 'bad'; }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
+})();
 const saveSync = () => { try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch(e){} };
 const syncOn = () => !!(sync.url && sync.token);
 let pushTimer = null, pushing = false, changeSeq = 0;
@@ -3697,7 +3724,36 @@ function updateSyncInfo(err){
   $('#syncInfo').textContent = !syncOn() ? 'Sin conectar.'
     : err ? 'Error: ' + err
     : sync.lastSync ? 'Última sincronización: ' + new Date(sync.lastSync).toLocaleString('es-PE') : 'Conectado.';
+  renderConnBox();
 }
+// Link personal que trae la URL y la clave (la parte después de # nunca sale del dispositivo)
+function connLink(){
+  const raw = btoa(unescape(encodeURIComponent(JSON.stringify({u:sync.url, t:sync.token}))));
+  return location.origin + location.pathname + '#conectar=' + raw.split('+').join('-').split('/').join('_').replace(/=+$/, '');
+}
+function renderConnBox(){
+  const box = $('#connBox'); if (!box) return;
+  const can = syncOn() && typeof window.__SCRIPT_URL !== 'string' && /^https?:$/.test(location.protocol);
+  box.hidden = !can; if (!can) return;
+  $('#connIc').innerHTML = ic('link'); $('#connLink').value = connLink(); $('#btnConnShare').hidden = !navigator.share;
+}
+$('#btnConnCopy').onclick = async () => {
+  const i = $('#connLink');
+  try { await navigator.clipboard.writeText(i.value); toast('Link copiado: guárdalo en tus notas', {icon:'link'}); }
+  catch(e){ i.focus(); i.select(); toast('Mantén presionado el link para copiarlo'); }
+};
+$('#btnConnShare').onclick = () => { navigator.share({title:'Presupuesto · link de conexión', text:'Mi link para conectar Presupuesto (no compartir)', url:$('#connLink').value}).catch(() => {}); };
+// Pide al navegador que no borre por su cuenta los datos de este dispositivo
+async function askPersist(){
+  const el = $('#persistInfo'); if (!el || !navigator.storage || !navigator.storage.persist) return;
+  try {
+    let p = await navigator.storage.persisted(); if (!p) p = await navigator.storage.persist();
+    el.hidden = false; el.classList.toggle('ok', p);
+    el.innerHTML = p ? ic('shield-check') + '<span>Datos de este dispositivo protegidos: el navegador no los borrará por su cuenta.</span>'
+                     : ic('shield') + '<span>El navegador aún no protege los datos de este dispositivo. Instalar la app suele activarlo.</span>';
+  } catch(e){}
+}
+window.addEventListener('appinstalled', () => setTimeout(askPersist, 800));
 async function callSheets(payload){
   const res = await fetch(sync.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({token:sync.token, ...payload})});
   if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -3925,6 +3981,9 @@ if ('serviceWorker' in navigator && !FROM_SCRIPT && (location.protocol === 'http
 let installEvt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#btnInstall').hidden = false; });
 $('#btnInstall').onclick = async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; $('#btnInstall').hidden = true; };
+askPersist();
+if (window.__connFromLink === 'new') setTimeout(() => toast('Conectado con tu link: trayendo tus datos de Sheets', {icon:'link'}), 600);
+else if (window.__connFromLink === 'bad') setTimeout(() => toast('⚠️ El link de conexión no es válido'), 600);
 // Punto de partida del registro de cambios: desde aquí cada edición queda fechada para sincronizar
 if (!_snapRec) _snapRec = snapState();
 $('#appVer').textContent = `Versión ${window.__APP_VERSION} · ${fmtDateLong(window.__APP_DATE)}${FROM_SCRIPT ? ' · abierta desde Apps Script' : location.protocol === 'https:' ? ' · ' + location.host : ''}`;

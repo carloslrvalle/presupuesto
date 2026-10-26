@@ -1070,7 +1070,7 @@ body.sel-on .toast{bottom:150px}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.5.0'; window.__APP_DATE = '2026-10-25';
+window.__APP_VERSION = '1.5.1'; window.__APP_DATE = '2026-10-25';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -2950,7 +2950,9 @@ const recDone = (r, m) => state.transactions.some(t => t.date.slice(0,7) === m &
 const recSkipped = (r, m) => (r.skipped || []).includes(m);
 const recDue = (r, m) => m < thisMonth() || (m === thisMonth() && new Date().getDate() >= Math.min(r.day, daysIn(m)));
 const recPending = m => state.recurring.filter(r => r.active !== false && (!r.start || r.start <= m) && !recDone(r, m) && !recSkipped(r, m));
-const recTx = (r, m, extra) => ({id:uid(), created:Date.now(), type:r.type, amount:r.amount, catId:r.catId, date:dateFor(m, r.day), method:r.method, desc:r.desc || getCat(r.catId).name, recId:r.id, ...(extra || {})});
+// Id fijo por recurrente y mes: si dos dispositivos lo crean a la vez, al sincronizar quedan como uno solo
+const recTxId = (r, m) => { const id = 'rec-' + r.id + '-' + m; return state.transactions.some(t => t.id === id) ? uid() : id; };
+const recTx = (r, m, extra) => ({id:recTxId(r, m), created:Date.now(), type:r.type, amount:r.amount, catId:r.catId, date:dateFor(m, r.day), method:r.method, desc:r.desc || getCat(r.catId).name, recId:r.id, ...(extra || {})});
 function runAutoRecurring(silent){
   const tm = thisMonth(); let n = 0;
   state.recurring.filter(r => r.active !== false && r.auto).forEach(r => {
@@ -4105,7 +4107,7 @@ $('#btnSyncPull').onclick = async () => {
   }catch(err){ updateSyncInfo(err.message); toast('⚠️ No se pudo leer la hoja'); }
 };
 $('#syncAuto').addEventListener('change', e => { sync.auto = e.target.checked; saveSync(); if (sync.auto && sync.pending) pushNow(); });
-window.addEventListener('online', () => { if (sync.pending && sync.auto) pushNow(); });
+window.addEventListener('online', () => { if (sync.pending && sync.auto) pushNow(); pushOtherPending(); });
 window.addEventListener('pagehide', () => {
   if (syncOn() && sync.auto && sync.pending && navigator.sendBeacon)
     navigator.sendBeacon(sync.url, new Blob([JSON.stringify({token:sync.token, profile:activeProfile, profiles, action:'save', data:snapshot(), base:Number(sync.rev) || 0})], {type:'text/plain;charset=utf-8'}));
@@ -4154,9 +4156,34 @@ function loadProfileState(){
   if (!state.updatedAt) saveLocal();
   _txIdx = null; _snapRec = snapState();
 }
-let switching = false;
+let switching = false, otherPush = null;
+// Si el otro usuario dejó cambios sin subir en este dispositivo (p. ej. se cambió de usuario sin internet), se suben en segundo plano
+function pushOtherPending(){
+  if (otherPush) return otherPush;
+  const other = otherProfile(), bp = (sync.byProf || {})[other];
+  if (!syncOn() || !sync.auto || !bp || !bp.pending) return Promise.resolve(false);
+  otherPush = (async () => {
+    let st = null; try { st = cleanState(JSON.parse(localStorage.getItem(storeKey(other)))); } catch(e){}
+    if (!st) return false;
+    const snap = withState(st, () => snapshot());
+    try {
+      const res = await callSheets({action:'save', profile:other, data:snap, base:Number(bp.rev) || 0});
+      if (res.merged){
+        const d = mergeData(res.merged, snap);
+        ['categories', 'transactions', 'recurring', 'goals', 'budgets', 'meta'].forEach(k => { if (d[k]) st[k] = d[k]; });
+        if (Array.isArray(d.methods) && d.methods.length) st.settings.methods = d.methods;
+        if (d.settings) SYNC_SETTINGS.forEach(k => { if (d.settings[k] != null && d.settings[k] !== '') st.settings[k] = d.settings[k]; });
+      }
+      try { localStorage.setItem(storeKey(other), JSON.stringify(st)); } catch(e){}
+      sync.byProf[other] = {rev:Number(res.rev) || Number(bp.rev) || 0, pending:false, lastSync:Date.now()}; saveSync(); _oth = null;
+      return true;
+    } catch(e){ return false; }
+  })().finally(() => { otherPush = null; });
+  return otherPush;
+}
 async function switchProfile(id){
   if (switching) return;
+  if (otherPush) { try { await otherPush; } catch(e){} }
   if (id === 'both'){ if (!bothMode) enterBoth(); return; }
   if (bothMode && id === activeProfile){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); showTab('dashboard'); renderAll(); return; }
   if (id === activeProfile) return;
@@ -4398,7 +4425,7 @@ if (!_snapRec) _snapRec = snapState();
 $('#appVer').textContent = `Versión ${window.__APP_VERSION} · ${fmtDateLong(window.__APP_DATE)}${FROM_SCRIPT ? ' · abierta desde Apps Script' : location.protocol === 'https:' ? ' · ' + location.host : ''}`;
 { const b = document.getElementById('boot'); if (b && !window.__bootErrs.length){ b.classList.add('gone'); setTimeout(() => b.remove(), 400); } }
 // Primero sincroniza (para no duplicar recurrentes ya creados en otro equipo) y luego registra los automáticos
-(syncOn() ? startupSync() : Promise.resolve()).then(() => { if (runAutoRecurring()) renderAll(); setTimeout(migratePastel, 600);
+(syncOn() ? startupSync() : Promise.resolve()).then(() => { if (runAutoRecurring()) renderAll(); pushOtherPending(); setTimeout(migratePastel, 600);
   setTimeout(() => { if (document.querySelector('dialog[open]')) return;
     if (!state.settings.onboarded && state.transactions.length){ state.settings.onboarded = true; if (!state.settings.lastClose) state.settings.lastClose = thisMonth(); save(); }
     maybeMonthClose(); }, 900); });

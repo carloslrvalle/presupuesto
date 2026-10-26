@@ -177,6 +177,13 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .topbar.scrolled{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
   .topbar>.wrap:last-child{height:0;padding:0;margin:0;overflow:visible}.topbar{padding-bottom:0}
   main.wrap{padding-top:14px}
+  /* Diálogos como hoja que sube desde abajo */
+  html dialog{width:100%!important;max-width:100%!important;margin:auto 0 0!important;border-radius:22px 22px 0 0!important;max-height:92dvh;padding-bottom:env(safe-area-inset-bottom);opacity:1;transform:translateY(100%);transition:transform .26s var(--ease-in),overlay .26s allow-discrete,display .26s allow-discrete}
+  html dialog[open]{opacity:1;transform:none;transition:transform .42s var(--ease-out),overlay .42s allow-discrete,display .42s allow-discrete}
+  @starting-style{html dialog[open]{opacity:1;transform:translateY(100%)}}
+  html dialog::before{content:"";display:block;width:40px;height:5px;border-radius:9px;background:color-mix(in srgb,var(--muted) 45%,transparent);margin:8px auto -2px}
+  html dialog.dragging{transition:none!important}
+  html dialog .dlg-foot{position:sticky;bottom:0;z-index:2;background:var(--surface);padding-top:12px;box-shadow:0 -10px 18px -14px rgba(10,12,20,.4);padding-bottom:calc(14px + env(safe-area-inset-bottom))}
   .topbar>.wrap:first-child{position:relative}.head-right .top-pair{position:absolute;top:18px;right:16px;display:flex;gap:8px;align-items:center}.prof-nm,.prof-cv{display:none}.prof-chip{padding:0 5px}.head-right .sync-badge{padding:0 14px}.sync-badge .sb-t{display:none}.brand{max-width:calc(100% - 70px);min-width:0}.topbar:has(.sync-badge:not([hidden])) .brand{max-width:calc(100% - 120px)}.brand #appName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .month-nav .month-label{white-space:nowrap}
   #txDialog .row2{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
@@ -201,9 +208,14 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 main.wrap{padding-top:24px;padding-bottom:110px} /* .wrap pone padding 0 16px: aquí se fija el aire bajo las pestañas */
 .tab{display:none}
 .tab.active{display:block;animation:tabIn .35s cubic-bezier(.4,0,.2,1)}
-.tab.active.m-next{animation:mNext .38s var(--ease-out)}.tab.active.m-prev{animation:mPrev .38s var(--ease-out)}
-@keyframes mNext{from{opacity:.25;transform:translateX(22px)}to{opacity:1;transform:none}}
-@keyframes mPrev{from{opacity:.25;transform:translateX(-22px)}to{opacity:1;transform:none}}
+.tab.active.m-next{animation:mNext .46s var(--ease-out)}.tab.active.m-prev{animation:mPrev .46s var(--ease-out)}
+.tab.active.from-r{animation:tabR .42s var(--ease-out)}.tab.active.from-l{animation:tabL .42s var(--ease-out)}
+@keyframes tabR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes tabL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.st-in{animation:stIn .55s var(--ease-out) both;animation-delay:var(--sd,0ms)}
+@keyframes stIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes mNext{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes mPrev{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
 @keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important}}
 h2{font-size:20px;margin:0 0 14px}
@@ -442,6 +454,17 @@ h3>.vi{color:var(--primary);vertical-align:-3px;margin-right:4px}
 .per-day{display:block;margin-top:3px;font-size:12px;color:var(--text)}.per-day b{color:var(--accent-ink,var(--primary))}
 .plan-line{display:block;font-size:12px;font-weight:600;color:var(--primary);margin-top:3px}.plan-line.neg{color:var(--expense)}
 .app-ver{text-align:center;margin:20px 0 4px}
+/* Encabezado compacto al bajar */
+.topbar .wrap,.brand,.brand .logo,#appName,.month-nav,.gear-btn,.prof-chip,.sync-badge{transition:padding .32s var(--ease-out),font-size .32s var(--ease-out),height .32s var(--ease-out),min-height .32s var(--ease-out),transform .32s var(--ease-out),background-color .2s,border-color .2s,color .2s}
+.topbar.compact>.wrap:first-child{padding-top:8px;padding-bottom:4px}
+.topbar.compact .brand{font-size:18px;min-height:36px}.topbar.compact .brand .logo{transform:scale(.84)}
+.topbar.compact .month-nav,.topbar.compact .gear-btn,.topbar.compact .prof-chip,.topbar.compact .sync-badge{height:36px}
+/* Celebración */
+.confetti{position:fixed;inset:0;z-index:1200;pointer-events:none}
+/* Jalar para actualizar (celular) */
+.ptr{position:fixed;left:50%;top:0;z-index:40;width:40px;height:40px;margin-left:-20px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--accent-ink,var(--primary));border:1px solid var(--border);box-shadow:0 8px 20px -8px rgba(10,12,20,.35);transform:translateY(-60px);opacity:0;pointer-events:none}
+.ptr .vi{width:20px;height:20px}.ptr.spin .vi{animation:btSpin .8s linear infinite}
+.ptr.back{transition:transform .35s var(--ease-out),opacity .3s}
 /* Usuarios */
 .top-pair{display:contents}
 .prof-chip{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 10px 0 6px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-size:14px;font-weight:700;cursor:pointer;max-width:200px;transition:background-color .2s,border-color .2s}
@@ -1047,7 +1070,7 @@ body.sel-on .toast{bottom:150px}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.4.0'; window.__APP_DATE = '2026-10-25';
+window.__APP_VERSION = '1.5.0'; window.__APP_DATE = '2026-10-25';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1695,10 +1718,13 @@ function showTab(name){
   if (typeof selMode !== 'undefined' && selMode) setSelMode(false);
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
-  const b = $(`#tabs button[data-tab="${name}"]`);
+  const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab();
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
   $('#btnSettings').classList.toggle('active', name === 'settings');
-  document.querySelectorAll('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+  document.querySelectorAll('.tab').forEach(s => { s.classList.toggle('active', s.id === 'tab-' + name); s.classList.remove('m-next', 'm-prev', 'from-r', 'from-l'); });
+  // La pestaña entra desde el lado hacia el que te mueves
+  { const ord = ['dashboard', 'movs', 'budget', 'goals', 'analysis', 'cats', 'settings', 'both'], d = ord.indexOf(name) - ord.indexOf(prevTab), te = $('#tab-' + name);
+    if (te && d && !reduceMotion()){ void te.offsetWidth; te.classList.add(d > 0 ? 'from-r' : 'from-l'); } }
   moveTabInd();
   // solo desplaza la fila de pestañas hacia los lados (no la página), y vuelve arriba sin animación para que no salte
   const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:'smooth'}); }
@@ -1710,6 +1736,14 @@ function showTab(name){
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
   if (name === 'movs') moveViewInd();
+  if (prevTab !== name) staggerIn($('#tab-' + name));
+}
+// Entrada escalonada: las tarjetas visibles aparecen una tras otra
+function staggerIn(root){
+  if (!root || reduceMotion()) return;
+  const vh = innerHeight, items = [...root.querySelectorAll('.insight, .card, .both-head')].filter(el => !el.parentElement.closest('.card') && el.offsetParent && el.getBoundingClientRect().top < vh);
+  items.slice(0, 14).forEach((el, i) => { el.classList.remove('st-in'); el.style.setProperty('--sd', (60 + i * 45) + 'ms'); void el.offsetWidth; el.classList.add('st-in');
+    el.addEventListener('animationend', function f(ev){ if (ev.target !== el) return; el.classList.remove('st-in'); el.removeEventListener('animationend', f); }); });
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
 $('#btnSettings').onclick = () => showTab('settings');
@@ -1723,14 +1757,21 @@ moveTabInd();
 window.addEventListener('resize', moveTabInd);
 // La línea y sombra del encabezado solo aparecen al hacer scroll
 const topbar = $('.topbar');
-const onScroll = () => topbar.classList.toggle('scrolled', window.scrollY > 4);
+let compactTop = false;
+const onScroll = () => {
+  const y = window.scrollY; topbar.classList.toggle('scrolled', y > 4);
+  // Se achica al bajar (con margen para que no titile) solo si la página es lo bastante larga
+  const room = document.documentElement.scrollHeight - innerHeight, want = room > 180 && (compactTop ? y > 24 : y > 72);
+  if (want !== compactTop){ compactTop = want; topbar.classList.toggle('compact', want); }
+};
 window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
 const monthInput = $('#month');
 monthInput.value = currentMonth;
 monthInput.addEventListener('change', () => { if (monthInput.value) { currentMonth = monthInput.value; renderAll(); } });
 // Al cambiar de mes el contenido se desliza hacia el lado del mes elegido
 function slideMonth(dir){ if (reduceMotion()) return; const t = document.querySelector('.tab.active'); if (!t) return; t.classList.remove('m-next', 'm-prev'); void t.offsetWidth; t.classList.add(dir > 0 ? 'm-next' : 'm-prev'); }
-function goMonth(v){ if (!v || v === currentMonth) return; const dir = v > currentMonth ? 1 : -1; currentMonth = v; monthInput.value = v; renderAll(); slideMonth(dir); }
+let chartMorph = false;
+function goMonth(v){ if (!v || v === currentMonth) return; const dir = v > currentMonth ? 1 : -1; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } slideMonth(dir); }
 $('#prevM').onclick = () => goMonth(shiftMonth(currentMonth, -1));
 $('#nextM').onclick = () => goMonth(shiftMonth(currentMonth, 1));
 
@@ -1998,7 +2039,9 @@ function renderCharts(){
   { const tot = data.reduce((a, x) => a + x.v, 0), small = data.filter((x, i) => i >= 5 && x.v / tot < .04);
     if (small.length >= 2){ data = data.filter(x => !small.includes(x)); data.push({c:{id:'_otras', name:`Otras (${small.length})`, icon:'svg:chart-pie', color:'#9aa3b5'}, v: small.reduce((a, x) => a + x.v, 0), group: small}); } }
   const dw = $('#donutWrap');
-  if (chDonut){ chDonut.destroy(); chDonut = null; }
+  // Al cambiar de mes los gráficos se transforman en vez de redibujarse desde cero
+  const morphD = chartMorph && chDonut && chDonut.canvas && chDonut.canvas.isConnected && data.length > 0;
+  if (chDonut && !morphD){ chDonut.destroy(); chDonut = null; }
   if (!data.length){ dw.innerHTML = emptyBox('chart-pie', 'Aún no hay gastos este mes. Cuando registres uno verás aquí cómo se reparte.', 'expense', 'Registrar gasto'); }
   else {
     if (!dw.querySelector('#donutLegend')) dw.innerHTML = '<div class="donut-c"><canvas id="chDonut"></canvas></div><div class="donut-l" id="donutLegend"></div>';
@@ -2008,17 +2051,25 @@ function renderCharts(){
       const meta = ch.getDatasetMeta(0), arc = meta.data[0]; if (!arc) return;
       const {ctx} = ch, x = arc.x, y = arc.y, act = ch.getActiveElements()[0];
       const fam = cssVar('--font-head') || 'system-ui, sans-serif', size = Math.max(14, Math.min(26, arc.innerRadius / 3.4));
-      let top = 'Total gastado', mid = fmt(totalD), bot = `${data.length} categoría${data.length > 1 ? 's' : ''}`;
-      if (act){ const d = data[act.index]; top = d.c.name.length > 16 ? d.c.name.slice(0, 15) + '…' : d.c.name; mid = fmt(d.v); bot = (d.v / totalD * 100).toFixed(1) + '% del total'; }
+      const D = ch.$d || {data:[], totalD:0};
+      let top = 'Total gastado', mid = fmt(D.totalD), bot = `${D.data.length} categoría${D.data.length > 1 ? 's' : ''}`;
+      if (act && D.data[act.index]){ const d = D.data[act.index]; top = d.c.name.length > 16 ? d.c.name.slice(0, 15) + '…' : d.c.name; mid = fmt(d.v); bot = (d.v / D.totalD * 100).toFixed(1) + '% del total'; }
       ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = cssVar('--muted'); ctx.font = `600 ${Math.round(size * .5)}px ${fam}`; ctx.fillText(top, x, y - size * .95);
       ctx.fillStyle = cssVar('--text'); ctx.font = `700 ${Math.round(size)}px ${fam}`; ctx.fillText(mid, x, y + 1);
       ctx.fillStyle = cssVar('--muted'); ctx.font = `500 ${Math.round(size * .48)}px ${fam}`; ctx.fillText(bot, x, y + size * .95);
       ctx.restore(); }};
-    chDonut = new Chart($('#chDonut'), {type:'doughnut', plugins:[centre],
-      data:{labels:data.map(x => iconText(x.c)), datasets:[{data:data.map(x => x.v), backgroundColor:sliceCols(data, 0), hoverBackgroundColor:sliceCols(data, .06), borderColor:cssVar('--surface'), hoverBorderColor:cssVar('--surface'), borderWidth:3, hoverOffset:6}]},
-      options:{maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'70%'}
-    });
+    if (morphD){
+      const ds = chDonut.data.datasets[0]; chDonut.$d = {data, totalD};
+      chDonut.data.labels = data.map(x => iconText(x.c)); ds.data = data.map(x => x.v); ds.backgroundColor = sliceCols(data, 0); ds.hoverBackgroundColor = sliceCols(data, .06);
+      chDonut.update();
+    } else {
+      chDonut = new Chart($('#chDonut'), {type:'doughnut', plugins:[centre],
+        data:{labels:data.map(x => iconText(x.c)), datasets:[{data:data.map(x => x.v), backgroundColor:sliceCols(data, 0), hoverBackgroundColor:sliceCols(data, .06), borderColor:cssVar('--surface'), hoverBorderColor:cssVar('--surface'), borderWidth:3, hoverOffset:6}]},
+        options:{maintainAspectRatio:false, animation:{duration:900, easing:'easeOutQuart', animateRotate:true, animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'70%'}
+      });
+      chDonut.$d = {data, totalD};
+    }
     const cols = sliceCols(data, 0);
     $('#donutLegend').innerHTML = data.map((x, i) => `<button type="button" class="dl-row" data-i="${i}"${x.group ? ` title="${esc(x.group.map(g => g.c.name).join(', '))}"` : ''}><i style="background:${cols[i]}"></i><span class="dl-n">${esc(x.c.name)}</span><b>${fmt(x.v)}</b><span class="dl-p">${(x.v / totalD * 100).toFixed(0)}%</span></button>`).join('');
   }
@@ -2028,12 +2079,14 @@ function renderCharts(){
   const incs = months.map(x => sum(txOfMonth(x).filter(t => t.type === 'income')));
   const exps = months.map(x => sum(txOfMonth(x).filter(t => t.type === 'expense')));
   const bw = $('#barsWrap');
-  if (chBars){ chBars.destroy(); chBars = null; }
+  const morphB = chartMorph && chBars && chBars.canvas && chBars.canvas.isConnected && (incs.some(Boolean) || exps.some(Boolean));
+  if (chBars && !morphB){ chBars.destroy(); chBars = null; }
   if (!incs.some(Boolean) && !exps.some(Boolean)){ bw.innerHTML = emptyBox('chart-column', 'Aún no hay movimientos en los últimos 6 meses.', 'tx', 'Nuevo movimiento'); return; }
   if (!bw.querySelector('canvas')) bw.innerHTML = '<canvas id="chBars"></canvas>';
   const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? savingsOf(mm).saved : null), cur = months.length - 1, ink = cssVar('--k-violet');
   const nul = arr => arr.map((v, i) => has(i) ? v : null);
   const barBg = v => c => vGrad(cssVar(v), c.dataIndex === cur || c.active ? 'ff' : 'b3', c.dataIndex === cur || c.active ? '66' : '3a')(c);
+  if (morphB){ chBars.data.labels = months.map(monthShort); chBars.data.datasets[0].data = nul(incs); chBars.data.datasets[1].data = nul(exps); chBars.update(); return; }
   chBars = new Chart($('#chBars'), {
     plugins:[legendGap],
     data:{labels:months.map(monthShort), datasets:[
@@ -3226,6 +3279,7 @@ function maybeMonthClose(){
     </ul>`;
   state.settings.lastClose = tm; save();
   $('#closeDialog').showModal();
+  if (bExp > 0 && exp <= bExp) setTimeout(confetti, 450);
 }
 $('#closeDialog').addEventListener('click', e => { if (e.target.closest('[data-cl=an]')){ $('#closeDialog').close(); goMonth(shiftMonth(thisMonth(), -1)); showTab('analysis'); } });
 
@@ -4113,7 +4167,7 @@ async function switchProfile(id){
     saveLocal(); saveSync();
     activeProfile = id; try { localStorage.setItem(ACT_KEY, id); } catch(e){}
     const bp = (sync.byProf || {})[id] || {}; sync.rev = Number(bp.rev) || 0; sync.pending = !!bp.pending; sync.lastSync = bp.lastSync || 0;
-    loadProfileState();
+    loadProfileState(); _doneSet = null;
     if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
     Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
     renderProfileUI(); if (activeTab() === 'both') showTab('dashboard'); renderAll(); updateSyncInfo();
@@ -4237,6 +4291,79 @@ function renderBoth(){
       scales:{x:{stacked:true, grid:{display:false}, border:{display:false}}, y:{stacked:true, beginAtZero:true, afterBuildTicks:trimTicks, grid:{color:cssVar('--border')}, border:{display:false}, ticks:{callback:compactS, maxTicksLimit:5, padding:8}}}}});
 }
 
+/* ---------- Gestos táctiles y celebraciones ---------- */
+VICONS['refresh-cw'] = '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>';
+const isTouchPhone = () => innerWidth <= 600;
+// Hoja (diálogo) en el celular: se cierra deslizándola hacia abajo desde su parte superior
+let dDrag = null;
+function closeDlg(d){ const x = d.querySelector('[data-close]'); if (x) x.click(); else d.close(); }
+document.addEventListener('touchstart', e => {
+  const d = e.target.closest && e.target.closest('dialog[open]'); if (!d || !isTouchPhone() || d.scrollTop > 2) return;
+  const t = e.touches[0], r = d.getBoundingClientRect();
+  if (t.clientY - r.top > 64 && !e.target.closest('.dlg-head')) return;
+  if (e.target.closest('input,select,textarea,button:not([data-close])')) return;
+  dDrag = {d, y0:t.clientY, t0:Date.now(), dy:0};
+}, {passive:true});
+document.addEventListener('touchmove', e => {
+  if (!dDrag) return; const dy = Math.max(0, e.touches[0].clientY - dDrag.y0); dDrag.dy = dy;
+  if (dy > 4){ dDrag.d.classList.add('dragging'); dDrag.d.style.transform = `translateY(${dy}px)`; }
+}, {passive:true});
+document.addEventListener('touchend', () => {
+  if (!dDrag) return; const {d, dy, t0} = dDrag; dDrag = null; d.classList.remove('dragging');
+  if (dy > 110 || (dy > 40 && Date.now() - t0 < 250)){
+    d.style.transition = 'transform .22s cubic-bezier(.55,0,1,.45)'; d.style.transform = 'translateY(100%)';
+    setTimeout(() => { closeDlg(d); d.style.transition = ''; d.style.transform = ''; }, 210);
+  } else { d.style.transition = 'transform .32s cubic-bezier(.22,1,.36,1)'; d.style.transform = ''; setTimeout(() => { d.style.transition = ''; }, 330); }
+});
+// Deslizar a los lados cambia de mes; jalar hacia abajo (arriba de todo) sincroniza con Sheets
+const ptr = document.createElement('div'); ptr.className = 'ptr'; ptr.innerHTML = ic('refresh-cw'); document.body.appendChild(ptr);
+let sw = null, ptrBusy = false;
+function hasHScroll(el){ for (let n = el; n && n !== document.body; n = n.parentElement){ const o = getComputedStyle(n).overflowX; if ((o === 'auto' || o === 'scroll') && n.scrollWidth > n.clientWidth + 2) return true; } return false; }
+document.addEventListener('touchstart', e => {
+  sw = null; if (e.touches.length !== 1 || !isTouchPhone() || document.querySelector('dialog[open]') || !profMenu.hidden) return;
+  const tg = e.target; if (!tg.closest || !tg.closest('main') || tg.closest('input,select,textarea,canvas,.vseg,[contenteditable]')) return;
+  const t = e.touches[0]; sw = {x:t.clientX, y:t.clientY, t:Date.now(), top:window.scrollY <= 0, h:!hasHScroll(tg), pull:0};
+}, {passive:true});
+document.addEventListener('touchmove', e => {
+  if (!sw) return; const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+  if (sw.top && !ptrBusy && syncOn() && dy > 0 && dy > Math.abs(dx) * 1.4 && window.scrollY <= 0){
+    sw.pull = Math.min(120, dy * .5); ptr.classList.remove('back');
+    ptr.style.opacity = Math.min(1, sw.pull / 50); ptr.style.transform = `translateY(${sw.pull - 20}px) rotate(${sw.pull * 3}deg)`;
+  }
+}, {passive:true});
+document.addEventListener('touchend', e => {
+  if (!sw) return; const s0 = sw; sw = null; const t = e.changedTouches[0], dx = t.clientX - s0.x, dy = t.clientY - s0.y;
+  if (s0.pull){ if (s0.pull >= 60) pullRefresh(); else { ptr.classList.add('back'); ptr.style.opacity = 0; ptr.style.transform = 'translateY(-60px)'; } return; }
+  if (s0.h && Math.abs(dx) > 70 && Math.abs(dy) < 50 && Math.abs(dx) > Math.abs(dy) * 2 && Date.now() - s0.t < 600 && !['settings', 'cats'].includes(activeTab()))
+    goMonth(shiftMonth(currentMonth, dx < 0 ? 1 : -1));
+});
+async function pullRefresh(){
+  ptrBusy = true; ptr.classList.add('spin', 'back'); ptr.style.opacity = 1; ptr.style.transform = 'translateY(44px)';
+  try { if (sync.pending) await pushNow(); await startupLoad(); otherAt = 0; await refreshOther(true); renderAll(); toast('Actualizado con Sheets', {icon:'cloud'}); }
+  catch(e){ toast('⚠️ No se pudo actualizar'); }
+  finally { ptrBusy = false; ptr.classList.remove('spin'); ptr.style.opacity = 0; ptr.style.transform = 'translateY(-60px)'; }
+}
+// Confeti breve (respeta «reducir movimiento»)
+function confetti(){
+  if (reduceMotion()) return;
+  const c = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  c.className = 'confetti'; c.width = W * dpr; c.height = H * dpr; document.body.appendChild(c);
+  const x = c.getContext('2d'); x.scale(dpr, dpr);
+  const cols = [cssVar('--primary'), cssVar('--income'), '#f59e0b', '#ec4899', '#38bdf8', '#a78bfa'].concat(profiles.list.map(p => p.color)).filter(Boolean);
+  const P = Array.from({length:150}, (_, i) => ({x:W / 2 + (Math.random() - .5) * W * .25, y:H * .38, vx:(Math.random() - .5) * 13, vy:-Math.random() * 13 - 4, s:5 + Math.random() * 6, r:Math.random() * 6, vr:(Math.random() - .5) * .35, c:cols[i % cols.length]}));
+  const t0 = performance.now(), DUR = 2000;
+  (function frame(now){ const t = now - t0; x.clearRect(0, 0, W, H);
+    P.forEach(p => { p.vy += .33; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.r += p.vr; x.save(); x.globalAlpha = Math.max(0, 1 - t / DUR); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); x.restore(); });
+    if (t < DUR) requestAnimationFrame(frame); else c.remove(); })(t0);
+}
+// Meta lograda: celebra cuando una meta pasa a completa (no al abrir la app)
+let _doneSet = null;
+function checkGoalCelebration(){
+  if (bothMode) return; const now = new Set(myGoals().filter(goalDone).map(g => g.id));
+  if (_doneSet){ const fresh = [...now].filter(id => !_doneSet.has(id)); if (fresh.length){ const g = myGoals().find(x => x.id === fresh[0]); setTimeout(() => { confetti(); toast(`¡Meta lograda: ${g.name}!`, {icon:'party-popper'}); }, 380); } }
+  _doneSet = now;
+}
+
 /* ---------- Render ---------- */
 let lastRenderMonth = null;
 const VIEWS = {dashboard:() => renderDashboard(), movs:() => { renderMovs(); renderRec(); if (movView === 'cal') renderCalendar(); },
@@ -4253,6 +4380,7 @@ function renderAll(){
   dirty = new Set(Object.keys(VIEWS));
   renderProfileUI();
   renderView(activeTab());
+  checkGoalCelebration();
 }
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);
 renderAll();

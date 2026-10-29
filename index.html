@@ -1182,6 +1182,21 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .topbar,.topbar .wrap,.brand,#appName,.month-nav,.prof-chip,.sync-badge,.ptr.back{transition-duration:var(--motion-move);transition-timing-function:var(--motion-ease)}.fsel-menu{animation-duration:var(--motion-move);animation-timing-function:var(--motion-ease)}.info-tip:hover::after,.info-tip.show::after,.info-tip:focus-visible::after{animation-duration:var(--motion-fast)}.pp-d::after,.dp-d,.pp-mo{transition-duration:var(--motion-fast);transition-timing-function:var(--motion-ease)}
+/* Una estructura común para las cuatro métricas del Resumen. */
+.dashboard-kpis{grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:16px}
+.dashboard-kpis>.kpi{padding:20px;display:flex;flex-direction:column;min-width:0}
+.dashboard-kpis .label{min-height:30px;line-height:1.4;font-size:13px;gap:9px;align-items:center}
+.dashboard-kpis .label .dot{flex-shrink:0;width:30px;height:30px}
+.dashboard-kpis .value{margin:14px 0 16px;font-size:min(28px,12.5cqi);line-height:1.2;letter-spacing:-.5px}
+.dashboard-kpis .metric-details{display:grid;align-content:start;gap:7px;flex:1;min-height:43px;font-size:12px;line-height:1.5}
+.dashboard-kpis .metric-detail-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
+.dashboard-kpis .metric-detail-row>span{color:var(--muted)}.dashboard-kpis .metric-detail-row>b{font-weight:600;white-space:nowrap;text-align:right}
+.dashboard-kpis .metric-footer{border-top:1px solid var(--border);padding-top:11px;margin-top:15px;min-height:43px;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.dashboard-kpis .metric-footer .per-day,.dashboard-kpis .metric-footer .plan-line{display:inline;margin:0;font-size:inherit;line-height:inherit}
+.dashboard-kpis #kBalanceSub{margin-top:15px;font-size:11.5px}
+@media(max-width:1050px){.dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+@media(max-width:560px){.dashboard-kpis{gap:10px}.dashboard-kpis>.kpi{padding:14px}.dashboard-kpis .label{font-size:11px;min-height:32px;gap:7px}.dashboard-kpis .label .dot{width:27px;height:27px;flex-shrink:0}.dashboard-kpis .value{font-size:min(24px,12.5cqi);margin:12px 0 14px}.dashboard-kpis .metric-details{font-size:11px;gap:8px;min-height:72px}.dashboard-kpis .metric-detail-row{display:grid;grid-template-columns:1fr;gap:1px}.dashboard-kpis .metric-detail-row>b{text-align:left}.dashboard-kpis .metric-footer,.dashboard-kpis #kBalanceSub{font-size:10.5px;min-height:44px;margin-top:12px;padding-top:10px}}
+
 </style>
 </head>
 <body>
@@ -1189,7 +1204,7 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.7.2'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.7.3'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1249,11 +1264,11 @@ window.addEventListener('error', function (e) {
   <!-- DASHBOARD -->
   <section class="tab active" id="tab-dashboard">
     <div class="insight" id="insight" hidden><span class="i-ic"></span><div id="insightText"></div></div>
-    <div class="kpis">
-      <div class="card kpi link k-inc" data-go="income" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬇️" style="background:var(--income-soft);color:var(--income)"></span>Ingresos del mes</div><div class="value" id="kIncome"></div><div class="small muted" id="kIncomeSub"></div><svg class="spark" id="spIncome" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-      <div class="card kpi link k-exp" data-go="expense" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬆️" style="background:var(--expense-soft);color:var(--expense)"></span>Gastos del mes</div><div class="value" id="kExpense"></div><div class="small muted" id="kExpenseSub"></div><svg class="spark" id="spExpense" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-      <div class="card kpi link" data-go="all" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⚖️" style="--k:var(--k-blue)"></span>Saldo acumulado</div><div class="value" id="kBalance"></div><div class="balance-parts" id="balanceParts"></div><div class="small muted" id="kBalanceSub"></div><svg class="spark" id="spBalance" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-      <div class="card kpi link" data-go="budget" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="🐷" style="--k:var(--k-violet)"></span>Tasa de ahorro</div><div class="value" id="kSavings"></div><div class="small muted" id="kSavingsSub"></div><div class="bar kbar" id="kSaveBar" hidden><span></span></div></div>
+    <div class="kpis dashboard-kpis">
+      <div class="card kpi link k-inc" data-go="income" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬇️" style="background:var(--income-soft);color:var(--income)"></span>Ingresos del mes</div><div class="value" id="kIncome"></div><div class="metric-details" id="kIncomeSub"></div><div class="metric-footer small muted" id="kIncomeFoot"></div></div>
+      <div class="card kpi link k-exp" data-go="expense" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬆️" style="background:var(--expense-soft);color:var(--expense)"></span>Gastos del mes</div><div class="value" id="kExpense"></div><div class="metric-details" id="kExpenseSub"></div><div class="metric-footer small muted" id="kExpenseFoot"></div></div>
+      <div class="card kpi link" data-go="all" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⚖️" style="--k:var(--k-blue)"></span>Saldo acumulado</div><div class="value" id="kBalance"></div><div class="metric-details" id="balanceParts"></div><div class="metric-footer small muted" id="kBalanceSub"></div></div>
+      <div class="card kpi link" data-go="budget" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="🐷" style="--k:var(--k-violet)"></span>Tasa de ahorro</div><div class="value" id="kSavings"></div><div class="metric-details" id="kSavingsSub"></div><div class="metric-footer small muted" id="kSavingsFoot"></div></div>
     </div>
     <div class="grid2">
       <div class="card"><h3>Gastos por categoría</h3><div class="chart-wrap" id="donutWrap"><canvas id="chDonut"></canvas></div></div>
@@ -2057,6 +2072,23 @@ function balanceOfMonth(month,data=state,today=todayISO()){
  return {previous:previous/100,result:result/100,total:(previous+result)/100,provisional:month>today.slice(0,7)};
 }
 
+function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv}){
+ const row=(label,value,cls='')=>`<div class="metric-detail-row"><span>${label}</span><b class="${cls}">${value}</b></div>`;
+ const incomeRemaining=Math.max(0,bInc-inc),expenseRemaining=bExp-exp;
+ $('#kIncomeSub').innerHTML=row('Esperado',bInc?fmt(bInc):'Sin definir')+row(inc>bInc&&bInc?'Adicional':'Por recibir',bInc?fmt(inc>bInc?inc-bInc:incomeRemaining):'—');
+ const incomeFoot=$('#kIncomeFoot');
+ incomeFoot.innerHTML=bInc?`${Math.round(inc/bInc*100)}% de lo esperado`:pInc?`${fmt(pInc)} programados`:'Sin expectativa de ingresos';
+ incomeFoot.title=pp.length?pp.map(x=>`${x.c.name}: ${payRange(x.a,x.b,m)}`).join('\n'):pInc?`${fmt(pInc)} con fecha futura`:'';
+ $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso':'Disponible',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'');
+ const expenseFoot=$('#kExpenseFoot');expenseFoot.innerHTML=!bExp?'Define un presupuesto':budgetStatus(exp,bExp)==='complete'?'Presupuesto completo':expenseRemaining<0?'Presupuesto superado':pace||pExp?pace||`${fmt(pExp)} programados`:`${Math.round(exp/bExp*100)}% del presupuesto usado`;
+ $('#balanceParts').innerHTML=row('Saldo anterior',fmt(cash.previous))+row('Resultado del mes',fmt(cash.result),cash.result<0?'neg':'');
+ $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';
+ $('#kBalanceSub').innerHTML=closed?'Cierre registrado':cash.provisional?'Saldo previo provisional':`Cierre estimado: <b class="${closing<0?'neg':'pos'}">${fmt(closing)}</b>`;
+ $('#kSavingsSub').innerHTML=row(saveMode()==='set'?'Separado':'Ahorro calculado',fmt(sv.saved))+row(sv.pct?`Objetivo (${sv.pct}%)`:'Objetivo',sv.pct?fmt(sv.target):'Sin definir');
+ const savingsFoot=$('#kSavingsFoot');
+ savingsFoot.innerHTML=!sv.pct?'Define tu meta en Presupuesto':sv.target<=0?'Se calcula con tus ingresos':sv.saved>=sv.target-.005?'<span class="pos">Meta de ahorro cumplida</span>':`${closed?'Faltaron':'Faltan'} ${fmt(Math.max(0,sv.target-sv.saved))} para la meta`;
+}
+
 function renderDashboard(){
   const m = currentMonth, txs = txOfMonth(m);
   const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense'));
@@ -2064,8 +2096,6 @@ function renderDashboard(){
   countUp($('#kIncome'), inc);
   const pInc = plannedOf(m, 'income'), pExp = plannedOf(m, 'expense');
   const pp = pendingPays(m);
-  $('#kIncomeSub').innerHTML = (m > thisMonth() && !inc ? (bInc ? `Esperas <b>${fmt(bInc)}</b>` : 'Sin monto esperado') : bInc ? `${Math.round(inc/bInc*100)}% de lo esperado` : 'Sin monto esperado')
-    + (pp.length ? `<span class="pay-line" title="${pp.map(x => `${x.c.name}: ${payRange(x.a, x.b, m)}`).join('\n')}">Por llegar: ${[...new Set(pp.map(x => x.c.name))].join(' y ')} · ${payRange(pp[0].a, pp[0].b, m)}</span>` : pInc ? `<span class="plan-line">+ ${fmt(pInc)} programado</span>` : '');
   countUp($('#kExpense'), exp);
   // Cuánto puedes gastar por día hasta fin de mes (sin contar lo que es para ahorrar ni lo ya programado)
   // Gastos: lo que el presupuesto aún permite gastar (no es dinero disponible, es el plan)
@@ -2078,25 +2108,16 @@ function renderDashboard(){
     const how = [`Gastos pendientes según tu presupuesto: ${fmt(bExp - exp)}`, pExp ? `− ${fmt(pExp)} ya programados` : '', savLeft ? `− ${fmt(savLeft)} reservados para ahorro` : '', `= ${fmt(free)} para el día a día ÷ ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} que quedan`, 'Es un tope para no pasarte del presupuesto, no dinero disponible en tu cuenta.'].filter(Boolean).join('\n');
     if (free > 0) pace = `<span class="per-day" title="${how}">Para no pasarte: máx. <b>${fmt(free / daysLeft)}</b>/día</span>`;
   }
-  $('#kExpenseSub').innerHTML = (bExp ? (budgetStatus(exp,bExp)==='complete'?'<span>Presupuesto completo</span>':exp > bExp ? `<span class="neg">Excedido en ${fmt(exp - bExp)}</span>` : (m < thisMonth() ? `<span class="pos">${fmt(pend)} sin usar</span> de ${fmt(bExp)} presupuestado` : m > thisMonth() && !exp ? `Presupuesto <b>${fmt(bExp)}</b>` : `<span title="Lo que tu presupuesto aún permite gastar este mes">Pendientes <b>${fmt(pend)}</b> de ${fmt(bExp)}</span>`)) : 'Sin presupuesto definido') + (pace || (pExp ? `<span class="plan-line">+ ${fmt(pExp)} programado</span>` : ''));
   const cash=balanceOfMonth(m);
   countUp($('#kBalance'),cash.total,'money','value '+(cash.total>=0?'pos':'neg'));
-  $('#balanceParts').innerHTML='<div><span>Saldo anterior</span><b>'+fmt(cash.previous)+'</b></div><div><span>Resultado del mes</span><b class="'+(cash.result<0?'neg':'')+'">'+fmt(cash.result)+'</b></div>';
-  $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';
   // Balance: cuánto quedaría libre al cierre (después del presupuesto, que ya incluye lo que separas para ahorro)
   // Mes cerrado: lo real. Mes en curso o futuro: la proyección (misma cifra que Análisis)
   const closed = m < thisMonth(), prj = closed ? null : projection(m);
   const incEnd = closed ? inc : prj.projInc, expEnd = closed ? exp : prj.projExp, freeEnd = incEnd - expEnd;
   const closing=cash.previous+freeEnd;
-  $('#kBalanceSub').innerHTML=closed?'Saldo al cierre según tus registros':cash.provisional?'Mes futuro: el saldo previo aún puede cambiar.':'Cierre estimado: <b class="'+(closing<0?'neg':'pos')+'">'+fmt(closing)+'</b>';
   const sv = savingsOf(m);
   if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value' + (sv.pct ? (sv.saved >= sv.target ? ' pos' : '') : '')); else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
-  $('#kSavingsSub').innerHTML = !sv.pct ? 'Define tu meta en Presupuesto'
-    : sv.saved >= sv.target && sv.target > 0 ? `<span class="pos">Meta de ${sv.pct}% cumplida</span>`
-    : m < thisMonth() ? `Meta ${sv.pct}% · faltaron ${fmt(sv.target - sv.saved)}` : `Meta ${sv.pct}% · faltan ${fmt(sv.target - sv.saved)}`;
-  const kb = $('#kSaveBar');
-  kb.hidden = !sv.pct;
-  if (sv.pct){ const w = sv.target ? Math.min(100, sv.saved / sv.target * 100) : 0; kb.firstElementChild.style.width = w + '%'; kb.firstElementChild.style.background = barFill(cssVar('--primary'), sv.saved >= sv.target ? 'income' : ''); }
+  renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv});
 
   // Recurrentes pendientes
   const pendN = recPending(m).filter(r => !r.auto && recDue(r, m)).length;
@@ -2130,7 +2151,6 @@ function renderDashboard(){
     <div><div class="name">${esc(t.desc || c.name)}</div><div class="small muted">${t.desc ? esc(c.name) + ' · ' : ''}${t.method ? esc(t.method) + ' · ' : ''}${fmtDate(t.date)}</div></div>
     <div class="amt"><b class="xp">${fmt(t.amount)}</b></div></div>`; }).join('') : emptyBox('receipt', 'Aquí verás tus 5 gastos más grandes del mes.', null, '', true);
 
-  renderSparks(m);
   renderCharts();
 }
 // Mini tendencia (últimos 6 meses) dentro de las tarjetas de Ingresos, Gastos y Balance

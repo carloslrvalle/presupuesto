@@ -1063,6 +1063,74 @@ body.sel-on .toast{bottom:150px}
 .toast.show .t-bar{animation:tBar var(--t-dur,2.6s) linear forwards}
 @keyframes tBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 .note{background:var(--primary-soft);border-radius:12px;padding:12px 14px;font-size:14px}
+/* Ajustes: navegación por secciones */
+.settings-intro{margin-bottom:22px}.settings-intro h2{margin:0 0 4px}.settings-intro p{margin:0;color:var(--muted)}
+.settings-status{display:flex;align-items:center;gap:14px;width:100%;text-align:left;color:var(--text);font:inherit;padding:18px 20px;margin-bottom:24px;border:1px solid var(--border);border-radius:20px;background:var(--surface);cursor:pointer}
+.settings-status .status-icon,.settings-nav-icon{display:grid;place-items:center;flex-shrink:0;width:42px;height:42px;border-radius:14px;background:var(--primary-soft);color:var(--primary)}
+.settings-status-copy{flex:1;min-width:0}.settings-status-copy strong,.settings-status-copy small{display:block}.settings-status-copy small{color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
+.settings-layout{display:grid;grid-template-columns:255px minmax(0,1fr);gap:28px;align-items:start}
+.settings-nav{display:grid;gap:8px;position:sticky;top:130px}
+.settings-nav button{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid transparent;border-radius:18px;text-align:left;background:transparent;color:var(--text);font:inherit;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease}
+.settings-nav button:hover{background:var(--surface-2)}.settings-nav button:active{transform:scale(.985)}
+.settings-nav button[aria-current=page]{background:var(--surface);border-color:var(--border)}
+.settings-nav-copy{flex:1;min-width:0}.settings-nav-copy b,.settings-nav-copy small{display:block}.settings-nav-copy small{font-size:12px;color:var(--muted);margin-top:3px}
+.settings-content{min-width:0}.settings-panel[hidden],.settings-home[hidden]{display:none!important}
+.settings-panel-head{display:flex;align-items:center;gap:10px;margin-bottom:18px}.settings-panel-head h3{margin:0;font-size:21px}.settings-back{display:none}
+.settings-panel>.card{margin-bottom:16px!important}.settings-panel .card h3{font-size:16px}
+.settings-home{padding:30px;border:1px solid var(--border);border-radius:22px;background:var(--surface)}.settings-home h3{margin:0 0 8px}.settings-home p{color:var(--muted);margin:0;max-width:46ch}
+.settings-preview{display:flex;align-items:center;gap:14px;margin-top:22px;padding-top:22px;border-top:1px solid var(--border)}.settings-preview strong{font-size:30px;color:var(--primary)}
+.settings-disclosure{border:1px solid var(--border);border-radius:18px;background:var(--surface);margin-bottom:14px;overflow:hidden}
+.settings-disclosure>summary{list-style:none;display:flex;align-items:center;gap:12px;cursor:pointer;padding:19px;font-weight:650;min-height:64px}.settings-disclosure>summary::-webkit-details-marker{display:none}
+.settings-disclosure>summary::after{content:'+';margin-left:auto;color:var(--muted);font-size:21px;font-weight:400}.settings-disclosure[open]>summary::after{content:'−'}
+.settings-disclosure>summary small{font-weight:400;color:var(--muted);margin-left:auto;font-size:12px;text-align:right}.settings-disclosure>summary small+span{display:none}
+.settings-disclosure-body{padding:0 19px 19px}.settings-disclosure-body>.card{border:0;box-shadow:none;padding:0;margin:0!important;background:transparent}.settings-disclosure-body>.card>h3{display:none}
+.settings-disclosure-body .theme-grid,.settings-disclosure-body .font-grid{margin-top:12px}
+.settings-methods{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.settings-method-chip{display:flex;align-items:center;gap:4px;padding:5px 7px 5px 13px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);max-width:100%}
+.settings-method-chip button{border:0;background:transparent;color:var(--text);font:inherit;cursor:pointer;min-height:34px;overflow-wrap:anywhere}.settings-method-chip button:last-child{width:34px;flex-shrink:0;color:var(--muted)}
+.settings-method-add{display:flex;gap:8px}.settings-method-add input{width:100%;min-width:0;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);color:var(--text);font:inherit}.settings-method-help{min-height:20px;color:var(--muted);font-size:12px;margin-top:8px}
+.settings-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:26px;padding-top:18px;border-top:1px solid var(--border)}.settings-footer .app-ver{margin:0;text-align:left}
+.settings-danger>summary{color:var(--expense)}
+.settings-disclosure>summary[aria-disabled=true]{cursor:default}.settings-disclosure>summary[aria-disabled=true]::after{content:''}
+.settings-panel button:focus-visible,.settings-nav button:focus-visible,.settings-status:focus-visible,.settings-disclosure>summary:focus-visible{outline:2px solid var(--primary);outline-offset:4px}
+@media(max-width:700px){
+ .settings-layout{display:block}.settings-nav{position:static;gap:0;border:1px solid var(--border);border-radius:20px;background:var(--surface);overflow:hidden}
+ .settings-nav button{border-radius:0;padding:17px 15px;border:0;border-bottom:1px solid var(--border)}.settings-nav button:last-child{border-bottom:0}
+ #tab-settings[data-settings-view] .settings-nav{display:none}#tab-settings:not([data-settings-view]) .settings-content{display:none}
+ .settings-back{display:inline-flex}.settings-status{padding:15px;margin-bottom:20px}.settings-intro{margin-bottom:18px}
+ .settings-panel-head{margin-top:4px}.settings-footer{align-items:flex-start;flex-direction:column}.settings-disclosure>summary{padding:16px}.settings-disclosure-body{padding:0 16px 16px}
+ .settings-panel .pe-row{flex-wrap:wrap}.settings-panel .pe-name{min-width:90px}
+}
+
+/* Registro ágil y ritmo del presupuesto */
+#txDialog{width:min(550px,calc(100% - 32px))}#txDialog form{display:flex;flex-direction:column;max-height:min(88dvh,var(--tx-viewport,88dvh))}#txDialog .dlg-body{overflow-y:auto;overscroll-behavior:contain;min-height:0;padding:18px 24px}#txDialog .dlg-head,#txDialog .dlg-foot{flex-shrink:0}
+#txDialog .tx-amount{padding:18px 0 12px;margin-bottom:8px;border-bottom:1px solid var(--border)}#txDialog .tx-amount label{font-size:12px;letter-spacing:.04em}
+#txDialog #fAmount{font-size:clamp(32px,6vw,44px);font-weight:700;text-align:left;border:0;border-radius:0;background:transparent;box-shadow:none;padding:4px 0;color:var(--text);min-height:58px;width:100%}#txDialog #fAmount:focus{outline:0;box-shadow:0 2px 0 var(--primary)}
+.tx-field-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.tx-field-head label{margin:0}.tx-text-button{border:0;background:transparent;color:var(--primary);font:inherit;font-size:12px;font-weight:650;cursor:pointer;padding:8px;border-radius:9px;min-height:36px}.tx-text-button:hover{background:var(--primary-soft)}
+#txDialog #fCatChips{gap:8px}#txDialog #fCatChips .chip{max-width:100%;min-height:40px}.tx-category-tools{display:flex;justify-content:space-between;align-items:center;margin-top:5px;gap:8px}.tx-category-search{margin-bottom:10px}.tx-category-search input{width:100%}
+.tx-category-editor{padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface-2);margin-top:10px}.tx-category-editor[hidden],.tx-category-search[hidden]{display:none!important}.tx-category-editor h4{margin:0 0 12px;font-size:14px}.tx-category-editor .field{margin-bottom:10px}.tx-category-editor input[type=text]{width:100%}.tx-category-style{display:flex;gap:12px;align-items:center;margin:12px 0}.tx-category-style input[type=color]{width:44px;height:40px;border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:4px}.tx-category-style label{margin:0!important}.tx-category-error{font-size:12px;color:var(--expense);margin:6px 0;min-height:18px}
+.tx-category-editor .toolbar{justify-content:flex-end;margin:0}.tx-inline-note{font-size:11px;color:var(--muted);margin:6px 0 0}#txDialog .row2{gap:14px}#txDialog .dlg-foot{border-top:1px solid var(--border);background:var(--surface)}
+.fab{width:auto;min-width:64px;height:60px;padding:0 19px;display:flex;gap:10px;align-items:center;justify-content:center;border-radius:22px;border:1px solid color-mix(in srgb,var(--on-primary,#fff) 20%,transparent);box-shadow:0 8px 22px color-mix(in srgb,var(--primary) 27%,transparent),inset 0 1px 0 rgba(255,255,255,.2);isolation:isolate;animation:fabArrive .6s cubic-bezier(.18,.8,.24,1) both;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background-color .3s}
+.fab .vi{transition:transform .35s cubic-bezier(.2,.8,.2,1)}.fab-label{font-size:14px;font-weight:700}.fab:hover .vi{transform:rotate(90deg)}.fab:active{transform:translateY(0) scale(.93)}.fab.is-open .vi{transform:rotate(45deg)}
+.fab::after{content:'';position:absolute;inset:-5px;border:2px solid var(--primary);border-radius:27px;opacity:0;pointer-events:none}.fab.launch::after{animation:fabRipple .5s ease-out}.fab:focus-visible{outline:3px solid var(--primary);outline-offset:5px}
+@keyframes fabArrive{from{opacity:0;transform:translateY(16px) scale(.8)}to{opacity:1;transform:none}}@keyframes fabRipple{from{opacity:.45;transform:scale(.9)}to{opacity:0;transform:scale(1.35)}}
+.pace-card{margin:0 0 18px;padding:22px;border:1px solid var(--border);border-radius:20px;background:var(--surface)}.pace-header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.pace-header h3{margin:0;font-size:16px}.pace-state{font-size:12px;color:var(--primary);background:var(--primary-soft);padding:6px 10px;border-radius:10px}.pace-card[data-status=over] .pace-state{color:var(--expense);background:var(--expense-soft)}
+.pace-values{display:flex;justify-content:space-between;gap:20px;margin-bottom:14px}.pace-values strong{display:block;font-size:25px}.pace-values small{color:var(--muted);font-size:12px}.pace-values>div:last-child{text-align:right}.pace-track{height:10px;border-radius:20px;background:var(--surface-2);position:relative;margin:18px 5px}.pace-fill{display:block;height:100%;border-radius:inherit;background:var(--primary);transition:width .45s cubic-bezier(.2,.8,.2,1)}.pace-card[data-status=over] .pace-fill{background:var(--expense)}.pace-marker{position:absolute;top:-4px;width:3px;height:18px;background:var(--text);border-radius:3px;transform:translateX(-50%)}.pace-caption{color:var(--muted);font-size:12px;margin:10px 0 0;line-height:1.6}
+@media(max-width:700px){html #txDialog form{max-height:min(88dvh,var(--tx-viewport,88dvh))}html #txDialog .dlg-body{padding:14px 18px}html #txDialog .dlg-foot{position:relative;padding-left:18px;padding-right:18px}html #txDialog .dlg-head{padding:16px 18px}.fab{width:62px;height:62px;padding:0;border-radius:22px;right:18px}.fab-label{display:none}.pace-card{padding:17px}.pace-header{align-items:flex-start}.pace-state{max-width:48%;text-align:right}.pace-values strong{font-size:22px}}
+
+/* Controles de desplazamiento integrados con cada tema */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 48%,var(--surface)) var(--surface)}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{border:2px solid var(--surface);border-radius:20px;background:color-mix(in srgb,var(--muted) 48%,var(--surface))}::-webkit-scrollbar-thumb:hover{background:var(--muted)}::-webkit-scrollbar-corner{background:var(--surface)}::-webkit-scrollbar-button{display:none;width:0;height:0}
+.hex-color-button{display:inline-flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;letter-spacing:.03em;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}.hex-color-button i{width:24px;height:24px;flex-shrink:0;border:1px solid color-mix(in srgb,var(--text) 18%,transparent);border-radius:8px;transition:background-color .18s}.hex-color-button:hover{border-color:var(--primary)}.hex-color-button:active{transform:scale(.97)}
+#colorDialog{width:min(410px,calc(100% - 32px))!important}#colorDialog .dlg-body{max-height:calc(85dvh - 145px);overflow-y:auto}#colorDialog .dlg-foot{border-top:1px solid var(--border);background:var(--surface)}
+.color-preview{padding:20px;border-radius:17px;display:grid;grid-template-columns:38px 1fr;column-gap:12px;align-items:center;margin-bottom:18px;transition:background-color .16s ease,color .16s ease}.color-preview>span{grid-row:span 2;display:grid;place-items:center}.color-preview .vi{width:28px;height:28px}.color-preview strong{font-size:19px;letter-spacing:.04em}.color-preview small{font-size:11px;opacity:.85}
+#colorDialog .color-hex-field{margin-bottom:8px}#colorHex{width:100%;font-family:var(--font-body);letter-spacing:.08em;font-size:16px}#colorHex[aria-invalid=true]{border-color:var(--expense)}.color-error{display:block;min-height:20px;font-size:11px;color:var(--expense);margin-top:4px}
+.color-sliders{display:grid;grid-template-columns:1fr;gap:8px;margin:4px 0 22px}.color-sliders label{font-size:12px;color:var(--muted);margin-top:6px}.color-sliders input[type=range]{appearance:none;-webkit-appearance:none;width:100%;height:12px;padding:0;border:0;border-radius:12px;cursor:pointer;outline-offset:6px;margin:9px 0}
+#colorHue{background:linear-gradient(90deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)}
+.color-sliders input::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:23px;height:23px;border-radius:50%;background:var(--surface);border:3px solid var(--text);box-shadow:0 1px 5px rgba(0,0,0,.2);transition:transform .15s}.color-sliders input::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--surface);border:3px solid var(--text)}.color-sliders input:active::-webkit-slider-thumb{transform:scale(1.13)}
+#colorDialog .swatch{transition:transform .18s,border-color .18s,box-shadow .18s}#colorDialog .swatch:hover{transform:translateY(-2px)}#colorDialog .swatch.active{outline:2px solid var(--primary);outline-offset:3px;transform:scale(1.08)}#colorDialog .palette{gap:14px 8px}#colorDialog .pal-title{font-size:12px;color:var(--muted)}
+@media(max-width:700px){html #colorDialog{width:100%!important}#colorDialog .dlg-body{max-height:calc(85dvh - 160px)}.tx-category-style{flex-wrap:wrap}}
+@media(forced-colors:active){*{scrollbar-color:auto}.color-sliders input[type=range]{appearance:auto}.color-sliders input::-webkit-slider-thumb{appearance:auto}}
+
 </style>
 </head>
 <body>
@@ -1070,7 +1138,7 @@ body.sel-on .toast{bottom:150px}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.5.1'; window.__APP_DATE = '2026-10-25';
+window.__APP_VERSION = '1.6.1'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1201,6 +1269,7 @@ window.addEventListener('error', function (e) {
       <button class="btn" id="btnSetDefault"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg> Usar como base</button>
       </div>
     </div>
+    <div class="pace-card" id="budgetPace" aria-live="polite"></div>
     <div class="bud-grid">
       <div class="card"><h3><span class="ui-ic" data-e="💸"></span>Gastos</h3><div class="table-wrap" id="budExpense"></div></div>
       <div class="bud-side">
@@ -1316,7 +1385,7 @@ window.addEventListener('error', function (e) {
   </section>
 </main>
 
-<button class="fab" id="fab" title="Nuevo movimiento"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+<button class="fab" id="fab" title="Nuevo movimiento" aria-label="Nuevo movimiento"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
 <!-- Dialog: movimiento -->
 <dialog id="txDialog">
@@ -1325,14 +1394,22 @@ window.addEventListener('error', function (e) {
     <div class="dlg-body">
       <div class="seg" id="txSeg"><button type="button" data-type="expense" class="active">Gasto</button><button type="button" data-type="income">Ingreso</button></div>
       <div class="quick" id="txQuick" hidden></div>
-      <div class="field"><label>Monto (S/)</label><input type="number" id="fAmount" class="amount-input" step="0.01" min="0.01" required placeholder="0.00"></div>
-      <div class="field"><label>Categoría</label><div class="chips" id="fCatChips"></div></div>
+      <div class="field tx-amount"><label for="fAmount">Monto en soles</label><input type="number" id="fAmount" class="amount-input" inputmode="decimal" step="0.01" min="0.01" required placeholder="0.00"></div>
+      <div class="field"><div class="tx-field-head"><label>Categoría</label><button type="button" class="tx-text-button" id="txAllCategories" aria-expanded="false" aria-controls="txCategorySearchBox">Ver todas</button></div>
+        <div class="tx-category-search" id="txCategorySearchBox" hidden><input type="search" id="txCategorySearch" placeholder="Buscar categoría" aria-label="Buscar categoría" autocomplete="off"></div>
+        <div class="chips" id="fCatChips"></div>
+        <div class="tx-category-tools"><span class="tx-inline-note">Tus categorías más usadas</span><button type="button" class="tx-text-button" id="txNewCategory" aria-expanded="false" aria-controls="txCategoryEditor">＋ Nueva categoría</button></div>
+        <div class="tx-category-editor" id="txCategoryEditor" hidden><h4>Nueva categoría</h4><div class="field"><label for="txCategoryName">Nombre</label><input type="text" id="txCategoryName" maxlength="60" autocomplete="off" placeholder="Ej. Mascotas"></div>
+          <div class="tx-category-style"><button class="iconbtn" type="button" id="txCategoryIcon" aria-label="Elegir ícono"></button><label for="txCategoryColor">Color</label><input type="hidden" id="txCategoryColor" value="#6366f1"><button type="button" class="hex-color-button" id="txChooseColor" aria-label="Elegir color de la categoría"></button></div>
+          <div class="tx-category-error" id="txCategoryError" role="status"></div><div class="toolbar"><button type="button" class="btn sm" id="txCancelCategory">Cancelar</button><button type="button" class="btn sm primary" id="txCreateCategory">Crear y usar</button></div>
+        </div>
+      </div>
       <div class="field"><label>Método de pago</label><div class="chips" id="fMethodChips"></div></div>
       <div class="field" id="fGoalField" hidden><label>Meta de ahorro (opcional)</label><div class="chips" id="fGoalChips"></div></div>
       <div class="row2">
         <div class="field" id="fDateField"><label>Fecha</label><input type="date" id="fDate"></div>
         <div class="field" id="fDayField" hidden><label>Día del mes</label><input type="number" id="fDay" min="1" max="31" placeholder="1–31"></div>
-        <div class="field"><label>Descripción</label><input type="text" id="fDesc" placeholder="Ej. Mercado"></div>
+        <div class="field"><label for="fDesc">Descripción <span class="muted">(opcional)</span></label><input type="text" id="fDesc" placeholder="Ej. Mercado"></div>
       </div>
       <label class="check" id="fAutoField" hidden><input type="checkbox" id="fAuto" checked> Registrar automáticamente cada mes en su día</label>
     </div>
@@ -1391,7 +1468,13 @@ window.addEventListener('error', function (e) {
 <!-- Dialog: colores -->
 <dialog id="colorDialog" style="width:min(360px,calc(100% - 32px))">
   <div class="dlg-head"><h3 style="margin:0">Elige un color</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
-  <div class="dlg-body"><div class="palette" id="paletteGrid"></div></div>
+  <div class="dlg-body">
+    <div class="color-preview" id="colorPreview"><span id="colorPreviewIcon"></span><strong id="colorPreviewValue"></strong><small>Vista previa</small></div>
+    <div class="field color-hex-field"><label for="colorHex">Código HEX</label><input id="colorHex" type="text" maxlength="7" autocomplete="off" spellcheck="false" aria-describedby="colorError" placeholder="#A6DCEF"><span id="colorError" class="color-error" role="status"></span></div>
+    <div class="color-sliders"><label for="colorHue">Tono</label><input type="range" id="colorHue" min="0" max="360" step="1"><label for="colorSaturation">Saturación</label><input type="range" id="colorSaturation" min="0" max="100" step="1"><label for="colorLightness">Luminosidad</label><input type="range" id="colorLightness" min="0" max="100" step="1"></div>
+    <div class="palette" id="paletteGrid"></div>
+  </div>
+  <div class="dlg-foot"><button type="button" class="btn" data-close>Cancelar</button><button type="button" class="btn primary" id="applyColor">Usar color</button></div>
 </dialog>
 
 <!-- Dialog: confirmación -->
@@ -2427,6 +2510,65 @@ $('#movBody').addEventListener('click', async e => {
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');
 let txType = 'expense', editingId = null, selCat = null, selMethod = null, selGoal = null, txMode = 'tx', txRecId = null;
+let txCategoryExpanded=false,txNewCategoryIcon='svg:tag';
+function txCategoryMarkup(cats){
+ const q=($('#txCategorySearch')?.value||'').trim().toLocaleLowerCase();
+ const count={};state.transactions.filter(t=>t.type===txType).forEach(t=>count[t.catId]=(count[t.catId]||0)+1);
+ let list=cats.slice().sort((a,b)=>(count[b.id]||0)-(count[a.id]||0));
+ if(txCategoryExpanded&&q)list=list.filter(c=>c.name.toLocaleLowerCase().includes(q));
+ if(!txCategoryExpanded){list=list.slice(0,9);const selected=cats.find(c=>c.id===selCat);if(selected&&!list.some(c=>c.id===selected.id))list.push(selected);}
+ $('#txCategorySearchBox').hidden=!txCategoryExpanded;
+ $('#txAllCategories').textContent=txCategoryExpanded?'Ver menos':`Ver todas (${cats.length})`;
+ $('#txAllCategories').setAttribute('aria-expanded',String(txCategoryExpanded));
+ return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${c.id}" aria-pressed="${c.id===selCat}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
+}
+function resetTxCategoryUI(){
+ txCategoryExpanded=false;$('#txCategorySearch').value='';$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');
+}
+function openTxCategoryEditor(){
+ const box=$('#txCategoryEditor');box.hidden=false;$('#txNewCategory').setAttribute('aria-expanded','true');$('#txCategoryError').textContent='';
+ $('#txCategoryName').value='';txNewCategoryIcon='svg:tag';$('#txCategoryColor').value=PALETTE[state.categories.length%PALETTE.length];paintTxCategoryIcon();
+ if(!reduceMotion())box.animate([{opacity:0,transform:'translateY(-6px)'},{opacity:1,transform:'none'}],{duration:220,easing:'ease-out'});
+ $('#txCategoryName').focus();
+}
+function paintTxCategoryIcon(){const color=$('#txCategoryColor').value,button=$('#txCategoryIcon');button.innerHTML=iconHTML(txNewCategoryIcon,color);$('#txChooseColor').innerHTML=`<i style="background:${color}"></i><span>${color.toUpperCase()}</span>`;}
+function createTxCategory(){
+ const name=$('#txCategoryName').value.trim(),error=$('#txCategoryError');
+ if(!name){error.textContent='Escribe un nombre para la categoría.';$('#txCategoryName').focus();return;}
+ if(catsOf(txType).some(c=>c.name.toLocaleLowerCase()===name.toLocaleLowerCase())){error.textContent='Ya existe una categoría con ese nombre, incluso si está archivada.';return;}
+ const c={id:uid(),name,icon:txNewCategoryIcon,type:txType,color:$('#txCategoryColor').value,defaultBudget:0};
+ state.categories.push(c);selCat=c.id;save();dirty=new Set(Object.keys(VIEWS));
+ $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();
+ toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
+}
+$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';renderTxChips();if(txCategoryExpanded)$('#txCategorySearch').focus();};
+$('#txCategorySearch').addEventListener('input',renderTxChips);
+$('#txNewCategory').onclick=openTxCategoryEditor;
+$('#txCancelCategory').onclick=()=>{$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txNewCategory').focus();};
+$('#txCreateCategory').onclick=createTxCategory;
+$('#txCategoryName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();createTxCategory();}});
+$('#txCategorySearch').addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
+$('#txCategoryIcon').onclick=()=>openIcon(icon=>{txNewCategoryIcon=icon;paintTxCategoryIcon();},{color:$('#txCategoryColor').value,soft:true,onColor:color=>{$('#txCategoryColor').value=color;paintTxCategoryIcon();}},txNewCategoryIcon);
+$('#txCategoryColor').addEventListener('input',paintTxCategoryIcon);
+$('#txChooseColor').onclick=()=>openColor($('#txCategoryColor').value,color=>{$('#txCategoryColor').value=color;paintTxCategoryIcon();});
+function budgetPaceData(month,today=todayISO()){
+ const days=daysIn(month),present=today.slice(0,7),day=month<present?days:month>present?0:Number(today.slice(8,10));
+ const cats=catsOf('expense').filter(c=>!isSavingCat(c.id)&&(!isArch(c,month)||realBy(month,c.id)));
+ const budget=cats.reduce((s,c)=>s+getBudget(month,c.id),0);
+ const spent=sum(txOfMonth(month).filter(t=>t.type==='expense'&&!isSavingCat(t.catId)));
+ const elapsed=day/days,ratio=budget>0?spent/budget:0;
+ const status=!budget?'empty':ratio>1?'over':month>present?'future':month<present?'closed':ratio>elapsed+.08?'ahead':'steady';
+ return {days,day,budget,spent,elapsed,ratio,status,month,present};
+}
+function renderBudgetPace(){
+ const el=$('#budgetPace');if(!el)return;const p=budgetPaceData(currentMonth);
+ el.dataset.status=p.status;
+ if(!p.budget){el.innerHTML='<div class="pace-header"><h3>Ritmo del presupuesto</h3></div><p class="pace-caption">Define montos en el presupuesto de gastos para comparar el consumo con el avance del mes. El ahorro se evalúa por separado.</p>';return;}
+ const label=({over:'Presupuesto superado',future:'Mes por comenzar',closed:'Mes cerrado',ahead:'Por encima del ritmo',steady:'Dentro del ritmo'})[p.status];
+ const when=currentMonth<p.present?'Mes completado':currentMonth>p.present?'El período aún no comienza':`Día ${p.day} de ${p.days}`;
+ el.innerHTML=`<div class="pace-header"><h3>Ritmo del presupuesto</h3><span class="pace-state">${label}</span></div><div class="pace-values"><div><strong>${pctTxt(p.ratio*100)}</strong><small>del presupuesto utilizado · ${fmt(p.spent)}</small></div><div><strong>${pctTxt(p.elapsed*100)}</strong><small>del mes · ${when}</small></div></div><div class="pace-track" role="img" aria-label="Gasto: ${pctTxt(p.ratio*100)} del presupuesto. Mes transcurrido: ${pctTxt(p.elapsed*100)}."><span class="pace-fill" style="width:${Math.min(100,p.ratio*100)}%"></span><span class="pace-marker" style="left:${p.elapsed*100}%"></span></div><p class="pace-caption">${p.spent>p.budget?'Exceso: '+fmt(p.spent-p.budget):'Disponible: '+fmt(p.budget-p.spent)} · Presupuesto: ${fmt(p.budget)}<br>La línea marca el avance del mes. Referencia uniforme: los pagos fijos pueden concentrarse en ciertos días. No incluye ahorro ni movimientos programados.</p>`;
+}
+
 function renderTxChips(){
   const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
   gf.hidden = !(txMode === 'tx' && (txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
@@ -2434,14 +2576,14 @@ function renderTxChips(){
     goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" data-goal="${g.id}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
   const cats = catsOf(txType).filter(c => !c.archived || c.id === selCat);
   if (!cats.some(c => c.id === selCat)) selCat = cats[0] ? cats[0].id : null;
-  $('#fCatChips').innerHTML = cats.map(c => `<button type="button" class="chip${c.id === selCat ? ' active' : ''}" data-cat="${c.id}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')
-    || '<span class="small muted">Primero crea una categoría en la pestaña Categorías.</span>';
+  $('#fCatChips').innerHTML = txCategoryMarkup(cats);
   const ms = state.settings.methods || [];
   if (!ms.includes(selMethod)) selMethod = ms[0] || '';
   $('#fMethodChips').innerHTML = ms.map(m => `<button type="button" class="chip${m === selMethod ? ' active' : ''}" data-method="${esc(m)}">${esc(m)}</button>`).join('')
     || '<span class="small muted">Agrega métodos de pago en la pestaña Datos.</span>';
 }
 function setTxType(type){
+  if(txType!==type)resetTxCategoryUI();
   txType = type;
   document.querySelectorAll('#txSeg button').forEach(b => b.classList.toggle('active', b.dataset.type === type));
   renderTxChips(); renderQuick();
@@ -2476,9 +2618,10 @@ document.addEventListener('click', e => {
   const t = state.transactions.find(x => x.id === q.dataset.quick); if (!t) return;
   $('#fAmount').value = t.amount; selCat = t.catId; selMethod = t.method || selMethod; $('#fDesc').value = t.desc || '';
   renderTxChips(); q.classList.add('picked'); setTimeout(() => q.classList.remove('picked'), 400);
-  $('#txForm').querySelector('[type=submit],.btn.primary') && $('#txForm').querySelector('[type=submit],.btn.primary').focus();
+  $('#txForm button[type=submit]').focus();
 });
 function openTx(id, preset){
+  resetTxCategoryUI();
   txMode = 'tx'; editingId = id || null; quickOK = !id && !preset;
   const t = id ? state.transactions.find(x => x.id === id) : null;
   const p = t || preset || {};
@@ -2494,6 +2637,7 @@ function openTx(id, preset){
   setTimeout(() => $('#fAmount').focus(), 50);
 }
 function openRec(id, preset){
+  resetTxCategoryUI();
   txMode = 'rec'; editingId = id || null; txRecId = null; selGoal = null; quickOK = false; $('#txDup').style.display = 'none';
   const r = id ? state.recurring.find(x => x.id === id) : null, pz = preset || {};
   selCat = r ? r.catId : pz.catId || null; selMethod = r ? r.method : null;
@@ -2538,6 +2682,7 @@ function delTx(id){
 }
 $('#txForm').addEventListener('submit', async e => {
   e.preventDefault();
+  if(!$('#txCategoryEditor').hidden){$('#txCategoryName').focus();return toast('Crea la categoría o cancela su edición antes de guardar.');}
   const amount = Math.round(parseFloat($('#fAmount').value) * 100) / 100;
   if (!(amount > 0)) return toast('Ingresa un monto válido');
   if (!selCat) return toast('Elige una categoría');
@@ -2598,6 +2743,14 @@ $('#txDelete').onclick = async () => {
   const id = editingId; txDialog.close(); delTxUndo(id);
 };
 $('#fab').onclick = () => (activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx()); // en Recurrentes el + crea un recurrente (en el celular no hay botón propio)
+$('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
+$('#fab').addEventListener('click',()=>{
+ const b=$('#fab');b.classList.remove('launch');void b.offsetWidth;b.classList.add('launch','is-open');
+ setTimeout(()=>b.classList.remove('launch'),550);
+});
+txDialog.addEventListener('close',()=>$('#fab').classList.remove('is-open'));
+const resizeTxViewport=()=>txDialog.style.setProperty('--tx-viewport',Math.max(180,(window.visualViewport?.height||innerHeight)-24)+'px');
+window.visualViewport?.addEventListener('resize',resizeTxViewport);resizeTxViewport();
 $('#btnNewTx').onclick = () => openTx();
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 
@@ -2678,6 +2831,7 @@ document.addEventListener('click', e => {
   state.settings.saveMode = b.dataset.svmode; save(); renderSaveCard(); renderDashboard(); if (activeTab() === 'analysis') renderAnalysis();
 });
 function renderBudget(){
+  renderBudgetPace();
   renderSaveCard();
   const before = [...document.querySelectorAll('#tab-budget tfoot td')].map(t => t.textContent);
   $('#budExpense').innerHTML = budgetTable('expense');
@@ -3643,15 +3797,31 @@ const curTheme = () => THEMES.find(x => x.id === state.settings.theme);
 const curThemeColorCat = c => { const t = curTheme(); return t ? themeMap(t)[c.id] : null; };
 const curThemeColorGoal = id => { const t = curTheme(); if (!t) return null; const i = id ? state.goals.findIndex(g => g.id === id) : state.goals.length; return goalThemeColor(t, Math.max(0, i)); };
 /* ---------- Selector de colores ---------- */
-const colorDialog = $('#colorDialog'); let colorCb = null;
+const colorDialog = $('#colorDialog'); let colorCb = null,colorDraft='#6366f1';
+function normalizeColor(value){const s=String(value).trim().replace(/^#/,'');return /^[a-f\d]{6}$/i.test(s)?'#'+s.toLowerCase():/^[a-f\d]{3}$/i.test(s)?'#'+[...s].map(c=>c+c).join('').toLowerCase():null;}
+function previewColor(color,fromSliders=false,keepInput=false){
+ colorDraft=color;if(!keepInput)$('#colorHex').value=color.toUpperCase();$('#colorHex').setAttribute('aria-invalid','false');$('#colorError').textContent='';$('#applyColor').disabled=false;
+ const hsl=hueOf(color);
+ if(!fromSliders){$('#colorHue').value=hsl.h;$('#colorSaturation').value=hsl.s*100;$('#colorLightness').value=hexLight(color)*100;}
+ const hue=Number($('#colorHue').value),sat=Number($('#colorSaturation').value),light=Number($('#colorLightness').value),preview=$('#colorPreview');
+ preview.style.background=color;preview.style.color=hexLum(color)>.45?'#1b2232':'#ffffff';$('#colorPreviewValue').textContent=color.toUpperCase();
+ $('#colorSaturation').style.background=`linear-gradient(90deg,${hslHex(hue,0,light/100)},${hslHex(hue,1,light/100)})`;
+ $('#colorLightness').style.background=`linear-gradient(90deg,#000000,${hslHex(hue,sat/100,.5)},#ffffff)`;
+ $('#paletteGrid').querySelectorAll('[data-color]').forEach(b=>{const on=b.dataset.color.toLowerCase()===color;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
+}
 function openColor(current, cb){
   colorCb = cb;
   const cur = String(current).toLowerCase();
   const items = list => list.map(([hex, name]) => `<div class="sw-item"><button type="button" class="swatch lg${hex.toLowerCase() === cur ? ' active' : ''}" data-color="${hex}" style="background:${hex}" title="${name}"></button>${name}</div>`).join('');
   $('#paletteGrid').innerHTML = `<div class="pal-title">Pastel</div>${items(COLORS_PASTEL)}<div class="pal-title">Intensos</div>${items(COLORS_MAIN)}`;
+  $('#colorPreviewIcon').innerHTML=ic('palette');previewColor(normalizeColor(current)||'#6366f1');
   colorDialog.showModal();
 }
-$('#paletteGrid').addEventListener('click', e => { const b = e.target.closest('[data-color]'); if (b){ colorDialog.close(); colorCb && colorCb(b.dataset.color); } });
+$('#paletteGrid').addEventListener('click', e => { const b = e.target.closest('[data-color]'); if(b)previewColor(b.dataset.color.toLowerCase()); });
+$('#colorHex').addEventListener('input',()=>{const color=normalizeColor($('#colorHex').value);if(color)previewColor(color,false,true);else{$('#colorHex').setAttribute('aria-invalid','true');$('#colorError').textContent='Usa 3 o 6 caracteres HEX (0–9, A–F).';$('#applyColor').disabled=true;}});
+for(const id of ['colorHue','colorSaturation','colorLightness'])$('#'+id).addEventListener('input',()=>previewColor(hslHex(Number($('#colorHue').value),Number($('#colorSaturation').value)/100,Number($('#colorLightness').value)/100),true));
+$('#applyColor').onclick=()=>{if($('#applyColor').disabled)return;const cb=colorCb;colorDialog.close();if(cb)cb(colorDraft);};
+$('#colorHex').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#applyColor').click();}});
 
 /* ---------- Nombre e ícono de la app ---------- */
 const nameEl = $('#appName');
@@ -3918,6 +4088,12 @@ async function callSheets(payload){
   if (!res.ok) throw new Error('HTTP ' + res.status);
   let j; try { j = await res.json(); } catch(e){ throw new Error('Respuesta inválida. Revisa la URL y que la implementación sea "Cualquier persona".'); }
   if (!j.ok) throw new Error(j.error || 'Error del script');
+  const connectionKey=sync.url+'|'+sync.token;
+  if(settingsVerifiedConnection!==connectionKey){
+    settingsVerifiedConnection=connectionKey;
+    const config=$('#settingsConnectionConfig');if(config&&config.setExpanded)config.setExpanded(false);
+    renderSettingsStatus();
+  }
   if (j.profiles && Array.isArray(j.profiles.list) && j.profiles.list.length === 2 && (Number(j.profiles.u) || 0) > (Number(profiles.u) || 0)){ profiles = j.profiles; saveProfiles(); renderProfileUI(); }
   return j;
 }
@@ -4391,6 +4567,127 @@ function checkGoalCelebration(){
   _doneSet = now;
 }
 
+/* Reorganiza los controles existentes conservando sus eventos y datos. */
+function setupSettings(){
+ const root=$('#tab-settings'), cards=[...root.querySelectorAll('.card')];
+ const [users,themes,fonts,backup,connection,methods,danger]=cards;
+ root.querySelector('.toolbar').remove(); root.querySelector('.grid2').remove();
+ const version=$('#appVer'),install=$('#btnInstall');
+ root.replaceChildren();
+ root.innerHTML=`<header class="settings-intro"><h2>Ajustes</h2></header>
+ <button type="button" class="settings-status" id="settingsStatus"><span class="status-icon">${ic('cloud')}</span><span class="settings-status-copy"><strong id="settingsStatusTitle"></strong><small id="settingsStatusInfo"></small></span>${ic('chevron-right')}</button>
+ <div class="settings-layout"><nav class="settings-nav" aria-label="Secciones de ajustes"></nav><div class="settings-content"><div class="settings-home"><h3>Todo en su lugar</h3><p>Personaliza la app, administra tus usuarios y cuida tus datos. Elige una sección para empezar.</p><div class="settings-preview"><strong>Aa</strong><div><b id="settingsHomeFont"></b><div class="small muted" id="settingsHomeTheme"></div></div></div></div></div></div>
+ <footer class="settings-footer"></footer>`;
+ root.querySelector('.settings-footer').append(version,install);
+ const entries=[['users','Usuarios','Nombres, fotos e íconos','users'],['appearance','Apariencia','Colores y tipografía','palette'],['methods','Métodos de pago','Organiza cómo pagas','credit-card'],['data','Datos y sincronización','Conexión y respaldos','cloud']];
+ const nav=root.querySelector('.settings-nav'),content=root.querySelector('.settings-content');
+ for(const [id,title,desc,icon] of entries){
+  const button=document.createElement('button');button.type='button';button.dataset.settingsTarget=id;button.setAttribute('aria-controls','settings-panel-'+id);
+  button.innerHTML=`<span class="settings-nav-icon">${ic(icon)}</span><span class="settings-nav-copy"><b>${title}</b><small>${desc}</small></span>${ic('chevron-right')}`;nav.append(button);
+  const panel=document.createElement('section');panel.id='settings-panel-'+id;panel.className='settings-panel';panel.hidden=true;panel.setAttribute('aria-labelledby','settings-heading-'+id);
+  panel.innerHTML=`<div class="settings-panel-head"><button type="button" class="iconbtn settings-back" aria-label="Volver a ajustes">${ic('arrow-left')}</button><h3 id="settings-heading-${id}" tabindex="-1">${title}</h3></div>`;
+  panel.querySelector('.settings-back').onclick=()=>openSettingsSection(null,true);content.append(panel);
+ }
+ const panel=id=>$('#settings-panel-'+id);
+ function disclosure(title,card,extra=''){
+  const details=document.createElement('details');details.className='settings-disclosure '+extra;
+  const summary=document.createElement('summary');summary.textContent=title;details.append(summary);
+  const body=document.createElement('div');body.className='settings-disclosure-body';body.append(card);details.append(body);
+  let animation=null,expanded=false;
+  details.setExpanded=(open,animate=true)=>{
+   if(details.id==='settingsConnectionConfig'&&!settingsConnectionReady())open=true;
+   expanded=open;
+   const from=details.getBoundingClientRect().height;
+   if(animation){animation.cancel();animation=null;}
+   details.style.height='';details.open=true;
+   const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+2;
+   if(!animate||reduceMotion()||Math.abs(from-to)<1){details.open=open;return;}
+   animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:300,easing:'cubic-bezier(.22,.68,.2,1)'});
+   animation.onfinish=()=>{details.open=expanded;animation=null;};
+  };
+  summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(animation?!expanded:!details.open);});
+  return details;
+ }
+ users.querySelector('p').textContent='Cada usuario conserva sus propios datos y preferencias. Toca su nombre, avatar o foto para editarlo.';
+ users.querySelector('h3').remove();panel('users').append(users);
+ const themeDetails=disclosure('Tema de colores',themes),fontDetails=disclosure('Tipografía',fonts);
+ themeDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsThemeName"></small>');
+ fontDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsFontName"></small>');
+ panel('appearance').append(themeDetails,fontDetails);
+ methods.querySelector('p').textContent='Agrega tus métodos de pago. Toca un nombre para editarlo.';
+ methods.querySelector('h3').remove();methodsInput.hidden=true;
+ methods.insertAdjacentHTML('beforeend',`<div class="settings-methods" id="settingsMethods"></div><form class="settings-method-add" id="settingsMethodForm"><input id="settingsMethodName" aria-label="Nombre del método de pago" placeholder="Ej. Transferencia" maxlength="60" required><button class="btn primary" type="submit" id="settingsMethodSubmit">Agregar</button></form><div class="settings-method-help" id="settingsMethodHelp" role="status"></div>`);
+ panel('methods').append(methods);
+ let editing=-1;
+ const commit=()=>{methodsInput.value=state.settings.methods.join(', ');methodsInput.dispatchEvent(new Event('change'));renderSettingsOverview();};
+ $('#settingsMethodForm').onsubmit=e=>{e.preventDefault();const input=$('#settingsMethodName'),name=input.value.trim(),list=state.settings.methods;
+  if(!name||name.includes(',')){ $('#settingsMethodHelp').textContent='Escribe un nombre sin comas.';return; }
+  if(list.some((m,i)=>i!==editing&&m.toLocaleLowerCase()===name.toLocaleLowerCase())){$('#settingsMethodHelp').textContent='Este método ya existe.';return;}
+  if(editing<0)list.push(name);else list[editing]=name;
+  editing=-1;input.value='';$('#settingsMethodSubmit').textContent='Agregar';$('#settingsMethodHelp').textContent='';commit();
+ };
+ $('#settingsMethods').onclick=e=>{const button=e.target.closest('button');if(!button)return;const i=Number(button.dataset.index);
+  if(button.dataset.action==='remove'){state.settings.methods.splice(i,1);editing=-1;$('#settingsMethodName').value='';$('#settingsMethodSubmit').textContent='Agregar';commit();}
+  else{editing=i;$('#settingsMethodName').value=state.settings.methods[i];$('#settingsMethodSubmit').textContent='Guardar';$('#settingsMethodName').focus();$('#settingsMethodHelp').textContent='Editando método de pago.';}
+ };
+ panel('data').append(connection,backup,danger);
+ const stack=connection.querySelector('.stack'),config=document.createElement('div');
+ for(const id of ['syncUrl','syncToken'])config.append($('#'+id).closest('.field'));
+ config.append($('#btnSyncConnect'));
+ const configDetails=disclosure('Configurar conexión',config);configDetails.id='settingsConnectionConfig';stack.append(configDetails);
+ const advanced=document.createElement('div');advanced.append($('#btnSyncPush'),$('#btnSyncPull'));advanced.className='toolbar';
+ const advancedDetails=disclosure('Opciones avanzadas',advanced);
+ connection.querySelector('p').textContent='Tus cambios se guardan en este dispositivo y se sincronizan con tu hoja cuando hay conexión.';
+ const emptyToolbar=stack.querySelector('.toolbar');if(emptyToolbar)emptyToolbar.remove();
+ $('#syncToken').type='password';$('#syncToken').insertAdjacentHTML('afterend','<button class="btn sm" type="button" id="settingsShowKey" aria-pressed="false">Mostrar clave</button>');
+ $('#settingsShowKey').onclick=e=>{const show=$('#syncToken').type==='password';$('#syncToken').type=show?'text':'password';e.currentTarget.textContent=show?'Ocultar clave':'Mostrar clave';e.currentTarget.setAttribute('aria-pressed',String(show));};
+ stack.append(configDetails,advancedDetails);
+ const connHeading=$('#connBox .conn-h');if(connHeading)connHeading.lastChild.textContent='Conectar otro dispositivo';
+ backup.querySelector('p').textContent='Descarga una copia para conservarla o restaura un respaldo anterior.';
+ danger.querySelector('p').textContent='Borra movimientos y presupuestos del usuario activo. Con sincronización automática, el borrado también se enviará a Sheets. Exporta un respaldo antes de continuar.';
+ panel('data').append(connection,disclosure('Respaldos y exportación',backup),disclosure('Borrar datos',danger,'settings-danger'));
+ nav.addEventListener('click',e=>{const b=e.target.closest('[data-settings-target]');if(b)openSettingsSection(b.dataset.settingsTarget,true);});
+ $('#settingsStatus').onclick=()=>{
+  openSettingsSection('data',true);
+  configDetails.setExpanded(true);
+  if(!settingsConnectionReady())$('#syncUrl').focus({preventScroll:true});
+ };
+ new MutationObserver(()=>renderSettingsStatus()).observe($('#syncInfo'),{childList:true,characterData:true,subtree:true});
+ new MutationObserver(()=>renderSettingsOverview()).observe($('#themeGrid'),{childList:true});
+ new MutationObserver(()=>renderSettingsOverview()).observe($('#fontGrid'),{childList:true});
+ // La primera conexión debe mantener visibles los campos que reciben el foco.
+ if(!settingsConnectionReady()){openSettingsSection('data');configDetails.setExpanded(true,false);}
+}
+let settingsVerifiedConnection=syncOn()&&sync.lastSync?sync.url+'|'+sync.token:'';
+function settingsConnectionReady(){return syncOn()&&settingsVerifiedConnection===sync.url+'|'+sync.token;}
+function openSettingsSection(id,focus=false){
+ const root=$('#tab-settings');
+ const changed=(root.dataset.settingsView||null)!==id;
+ if(id)root.dataset.settingsView=id;else delete root.dataset.settingsView;
+ root.querySelectorAll('.settings-panel').forEach(p=>{p.hidden=p.id!=='settings-panel-'+id;});
+ root.querySelector('.settings-home').hidden=!!id;
+ root.querySelectorAll('[data-settings-target]').forEach(b=>{if(b.dataset.settingsTarget===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+ const target=id?$('#settings-panel-'+id):root.querySelector('.settings-nav');
+ if(changed&&!reduceMotion())target.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'cubic-bezier(.2,.7,.2,1)'});
+ if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else root.querySelector('[data-settings-target]').focus({preventScroll:true});}
+}
+function renderSettingsStatus(){
+ if(!$('#settingsStatusTitle'))return;
+ const config=$('#settingsConnectionConfig');
+ if(config){const summary=config.querySelector('summary');summary.setAttribute('aria-disabled',String(!settingsConnectionReady()));summary.textContent=settingsConnectionReady()?'Configurar conexión':'Vincular hoja de cálculo';}
+ $('#settingsStatusTitle').textContent=!settingsConnectionReady()?'Conecta tu hoja de cálculo':$('#syncBadge').classList.contains('err')?'Revisa la sincronización':sync.pending?'Cambios pendientes de sincronizar':'Google Sheets conectado';
+ $('#settingsStatusInfo').textContent=$('#syncInfo').textContent;
+}
+function renderSettingsOverview(){
+ if(!$('#settingsThemeName'))return;
+ const theme=curTheme()?.name||'Personalizado',font=curFont().name;
+ $('#settingsThemeName').textContent=theme;$('#settingsFontName').textContent=font;
+ $('#settingsHomeFont').textContent=font;$('#settingsHomeTheme').textContent='Tema '+theme;
+ $('#settingsMethods').innerHTML=(state.settings.methods||[]).map((m,i)=>`<span class="settings-method-chip"><button type="button" data-index="${i}" data-action="edit" aria-label="Editar ${esc(m)}">${esc(m)}</button><button type="button" data-index="${i}" data-action="remove" aria-label="Eliminar ${esc(m)}">${ic('x')}</button></span>`).join('')||'<p class="small muted">Aún no agregaste métodos de pago.</p>';
+ renderSettingsStatus();
+}
+setupSettings();
+
 /* ---------- Render ---------- */
 let lastRenderMonth = null;
 const VIEWS = {dashboard:() => renderDashboard(), movs:() => { renderMovs(); renderRec(); if (movView === 'cal') renderCalendar(); },
@@ -4402,7 +4699,7 @@ function renderAll(){
   if (lastRenderMonth !== currentMonth){ resetBars(); lastRenderMonth = currentMonth; }
   $('#monthLabel').textContent = monthLong(currentMonth);
   applyBrand(); renderThemes(); renderFonts();
-  methodsInput.value = (state.settings.methods||[]).join(', ');
+  methodsInput.value = (state.settings.methods||[]).join(', '); renderSettingsOverview();
   // Solo se dibuja la pestaña visible; las demás quedan marcadas y se dibujan al abrirlas
   dirty = new Set(Object.keys(VIEWS));
   renderProfileUI();

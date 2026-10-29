@@ -1333,6 +1333,50 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 @media(max-width:700px){#tab-movs>.mview,#tab-movs>.toolbar{max-width:100%}.settings-home{padding:17px}.settings-home-row{gap:10px}}
 
 .settings-panel-head .settings-back{display:inline-flex}
+/* Escala compartida por función: igual contenido, igual tipografía en todas las vistas. */
+:root{--type-title:20px;--type-section:15px;--type-item:14px;--type-control:13px;--type-meta:12px}
+h2,.both-head h2{font-size:var(--type-title)}
+h3,.settings-home h3{font-size:var(--type-section)}
+html .history-category,html .history-primary.has-description .history-category,
+html .bud-table .cname,html .catcell,html .cat-row input[data-act=name],
+html .up-name,html .fc-name,html .rec-item .name{
+  font-size:var(--type-item);font-weight:600;line-height:1.5;
+}
+html .history-amount,html .bud-table td.num,html .bud-table .budget-input,
+html .bud-table tfoot td{font-size:var(--type-item);font-variant-numeric:tabular-nums;line-height:1.5}
+html .history-description,html .history-detail,html .history-day-date h3,
+html .history-day-date>span:not(.plan-pill),html .history-day-totals,
+html .small,html .sv-hint,html .sv-tip,html .pr-meta,html .pr-meta .delta,
+html .fc-desc,html .settings-home-value,html .bud-table thead th,html .av-pct,
+html #movSummary,html #movSummary .mov-count,html .mov-total>span,
+html .mov-planned-total,html .dashboard-kpis .metric-details,
+html .dashboard-kpis .metric-footer,html .dashboard-kpis #kBalanceSub,
+html .metric-action{font-size:var(--type-meta);line-height:1.5}
+html .dashboard-kpis .label,html .settings-home-copy b,html .mov-total b,
+html .btn,html .seg button,html .vseg button,html .fsel-btn,
+html #view-list .mov-filter-toggle,html .mov-filters .search-box input{
+  font-size:var(--type-control);line-height:1.5;
+}
+/* Las filas crecen con el contenido; la escala no se comprime en móvil. */
+html .history-edit{min-height:54px;height:auto}
+html .bud-table .cname{line-height:1.5}
+.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2>.card,.chart-wrap,.donut-c,.donut-l{min-width:0}
+@media(max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.budget-mobile-total{display:none}
+@media(max-width:600px){
+ html .bud-table tfoot{display:none}
+ .budget-mobile-total{display:flex;flex-wrap:wrap;gap:12px 20px;padding-top:14px;border-top:1px solid var(--border);font-size:var(--type-item)}
+ .budget-mobile-total>strong{flex-basis:100%}
+ .budget-mobile-total>div{display:grid;gap:3px}
+ .budget-mobile-total span{font-size:var(--type-meta);color:var(--muted)}
+ .budget-mobile-total b{white-space:nowrap}
+}
+html .cat-row input[data-act=name]{min-width:0;width:100%}
+@media(max-width:560px){
+ html .cat-row,html #catsExpense .cat-row{grid-template-columns:18px 40px minmax(0,1fr) auto!important}
+ .cat-row .row-acts{grid-column:4;grid-row:1}
+ .cat-row .pay-btn{grid-column:3/-1;grid-row:2;justify-self:start;max-width:100%}
+}
 </style>
 </head>
 <body>
@@ -1340,7 +1384,7 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.8.4'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.8.5'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -3061,7 +3105,7 @@ function budgetTable(type){
   const tdCell = isE ? `<td class="num ${td >= 0 ? 'pos' : 'neg'}">${fmt(td)}</td>` : `<td class="num ${td >= 0 ? 'pos' : 'muted'}">${td >= 0 ? (td > .005 ? '+' : '') + fmt(td) : fmt(-td)}</td>`;
   return `<table class="bud-table">
     <thead><tr><th>Categoría</th><th class="num c-plan"><span class="hide-m">${isE ? 'Presupuesto' : 'Esperado'}</span><span class="show-m">Plan</span></th><th class="num c-real">Real</th><th class="num c-diff"><span class="hide-m">${isE ? 'Disponible' : 'Por recibir'}</span><span class="show-m">${isE ? 'Queda' : 'Falta'}</span></th><th class="num c-av" title="Avance">%</th></tr></thead>
-    <tbody>${body}</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(tb)}</td><td class="num">${fmt(tr)}</td>${tdCell}<td class="av"><span class="av-pct${isE && tr > tb ? ' over' : ''}">${tb ? pctTxt(tr / tb * 100) : '—'}</span></td></tr></tfoot></table>`;
+    <tbody>${body}</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(tb)}</td><td class="num">${fmt(tr)}</td>${tdCell}<td class="av"><span class="av-pct${isE && tr > tb ? ' over' : ''}">${tb ? pctTxt(tr / tb * 100) : '—'}</span></td></tr></tfoot></table><div class="budget-mobile-total"><strong>Total</strong><div><span>Plan</span><b>${fmt(tb)}</b></div><div><span>${isE ? 'Queda' : 'Diferencia'}</span><b class="${td >= 0 ? 'pos' : 'muted'}">${fmt(td)}</b></div><div><span>Avance</span><b>${tb ? pctTxt(tr / tb * 100) : '—'}</b></div></div>`;
 }
 function renderSaveCard(){
   const m = currentMonth, sv = savingsOf(m), own = (state.settings.savePctM || {})[m] != null, mode = saveMode();

@@ -49,7 +49,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.9.2'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.9.3'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -152,7 +152,7 @@ window.addEventListener('error', function (e) {
     <div class="mview" id="view-cal" hidden>
       <div class="cal-stats" id="calStats"></div>
       <div class="grid-cal">
-        <div class="card"><div class="cal" id="calGrid"></div><div class="cal-legend small muted"><span class="lg-scale"><i></i><i></i><i></i><i></i></span><span>Gastos</span><span class="lg-scale inc"><i></i><i></i><i></i><i></i></span><span>Ingresos</span><span class="cal-key2"><b class="cd-hot">●</b> muy alto</span><span class="cal-key"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg> recurrente pendiente</span></div></div>
+        <div class="card"><div class="cal" id="calGrid"></div><div class="cal-currency">Importes aproximados en S/ · k: miles · M: millones</div><div class="cal-legend small muted"><span class="lg-scale"><i></i><i></i><i></i><i></i></span><span>Gastos</span><span class="lg-scale inc"><i></i><i></i><i></i><i></i></span><span>Ingresos</span><span class="cal-key2"><b class="cd-hot">●</b> muy alto</span><span class="cal-key"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg> recurrente pendiente</span></div></div>
         <div class="card" id="calDay"></div>
       </div>
     </div>
@@ -1322,7 +1322,13 @@ window.addEventListener('resize', moveViewInd);
 
 /* ---------- Calendario ---------- */
 let calSel = null;
-const fmtK = n => n >= 10000 ? 'S/ ' + (n / 1000).toFixed(0) + 'k' : n >= 1000 ? 'S/ ' + (n / 1000).toFixed(1).replace('.0', '') + 'k' : 'S/ ' + Math.round(n);
+function calendarAmount(n){
+  let value=Math.abs(n),unit=0;const units=['','k','M'];
+  while(value>=1000&&unit<units.length-1){value/=1000;unit++;}
+  value=Number(value.toFixed(unit&&value<100?1:0));
+  if(value>=1000&&unit<units.length-1){value/=1000;unit++;}
+  return value>=1000?Math.abs(n).toExponential(0):String(value)+units[unit];
+}
 function renderCalendar(){
   const m = currentMonth, [y, mo] = m.split('-').map(Number), dim = daysIn(m), first = (new Date(y, mo - 1, 1).getDay() + 6) % 7;
   const tm = thisMonth(), today = m === tm ? new Date().getDate() : 0, byDay = {};
@@ -1344,16 +1350,17 @@ function renderCalendar(){
   const pastExp = sum(txOfMonth(m).filter(t => t.type === 'expense')), avg = daysPassed ? pastExp / daysPassed : 0;
   let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((d, i) => `<div class="cal-h${i > 4 ? ' we' : ''}">${d}</div>`).join('') + '<div class="cal-h wk">Semana</div>';
   let col = 0, week = 0, idx = 0;
-  const closeWeek = () => { html += `<div class="cal-wk${week ? '' : ' zero'}" style="--i:${idx++}"><span class="small muted">Total</span><b>${week ? fmtK(week) : '—'}</b></div>`; week = 0; col = 0; };
+  const closeWeek = () => { html += `<div class="cal-wk${week ? '' : ' zero'}" style="--i:${idx++}" title="Gastos de la semana: ${fmt(week)}"><span class="small muted">Total</span><b>${week ? calendarAmount(week) : '—'}</b></div>`; week = 0; col = 0; };
   for (let i = 0; i < first; i++){ html += '<div class="cal-pad"></div>'; col++; }
   for (let d = 1; d <= dim; d++){
     const o = byDay[d], iso = dateFor(m, d), recs = recBy[d] || [], we = col > 4;
     if (o) week += o.exp;
     const hot = o && o.exp > med * 2.5 && exps.length > 3;
     const e = lvlOf(o && o.exp, max), g = lvlOf(o && o.inc, maxInc), kind = e && g ? ' both' : e ? ' has-exp' : g ? ' has-inc' : '';
-    html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${d}: ${o ? fmt(o.exp) : 'sin gastos'}">
+    const dayLabel=`${fmtDateLong(iso)}. Ingresos: ${fmt(o?.inc||0)}. Gastos: ${fmt(o?.exp||0)}${recs.length?'. Recurrentes pendientes: '+recs.length:''}`;
+    html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${esc(dayLabel)}" title="${esc(dayLabel)}" aria-pressed="${iso===calSel}">
       <span class="cd-n">${d}</span>${recs.length ? `<span class="cd-r" title="${recs.length} recurrente(s) pendiente(s)">${ic('repeat')}</span>` : ''}${hot ? '<span class="cd-hot" title="Gasto alto">●</span>' : ''}
-      <span class="cd-amts">${o && o.inc ? `<span class="cd-i">+ ${fmtK(o.inc)}</span>` : ''}${o && o.exp ? `<span class="cd-e">− ${fmtK(o.exp)}</span>` : ''}</span></button>`;
+      <span class="cd-amts" aria-hidden="true">${o && o.inc ? `<span class="cd-i">+${calendarAmount(o.inc)}</span>` : ''}${o && o.exp ? `<span class="cd-e">−${calendarAmount(o.exp)}</span>` : ''}</span></button>`;
     if (++col === 7) closeWeek();
   }
   if (col){ while (col < 7){ html += '<div class="cal-pad"></div>'; col++; } closeWeek(); }
@@ -1382,19 +1389,19 @@ function renderCalDay(){
       <div class="small muted">${list.length ? `${plural(list.length, 'movimiento')} · <span class="xp">${fmt(exp)}</span>${inc ? ` · <span class="pos">+${fmt(inc)}</span>` : ''}` : 'Sin movimientos'}</div>
       ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}</div>
       <button class="btn sm primary" data-cal-add="${iso}">${ic('plus')} Agregar</button></div>
-    ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income'; return `<div class="prow" style="grid-template-columns:34px 1fr auto auto">
+    ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income'; return `<div class="prow cal-transaction">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
-      <div><div class="name">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
+      <div><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
       <div class="amt"><b class="${isI ? 'pos' : 'xp'}">${isI ? '+' : '−'} ${fmt(t.amount)}</b></div>
       <div class="row-actions"><button class="iconbtn" data-edit="${t.id}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${t.id}" title="Eliminar">${ic('trash-2')}</button></div></div>`; }).join('')}
-    ${recs.map(r => { const c = getCat(r.catId); return `<div class="prow" style="grid-template-columns:34px 1fr auto;opacity:.75">
+    ${recs.map(r => { const c = getCat(r.catId); return `<div class="prow cal-recurring">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name">${recLabel(r)}</div><div class="small muted">Recurrente ${r.auto ? 'automático' : 'por confirmar'}</div></div>
       <div class="amt">${fmt(r.amount)}</div></div>`; }).join('')}
     ${!list.length && !recs.length ? emptyBox('calendar-days', 'Nada registrado este día. Toca «Agregar» para sumar algo.', null, '', false, 'es-sm') : ''}`;
 }
 $('#calGrid').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; calSel = b.dataset.day;
-  document.querySelectorAll('#calGrid .cal-d').forEach(x => x.classList.toggle('sel', x === b)); renderCalDay(); $('#calDay').classList.remove('swap'); void $('#calDay').offsetWidth; $('#calDay').classList.add('swap'); });
+  document.querySelectorAll('#calGrid .cal-d').forEach(x => {x.classList.toggle('sel', x === b);x.setAttribute('aria-pressed',String(x===b));}); renderCalDay(); $('#calDay').classList.remove('swap'); void $('#calDay').offsetWidth; $('#calDay').classList.add('swap'); });
 $('#calGrid').addEventListener('keydown', e => {
   const k = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-7, ArrowDown:7}[e.key]; if (!k || !calSel) return;
   const m = currentMonth, d = Number(calSel.slice(8, 10)) + k; if (d < 1 || d > daysIn(m)) return;

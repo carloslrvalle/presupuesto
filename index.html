@@ -49,7 +49,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.9.3'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.9.4'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1265,7 +1265,7 @@ function openCatDetail(id){
       <div><span>${isI ? 'Esperado' : 'Presupuesto'}</span><b>${b ? fmt(b) : '—'}</b></div>
       <div><span>Promedio mensual</span><b>${fmt(avg)}</b></div>
     </div>
-    <div class="cd-chart">${ms.map((mm, i) => `<div class="cd-col${i === 5 ? ' cur' : ''}" title="${monthShort(mm)}: ${fmt(vals[i])}"><div class="cd-bar"><span class="cd-v">${vals[i] ? fmtK(vals[i]) : ''}</span><i style="height:${Math.max(vals[i] ? 6 : 2, vals[i] / max * 100)}%;background:${col}"></i></div><span class="cd-m">${MONTHS_ES[Number(mm.slice(5, 7)) - 1]}</span></div>`).join('')}
+    <div class="cd-chart">${ms.map((mm, i) => `<div class="cd-col${i === 5 ? ' cur' : ''}" title="${monthShort(mm)}: ${fmt(vals[i])}"><div class="cd-bar"><span class="cd-v">${vals[i] ? compactS(vals[i]) : ''}</span><i style="height:${Math.max(vals[i] ? 6 : 2, vals[i] / max * 100)}%;background:${col}"></i></div><span class="cd-m">${MONTHS_ES[Number(mm.slice(5, 7)) - 1]}</span></div>`).join('')}
 </div>
     <div class="cd-list"><div class="cd-lh">${plural(txs.length, 'movimiento')} en ${monthLong(m).split(' ')[0].toLowerCase()}</div>
       ${txs.length ? txs.slice(0, 8).map(t => `<button type="button" class="cd-tx" data-cd-edit="${t.id}"><span class="cd-d">${fmtDate(t.date).slice(0, 5)}</span><span class="cd-n">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}<small>${esc(t.method || '')}</small></span><b class="${isI ? 'pos' : 'xp'}">${fmt(t.amount)}</b></button>`).join('') : '<div class="small muted" style="padding:8px 0">Sin movimientos este mes.</div>'}

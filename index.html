@@ -1197,6 +1197,23 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 @media(max-width:1050px){.dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 @media(max-width:560px){.dashboard-kpis{gap:10px}.dashboard-kpis>.kpi{padding:14px}.dashboard-kpis .label{font-size:11px;min-height:32px;gap:7px}.dashboard-kpis .label .dot{width:27px;height:27px;flex-shrink:0}.dashboard-kpis .value{font-size:min(24px,12.5cqi);margin:12px 0 14px}.dashboard-kpis .metric-details{font-size:11px;gap:8px;min-height:72px}.dashboard-kpis .metric-detail-row{display:grid;grid-template-columns:1fr;gap:1px}.dashboard-kpis .metric-detail-row>b{text-align:left}.dashboard-kpis .metric-footer,.dashboard-kpis #kBalanceSub{font-size:10.5px;min-height:44px;margin-top:12px;padding-top:10px}}
 
+.dashboard-kpis{align-items:start}
+.dashboard-kpis>.metric-disclosure{padding:0;display:block;overflow:hidden;min-width:0}
+.metric-disclosure>summary{position:relative;list-style:none;padding:20px;cursor:pointer;border-radius:inherit;user-select:none}
+.metric-disclosure>summary::-webkit-details-marker{display:none}
+.dashboard-kpis .metric-disclosure>summary .label{padding-right:24px}
+.dashboard-kpis .metric-disclosure>summary .value{margin:14px 0 0}
+.metric-chevron{position:absolute;right:18px;top:25px;color:var(--muted);display:grid;place-items:center;transition:transform var(--motion-panel) var(--motion-ease),color var(--motion-fast) var(--motion-ease)}
+.metric-chevron .vi{width:17px;height:17px}.metric-disclosure[open]>summary .metric-chevron{transform:rotate(180deg);color:var(--primary)}
+.metric-disclosure>summary:focus-visible{outline:2px solid var(--primary);outline-offset:-4px}
+.metric-disclosure>summary:hover .metric-chevron{color:var(--primary)}
+.metric-expanded{padding:0 20px 18px}
+.dashboard-kpis .metric-expanded .metric-details{border-top:1px solid var(--border);padding-top:14px}
+.dashboard-kpis .metric-expanded .metric-footer,.dashboard-kpis .metric-expanded #kBalanceSub{border:0;padding-top:0;min-height:0;margin-top:12px}
+.metric-action{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin-top:14px;padding:10px 0 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--primary);font:inherit;font-weight:600;font-size:11.5px;text-align:left;cursor:pointer}
+.metric-action .vi{width:14px;height:14px}.metric-action:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:5px}
+@media(max-width:560px){.metric-disclosure>summary{padding:14px}.metric-expanded{padding:0 14px 14px}.metric-chevron{right:11px;top:22px}.metric-chevron .vi{width:14px;height:14px}.dashboard-kpis .metric-disclosure>summary .label{padding-right:13px;gap:6px}.dashboard-kpis .metric-disclosure>summary .value{margin:12px 0 0}.dashboard-kpis .metric-expanded .metric-details{padding-top:12px}.metric-action{font-size:10.5px}}
+
 </style>
 </head>
 <body>
@@ -1204,7 +1221,7 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.7.3'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.7.4'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1265,11 +1282,11 @@ window.addEventListener('error', function (e) {
   <section class="tab active" id="tab-dashboard">
     <div class="insight" id="insight" hidden><span class="i-ic"></span><div id="insightText"></div></div>
     <div class="kpis dashboard-kpis">
-      <div class="card kpi link k-inc" data-go="income" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬇️" style="background:var(--income-soft);color:var(--income)"></span>Ingresos del mes</div><div class="value" id="kIncome"></div><div class="metric-details" id="kIncomeSub"></div><div class="metric-footer small muted" id="kIncomeFoot"></div></div>
-      <div class="card kpi link k-exp" data-go="expense" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬆️" style="background:var(--expense-soft);color:var(--expense)"></span>Gastos del mes</div><div class="value" id="kExpense"></div><div class="metric-details" id="kExpenseSub"></div><div class="metric-footer small muted" id="kExpenseFoot"></div></div>
-      <div class="card kpi link" data-go="all" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⚖️" style="--k:var(--k-blue)"></span>Saldo acumulado</div><div class="value" id="kBalance"></div><div class="metric-details" id="balanceParts"></div><div class="metric-footer small muted" id="kBalanceSub"></div></div>
-      <div class="card kpi link" data-go="budget" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="🐷" style="--k:var(--k-violet)"></span>Tasa de ahorro</div><div class="value" id="kSavings"></div><div class="metric-details" id="kSavingsSub"></div><div class="metric-footer small muted" id="kSavingsFoot"></div></div>
-    </div>
+      <details class="card kpi metric-disclosure k-inc"><summary><div class="label"><span class="dot ui-ic" data-e="⬇️" style="background:var(--income-soft);color:var(--income)"></span>Ingresos del mes</div><div class="value" id="kIncome"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="kIncomeSub"></div><div class="metric-footer small muted" id="kIncomeFoot"></div><button type="button" class="metric-action" data-metric-go="income">Ver movimientos<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
+      <details class="card kpi metric-disclosure k-exp"><summary><div class="label"><span class="dot ui-ic" data-e="⬆️" style="background:var(--expense-soft);color:var(--expense)"></span>Gastos del mes</div><div class="value" id="kExpense"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="kExpenseSub"></div><div class="metric-footer small muted" id="kExpenseFoot"></div><button type="button" class="metric-action" data-metric-go="expense">Ver movimientos<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
+      <details class="card kpi metric-disclosure"><summary><div class="label"><span class="dot ui-ic" data-e="⚖️" style="--k:var(--k-blue)"></span>Saldo acumulado</div><div class="value" id="kBalance"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="balanceParts"></div><div class="metric-footer small muted" id="kBalanceSub"></div><button type="button" class="metric-action" data-metric-go="all">Ver movimientos<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
+      <details class="card kpi metric-disclosure"><summary><div class="label"><span class="dot ui-ic" data-e="🐷" style="--k:var(--k-violet)"></span>Tasa de ahorro</div><div class="value" id="kSavings"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="kSavingsSub"></div><div class="metric-footer small muted" id="kSavingsFoot"></div><button type="button" class="metric-action" data-metric-go="budget">Ver presupuesto<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
+      </div>
     <div class="grid2">
       <div class="card"><h3>Gastos por categoría</h3><div class="chart-wrap" id="donutWrap"><canvas id="chDonut"></canvas></div></div>
       <div class="card"><h3>Ingresos vs gastos · últimos 6 meses</h3><div class="chart-wrap" id="barsWrap"><canvas id="chBars"></canvas></div></div>
@@ -2442,6 +2459,7 @@ function goFromCard(go){
   openMovs({scope, type: type === 'all' ? '' : type});
 }
 document.addEventListener('click', e => {
+  const metric=e.target.closest('[data-metric-go]');if(metric)return goFromCard(metric.dataset.metricGo);
   const k = e.target.closest('.kpi.link[data-go]'); if (k) return goFromCard(k.dataset.go);
   const r = e.target.closest('.prow.link[data-go-cat]'); if (r && r.dataset.goCat) return openCatDetail(r.dataset.goCat);
   const t = e.target.closest('.prow.link[data-go-tx]'); if (t) return openTx(t.dataset.goTx);

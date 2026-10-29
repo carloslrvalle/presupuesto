@@ -1031,7 +1031,7 @@ tr.just td,.just{animation:justSaved 1.8s var(--ease-out)}
 .btn.danger[disabled]{opacity:.5;pointer-events:none}
 body.sel-on .toast{bottom:150px}
 @media (max-width:600px){.sel-bar{bottom:calc(84px + env(safe-area-inset-bottom));width:calc(100% - 24px);justify-content:space-between;gap:8px;padding:8px 8px 8px 14px}.sel-bar span{font-size:13px}#btnSelect .sel-t{display:none}
-  .selecting #movBody tr[data-row] td:last-child{display:none}.selecting #movBody tr[data-row]{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cat amt";border-radius:10px}
+  .selecting #movBody [data-row] td:last-child{display:none}.selecting #movBody [data-row]{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cat amt";border-radius:10px}
   .selecting #movBody tr.picked{background:var(--accent-bg,var(--primary-soft))}.selecting #movBody tr.picked td{background:transparent}
   body.sel-on .toast{bottom:calc(150px + env(safe-area-inset-bottom))}}
 .show-m{display:none}
@@ -1214,6 +1214,125 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 .metric-action .vi{width:14px;height:14px}.metric-action:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:5px}
 @media(max-width:560px){.metric-disclosure>summary{padding:14px}.metric-expanded{padding:0 14px 14px}.metric-chevron{right:11px;top:22px}.metric-chevron .vi{width:14px;height:14px}.dashboard-kpis .metric-disclosure>summary .label{padding-right:13px;gap:6px}.dashboard-kpis .metric-disclosure>summary .value{margin:12px 0 0}.dashboard-kpis .metric-expanded .metric-details{padding-top:12px}.metric-action{font-size:10.5px}}
 
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#tab-movs>.toolbar{align-items:center;gap:12px;margin-bottom:18px}
+#tab-movs>.toolbar .btn{min-height:40px}#tab-movs .vseg{min-height:40px;align-items:center}#tab-movs .vseg button{min-height:32px}
+#view-list .mov-filters{display:grid;grid-template-columns:120px 120px minmax(155px,1fr) minmax(150px,1fr) minmax(220px,1.4fr);gap:10px;align-items:center;margin-bottom:18px}
+.mov-extra-filters{display:contents}.mov-filter-toggle{display:none}.mov-filters .fsel{min-width:0;width:100%}.mov-filters .fsel-btn,.mov-filters .search-box input{height:42px;min-height:42px}.mov-filters .search-box{min-width:0;width:100%}.mov-filters .search-box input{width:100%;min-width:0;font-size:13px}
+#view-list>.card{padding:0;overflow:visible}#movSummary{display:flex;align-items:center;gap:9px 22px;margin:0;padding:18px 20px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5}#movSummary .mov-count{margin-right:auto}.mov-total{display:flex;align-items:baseline;gap:7px}.mov-total>span{color:var(--muted)}.mov-total b{font-size:13px;font-weight:650;white-space:nowrap}.mov-planned-total{color:var(--muted);font-size:11px}
+#view-list .mov-table-wrap{overflow:visible;padding:0 20px 8px}
+.mov-table{table-layout:fixed;width:100%}.mov-col-cat{width:30%}.mov-col-desc{width:27%}.mov-col-method{width:auto}.mov-col-amount{width:150px}.mov-col-actions{width:48px}
+.mov-table th{padding:14px 10px 10px;text-transform:none;letter-spacing:0;font-size:11px;font-weight:600}
+.mov-table th:first-child{padding-left:0}.mov-table td{padding:11px 10px;line-height:1.5;font-size:13px}.mov-table td:first-child{padding-left:0}.mov-table td:last-child,.mov-table th:last-child{padding-right:0}
+.mov-table td.num b{font-variant-numeric:tabular-nums;letter-spacing:-.1px;font-weight:650;font-size:13.5px}
+.mov-table .mov-method{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.mov-row-open{display:block;width:100%;border:0;background:transparent;text-align:left;padding:0;color:var(--text);font:inherit;cursor:pointer;border-radius:8px}
+.mov-row-open .catcell{gap:11px;min-width:0;font-weight:500}.mov-row-open .ico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex-shrink:0}.mov-row-open .ico .vi,.mov-row-open .ico svg{width:18px;height:18px}
+.mov-name-block{min-width:0;display:block}.mov-category-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mov-description>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text);overflow-wrap:anywhere}.mov-table .mdesc{display:none}
+.mov-row-open:focus-visible,.mov-filter-toggle:focus-visible{outline:2px solid var(--primary);outline-offset:4px}.mov-actions .iconbtn{width:34px;height:34px;display:inline-grid;place-items:center;border-radius:10px}
+#movBody tr.day-h td{padding:19px 0 8px!important;border-bottom:1px solid var(--border)}#movBody tr.day-h:first-child td{padding-top:13px!important}
+.mov-table .dh{display:flex;align-items:center;gap:10px;padding-right:58px;min-height:24px;line-height:1.5}.mov-day-label{display:flex;align-items:baseline;gap:8px;min-width:0}.mov-day-label b{font-size:12px;font-weight:650;color:var(--text)}.mov-day-label>span{font-size:11px;color:var(--muted)}.mov-table .dh-tot{display:flex;align-items:baseline;justify-content:flex-end;gap:5px;margin-left:auto;font-size:11px;font-variant-numeric:tabular-nums;font-weight:600}.mov-table .dh-tot .pos{white-space:nowrap}
+.mov-action-menu{position:fixed;inset:auto;margin:0;padding:5px;min-width:160px;border:1px solid var(--border);border-radius:13px;background:var(--surface);color:var(--text);box-shadow:0 10px 32px -12px rgba(0,0,0,.3);z-index:100;animation:motionReveal var(--motion-move) var(--motion-ease)}.mov-action-menu[hidden]{display:none!important}.mov-action-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:var(--text);text-align:left;font:inherit;font-size:13px;cursor:pointer}.mov-action-menu button:hover,.mov-action-menu button:focus-visible{background:var(--surface-2);outline:none}.mov-action-menu .vi{width:16px;height:16px;color:var(--muted)}.mov-action-menu [data-mov-action=delete],.mov-action-menu [data-mov-action=delete] .vi{color:var(--expense)}
+@media(max-width:1100px) and (min-width:701px){#view-list .mov-filters{grid-template-columns:repeat(4,minmax(0,1fr))}#view-list .mov-filters .search-box{grid-column:1/-1}.mov-col-cat{width:30%}.mov-col-desc{width:23%}.mov-col-amount{width:130px}}
+@media(max-width:700px){
+ #tab-movs>.toolbar{gap:8px;flex-wrap:wrap;margin-bottom:14px}#tab-movs>.toolbar .vseg{flex:1;min-width:0}#tab-movs .vseg button{padding:7px 9px;font-size:12px;gap:5px}#tab-movs .vseg button .vi{width:15px;height:15px}#tab-movs>.toolbar>.spacer{display:none}#btnSelect{padding:8px;min-width:38px}#btnSelect .sel-t{display:none}#btnNewTx,#btnNewRec{display:none!important}
+ #view-list .mov-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}#view-list .mov-filters .search-box{grid-column:1/-1;grid-row:2;min-width:0}.mov-filters .fsel-btn{font-size:12px}.mov-extra-filters{display:none;grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mov-extra-filters.expanded{display:grid}.mov-filter-toggle{display:flex;grid-column:1/-1;justify-self:start;align-items:center;min-height:30px;border:0;border-radius:8px;background:transparent;color:var(--primary);font:inherit;font-size:11px;padding:3px 0;cursor:pointer}
+ #movSummary{padding:14px 15px;gap:7px 16px;align-items:baseline}#movSummary .mov-count{flex-basis:100%;margin:0;font-size:11px}.mov-total{gap:5px}.mov-total>span{font-size:10px}.mov-total b{font-size:12px}.mov-planned-total{flex-basis:100%}
+ #view-list .mov-table-wrap{padding:0 14px 5px}.mov-table colgroup,.mov-table thead{display:none!important}#tab-movs .mov-table,#tab-movs .mov-table tbody{display:block;width:100%}
+ #movBody [data-row]{display:grid;grid-template-columns:minmax(0,1fr) auto 30px;grid-template-areas:'cat amt act';column-gap:7px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}#movBody [data-row]:last-child{border-bottom:0}
+ #movBody [data-row] td{display:block;padding:0;border:0;min-width:0}#movBody [data-row] td:nth-child(2),#movBody [data-row] td:nth-child(3){display:none!important}#movBody [data-row] td:nth-child(5){display:block;grid-area:act;align-self:center}#movBody [data-row] td:nth-child(4){grid-area:amt;align-self:center}
+ #movBody .mov-row-open .catcell{gap:9px;align-items:center;font-size:12px}#movBody .mov-row-open .ico{width:32px;height:32px;border-radius:10px}#movBody .mov-category-name{font-size:12px;font-weight:550}#movBody .mdesc{display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:10.5px;line-height:1.5;color:var(--muted);margin-top:3px;overflow-wrap:anywhere;white-space:normal}
+ #movBody td.num b{font-size:12px;white-space:nowrap}#movBody .mov-actions .iconbtn{width:30px;height:34px}#movBody tr.day-h{display:block;padding:0;border:0}#movBody tr.day-h td{display:block;border:0;padding:18px 0 7px!important}#movBody tr.day-h:first-child td{padding-top:12px!important}.mov-table .dh{padding-right:37px;gap:7px;align-items:center}.mov-day-label{display:block;flex:1}.mov-day-label b{font-size:11px}.mov-day-label>span{display:block;font-size:10px}.mov-table .dh-tot{font-size:10px;gap:3px;flex-wrap:wrap;max-width:65%;line-height:1.6}.mov-table .dh .plan-pill{font-size:9px}
+ #movBody tr:has(td[colspan]):not(.day-h){display:block;border:0}.selecting #movBody [data-row]{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'cat amt'}.selecting #movBody [data-row] td:last-child{display:none!important}
+}
+
+@media(max-width:380px){#tab-movs .vseg button{flex:1;min-width:0;padding:7px 5px;font-size:11px;justify-content:center}#tab-movs .vseg button .vi{display:none}#tab-movs>.toolbar .vseg{min-width:0;display:flex}#btnSelect{flex:none;width:36px;min-width:36px}}
+#tab-movs>.toolbar,#view-list{max-width:960px;margin-left:auto;margin-right:auto}
+#view-list .mov-filters{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:0;align-items:center}
+#view-list .mov-filters .search-box{grid-column:1;grid-row:1;width:100%;min-width:0}
+#view-list .mov-filter-toggle{display:flex;grid-column:2;grid-row:1;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:600;min-height:42px;padding:8px 15px;cursor:pointer}
+#view-list .mov-filter-toggle[aria-expanded=true]{background:var(--primary-soft);color:var(--primary);border-color:color-mix(in srgb,var(--primary) 35%,var(--border))}
+#view-list .mov-extra-filters{display:none;grid-column:1/-1;grid-row:2;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+#view-list .mov-extra-filters.expanded{display:grid}#view-list .mov-extra-filters .fsel{grid-column:auto;grid-row:auto;min-width:0}
+#view-list>.card{background:var(--surface);border-radius:20px}
+#movBody.mov-history{padding:0 20px 10px}
+.history-day{margin:0}.history-day+.history-day{margin-top:8px}
+.history-day-head{display:flex;align-items:center;gap:14px;padding:20px 48px 10px 0}
+.history-day-date{display:flex;align-items:baseline;gap:8px;flex:1;min-width:0;flex-wrap:wrap}
+.history-day-date h3{font-size:13px;font-weight:650;margin:0;line-height:1.5}.history-day-date>span:not(.plan-pill){font-size:11px;color:var(--muted)}
+.history-day-totals{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;font-size:11px;line-height:1.6;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.history-items{margin:0;padding:0;list-style:none}
+.history-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:10px;align-items:center;border-bottom:1px solid var(--border);border-radius:0;transition:background-color var(--motion-fast) var(--motion-ease)}
+.history-row:last-child{border-bottom:0}
+.history-row:hover{background:color-mix(in srgb,var(--primary) 3%,var(--surface))}
+.history-edit{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:13px;width:100%;min-width:0;min-height:72px;padding:13px 0;border:0;border-radius:9px;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.history-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}.history-icon svg,.history-icon .vi{width:20px;height:20px}
+.history-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.history-category{font-size:14px;font-weight:600;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-detail{font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.history-amount{font-size:14px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.5;letter-spacing:-.15px}
+.history-options{width:36px;height:38px;justify-self:end}.history-edit:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+.history-edit:active{transform:none}.history-row.planned .history-copy,.history-row.planned .history-amount{opacity:.7}
+.mov-history.selecting .history-row{grid-template-columns:minmax(0,1fr);cursor:pointer}.mov-history.selecting .history-options{display:none}.mov-history.selecting .history-edit{grid-template-columns:20px 38px minmax(0,1fr) auto;gap:11px}
+.mov-history.selecting .history-edit::before{content:'';width:17px;height:17px;border:2px solid var(--border);border-radius:6px;box-sizing:border-box}
+.mov-history.selecting .picked .history-edit::before{background:var(--primary);border-color:var(--primary);box-shadow:inset 0 0 0 3px var(--surface)}.mov-history.selecting .picked{background:var(--primary-soft);border-radius:10px}
+@media(max-width:700px){
+ #view-list .mov-filters{grid-template-columns:minmax(0,1fr) auto;gap:0 8px}#view-list .mov-extra-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#view-list .mov-filter-toggle{font-size:11px;padding:8px 12px}
+ #movBody.mov-history{padding:0 14px 7px}.history-day-head{padding:17px 40px 7px 0;gap:9px;align-items:center}.history-day-date{display:block}.history-day-date h3{font-size:12px}.history-day-date>span:not(.plan-pill){display:block;font-size:10px}.history-day-totals{font-size:10px;gap:2px 8px;max-width:65%}
+ .history-row{grid-template-columns:minmax(0,1fr) 30px;gap:7px}.history-edit{grid-template-columns:34px minmax(0,1fr) auto;gap:9px;min-height:68px;padding:12px 0}.history-icon{width:34px;height:34px;border-radius:11px}.history-icon svg,.history-icon .vi{width:18px;height:18px}.history-category{font-size:12px}.history-detail{font-size:10.5px}.history-amount{font-size:12px}.history-options{width:30px;height:36px}.mov-history.selecting .history-edit{grid-template-columns:17px 30px minmax(0,1fr) auto;gap:7px}.mov-history.selecting .history-icon{width:30px;height:30px}
+}
+
+#view-list #movSummary{padding-top:14px;padding-bottom:14px}
+.history-day+.history-day{margin-top:4px}.history-day-head{padding-top:12px;padding-bottom:4px;min-height:34px}
+.history-edit{min-height:54px;padding:8px 0;grid-template-columns:32px minmax(0,1fr) auto;gap:11px}
+.history-icon{width:32px;height:32px;border-radius:10px}.history-icon svg,.history-icon .vi{width:18px;height:18px}
+.history-copy{gap:1px;min-height:34px;justify-content:center}
+.history-primary{display:flex;align-items:baseline;gap:0;min-width:0;line-height:1.5}
+.history-category{font-size:13px;min-width:0;flex:0 1 auto}
+.history-primary.has-description .history-category{max-width:55%;flex-shrink:0}
+.history-description{display:flex;align-items:baseline;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;font-weight:400;color:var(--muted)}
+.history-description::before{content:'·';padding:0 7px;color:var(--muted);flex-shrink:0}
+.history-description{display:block}.history-detail{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:unset;font-size:11px;line-height:1.4}
+.history-amount{font-size:13px}.mov-history.selecting .history-edit{grid-template-columns:20px 32px minmax(0,1fr) auto;gap:10px}
+@media(max-width:700px){
+ #view-list #movSummary{padding-top:12px;padding-bottom:12px}.history-day-head{padding-top:11px;padding-bottom:3px;padding-right:43px;min-height:32px}
+ .history-day-date{display:flex;align-items:baseline;gap:3px 6px;flex-wrap:wrap}.history-day-date h3{font-size:11px}.history-day-date>span:not(.plan-pill){display:inline;font-size:10px}
+ .history-row{grid-template-columns:minmax(0,1fr) 32px;gap:7px}.history-edit{min-height:54px;padding:8px 0;grid-template-columns:30px minmax(0,1fr) auto;gap:8px}
+ .history-icon{width:30px;height:30px;border-radius:9px}.history-icon svg,.history-icon .vi{width:17px;height:17px}.history-copy{min-height:32px;gap:1px}
+ .history-category{font-size:12px}.history-description{font-size:11px}.history-description::before{padding:0 5px}.history-detail{font-size:10px}.history-amount{font-size:12px}.history-options{width:32px;height:40px}
+ .mov-history.selecting .history-edit{grid-template-columns:17px 28px minmax(0,1fr) auto;gap:6px}.mov-history.selecting .history-icon{width:28px;height:28px}
+}
+
+#movBody.mov-history .history-row{padding:0;grid-template-areas:none;grid-template-columns:minmax(0,1fr) 36px}#movBody.mov-history.selecting .history-row{grid-template-columns:minmax(0,1fr);grid-template-areas:none}@media(max-width:700px){#movBody.mov-history .history-row{grid-template-columns:minmax(0,1fr) 32px}#movBody.mov-history.selecting .history-row{grid-template-columns:minmax(0,1fr)}}
+/* En PC, aprovechar el centro de la fila para descripción y método. */
+@media(min-width:701px){
+ .history-edit{grid-template-columns:32px minmax(110px,1fr) minmax(0,1.45fr) minmax(85px,.75fr) 118px;column-gap:14px;align-items:center}
+ .history-copy,.history-primary{display:contents}
+ .history-icon{grid-column:1;grid-row:1}
+ .history-category,.history-primary.has-description .history-category{grid-column:2;grid-row:1;max-width:none;min-width:0;display:block;width:100%;font-size:13px}
+ .history-description{grid-column:3;grid-row:1;display:block;width:100%;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+ .history-description::before{content:none;padding:0}
+ .history-detail{grid-column:4;grid-row:1;font-size:11.5px;min-width:0;width:100%;line-height:1.5}
+ .history-amount{grid-column:5;grid-row:1;justify-self:end;text-align:right}
+ .mov-history.selecting .history-edit{grid-template-columns:20px 32px minmax(110px,1fr) minmax(0,1.45fr) minmax(85px,.75fr) 118px;column-gap:12px}
+ .mov-history.selecting .history-edit::before{grid-column:1;grid-row:1}
+ .mov-history.selecting .history-icon{grid-column:2}.mov-history.selecting .history-category{grid-column:3}.mov-history.selecting .history-description{grid-column:4}.mov-history.selecting .history-detail{grid-column:5}.mov-history.selecting .history-amount{grid-column:6}
+}
+@media(min-width:701px) and (max-width:900px){.history-edit{column-gap:10px;grid-template-columns:30px minmax(100px,1fr) minmax(0,1.1fr) minmax(70px,.7fr) 100px}.mov-history.selecting .history-edit{column-gap:8px;grid-template-columns:18px 30px minmax(90px,1fr) minmax(0,1.1fr) minmax(65px,.7fr) 100px}}
+
+/* Las tres vistas de Movimientos comparten el marco del selector superior. */
+#tab-movs>.mview{width:100%;max-width:960px;min-width:0;margin-left:auto;margin-right:auto}
+#view-cal>.cal-stats,#view-cal>.grid-cal,#view-rec>.card,#view-rec>.grid2{min-width:0;width:100%}
+#view-cal .grid-cal>.card,#view-rec .grid2>.card{min-width:0}
+#tab-movs>.toolbar{width:100%;max-width:960px;margin-left:auto;margin-right:auto;box-sizing:border-box}
+/* Resumen funcional de Ajustes, sin bienvenida ni muestra tipográfica aislada. */
+.settings-home{padding:22px}.settings-home h3{margin:0 0 12px;font-size:16px}
+.settings-home-rows{display:grid;gap:0}
+.settings-home-row{display:grid;grid-template-columns:34px minmax(0,1fr) 16px;gap:12px;align-items:center;min-height:74px;padding:14px 0;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.settings-home-row:last-child{border-bottom:0}.settings-home-icon{display:grid;place-items:center;width:34px;height:34px;background:var(--surface-2);border-radius:11px;color:var(--primary)}.settings-home-icon .vi{width:18px;height:18px}.settings-home-copy{display:grid;gap:4px;min-width:0}.settings-home-copy b{font-size:13px;font-weight:600}.settings-home-value{font-size:12px;line-height:1.6;color:var(--muted);overflow-wrap:anywhere}.settings-home-row>.vi{width:16px;height:16px;color:var(--muted)}
+.settings-home-row:hover .settings-home-copy b,.settings-home-row:hover>.vi{color:var(--primary)}.settings-home-row:focus-visible{outline:2px solid var(--primary);outline-offset:4px;border-radius:8px}.settings-home-row:active{transform:scale(.99)}
+@media(max-width:700px){#tab-movs>.mview,#tab-movs>.toolbar{max-width:100%}.settings-home{padding:17px}.settings-home-row{gap:10px}}
+
+.settings-panel-head .settings-back{display:inline-flex}
 </style>
 </head>
 <body>
@@ -1221,7 +1340,7 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.7.4'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.8.4'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1309,19 +1428,16 @@ window.addEventListener('error', function (e) {
       <button class="btn primary" id="btnNewRec" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nuevo recurrente</button>
     </div>
     <div class="mview" id="view-list">
-      <div class="toolbar">
-        <select id="fltScope"><option value="month">Este mes</option><option value="year">Todo el año</option><option value="all">Todo</option></select>
-        <select id="fltType"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select>
-        <select id="fltCat"></select>
-        <select id="fltMethod"></select>
-        <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" id="fltText" placeholder="Buscar descripción, categoría o monto…"></div>
+      <div class="toolbar mov-filters">
+        
+        
+        <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
+        <select id="fltMethod" aria-label="Filtrar por método"></select></div><button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
+        <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar descripción, categoría o monto…"></div>
       </div>
       <div class="card">
-        <div class="small muted" id="movSummary" style="margin-bottom:8px"></div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Categoría</th><th>Descripción</th><th>Método</th><th class="num">Monto</th><th></th></tr></thead>
-          <tbody id="movBody"></tbody>
-        </table></div>
+        <div class="small muted" id="movSummary"></div>
+        <div id="movBody" class="mov-history"></div>
       </div>
     </div>
     <div class="mview" id="view-cal" hidden>
@@ -2323,7 +2439,30 @@ function fillMethodFilter(){
   sel.innerHTML = '<option value="">Todos los métodos</option>' + ms.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
   sel.value = v; if (sel.selectedIndex < 0) sel.value = '';
 }
+function movementHistory(list,dayLbl,filtered){
+ if(!list.length)return filtered?emptyBox('search','Ningún movimiento coincide con tu búsqueda o filtros.'):emptyBox('receipt','Aún no hay movimientos en este período.','tx','Nuevo movimiento');
+ const groups=new Map();for(const t of list){if(!groups.has(t.date))groups.set(t.date,[]);groups.get(t.date).push(t);}
+ return [...groups].map(([day,items])=>{
+  const [label,date]=dayLbl(day),expense=sum(items.filter(t=>t.type==='expense')),income=sum(items.filter(t=>t.type==='income')),planned=isPlanned(items[0]);
+  const totals=[expense?`<span>− ${fmt(expense)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
+  return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h3 id="history-day-${day}">${label}</h3>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div><div class="history-day-totals" aria-label="Totales del día">${totals}</div></header><ul class="history-items">${items.map(t=>{
+   const c=getCat(t.catId),isI=t.type==='income';
+   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${t.id}"><button type="button" class="history-edit" data-edit="${t.id}" aria-label="Editar ${esc(c.name)}${t.desc?': '+esc(t.desc):''}"><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary${t.desc?' has-description':''}"><span class="history-category" title="${esc(c.name)}">${esc(c.name)}</span>${t.desc?`<span class="history-description" title="${esc(t.desc)}">${esc(t.desc)}</span>`:''}</span>${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span><b class="history-amount ${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${t.id}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+  }).join('')}</ul></section>`;
+ }).join('');
+}
+function toggleMovementFilters(){
+ const el=$('#movExtraFilters'),old=el._filterState,open=old?!old.open:!el.classList.contains('expanded'),from=el.getBoundingClientRect().height;
+ if(old)old.animation.cancel();el.classList.add('expanded');el.style.overflow='hidden';
+ $('#movFilterToggle').setAttribute('aria-expanded',String(open));
+ const to=open?el.getBoundingClientRect().height:0,finish=()=>{el.classList.toggle('expanded',open);el.style.overflow='';el._filterState=null;};
+ if(reduceMotion()){finish();return;}
+ const animation=el.animate([{height:from+'px',marginTop:from?'12px':'0px',opacity:from?1:0},{height:to+'px',marginTop:open?'12px':'0px',opacity:open?1:0}],{duration:MOTION.panel,easing:MOTION.ease});
+ el._filterState={animation,open};animation.onfinish=finish;
+}
+
 function renderMovs(){
+  closeMovActionMenu(false);
   fillCatFilter(); fillMethodFilter();
   const ft = $('#fltType').value, fc = $('#fltCat').value, fm = $('#fltMethod').value, scope = $('#fltScope').value, q = $('#fltText').value.trim().toLowerCase();
   const y = currentMonth.slice(0, 4);
@@ -2335,27 +2474,16 @@ function renderMovs(){
   const pl = list.filter(isPlanned);
   const real = list.filter(t => !isPlanned(t)); // los programados se cuentan aparte, igual que en el Resumen
   const inc = sum(real.filter(t => t.type === 'income')), exp = sum(real.filter(t => t.type === 'expense'));
-  $('#movSummary').innerHTML = `<span>${plural(list.length, 'movimiento')} ${scope === 'all' ? 'en total' : 'en ' + (scope === 'year' ? y : monthLong(currentMonth))}</span><span class="pos">Ingresos ${fmt(inc)}</span><span class="xp">Gastos ${fmt(exp)}</span>${pl.length ? `<span class="plan-txt">${plural(pl.length, 'programado')} · ${fmt(sum(pl))}</span>` : ''}`;
-  const noDesc = !list.some(t => t.desc);
-  $('#movBody').closest('table').classList.toggle('no-desc', noDesc);
+  $('#movSummary').innerHTML='<span class="mov-count">'+plural(list.length,'movimiento')+' '+(scope==='all'?'en total':'en '+(scope==='year'?y:monthLong(currentMonth)))+'</span><span class="mov-total"><span>Ingresos</span><b class="pos">'+fmt(inc)+'</b></span><span class="mov-total"><span>Gastos</span><b class="xp">'+fmt(exp)+'</b></span>'+(pl.length?'<span class="mov-planned-total">'+plural(pl.length,'programado')+' · '+fmt(sum(pl))+'</span>':'');
+  const extraCount=Number(!!fc)+Number(!!fm)+Number(!!ft)+Number(scope!=='month');$('#movFilterToggle').textContent=(extraCount?'Filtros ('+extraCount+')':'Filtros');
+
   // Agrupados por día, con el total del día en el encabezado
   const dayLbl = iso => { const [Y, M, D] = iso.split('-').map(Number), d = new Date(Y, M - 1, D), t0 = new Date(); t0.setHours(0, 0, 0, 0);
     const diff = Math.round((d - t0) / 864e5), wd = d.toLocaleDateString('es-PE', {weekday:'long'});
     const long = `${wd.charAt(0).toUpperCase() + wd.slice(1)} ${D} ${MONTHS_ES[M - 1].toLowerCase()}${Y !== t0.getFullYear() ? ' ' + Y : ''}`;
     return diff === 0 ? ['Hoy', long] : diff === -1 ? ['Ayer', long] : diff === 1 ? ['Mañana', long] : [long, '']; };
-  let lastDay = '';
-  $('#movBody').closest('table').classList.toggle('selecting', selMode);
-  $('#movBody').innerHTML = list.length ? list.map(t => { const c = getCat(t.catId); const isI = t.type === 'income', P = isPlanned(t);
-    let head = '';
-    if (t.date !== lastDay){ lastDay = t.date; const dl = list.filter(x => x.date === t.date), de = sum(dl.filter(x => x.type === 'expense')), di = sum(dl.filter(x => x.type === 'income')), [a, b] = dayLbl(t.date);
-      head = `<tr class="day-h"><td colspan="5"><div class="dh"><b>${a}</b>${b ? `<span>${b}</span>` : ''}${P ? '<span class="plan-pill">Programado</span>' : ''}<span class="dh-tot">${de ? `− ${fmt(de)}` : ''}${de && di ? ' · ' : ''}${di ? `<span class="pos">+ ${fmt(di)}</span>` : ''}</span></div></td></tr>`; }
-    return head + `<tr class="${P ? 'planned' : ''}${selSet.has(t.id) ? ' picked' : ''}" data-row="${t.id}">
-    <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><div>${esc(c.name)}${t.desc || t.method ? `<div class="small muted mdesc">${[t.desc, t.method].filter(Boolean).map(esc).join(' · ')}</div>` : ''}</div></div></td>
-    <td>${esc(t.desc) || '<span class="muted">—</span>'}</td>
-    <td class="small muted">${esc(t.method)}</td>
-    <td class="num"><b class="${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></td>
-    <td class="num"><button class="iconbtn" data-edit="${t.id}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${t.id}" title="Eliminar">${ic('trash-2')}</button></td>
-  </tr>`; }).join('') : `<tr><td colspan="5">${q || ft || fc || fm ? emptyBox('search', 'Ningún movimiento coincide con tu búsqueda o filtros.') : emptyBox('receipt', 'Aún no hay movimientos en este período.', 'tx', 'Nuevo movimiento')}</td></tr>`;
+  $('#movBody').classList.toggle('selecting',selMode);
+  $('#movBody').innerHTML=movementHistory(list,dayLbl,!!(q||ft||fc||fm));
 }
 ['#fltType','#fltCat'].forEach(s => $(s).addEventListener('change', renderMovs));
 
@@ -2370,7 +2498,7 @@ function optInner(o){
 function enhanceSelect(sel){
   const w = document.createElement('div'); w.className = 'fsel';
   sel.parentNode.insertBefore(w, sel); w.appendChild(sel); sel.tabIndex = -1;
-  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'fsel-btn';
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'fsel-btn';btn.setAttribute('aria-label',sel.getAttribute('aria-label')||'Filtrar movimientos');
   const menu = document.createElement('div'); menu.className = 'fsel-menu'; menu.setAttribute('role','listbox');
   w.append(btn, menu);
   let hl = -1;
@@ -2604,6 +2732,7 @@ function setSelMode(on){
   selMode = on; selSet.clear(); renderSelUI(); renderMovs();
 }
 function renderSelUI(){
+  $('#btnSelect').setAttribute('aria-label',selMode?'Cancelar selección':'Seleccionar movimientos');
   $('#btnSelect').classList.toggle('on', selMode);
   $('#btnSelect .sel-ic').innerHTML = ic(selMode ? 'x' : 'list-checks'); $('#btnSelect .sel-t').textContent = selMode ? 'Cancelar' : 'Seleccionar';
   selBar.hidden = !selMode; document.body.classList.toggle('sel-on', selMode);
@@ -2614,7 +2743,7 @@ function renderSelUI(){
 $('#btnSelect').onclick = () => setSelMode(!selMode);
 selBar.addEventListener('click', async e => {
   const b = e.target.closest('[data-sel]'); if (!b) return;
-  if (b.dataset.sel === 'all'){ const rows = [...document.querySelectorAll('#movBody tr[data-row]')].map(r => r.dataset.row); const all = rows.every(id => selSet.has(id)); rows.forEach(id => all ? selSet.delete(id) : selSet.add(id)); renderSelUI(); renderMovs(); return; }
+  if (b.dataset.sel === 'all'){ const rows = [...document.querySelectorAll('#movBody [data-row]')].map(r => r.dataset.row); const all = rows.every(id => selSet.has(id)); rows.forEach(id => all ? selSet.delete(id) : selSet.add(id)); renderSelUI(); renderMovs(); return; }
   const ids = [...selSet]; if (!ids.length) return;
   if (!(await ask({title:`¿Borrar ${plural(ids.length, 'movimiento')}?`, msg:'Podrás deshacerlo desde el aviso de abajo.'}))) return;
   const keep = state.transactions.map((t, i) => [i, t]).filter(([, t]) => selSet.has(t.id)), recs = JSON.stringify(state.recurring);
@@ -2624,16 +2753,53 @@ selBar.addEventListener('click', async e => {
     state.recurring = JSON.parse(recs); save(); renderAll(); toast('Movimientos restaurados', {icon:'undo-2'}); }});
 });
 $('#movBody').addEventListener('click', e => {
-  if (!selMode) return; const tr = e.target.closest('tr[data-row]'); if (!tr) return;
+  if (!selMode) return; const tr = e.target.closest('[data-row]'); if (!tr) return;
   e.stopImmediatePropagation(); const id = tr.dataset.row;
   selSet.has(id) ? selSet.delete(id) : selSet.add(id); tr.classList.toggle('picked', selSet.has(id)); renderSelUI();
 }, true);
 $('#movBody').addEventListener('click', async e => {
   const ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
   if (ed) openTx(ed.dataset.edit);
-  if (dl){ await fadeOut(dl.closest('tr')); delTxUndo(dl.dataset.del); }
+  if (dl){ await fadeOut(dl.closest('[data-row]')); delTxUndo(dl.dataset.del); }
 });
 
+const movActionMenu=document.createElement('div');movActionMenu.className='mov-action-menu';movActionMenu.setAttribute('role','menu');movActionMenu.setAttribute('aria-label','Acciones del movimiento');movActionMenu.hidden=true;
+if('popover' in HTMLElement.prototype)movActionMenu.setAttribute('popover','manual');
+movActionMenu.innerHTML=`<button type="button" role="menuitem" data-mov-action="edit">${ic('pencil')}<span>Editar</span></button><button type="button" role="menuitem" data-mov-action="delete">${ic('trash-2')}<span>Eliminar</span></button>`;
+document.body.append(movActionMenu);let movAction=null;
+function closeMovActionMenu(focus=false){
+ if(!movAction)return;const anchor=movAction.anchor;anchor.setAttribute('aria-expanded','false');
+ if(movActionMenu.hidePopover&&movActionMenu.matches(':popover-open'))movActionMenu.hidePopover();movActionMenu.hidden=true;movAction=null;
+ if(focus&&anchor.isConnected)anchor.focus({preventScroll:true});
+}
+function openMovActionMenu(anchor){
+ if(movAction?.anchor===anchor){closeMovActionMenu(true);return;}
+ closeMovActionMenu();movAction={anchor,id:anchor.dataset.rowMenu};anchor.setAttribute('aria-expanded','true');movActionMenu.hidden=false;
+ if(movActionMenu.showPopover)movActionMenu.showPopover();
+ positionMovActionMenu();
+ movActionMenu.querySelector('button').focus({preventScroll:true});
+}
+function positionMovActionMenu(){
+ if(!movAction)return;const anchor=movAction.anchor,r=anchor.getBoundingClientRect();
+ if(!anchor.isConnected||r.bottom<0||r.top>innerHeight){closeMovActionMenu();return;}
+ const w=movActionMenu.offsetWidth,h=movActionMenu.offsetHeight;
+ movActionMenu.style.left=Math.max(12,Math.min(innerWidth-w-12,r.right-w))+'px';movActionMenu.style.top=Math.max(12,r.bottom+h+8<innerHeight?r.bottom+6:r.top-h-6)+'px';
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-row-menu]');if(b&&!selMode)openMovActionMenu(b);});
+document.addEventListener('pointerdown',e=>{if(movAction&&!movActionMenu.contains(e.target)&&!movAction.anchor.contains(e.target))closeMovActionMenu();},true);
+let movActionPositionFrame=null;
+document.addEventListener('scroll',e=>{if(movAction&&!movActionMenu.contains(e.target)&&!movActionPositionFrame)movActionPositionFrame=requestAnimationFrame(()=>{movActionPositionFrame=null;positionMovActionMenu();});},true);
+window.addEventListener('resize',()=>closeMovActionMenu());
+movActionMenu.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){e.preventDefault();closeMovActionMenu(true);return;}
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const buttons=[...movActionMenu.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length].focus();}
+ if(e.key==='Tab')closeMovActionMenu();
+});
+movActionMenu.addEventListener('click',async e=>{
+ const b=e.target.closest('[data-mov-action]');if(!b||!movAction)return;const id=movAction.id;closeMovActionMenu();
+ if(b.dataset.movAction==='edit')openTx(id);else{await fadeOut(document.querySelector(`#movBody tr[data-row="${id}"]`));delTxUndo(id);}
+});
+$('#movFilterToggle').onclick=toggleMovementFilters;
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');
 let txType = 'expense', editingId = null, selCat = null, selMethod = null, selGoal = null, txMode = 'tx', txRecId = null;
@@ -2780,7 +2946,7 @@ function highlightSaved(id){
   if (!el) return; el.classList.remove('just'); void el.offsetWidth; el.classList.add('just');
   if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
 }
-function flashRow(id){const tr=document.querySelector(`#movBody [data-del="${id}"]`)?.closest('tr');motionAnimate(tr,[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
+function flashRow(id){const tr=document.querySelector(`#movBody [data-row="${id}"]`);motionAnimate(tr,[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
 function delTx(id){
   const t = state.transactions.find(x => x.id === id);
   if (t && t.recId){ // evita que un recurrente automático se vuelva a crear ese mes
@@ -4497,6 +4663,7 @@ async function switchProfile(id){
 // Edición de usuarios en Ajustes
 let photoFor = null;
 function renderProfEdit(){
+  renderSettingsHome();
   const box = $('#profEdit'); if (!box) return;
   box.innerHTML = profiles.list.map(pr => `<div class="pe-row" data-pid="${pr.id}">
     <button type="button" class="prof-av lg" data-pe="icon" title="Cambiar ícono y color" style="background:${pr.photo ? 'transparent' : soft(pr.color)}">${avatarHTML(pr)}</button>
@@ -4690,7 +4857,7 @@ function setupSettings(){
  root.replaceChildren();
  root.innerHTML=`<header class="settings-intro"><h2>Ajustes</h2></header>
  <button type="button" class="settings-status" id="settingsStatus"><span class="status-icon">${ic('cloud')}</span><span class="settings-status-copy"><strong id="settingsStatusTitle"></strong><small id="settingsStatusInfo"></small></span>${ic('chevron-right')}</button>
- <div class="settings-layout"><nav class="settings-nav" aria-label="Secciones de ajustes"></nav><div class="settings-content"><div class="settings-home"><h3>Todo en su lugar</h3><p>Personaliza la app, administra tus usuarios y cuida tus datos. Elige una sección para empezar.</p><div class="settings-preview"><strong>Aa</strong><div><b id="settingsHomeFont"></b><div class="small muted" id="settingsHomeTheme"></div></div></div></div></div></div>
+ <div class="settings-layout"><nav class="settings-nav" aria-label="Secciones de ajustes"></nav><div class="settings-content"><div class="settings-home"><h3>Configuración actual</h3><div class="settings-home-rows"><button type="button" class="settings-home-row" data-settings-target="users"><span class="settings-home-icon">${ic('users')}</span><span class="settings-home-copy"><b>Usuarios</b><span class="settings-home-value" id="settingsHomeUsers"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="appearance"><span class="settings-home-icon">${ic('palette')}</span><span class="settings-home-copy"><b>Apariencia</b><span class="settings-home-value" id="settingsHomeAppearance"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="methods"><span class="settings-home-icon">${ic('credit-card')}</span><span class="settings-home-copy"><b>Métodos de pago</b><span class="settings-home-value" id="settingsHomeMethods"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="data"><span class="settings-home-icon">${ic('cloud')}</span><span class="settings-home-copy"><b>Datos y sincronización</b><span class="settings-home-value" id="settingsHomeData"></span></span>${ic('chevron-right')}</button></div></div></div></div>
  <footer class="settings-footer"></footer>`;
  root.querySelector('.settings-footer').append(version,install);
  const entries=[['users','Usuarios','Nombres, fotos e íconos','users'],['appearance','Apariencia','Colores y tipografía','palette'],['methods','Métodos de pago','Organiza cómo pagas','credit-card'],['data','Datos y sincronización','Conexión y respaldos','cloud']];
@@ -4760,7 +4927,7 @@ function setupSettings(){
  backup.querySelector('p').textContent='Descarga una copia para conservarla o restaura un respaldo anterior.';
  danger.querySelector('p').textContent='Borra movimientos y presupuestos del usuario activo. Con sincronización automática, el borrado también se enviará a Sheets. Exporta un respaldo antes de continuar.';
  panel('data').append(connection,disclosure('Respaldos y exportación',backup),disclosure('Borrar datos',danger,'settings-danger'));
- nav.addEventListener('click',e=>{const b=e.target.closest('[data-settings-target]');if(b)openSettingsSection(b.dataset.settingsTarget,true);});
+ root.addEventListener('click',e=>{const b=e.target.closest('[data-settings-target]');if(b)openSettingsSection(b.dataset.settingsTarget,true);});
  $('#settingsStatus').onclick=()=>{
   openSettingsSection('data',true);
   configDetails.setExpanded(true);
@@ -4770,7 +4937,7 @@ function setupSettings(){
  new MutationObserver(()=>renderSettingsOverview()).observe($('#themeGrid'),{childList:true});
  new MutationObserver(()=>renderSettingsOverview()).observe($('#fontGrid'),{childList:true});
  // La primera conexión debe mantener visibles los campos que reciben el foco.
- if(!settingsConnectionReady()){openSettingsSection('data');configDetails.setExpanded(true,false);}
+ if(!settingsConnectionReady()){configDetails.setExpanded(true,false);if(!state.transactions.length&&!state.goals.length)openSettingsSection('data');}
 }
 let settingsVerifiedConnection=syncOn()&&sync.lastSync?sync.url+'|'+sync.token:'';
 function settingsConnectionReady(){return syncOn()&&settingsVerifiedConnection===sync.url+'|'+sync.token;}
@@ -4790,13 +4957,21 @@ function renderSettingsStatus(){
  const config=$('#settingsConnectionConfig');
  if(config){const summary=config.querySelector('summary');summary.setAttribute('aria-disabled',String(!settingsConnectionReady()));summary.textContent=settingsConnectionReady()?'Configurar conexión':'Vincular hoja de cálculo';}
  $('#settingsStatusTitle').textContent=!settingsConnectionReady()?'Conecta tu hoja de cálculo':$('#syncBadge').classList.contains('err')?'Revisa la sincronización':sync.pending?'Cambios pendientes de sincronizar':'Google Sheets conectado';
- $('#settingsStatusInfo').textContent=$('#syncInfo').textContent;
+ $('#settingsStatusInfo').textContent=$('#syncInfo').textContent;renderSettingsHome();
+}
+function renderSettingsHome(){
+ if(!$('#settingsHomeUsers'))return;
+ $('#settingsHomeUsers').textContent=profiles.list.map(p=>p.name).join(' · ');
+ $('#settingsHomeAppearance').textContent=(curTheme()?.name||'Personalizado')+' · '+curFont().name;
+ const methods=state.settings.methods||[];
+ $('#settingsHomeMethods').textContent=methods.length?methods.slice(0,3).join(' · ')+(methods.length>3?' · +'+(methods.length-3):''):'Sin métodos definidos';
+ $('#settingsHomeData').textContent=!syncOn()?'Datos en este dispositivo · Sin conectar a Sheets':$('#syncBadge').classList.contains('err')?'Revisar conexión con Google Sheets':sync.pending?'Google Sheets · Cambios pendientes':sync.lastSync?'Google Sheets · Última sincronización '+new Date(sync.lastSync).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Google Sheets · Esperando sincronización';
 }
 function renderSettingsOverview(){
  if(!$('#settingsThemeName'))return;
  const theme=curTheme()?.name||'Personalizado',font=curFont().name;
  $('#settingsThemeName').textContent=theme;$('#settingsFontName').textContent=font;
- $('#settingsHomeFont').textContent=font;$('#settingsHomeTheme').textContent='Tema '+theme;
+ renderSettingsHome();
  $('#settingsMethods').innerHTML=(state.settings.methods||[]).map((m,i)=>`<span class="settings-method-chip"><button type="button" data-index="${i}" data-action="edit" aria-label="Editar ${esc(m)}">${esc(m)}</button><button type="button" data-index="${i}" data-action="remove" aria-label="Eliminar ${esc(m)}">${ic('x')}</button></span>`).join('')||'<p class="small muted">Aún no agregaste métodos de pago.</p>';
  renderSettingsStatus();
 }

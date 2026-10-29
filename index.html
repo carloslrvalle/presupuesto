@@ -49,7 +49,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.9.0'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.9.2'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -3473,19 +3473,27 @@ $('#profPhoto').addEventListener('change', async e => {
 function profileState(id){ if (id === activeProfile) return state; try { const r = localStorage.getItem(storeKey(id)); return r ? cleanState(JSON.parse(r)) : null; } catch(e){ return null; } }
 function withState(st, fn){ const prev = state; state = st; _txIdx = null; try { return fn(); } finally { state = prev; _txIdx = null; } }
 let chBoth = null;
+function bothProfileColors(){
+  const base=cssVar('--primary'),surface=cssVar('--surface');
+  const ratio=(a,b)=>(Math.max(hexLum(a),hexLum(b))+.05)/(Math.min(hexLum(a),hexLum(b))+.05);
+  let second=base;for(let amount=.4;amount>=0;amount-=.05){second=mixHex(base,surface,amount);if(ratio(second,surface)>=3.1)break;}
+  return [base,second];
+}
 function sharedGoalsCard(){
   const sts = {}; profiles.list.forEach(pr => sts[pr.id] = profileState(pr.id));
   const list = profiles.list.flatMap(pr => ((sts[pr.id] && sts[pr.id].goals) || []).filter(g => g.shared).map(g => ({g, owner:pr.id})));
   if (!list.length) return '';
   const today = todayISO();
+  const colors=bothProfileColors();
   return `<div class="card both-goals"><h3>Metas compartidas</h3>${list.map(({g, owner}) => {
     const sp = {p1:0, p2:0}; profiles.list.forEach(pr => { const st = sts[pr.id]; if (st) sp[pr.id] += sum((st.transactions || []).filter(t => t.goalId === g.id && !(t.date > today))); });
     sp[owner] += Number(g.initial || 0);
     const tot = sp.p1 + sp.p2, saved = tot - goalOut(g), tg = Number(g.target) || 0, pct = tg ? Math.min(100, saved / tg * 100) : 0;
     return `<div class="bg-row"><div class="ico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</div><div style="min-width:0">
-      <div class="bg-top"><b>${esc(g.name)}</b><span>${fmt(saved)} de ${fmt(tg)} · ${pct.toFixed(0)}%</span></div>
-      <div class="gsp-bar">${profiles.list.map(pr => `<i style="width:${tg ? (sp[pr.id] / Math.max(tg, tot) * 100).toFixed(1) : 0}%;background:${pr.color}"></i>`).join('')}</div>
-      <div class="gsp-leg">${profiles.list.map(pr => `<span>${avatarBox(pr, 'xs')}${esc(pr.name)} <b>${fmt(sp[pr.id])}</b></span>`).join('')}</div></div></div>`; }).join('')}</div>`;
+      <div class="bg-top"><b>${esc(g.name)}</b></div>
+      <div class="both-goal-summary"><strong>${fmt(saved)}</strong><span class="muted">de ${fmt(tg)}</span><b>${pct.toFixed(0)}%</b></div>
+      <div class="gsp-bar">${profiles.list.map((pr,i) => `<i style="width:${tg ? (sp[pr.id] / Math.max(tg, tot) * 100).toFixed(1) : 0}%;background:${colors[i]}"></i>`).join('')}</div>
+      <div class="both-goal-contributions">${profiles.list.map((pr,i) => `<div><span><i style="background:${colors[i]}"></i>${esc(pr.name)}</span><b>${fmt(sp[pr.id])}</b><small>${tot>0?(sp[pr.id]/tot*100).toFixed(1)+'% del acumulado':'Sin aportes'}</small></div>`).join('')}</div>${goalOut(g)>0?`<div class="small muted">Retirado: ${fmt(goalOut(g))}</div>`:''}</div></div>`; }).join('')}</div>`;
 }
 async function enterBoth(){
   bothMode = true; document.body.classList.add('both-on'); renderProfileUI(); showTab('both');
@@ -3510,6 +3518,7 @@ async function refreshOther(force){
 }
 function renderBoth(){
   const m = currentMonth, box = $('#bothBody'); if (!box) return;
+  const opened=new Set([...box.querySelectorAll('[data-both-metric][open]')].map(d=>d.dataset.bothMetric)),colors=bothProfileColors();
   const months = Array.from({length:6}, (_, i) => shiftMonth(m, i - 5));
   const rows = profiles.list.map(pr => {
     const st = profileState(pr.id);
@@ -3522,31 +3531,32 @@ function renderBoth(){
     });
   });
   const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), saved = T('saved'), bal = T('cash');
-  const kpi = (lbl, icon, val, sub, cls, style) => `<div class="card kpi ${cls}"><div class="label"><span class="dot" style="${style}">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><div class="small muted">${sub}</div></div>`;
+  const perProfile=(key,total,percentage=false)=>rows.map(r=>`<div class="metric-detail-row"><span>${esc(r.pr.name)}</span><b>${fmt(r[key]||0)}${percentage&&total>0?` <small>${((r[key]||0)/total*100).toFixed(1)}%</small>`:''}</b></div>`).join('');
+  const kpi = (lbl, icon, val, sub, cls, style) => `<details class="card kpi metric-disclosure ${cls}" data-both-metric="${esc(lbl)}"${opened.has(lbl)?' open':''}><summary><div class="label"><span class="dot" style="${style}">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><span class="metric-chevron" aria-hidden="true">${ic('chevron-down')}</span></summary><div class="metric-expanded"><div class="metric-details">${sub}</div></div></details>`;
   const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5);
   box.innerHTML = `<div class="both-head"><h2>Ambos · ${monthLong(m)}</h2><div class="small muted">Solo lectura. Para registrar o editar, elige un usuario en el botón de arriba.</div></div>
-    <div class="kpis">
-      ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), rows.map(r => `${esc(r.pr.name)}: ${fmt(r.inc)}`).join(' · '), 'k-inc', 'background:var(--income-soft);color:var(--income)')}
-      ${kpi('Gastos de ambos', 'arrow-up', fmt(exp), rows.map(r => `${esc(r.pr.name)}: ${fmt(r.exp)}`).join(' · '), 'k-exp', 'background:var(--expense-soft);color:var(--expense)')}
-      ${kpi('Saldo acumulado conjunto', 'scale', `<span class="${bal >= 0 ? 'pos' : 'neg'}">${fmt(bal)}</span>`, `Saldo anterior: ${fmt(T('previous'))} · Resultado del mes: ${fmt(inc-exp)}`, '', '--k:var(--k-blue)')}
-      ${kpi('Ahorro conjunto', 'piggy-bank', fmt(saved), inc > 0 ? `${(saved / inc * 100).toFixed(1)}% de los ingresos de ambos` : '—', '', '--k:var(--k-violet)')}
+    <div class="kpis dashboard-kpis both-kpis">
+      ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), perProfile('inc',inc,true), 'k-inc', 'background:var(--income-soft);color:var(--income)')}
+      ${kpi('Gastos de ambos', 'arrow-up', fmt(exp), perProfile('exp',exp,true), 'k-exp', 'background:var(--expense-soft);color:var(--expense)')}
+      ${kpi('Saldo acumulado conjunto', 'scale', `<span class="${bal >= 0 ? 'pos' : 'neg'}">${fmt(bal)}</span>`,perProfile('cash',bal)+`<div class="metric-detail-row"><span>Saldo anterior</span><b>${fmt(T('previous'))}</b></div><div class="metric-detail-row"><span>Resultado del mes</span><b>${fmt(inc-exp)}</b></div>`, '', '--k:var(--k-blue)')}
+      ${kpi('Ahorro conjunto', 'piggy-bank', fmt(saved),perProfile('saved',saved)+`<div class="small muted">${inc > 0 ? `${(saved / inc * 100).toFixed(1)}% de los ingresos de ambos` : 'Sin ingresos registrados'}</div>`, '', '--k:var(--k-violet)')}
     </div>
     <div class="grid2 top">
       <div class="card"><h3>Por usuario</h3><div class="both-users">${rows.map(r => `<div class="bu-row">${avatarBox(r.pr)}<div style="min-width:0"><div class="bu-name"><span>${esc(r.pr.name)}</span>${r.empty ? '<span class="small muted">sin datos aún</span>' : ''}</div>
         <div class="bu-stats"><div>Ingresos<b class="pos">${fmt(r.inc)}</b></div><div>Gastos<b>${fmt(r.exp)}</b></div><div>Balance<b class="${r.inc - r.exp >= 0 ? 'pos' : 'neg'}">${fmt(r.inc - r.exp)}</b></div><div>Ahorro<b>${r.rate != null ? r.rate.toFixed(1) + '%' : '—'}</b></div></div></div></div>`).join('')}
-        ${exp > 0 ? `<div class="small muted" style="margin-top:4px">Parte de los gastos del mes</div><div class="bu-share">${rows.map(r => `<i style="width:${(r.exp / exp * 100).toFixed(1)}%;background:${r.pr.color}" title="${esc(r.pr.name)}: ${(r.exp / exp * 100).toFixed(0)}%"></i>`).join('')}</div>` : ''}</div></div>
+        <div class="small muted" style="margin-top:4px">Parte de los gastos del mes</div><div class="bu-share">${rows.map((r,i) => `<i style="width:${exp>0?(r.exp / exp * 100).toFixed(1):0}%;background:${colors[i]}"></i>`).join('')}</div><div class="both-share-legend">${rows.map((r,i)=>`<div><span><i style="background:${colors[i]}"></i>${esc(r.pr.name)}</span><b>${exp>0?(r.exp/exp*100).toFixed(1)+'%':'—'}</b></div>`).join('')}</div></div></div>
       <div class="card"><h3>Gastos de ambos · últimos 6 meses</h3><div class="chart-wrap" id="bothWrap"><canvas id="chBoth"></canvas></div></div>
     </div>
-    ${sharedGoalsCard()}
-    <div class="card both-top"><h3>Top 5 gastos del mes de ambos</h3>${top.length ? top.map(x => `<div class="prow">${avatarBox(x.pr)}<div class="pn"><b>${esc(x.t.desc || x.c.name)}</b><span>${esc(x.pr.name)} · ${esc(x.c.name)} · ${fmtDateLong(x.t.date)}</span></div><b>${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos este mes.</div>'}</div>`;
+    <div class="both-bottom">${sharedGoalsCard()}
+    <div class="card both-top"><h3>Top 5 gastos del mes de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${x.t.date}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos este mes.</div>'}</div></div>`;
   if (chBoth){ chBoth.destroy(); chBoth = null; }
   if (typeof Chart === 'undefined') return;
   chartTheme();
   chBoth = new Chart($('#chBoth'), {type:'bar', plugins:[legendGap],
-    data:{labels:months.map(monthShort), datasets:rows.map(r => ({label:r.pr.name, data:r.series, backgroundColor:r.pr.color + 'cc', hoverBackgroundColor:r.pr.color, borderRadius:6, borderSkipped:false, maxBarThickness:26, stack:'g'}))},
+    data:{labels:months.map(monthShort), datasets:rows.map((r,i) => ({label:r.pr.name, data:r.series, backgroundColor:colors[i], hoverBackgroundColor:colors[i], borderRadius:5, borderSkipped:'start', maxBarThickness:24, barPercentage:.85, categoryPercentage:.7}))},
     options:{maintainAspectRatio:false, animation:stagger(), interaction:{mode:'index', intersect:false},
       plugins:{legend:LEGEND, tooltip:{callbacks:{label: c => ` ${c.dataset.label}: ${fmt(c.parsed.y)}`, footer: items => 'Total: ' + fmt(items.reduce((a, i) => a + i.parsed.y, 0))}}},
-      scales:{x:{stacked:true, grid:{display:false}, border:{display:false}}, y:{stacked:true, beginAtZero:true, afterBuildTicks:trimTicks, grid:{color:cssVar('--border')}, border:{display:false}, ticks:{callback:compactS, maxTicksLimit:5, padding:8}}}}});
+      scales:{x:{stacked:false, grid:{display:false}, border:{display:false}}, y:{stacked:false, beginAtZero:true, afterBuildTicks:trimTicks, grid:{color:cssVar('--border')}, border:{display:false}, ticks:{callback:compactS, maxTicksLimit:5, padding:8}}}}});
 }
 
 /* ---------- Gestos táctiles y celebraciones ---------- */

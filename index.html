@@ -1131,6 +1131,57 @@ body.sel-on .toast{bottom:150px}
 @media(max-width:700px){html #colorDialog{width:100%!important}#colorDialog .dlg-body{max-height:calc(85dvh - 160px)}.tx-category-style{flex-wrap:wrap}}
 @media(forced-colors:active){*{scrollbar-color:auto}.color-sliders input[type=range]{appearance:auto}.color-sliders input::-webkit-slider-thumb{appearance:auto}}
 
+.alert-pill.complete,.alert-pill.neutral{background:var(--surface-2);color:var(--text)}.prow.complete .bar>span{animation:none}.insight[data-tone=neutral]{background:var(--surface);border-color:var(--border)}.insight[data-tone=neutral] .i-ic{background:var(--primary-soft);color:var(--primary)}
+#projDetail .cmp-row{align-items:start;gap:10px;padding-top:14px;padding-bottom:14px}#projDetail .cmp-row .small{line-height:1.65;margin-top:4px}#projDetail .alert-pill{white-space:normal;max-width:170px;text-align:right;line-height:1.5}#projDetail .pj-line{gap:18px}#projDetail .pj-line>b{flex-shrink:0}
+@media(max-width:700px){#projDetail .cmp-row{grid-template-columns:30px minmax(0,1fr)!important}#projDetail .cmp-row>.alert-pill{grid-column:2;text-align:left;justify-self:start;max-width:100%}}
+
+.balance-parts{display:grid;gap:5px;border-top:1px solid var(--border);padding-top:10px;margin-top:10px;font-size:11px}.balance-parts>div{display:flex;justify-content:space-between;gap:8px}.balance-parts span{color:var(--muted)}.balance-parts b{font-weight:600;white-space:nowrap}#kBalanceSub{margin-top:8px;font-size:11px;line-height:1.6}
+
+.category-personalize{gap:8px;min-height:40px;border-radius:12px;transition:background .2s,border-color .2s,transform .2s}.category-personalize .vi{color:var(--primary);width:18px;height:18px}.category-personalize:active{transform:scale(.97)}.category-personalize:hover{border-color:var(--primary);background:var(--primary-soft)}
+.cat-row button.ico[data-act=icon]{position:relative;overflow:visible;cursor:pointer}.category-palette-badge{position:absolute;bottom:-3px;right:-3px;display:grid;place-items:center;width:17px;height:17px;border-radius:6px;background:var(--surface);color:var(--muted);border:1px solid var(--border);pointer-events:none}.category-palette-badge .vi{width:11px!important;height:11px!important}.cat-row button.ico[data-act=icon]:hover .category-palette-badge{color:var(--primary)}.frame-custom-color{grid-column:1/-1;width:100%;justify-content:center;margin:8px 0 4px}.frame-custom-color .vi{width:16px;height:16px}
+
+/* Sistema de movimiento: respuesta, navegación, paneles y datos. */
+:root{--motion-fast:160ms;--motion-move:240ms;--motion-panel:280ms;--motion-data:420ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.2,.7,.2,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:cubic-bezier(.4,0,1,1)}
+button,.btn,.chip,.iconbtn,.seg button,.month-nav button,.year-nav button,.emoji-grid button,.fsel-btn,.swatch,.cat-row .ico,.goal-icon-btn,.settings-nav button,.settings-status,.category-personalize,.font-card,.theme-card,.cal-d,.pp-mo,.dp-trigger,.pay-btn{
+ transition:background-color var(--motion-fast) var(--motion-ease),color var(--motion-fast) var(--motion-ease),border-color var(--motion-fast) var(--motion-ease),box-shadow var(--motion-fast) var(--motion-ease),transform var(--motion-fast) var(--motion-ease),filter var(--motion-fast) var(--motion-ease);
+}
+.btn:hover,.chip:hover,.iconbtn:hover,.cat-row .ico:hover,.goal-icon-btn:hover,.emoji-grid button:hover,.swatch:hover,.font-card:hover,.theme-card:hover,.cal-d:hover,.kpi.link:hover,.category-personalize:hover{transform:none}
+.btn:active,.btn.primary:active,.btn.danger-solid:active,.chip:active,.iconbtn:active,.seg button:active,.month-nav button:active,.year-nav button:active,.emoji-grid button:active,.fsel-btn:active,.swatch:active,.cat-row .ico:active,.goal-icon-btn:active,.settings-nav button:active,.category-personalize:active,.font-card:active,.theme-card:active,.cal-d:active,.kpi.link:active{transform:scale(.97);transition-duration:var(--motion-fast)}
+.btn .vi,.iconbtn .vi,.gear-btn .vi,.fab .vi,.brand .logo{transition:transform var(--motion-fast) var(--motion-ease)}
+.btn:hover .vi,.iconbtn:hover .vi,.iconbtn[data-edit]:hover .vi,.iconbtn[title=Editar]:hover .vi,.iconbtn[data-del]:hover .vi,.iconbtn[title=Eliminar]:hover .vi,.gear-btn:hover .vi,.brand .logo:hover{transform:none;animation:none}
+button:disabled{transform:none!important}
+.swatch.active,#colorDialog .swatch.active{transform:none}.swatch:hover,#colorDialog .swatch:hover{transform:none}.swatch:active,#colorDialog .swatch:active{transform:scale(.97)}
+.emoji-grid button,.ig.open .emoji-grid button{animation:none}.emoji-grid button:hover{transform:none}.emoji-grid button:active{transform:scale(.97)}
+.icon-preview .ico.pop,.goal-icon-btn.pop,.tc-on,.pp-date,.es .empty-ic,.es-row .empty-ic,.cl-hero>.vi,#confirmDialog[open] .confirm-ico,.toast.show .t-ic{animation:motionReveal var(--motion-move) var(--motion-ease) both;animation-delay:0ms}
+@keyframes motionReveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.tab.active{animation:tabIn var(--motion-move) var(--motion-ease)}.tab.active.from-r{animation:tabR var(--motion-move) var(--motion-ease)}.tab.active.from-l{animation:tabL var(--motion-move) var(--motion-ease)}.tab.active.m-next{animation:mNext var(--motion-move) var(--motion-ease)}.tab.active.m-prev{animation:mPrev var(--motion-move) var(--motion-ease)}
+@keyframes tabR{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}@keyframes tabL{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}@keyframes mNext{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}@keyframes mPrev{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+main.wrap.prof-swap,.mview:not([hidden]),.dp-body,.pp-body.swap,.emoji-grid.swap,#calDay.swap,.insight.swap,.prof-menu{animation:motionReveal var(--motion-move) var(--motion-ease)}
+.st-in{animation:none}.cal-d,.cal-wk,.arch-row{animation:none;animation-delay:0ms}
+.tab-ind.ready,.vseg-ind{transition:left var(--motion-move) var(--motion-ease),width var(--motion-move) var(--motion-ease),background-color var(--motion-fast) var(--motion-ease),opacity var(--motion-fast) var(--motion-ease)}
+/* Un solo movimiento para el diálogo: sin entradas escalonadas de cada campo. */
+dialog{opacity:0;transform:translateY(8px) scale(.99);transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
+dialog[open]{opacity:1;transform:none;transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
+@starting-style{dialog[open]{opacity:0;transform:translateY(8px) scale(.99)}}
+dialog::backdrop{transition:background-color var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
+dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
+.dp,.pp{transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
+.acc-body{transition:grid-template-rows var(--motion-panel) var(--motion-ease)}.acc-head .chev,.ig-head .chev,.zero-group>summary .chev,.arch-group summary .vi,.sug summary>svg:last-child,.fsel-btn .chev{transition:transform var(--motion-panel) var(--motion-ease)}
+.sug[open]>*:not(summary),.zero-group[open]>div,.arch-group[open] .arch-row{animation:none}
+.bar>span,.kbar>span,.gsp-bar i{transition:width var(--motion-data) var(--motion-ease)}.prow.warn .bar>span,tr.warn .bar>span,.pp-d.pend::after{animation:none}
+.spark.draw,.cd-col i{animation-duration:var(--motion-data);animation-timing-function:var(--motion-ease);animation-delay:0ms}
+.check input[type=checkbox],.check input[type=checkbox]::after,.color-preview,.acc-sw,.icon-preview .ico,.card{transition-duration:var(--motion-fast);transition-timing-function:var(--motion-ease)}
+.color-sliders input::-webkit-slider-thumb{transition:transform var(--motion-fast) var(--motion-ease)}
+.leaving{animation:leave var(--motion-move) var(--motion-ease) forwards}@keyframes leave{to{opacity:0;transform:translateY(-4px)}}
+.just,tr.just td{animation-duration:var(--motion-signal);animation-timing-function:var(--motion-ease)}
+.toast{transition:opacity var(--motion-move) var(--motion-ease),transform var(--motion-move) var(--motion-ease)}.toast.show{transition:opacity var(--motion-move) var(--motion-ease),transform var(--motion-move) var(--motion-ease)}
+.fab{animation:fabArrive var(--motion-panel) var(--motion-ease) both;transition:transform var(--motion-fast) var(--motion-ease),box-shadow var(--motion-fast) var(--motion-ease),background-color var(--motion-fast) var(--motion-ease)}.fab:hover .vi{transform:none}.fab.is-open .vi{transform:rotate(45deg)}.fab:active{transform:scale(.97)}.fab.launch::after{animation:fabRipple var(--motion-data) var(--motion-ease)}
+@keyframes fabArrive{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+.settings-panel,.settings-nav{min-width:0}
+@media(max-width:700px){html dialog{opacity:1;transform:translateY(100%);transition:transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}html dialog[open]{transform:none;transition:transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}@starting-style{html dialog[open]{opacity:1;transform:translateY(100%)}}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.topbar,.topbar .wrap,.brand,#appName,.month-nav,.prof-chip,.sync-badge,.ptr.back{transition-duration:var(--motion-move);transition-timing-function:var(--motion-ease)}.fsel-menu{animation-duration:var(--motion-move);animation-timing-function:var(--motion-ease)}.info-tip:hover::after,.info-tip.show::after,.info-tip:focus-visible::after{animation-duration:var(--motion-fast)}.pp-d::after,.dp-d,.pp-mo{transition-duration:var(--motion-fast);transition-timing-function:var(--motion-ease)}
 </style>
 </head>
 <body>
@@ -1138,7 +1189,7 @@ body.sel-on .toast{bottom:150px}
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.6.1'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.7.2'; window.__APP_DATE = '2026-10-29';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1201,7 +1252,7 @@ window.addEventListener('error', function (e) {
     <div class="kpis">
       <div class="card kpi link k-inc" data-go="income" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬇️" style="background:var(--income-soft);color:var(--income)"></span>Ingresos del mes</div><div class="value" id="kIncome"></div><div class="small muted" id="kIncomeSub"></div><svg class="spark" id="spIncome" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
       <div class="card kpi link k-exp" data-go="expense" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⬆️" style="background:var(--expense-soft);color:var(--expense)"></span>Gastos del mes</div><div class="value" id="kExpense"></div><div class="small muted" id="kExpenseSub"></div><svg class="spark" id="spExpense" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-      <div class="card kpi link" data-go="all" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⚖️" style="--k:var(--k-blue)"></span>Balance</div><div class="value" id="kBalance"></div><div class="small muted" id="kBalanceSub"></div><svg class="spark" id="spBalance" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      <div class="card kpi link" data-go="all" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="⚖️" style="--k:var(--k-blue)"></span>Saldo acumulado</div><div class="value" id="kBalance"></div><div class="balance-parts" id="balanceParts"></div><div class="small muted" id="kBalanceSub"></div><svg class="spark" id="spBalance" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
       <div class="card kpi link" data-go="budget" role="button" tabindex="0"><div class="label"><span class="dot ui-ic" data-e="🐷" style="--k:var(--k-violet)"></span>Tasa de ahorro</div><div class="value" id="kSavings"></div><div class="small muted" id="kSavingsSub"></div><div class="bar kbar" id="kSaveBar" hidden><span></span></div></div>
     </div>
     <div class="grid2">
@@ -1269,7 +1320,7 @@ window.addEventListener('error', function (e) {
       <button class="btn" id="btnSetDefault"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg> Usar como base</button>
       </div>
     </div>
-    <div class="pace-card" id="budgetPace" aria-live="polite"></div>
+
     <div class="bud-grid">
       <div class="card"><h3><span class="ui-ic" data-e="💸"></span>Gastos</h3><div class="table-wrap" id="budExpense"></div></div>
       <div class="bud-side">
@@ -1400,7 +1451,7 @@ window.addEventListener('error', function (e) {
         <div class="chips" id="fCatChips"></div>
         <div class="tx-category-tools"><span class="tx-inline-note">Tus categorías más usadas</span><button type="button" class="tx-text-button" id="txNewCategory" aria-expanded="false" aria-controls="txCategoryEditor">＋ Nueva categoría</button></div>
         <div class="tx-category-editor" id="txCategoryEditor" hidden><h4>Nueva categoría</h4><div class="field"><label for="txCategoryName">Nombre</label><input type="text" id="txCategoryName" maxlength="60" autocomplete="off" placeholder="Ej. Mascotas"></div>
-          <div class="tx-category-style"><button class="iconbtn" type="button" id="txCategoryIcon" aria-label="Elegir ícono"></button><label for="txCategoryColor">Color</label><input type="hidden" id="txCategoryColor" value="#6366f1"><button type="button" class="hex-color-button" id="txChooseColor" aria-label="Elegir color de la categoría"></button></div>
+          <div class="tx-category-style"><input type="hidden" id="txCategoryColor" value="#6366f1"><button class="btn category-personalize" type="button" id="txCategoryIcon" aria-label="Personalizar ícono y color"></button></div>
           <div class="tx-category-error" id="txCategoryError" role="status"></div><div class="toolbar"><button type="button" class="btn sm" id="txCancelCategory">Cancelar</button><button type="button" class="btn sm primary" id="txCreateCategory">Crear y usar</button></div>
         </div>
       </div>
@@ -1424,12 +1475,11 @@ window.addEventListener('error', function (e) {
 
 <!-- Dialog: íconos -->
 <dialog id="iconDialog">
-  <div class="dlg-head"><h3 style="margin:0">Elige un ícono</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="dlg-head"><h3 style="margin:0">Personalizar</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
   <div class="dlg-body">
     <div class="icon-preview"><div class="ico" id="iconPreview"></div></div>
-    <div class="field" id="frameField"><label>Color del marco</label>
-      <button type="button" class="acc-head" id="frameHead" aria-expanded="false"><span class="acc-sw" id="frameSw"></span><span id="frameName" style="flex:1;text-align:left"></span><span class="small muted">Cambiar</span><svg class="vi chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-      <div class="acc-body" id="frameBody"><div class="acc-in"><div class="frame-row" id="frameRow"></div></div></div>
+    <div class="field" id="frameField"><label>Color</label>
+      <button type="button" class="acc-head" id="frameHead" aria-haspopup="dialog" aria-controls="colorDialog"><span class="acc-sw" id="frameSw"></span><span id="frameName" style="flex:1;text-align:left"></span><span class="small muted">Cambiar</span><svg class="vi chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
       <button type="button" class="frame-reset" id="frameReset" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Usar color del tema</span></button></div>
     <div class="field"><label>Ícono</label>
       <div class="icon-acc" id="emojiGrid"></div></div>
@@ -1734,6 +1784,32 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
   if (!_cv || k !== _cvKey){ _cv = new Map(); _cvKey = k; _cv.cs = getComputedStyle(de); qMicro(() => { _cv = null; }); }
   let v = _cv.get(n); if (v === undefined){ v = _cv.cs.getPropertyValue(n).trim(); _cv.set(n, v); } return v; };
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
+const MOTION={fast:160,move:240,panel:280,data:420,signal:800,ease:'cubic-bezier(.2,.7,.2,1)'};
+function motionAnimate(el,frames,kind='move'){
+ if(!el)return;
+ if(el._motion){el._motion.cancel();el._motion=null;}
+ if(reduceMotion())return;
+ const animation=el.animate(frames,{duration:MOTION[kind],easing:MOTION.ease});el._motion=animation;
+ animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
+}
+function toggleDisclosure(details,summary){
+ const current=details._disclosure,open=current?!current.open:!details.open,from=details.getBoundingClientRect().height;
+ if(current)current.animation.cancel();
+ details.style.overflow='hidden';details.open=true;
+ const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+parseFloat(getComputedStyle(details).borderTopWidth||0)+parseFloat(getComputedStyle(details).borderBottomWidth||0);
+ const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
+ if(reduceMotion()||Math.abs(from-to)<1){finish();return;}
+ const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});
+ details._disclosure={animation,open};animation.onfinish=finish;
+}
+document.addEventListener('click',e=>{
+ const summary=e.target.closest('summary');if(!summary)return;
+ const details=summary.parentElement;
+ if(details.tagName!=='DETAILS'||details.classList.contains('settings-disclosure'))return;
+ e.preventDefault();toggleDisclosure(details,summary);
+});
+
 // Números que cuentan hasta su valor
 const numMemo = {};
 function countUp(el, to, kind = 'money', cls){
@@ -1742,8 +1818,8 @@ function countUp(el, to, kind = 'money', cls){
   if (cls !== undefined) el.className = cls;
   cancelAnimationFrame(el._raf);
   if (reduceMotion() || from === to){ el.textContent = f(to); return; }
-  const t0 = performance.now(), dur = 700, ease = x => 1 - Math.pow(1 - x, 4);
-  const step = now => { const k = Math.min(1, (now - t0) / dur); el.textContent = f(from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step); };
+  const t0 = performance.now(), dur = MOTION.data, ease = x => 1 - Math.pow(1 - x, 4);
+  const step = now => { if(reduceMotion()){el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el.textContent = f(from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step); };
   el._raf = requestAnimationFrame(step);
 }
 // Barras que crecen: desde cero al entrar a la pestaña o cambiar de mes; desde su valor anterior en el resto de cambios
@@ -1756,11 +1832,11 @@ function animateBars(root){
   if (!spans.length) return;
   void root.offsetWidth;
   let i = 0;
-  spans.forEach(sp => { sp.style.transition = ''; sp.style.transitionDelay = fresh.includes(sp) && !reduceMotion() ? Math.min(i++ * 45, 500) + 'ms' : '0ms'; sp.style.width = sp.dataset.w + '%'; });
+  spans.forEach(sp => { sp.style.transition = ''; sp.style.transitionDelay = fresh.includes(sp) && !reduceMotion() ? Math.min(i++ * 20, 100) + 'ms' : '0ms'; sp.style.width = sp.dataset.w + '%'; });
 }
 const resetBars = sec => Object.keys(barMemo).forEach(k => { if (!sec || k.startsWith(sec + ':')) delete barMemo[k]; });
 // Desvanece una fila antes de quitarla
-const fadeOut = el => new Promise(res => { if (!el || reduceMotion()) return res(); el.classList.add('leaving'); setTimeout(res, 240); });
+const fadeOut = el => new Promise(res => { if (!el || reduceMotion()) return res(); el.classList.add('leaving'); setTimeout(res,MOTION.move); });
 
 const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B06}\u{2B07}\u{FE0F}\u{200D}]/gu;
 function toast(msg, opt = {}){
@@ -1810,7 +1886,7 @@ function showTab(name){
     if (te && d && !reduceMotion()){ void te.offsetWidth; te.classList.add(d > 0 ? 'from-r' : 'from-l'); } }
   moveTabInd();
   // solo desplaza la fila de pestañas hacia los lados (no la página), y vuelve arriba sin animación para que no salte
-  const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:'smooth'}); }
+  const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:reduceMotion()?'instant':'smooth'}); }
   if (window.scrollY > 0) window.scrollTo({top:0, behavior:'instant'});
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
@@ -1819,15 +1895,9 @@ function showTab(name){
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
   if (name === 'movs') moveViewInd();
-  if (prevTab !== name) staggerIn($('#tab-' + name));
+
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
-function staggerIn(root){
-  if (!root || reduceMotion()) return;
-  const vh = innerHeight, items = [...root.querySelectorAll('.insight, .card, .both-head')].filter(el => !el.parentElement.closest('.card') && el.offsetParent && el.getBoundingClientRect().top < vh);
-  items.slice(0, 14).forEach((el, i) => { el.classList.remove('st-in'); el.style.setProperty('--sd', (60 + i * 45) + 'ms'); void el.offsetWidth; el.classList.add('st-in');
-    el.addEventListener('animationend', function f(ev){ if (ev.target !== el) return; el.classList.remove('st-in'); el.removeEventListener('animationend', f); }); });
-}
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
 $('#btnSettings').onclick = () => showTab('settings');
 const goTab = showTab;
@@ -1898,18 +1968,25 @@ function prowMeta(real, budget, type, saving){
   if (!(budget > 0)) return type === 'income' ? 'Sin monto esperado' : 'Sin presupuesto';
   if (saving){ const d = budget - real; return d > .005 ? `Faltan ${fmt(d)} por separar` : d < -.005 ? `<span class="pos">${fmt(-d)} más de lo planeado</span>` : '<span class="pos">Completo</span>'; }
   const d = budget - real;
-  if (type === 'income') return d > .005 ? `Faltan ${fmt(d)}` : d < -.005 ? `<span class="pos">${fmt(-d)} sobre lo esperado</span>` : '<span class="pos">Completo</span>';
-  return d >= -.005 ? `Quedan ${fmt(Math.max(0, d))}` : `<span class="neg">${fmt(-d)} sobre el presupuesto</span>`;
+  if (type === 'income') return d > .005 ? `Por recibir: ${fmt(d)}` : d < -.005 ? `<span class="pos">${fmt(-d)} más de lo esperado</span>` : '<span class="pos">Ingreso completo</span>';
+  return Math.round(real*100)===Math.round(budget*100) ? 'Presupuesto completo · sin excedente' : d > 0 ? `Disponible: ${fmt(d)}` : `<span class="neg">Exceso: ${fmt(-d)}</span>`;
+}
+function budgetStatus(real,budget){
+ const r=Math.round((Number(real)||0)*100),b=Math.round((Number(budget)||0)*100);
+ return b<=0?'none':r>b?'over':r===b?'complete':r>=b*.85?'near':'available';
 }
 function progressRow(c, real, budget, type, prev, prevM){
   const pct = budget > 0 ? real / budget * 100 : (real > 0 ? 100 : 0);
   const saving = type === 'expense' && isSavingCat(c.id);
   let color = dc(c.color);
-  color = barFill(c.color, type === 'income' || saving ? 'income' : budget > 0 ? (pct > 100 ? 'over' : pct >= 85 ? 'warn' : '') : '');
+  const status=budgetStatus(real,budget);
+  color = barFill(c.color, type === 'income' || saving ? 'income' : status==='over'?'over':status==='near'?'warn':'');
   let tag = '', alert = '';
   if (saving){ if (budget > 0 && pct >= 100) tag = `<span class="alert-pill good">${ic('check')}Cumplido</span>`; }
-  else if (type === 'expense' && budget > 0 && pct > 100){ alert = 'over'; tag = `<span class="alert-pill over">${ic('triangle-alert')}Excedido</span>`; }
-  else if (type === 'expense' && budget > 0 && pct >= 85){ alert = 'warn'; tag = `<span class="alert-pill warn">${Math.abs(real - budget) <= .005 ? 'Al límite' : Math.floor(pct) + '%'}</span>`; }
+  else if (type === 'expense' && status==='over'){ alert = 'over'; tag = `<span class="alert-pill over">${ic('triangle-alert')}Superado</span>`; }
+  else if (type === 'expense' && status==='complete'){ tag = '<span class="alert-pill complete">Completo</span>'; }
+  else if (type === 'expense' && status==='near'){ alert = 'warn'; tag = `<span class="alert-pill warn">Queda ${fmt(budget-real)}</span>`; }
+  else if(type==='income'&&budget>0&&real>=budget-.005){tag='<span class="alert-pill good">Ingreso recibido</span>';}
   return `<div class="prow ${alert} link" data-go-cat="${c.id || ''}" data-go-type="${type}" title="Ver movimientos de ${esc(c.name)}">
     <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
     <div class="pr-main">
@@ -1939,7 +2016,7 @@ function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
   // Presupuesto
   if (bExp > 0){
     const d = bExp - exp;
-    parts.push(d >= 0 ? (m === tm ? `Llevas ${b(fmt(exp))} gastado de ${b(fmt(bExp))} presupuestado (${Math.round(exp / bExp * 100)}%)` : `Cerraste ${b('<span class="good">' + fmt(d) + '</span>')} por debajo del presupuesto de gastos`)
+    parts.push(d >= 0 ? (Math.abs(d)<.005?`Presupuesto de gastos completo: ${b(fmt(exp))}`:m === tm ? `Llevas ${b(fmt(exp))} gastado de ${b(fmt(bExp))} presupuestado (${Math.round(exp / bExp * 100)}%)` : `Cerraste ${b('<span class="good">' + fmt(d) + '</span>')} por debajo del presupuesto de gastos`)
                       : `Te ${m === tm ? 'estás pasando' : 'pasaste'} ${b('<span class="bad">' + fmt(-d) + '</span>')} del presupuesto de gastos`);
   } else parts.push(`Llevas ${b(fmt(exp))} en gastos este mes`);
   // Comparación con el mes anterior (mismo día si es el mes en curso)
@@ -1952,23 +2029,34 @@ function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
   }
   let text = parts.join(' y ') + '.';
   // Categorías en alerta
-  // Estado de cada categoría: pasada (>100%), al límite (100%) o cerca (85–99%)
+  // Completo no es exceso: solo el gasto superior al presupuesto es una alerta roja.
   const st = catsOf('expense').filter(c => !isSavingCat(c.id)).map(c => { const bb = getBudget(m, c.id), r = realBy(m, c.id); return {c, bb, r, p: bb > 0 ? r / bb : 0}; }).filter(x => x.bb > 0);
-  const over = st.filter(x => x.r - x.bb > .005), full = st.filter(x => Math.abs(x.r - x.bb) <= .005), near = st.filter(x => x.r < x.bb - .005 && x.p >= .85);
+  const over = st.filter(x => budgetStatus(x.r,x.bb)==='over'), full = st.filter(x => budgetStatus(x.r,x.bb)==='complete'), near = st.filter(x => budgetStatus(x.r,x.bb)==='near');
   const names = arr => { const n = arr.map(x => b(esc(x.c.name))); return n.length > 2 ? n.slice(0, 2).join(', ') + ` y ${n.length - 2} más` : n.join(' y '); };
   // Solo la alerta más importante, para que el resumen quepa en dos líneas
-  const alerts = [], rest = n => n ? ` (y ${n} más cerca del límite)` : '';
-  if (over.length) alerts.push(`${names(over)} ${over.length === 1 ? `se pasó por ${b('<span class="bad">' + fmt(over[0].r - over[0].bb) + '</span>')}` : 'se pasaron de su presupuesto'}${rest(full.length + near.length)}`);
-  else if (full.length) alerts.push(`${names(full)} ${full.length === 1 ? 'ya usó todo su presupuesto' : 'ya usaron todo su presupuesto'}${rest(near.length)}`);
-  else if (near.length) alerts.push(`${names(near)} ${near.length === 1 ? `va al ${Math.round(near[0].p * 100)}%` : 'están cerca del límite'}`);
+  const alerts = [], rest = n => n ? ` (${n} ${n===1?'categoría con poco presupuesto disponible':'categorías con poco presupuesto disponible'})` : '';
+  if (over.length) alerts.push(`${names(over)} ${over.length === 1 ? `superó su presupuesto por ${b('<span class="bad">' + fmt(over[0].r - over[0].bb) + '</span>')}` : 'superaron su presupuesto'}${rest(near.length)}`);
+  else if (full.length) alerts.push(`Presupuesto completo en ${names(full)}${rest(near.length)}`);
+  else if (near.length) alerts.push(`${names(near)}: ${near.length===1?`quedan ${b(fmt(near[0].bb-near[0].r))} disponibles`:'queda menos del 15% del presupuesto disponible'}`);
   if (alerts.length) text += ' ' + alerts[0].replace(/^./, ch => ch.toUpperCase()) + '.';
-  if (!alerts.length && inc > 0 && inc - exp > 0 && bExp > 0 && exp > 0) text += ' Todas tus categorías están en rango.';
-  const icon = over.length || (bExp > 0 && exp > bExp) ? 'triangle-alert' : full.length || near.length ? 'circle-alert' : 'sparkles';
-  box.dataset.tone = over.length || (bExp > 0 && exp > bExp) ? 'bad' : full.length || near.length ? 'warn' : 'good';
+  if (!alerts.length && inc > 0 && inc - exp > 0 && bExp > 0 && exp > 0) text += ' Sin excesos en las categorías con presupuesto.';
+  const icon = over.length || (bExp > 0 && exp > bExp) ? 'triangle-alert' : near.length ? 'circle-alert' : full.length?'check':'sparkles';
+  box.dataset.tone = over.length || (bExp > 0 && exp > bExp) ? 'bad' : near.length ? 'warn' : full.length?'neutral':'good';
   text += recLine;
   if (el.innerHTML !== text){ el.innerHTML = text; box.querySelector('.i-ic').innerHTML = ic(icon); box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap'); }
   box.hidden = false;
 }
+// El saldo anterior es derivado: nunca crea ingresos ni cierres duplicados.
+function balanceOfMonth(month,data=state,today=todayISO()){
+ let previous=0,result=0;
+ for(const t of data.transactions||[]){
+  if(!t||!/^\d{4}-\d{2}-\d{2}$/.test(t.date)||t.date>today||!['income','expense'].includes(t.type))continue;
+  const cents=Math.round((Number(t.amount)||0)*100)*(t.type==='income'?1:-1),m=t.date.slice(0,7);
+  if(m<month)previous+=cents;else if(m===month)result+=cents;
+ }
+ return {previous:previous/100,result:result/100,total:(previous+result)/100,provisional:month>today.slice(0,7)};
+}
+
 function renderDashboard(){
   const m = currentMonth, txs = txOfMonth(m);
   const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense'));
@@ -1990,18 +2078,17 @@ function renderDashboard(){
     const how = [`Gastos pendientes según tu presupuesto: ${fmt(bExp - exp)}`, pExp ? `− ${fmt(pExp)} ya programados` : '', savLeft ? `− ${fmt(savLeft)} reservados para ahorro` : '', `= ${fmt(free)} para el día a día ÷ ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} que quedan`, 'Es un tope para no pasarte del presupuesto, no dinero disponible en tu cuenta.'].filter(Boolean).join('\n');
     if (free > 0) pace = `<span class="per-day" title="${how}">Para no pasarte: máx. <b>${fmt(free / daysLeft)}</b>/día</span>`;
   }
-  $('#kExpenseSub').innerHTML = (bExp ? (exp > bExp ? `<span class="neg">Excedido en ${fmt(exp - bExp)}</span>` : (m < thisMonth() ? `<span class="pos">${fmt(pend)} sin usar</span> de ${fmt(bExp)} presupuestado` : m > thisMonth() && !exp ? `Presupuesto <b>${fmt(bExp)}</b>` : `<span title="Lo que tu presupuesto aún permite gastar este mes">Pendientes <b>${fmt(pend)}</b> de ${fmt(bExp)}</span>`)) : 'Sin presupuesto definido') + (pace || (pExp ? `<span class="plan-line">+ ${fmt(pExp)} programado</span>` : ''));
-  countUp($('#kBalance'), bal, 'money', 'value ' + (bal >= 0 ? 'pos' : 'neg'));
+  $('#kExpenseSub').innerHTML = (bExp ? (budgetStatus(exp,bExp)==='complete'?'<span>Presupuesto completo</span>':exp > bExp ? `<span class="neg">Excedido en ${fmt(exp - bExp)}</span>` : (m < thisMonth() ? `<span class="pos">${fmt(pend)} sin usar</span> de ${fmt(bExp)} presupuestado` : m > thisMonth() && !exp ? `Presupuesto <b>${fmt(bExp)}</b>` : `<span title="Lo que tu presupuesto aún permite gastar este mes">Pendientes <b>${fmt(pend)}</b> de ${fmt(bExp)}</span>`)) : 'Sin presupuesto definido') + (pace || (pExp ? `<span class="plan-line">+ ${fmt(pExp)} programado</span>` : ''));
+  const cash=balanceOfMonth(m);
+  countUp($('#kBalance'),cash.total,'money','value '+(cash.total>=0?'pos':'neg'));
+  $('#balanceParts').innerHTML='<div><span>Saldo anterior</span><b>'+fmt(cash.previous)+'</b></div><div><span>Resultado del mes</span><b class="'+(cash.result<0?'neg':'')+'">'+fmt(cash.result)+'</b></div>';
+  $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';
   // Balance: cuánto quedaría libre al cierre (después del presupuesto, que ya incluye lo que separas para ahorro)
   // Mes cerrado: lo real. Mes en curso o futuro: la proyección (misma cifra que Análisis)
   const closed = m < thisMonth(), prj = closed ? null : projection(m);
   const incEnd = closed ? inc : prj.projInc, expEnd = closed ? exp : prj.projExp, freeEnd = incEnd - expEnd;
-  if (incEnd > 0){
-    const pctFree = freeEnd / incEnd * 100;
-    const hw = closed ? [`Ingresos de ${monthLong(m)}: ${fmt(incEnd)}`, `− Gastos: ${fmt(expEnd)}`, `= ${fmt(freeEnd)} (${pctFree.toFixed(0)}% de tus ingresos)`].join('\n')
-      : [`Ingresos del mes: ${fmt(incEnd)}${incEnd > inc + .005 ? ` (${fmt(inc)} ya recibidos + lo que esperas)` : ''}`, `− Gastos estimados: ${fmt(expEnd)}${expEnd > exp + .005 ? ` (${fmt(exp)} ya gastados + programados, recurrentes, tu ritmo y el presupuesto que queda)` : ''}`, `= ${fmt(freeEnd)} sin asignar (${pctFree.toFixed(0)}% de tus ingresos)`, 'Lo que separas para ahorro ya está dentro de los gastos.'].join('\n');
-    $('#kBalanceSub').innerHTML = `<span title="${hw}">${freeEnd >= 0 ? (closed ? `Te sobró el <b class="pos">${pctFree.toFixed(0)}%</b> de tus ingresos` : `Libre al cierre: <b class="pos">${fmt(freeEnd)}</b> · ${pctFree.toFixed(0)}%`) : `<span class="neg">${closed ? 'Faltó' : 'Faltarían'} ${fmt(-freeEnd)}${closed ? '' : ' al cierre'}</span>`}</span>`;
-  } else $('#kBalanceSub').textContent = 'Aún sin ingresos este mes';
+  const closing=cash.previous+freeEnd;
+  $('#kBalanceSub').innerHTML=closed?'Saldo al cierre según tus registros':cash.provisional?'Mes futuro: el saldo previo aún puede cambiar.':'Cierre estimado: <b class="'+(closing<0?'neg':'pos')+'">'+fmt(closing)+'</b>';
   const sv = savingsOf(m);
   if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value' + (sv.pct ? (sv.saved >= sv.target ? ' pos' : '') : '')); else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
   $('#kSavingsSub').innerHTML = !sv.pct ? 'Define tu meta en Presupuesto'
@@ -2056,7 +2143,7 @@ function renderSparks(m){
   const ms = Array.from({length:6}, (_, i) => shiftMonth(end, i - 5));
   const inc = ms.map(x => sum(txOfMonth(x).filter(t => t.type === 'income')));
   const exp = ms.map(x => sum(txOfMonth(x).filter(t => t.type === 'expense')));
-  const bal = inc.map((v, i) => v - exp[i]);
+  const bal = ms.map(month=>balanceOfMonth(month).total);
   const show = ms.filter((_, i) => inc[i] || exp[i]).length >= 2;
   [['spIncome', inc, 'var(--income)'], ['spExpense', exp, 'var(--expense)'], ['spBalance', bal, 'var(--primary)']].forEach(([id, v, col]) => {
     const el = $('#' + id); if (!el) return;
@@ -2082,13 +2169,15 @@ document.addEventListener('pointerout', e => { const r = e.target.closest && e.t
 function chartTheme(){
   Chart.defaults.font.family = cssVar('--font-body') || 'system-ui, sans-serif';
   Chart.defaults.color = cssVar('--muted');
+  Chart.defaults.animation.duration=reduceMotion()?0:MOTION.data;
+  Chart.defaults.animation.easing='easeOutQuart';
   const tt = Chart.defaults.plugins.tooltip;
   const dk = isDarkUI();
   Object.assign(tt, {backgroundColor: dk ? '#16181d' : cssVar('--text'), titleColor: dk ? cssVar('--text') : cssVar('--bg'), bodyColor: dk ? cssVar('--muted') : cssVar('--bg'), borderColor: dk ? '#2a2e37' : 'transparent', borderWidth: dk ? 1 : 0, padding:10, cornerRadius:10, boxPadding:4, usePointStyle:true, titleFont:{weight:'700'}});
 }
 // Degradado vertical de un color (más intenso arriba)
 const vGrad = (hex, a1 = 'ff', a2 = '55') => c => { const {ctx, chartArea:ar} = c.chart; if (!ar) return hex; const g = ctx.createLinearGradient(0, ar.bottom, 0, ar.top); g.addColorStop(0, hex + a2); g.addColorStop(1, hex + a1); return g; };
-const stagger = (step = 70) => ({delay: c => c.type === 'data' && c.mode === 'default' ? c.dataIndex * step + c.datasetIndex * 40 : 0, duration:700, easing:'easeOutQuart'});
+const stagger=()=>reduceMotion()?false:{duration:MOTION.data,easing:'easeOutQuart'};
 const compactS = v => { const a = Math.abs(v), r = x => (Math.round(x * 10) / 10).toString().replace(/\.0$/, ''); return (v < 0 ? '−' : '') + 'S/ ' + (a >= 1e6 ? r(a / 1e6) + 'M' : a >= 1000 ? r(a / 1000) + 'k' : Math.round(a)); };
 // Quita la marca del borde del eje si queda pegada a la anterior (evita etiquetas encimadas como «S/ 440» sobre «S/ 400»)
 function trimTicks(sc){ const t = sc.ticks; if (t.length < 4) return; const h = Math.floor(t.length / 2), step = t[h].value - t[h - 1].value;
@@ -2149,7 +2238,7 @@ function renderCharts(){
     } else {
       chDonut = new Chart($('#chDonut'), {type:'doughnut', plugins:[centre],
         data:{labels:data.map(x => iconText(x.c)), datasets:[{data:data.map(x => x.v), backgroundColor:sliceCols(data, 0), hoverBackgroundColor:sliceCols(data, .06), borderColor:cssVar('--surface'), hoverBorderColor:cssVar('--surface'), borderWidth:3, hoverOffset:6}]},
-        options:{maintainAspectRatio:false, animation:{duration:900, easing:'easeOutQuart', animateRotate:true, animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'70%'}
+        options:{maintainAspectRatio:false, animation:reduceMotion()?false:{duration:MOTION.data,easing:'easeOutQuart',animateRotate:true,animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'70%'}
       });
       chDonut.$d = {data, totalD};
     }
@@ -2528,10 +2617,10 @@ function resetTxCategoryUI(){
 function openTxCategoryEditor(){
  const box=$('#txCategoryEditor');box.hidden=false;$('#txNewCategory').setAttribute('aria-expanded','true');$('#txCategoryError').textContent='';
  $('#txCategoryName').value='';txNewCategoryIcon='svg:tag';$('#txCategoryColor').value=PALETTE[state.categories.length%PALETTE.length];paintTxCategoryIcon();
- if(!reduceMotion())box.animate([{opacity:0,transform:'translateY(-6px)'},{opacity:1,transform:'none'}],{duration:220,easing:'ease-out'});
+ motionAnimate(box,[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}]);
  $('#txCategoryName').focus();
 }
-function paintTxCategoryIcon(){const color=$('#txCategoryColor').value,button=$('#txCategoryIcon');button.innerHTML=iconHTML(txNewCategoryIcon,color);$('#txChooseColor').innerHTML=`<i style="background:${color}"></i><span>${color.toUpperCase()}</span>`;}
+function paintTxCategoryIcon(){const color=$('#txCategoryColor').value,button=$('#txCategoryIcon');button.innerHTML=ic('palette')+'<span>Personalizar</span>';button.style.setProperty('--category-color',color);}
 function createTxCategory(){
  const name=$('#txCategoryName').value.trim(),error=$('#txCategoryError');
  if(!name){error.textContent='Escribe un nombre para la categoría.';$('#txCategoryName').focus();return;}
@@ -2550,24 +2639,6 @@ $('#txCategoryName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preven
 $('#txCategorySearch').addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
 $('#txCategoryIcon').onclick=()=>openIcon(icon=>{txNewCategoryIcon=icon;paintTxCategoryIcon();},{color:$('#txCategoryColor').value,soft:true,onColor:color=>{$('#txCategoryColor').value=color;paintTxCategoryIcon();}},txNewCategoryIcon);
 $('#txCategoryColor').addEventListener('input',paintTxCategoryIcon);
-$('#txChooseColor').onclick=()=>openColor($('#txCategoryColor').value,color=>{$('#txCategoryColor').value=color;paintTxCategoryIcon();});
-function budgetPaceData(month,today=todayISO()){
- const days=daysIn(month),present=today.slice(0,7),day=month<present?days:month>present?0:Number(today.slice(8,10));
- const cats=catsOf('expense').filter(c=>!isSavingCat(c.id)&&(!isArch(c,month)||realBy(month,c.id)));
- const budget=cats.reduce((s,c)=>s+getBudget(month,c.id),0);
- const spent=sum(txOfMonth(month).filter(t=>t.type==='expense'&&!isSavingCat(t.catId)));
- const elapsed=day/days,ratio=budget>0?spent/budget:0;
- const status=!budget?'empty':ratio>1?'over':month>present?'future':month<present?'closed':ratio>elapsed+.08?'ahead':'steady';
- return {days,day,budget,spent,elapsed,ratio,status,month,present};
-}
-function renderBudgetPace(){
- const el=$('#budgetPace');if(!el)return;const p=budgetPaceData(currentMonth);
- el.dataset.status=p.status;
- if(!p.budget){el.innerHTML='<div class="pace-header"><h3>Ritmo del presupuesto</h3></div><p class="pace-caption">Define montos en el presupuesto de gastos para comparar el consumo con el avance del mes. El ahorro se evalúa por separado.</p>';return;}
- const label=({over:'Presupuesto superado',future:'Mes por comenzar',closed:'Mes cerrado',ahead:'Por encima del ritmo',steady:'Dentro del ritmo'})[p.status];
- const when=currentMonth<p.present?'Mes completado':currentMonth>p.present?'El período aún no comienza':`Día ${p.day} de ${p.days}`;
- el.innerHTML=`<div class="pace-header"><h3>Ritmo del presupuesto</h3><span class="pace-state">${label}</span></div><div class="pace-values"><div><strong>${pctTxt(p.ratio*100)}</strong><small>del presupuesto utilizado · ${fmt(p.spent)}</small></div><div><strong>${pctTxt(p.elapsed*100)}</strong><small>del mes · ${when}</small></div></div><div class="pace-track" role="img" aria-label="Gasto: ${pctTxt(p.ratio*100)} del presupuesto. Mes transcurrido: ${pctTxt(p.elapsed*100)}."><span class="pace-fill" style="width:${Math.min(100,p.ratio*100)}%"></span><span class="pace-marker" style="left:${p.elapsed*100}%"></span></div><p class="pace-caption">${p.spent>p.budget?'Exceso: '+fmt(p.spent-p.budget):'Disponible: '+fmt(p.budget-p.spent)} · Presupuesto: ${fmt(p.budget)}<br>La línea marca el avance del mes. Referencia uniforme: los pagos fijos pueden concentrarse en ciertos días. No incluye ahorro ni movimientos programados.</p>`;
-}
 
 function renderTxChips(){
   const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
@@ -2669,9 +2740,9 @@ function highlightSaved(id){
   if (reduceMotion()) return;
   const el = document.querySelector(`#movBody tr[data-row="${id}"]`) || document.querySelector(`[data-go-tx="${id}"]`) || document.querySelector(`#calDay [data-edit="${id}"]`)?.closest('.prow');
   if (!el) return; el.classList.remove('just'); void el.offsetWidth; el.classList.add('just');
-  if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:'smooth'});
+  if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
 }
-function flashRow(id){ const tr = document.querySelector(`#movBody [data-del="${id}"]`)?.closest('tr'); if (tr && !reduceMotion()) tr.animate([{background:'var(--primary-soft)'},{background:'transparent'}], {duration:1400, easing:'ease-out'}); }
+function flashRow(id){const tr=document.querySelector(`#movBody [data-del="${id}"]`)?.closest('tr');motionAnimate(tr,[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
 function delTx(id){
   const t = state.transactions.find(x => x.id === id);
   if (t && t.recId){ // evita que un recurrente automático se vuelva a crear ese mes
@@ -2773,7 +2844,7 @@ function budgetTable(type){
     const b = getBudget(m,c.id), r = realBy(m,c.id); tb += b; tr += r;
     const sav = isE && isSavingCat(c.id); // en la categoría de ahorro, pasarse del plan es bueno
     const diff = isE && !sav ? b - r : r - b, raw = b > 0 ? r / b * 100 : 0, pct = Math.min(raw, 100);
-    const alert = isE && !sav && b > 0 ? (raw > 100 ? 'over' : raw >= 85 ? 'warn' : '') : '';
+    const status=budgetStatus(r,b),alert=isE&&!sav?(status==='over'?'over':status==='near'?'warn':status==='complete'?'complete':''):'';
     return `<tr class="${alert}">
       <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="cname">${esc(c.name)}</span></div></td>
       <td class="num">${payActive(c, m) ? `<input type="number" class="budget-input" min="0" step="10" data-bud="${c.id}" value="${b || ''}" placeholder="0">` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
@@ -2831,12 +2902,11 @@ document.addEventListener('click', e => {
   state.settings.saveMode = b.dataset.svmode; save(); renderSaveCard(); renderDashboard(); if (activeTab() === 'analysis') renderAnalysis();
 });
 function renderBudget(){
-  renderBudgetPace();
   renderSaveCard();
   const before = [...document.querySelectorAll('#tab-budget tfoot td')].map(t => t.textContent);
   $('#budExpense').innerHTML = budgetTable('expense');
   $('#budIncome').innerHTML = budgetTable('income');
-  if (before.length) document.querySelectorAll('#tab-budget tfoot td').forEach((t, i) => { if (before[i] !== undefined && before[i] !== t.textContent && !reduceMotion()) t.animate([{transform:'translateY(-4px)', color:'var(--primary)'}, {transform:'none'}], {duration:450, easing:'cubic-bezier(.22,1,.36,1)'}); });
+  if (before.length) document.querySelectorAll('#tab-budget tfoot td').forEach((t, i) => { if (before[i] !== undefined && before[i] !== t.textContent && !reduceMotion()) motionAnimate(t,[{opacity:.55},{opacity:1}],'fast'); });
   animateBars($('#tab-budget'));
 }
 $('#tab-budget').addEventListener('change', e => {
@@ -2876,7 +2946,7 @@ document.addEventListener('pointermove', e => {
   if ((target && row.nextElementSibling !== target) || (!target && list.lastElementChild !== row)){
     const tops = new Map(sibs.map(s => [s, s.getBoundingClientRect().top]));
     list.insertBefore(row, target);
-    if (!reduceMotion()) sibs.forEach(s => { const d = tops.get(s) - s.getBoundingClientRect().top; if (d) s.animate([{transform:`translateY(${d}px)`}, {transform:'none'}], {duration:220, easing:'cubic-bezier(.22,1,.36,1)'}); });
+    if (!reduceMotion()) sibs.forEach(s => { const d = tops.get(s) - s.getBoundingClientRect().top; if (d) motionAnimate(s,[{transform:`translateY(${d}px)`},{transform:'none'}]); });
   }
   const nat2 = row.getBoundingClientRect().top - catDrag.t;
   catDrag.t = e.clientY - catDrag.offY - nat2; row.style.transform = `translateY(${catDrag.t}px) scale(1.02)`;
@@ -2884,8 +2954,8 @@ document.addEventListener('pointermove', e => {
 const endCatDrag = e => {
   if (!catDrag || e.pointerId !== catDrag.id) return;
   const {row, list} = catDrag; catDrag = null;
-  row.style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)'; row.style.transform = '';
-  setTimeout(() => { row.classList.remove('dragging'); row.style.transition = ''; }, 250);
+  row.style.transition = 'transform '+MOTION.move+'ms '+MOTION.ease; row.style.transform = '';
+  setTimeout(() => { row.classList.remove('dragging'); row.style.transition = ''; }, MOTION.move);
   const ids = [...list.querySelectorAll('.cat-row')].map(r => r.dataset.id), type = list.id === 'catsIncome' ? 'income' : 'expense';
   const before = catsOf(type).map(c => c.id).join();
   if (ids.join() === before) return;
@@ -2982,7 +3052,7 @@ function renderCats(){
     const arch = catsOf(type).filter(c => c.archived);
     $(type === 'income' ? '#catsIncome' : '#catsExpense').innerHTML = catsActive(type).map(c => `<div class="cat-row" data-id="${c.id}">
       <span class="grip" title="Arrastra para ordenar" aria-label="Arrastra para ordenar">${GRIP}</span>
-      <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Cambiar ícono y color">${iconHTML(c.icon, c.color)}</button>
+      <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}">${iconHTML(c.icon, c.color)}</button>
       <input type="text" data-act="name" value="${esc(c.name)}">
       ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" title="Día de pago">${ic('calendar-days')}<span>${c.pay ? payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
       <span class="row-acts"><button class="iconbtn" data-act="arch" title="Archivar: deja de aparecer, pero conserva su historial">${ic('archive')}</button><button class="iconbtn" data-act="del" title="Eliminar">${ic('trash-2')}</button></span>
@@ -3062,38 +3132,29 @@ function renderIconGrid(){
 function markSel(){ document.querySelectorAll('#emojiGrid [data-icon]').forEach(b => b.classList.toggle('sel', b.dataset.icon === previewIcon)); }
 const colorName = hex => (COLORS.find(([h]) => h.toLowerCase() === String(hex || '').toLowerCase()) || [, 'Personalizado'])[1];
 const swatchRow = (list, cur) => list.map(([hex, name]) => `<button type="button" class="swatch${hex === cur ? ' active' : ''}" data-frame="${hex}" style="background:${hex}" title="${name}"></button>`).join('');
-function renderFrameRow(){
-  $('#frameField').hidden = !frameCfg; if (!frameCfg) return;
-  const cur = String(frameCfg.color || '').toLowerCase();
-  $('#frameRow').innerHTML = `<div class="sw-group">Pastel</div>${swatchRow(COLORS_PASTEL, cur)}<div class="sw-group">Intensos</div>${swatchRow(COLORS_MAIN, cur)}`;
-  $('#frameField').classList.remove('open'); $('#frameHead').setAttribute('aria-expanded', 'false');
-  paintFrameHead();
+function renderFrameRow(){ $('#frameField').hidden=!frameCfg;if(frameCfg)paintFrameHead(); }
+function openFrameColor(){
+ if(!frameCfg)return;const frame=frameCfg;
+ openColor(frame.color,color=>{frame.color=color;frame.onColor(color);iconDirty=true;paintFrameHead();paintPreview();$('#emojiGrid').style.color=iconInk();});
 }
 function paintFrameHead(){ $('#frameSw').style.background = frameCfg.color || '#4f46e5'; $('#frameName').textContent = !frameCfg.color ? 'Predeterminado' : frameCfg.themeColor && frameCfg.color.toLowerCase() === String(frameCfg.themeColor).toLowerCase() ? 'Color del tema ' + curTheme().name : colorName(frameCfg.color);
   const tc = frameCfg.themeColor, r = $('#frameReset'); r.hidden = !tc || String(tc).toLowerCase() === String(frameCfg.color || '').toLowerCase();
   if (!r.hidden) r.querySelector('span').innerHTML = `Usar color del tema <i style="display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;background:${tc}"></i>`; }
 $('#frameReset').onclick = () => { if (!frameCfg || !frameCfg.themeColor) return; frameCfg.color = frameCfg.themeColor; frameCfg.onColor(frameCfg.themeColor); iconDirty = true;
-  document.querySelectorAll('#frameRow .swatch').forEach(x => x.classList.toggle('active', x.dataset.frame.toLowerCase() === frameCfg.color.toLowerCase()));
   paintFrameHead(); paintPreview(); $('#emojiGrid').style.color = iconInk(); };
 let iconDirty = false;
 function openIcon(cb, frame, current){
   iconCb = cb; frameCfg = frame || null; previewIcon = current || ''; iconDirty = false;
   paintPreview(); renderFrameRow(); renderIconGrid(); iconDialog.showModal();
 }
-$('#frameHead').onclick = () => { const f = $('#frameField'), o = f.classList.toggle('open'); $('#frameHead').setAttribute('aria-expanded', o); };
+$('#frameHead').onclick=openFrameColor;
 $('#emojiGrid').addEventListener('click', e => {
   const h = e.target.closest('.ig-head'); if (!h) return;
   const ig = h.parentElement, open = !ig.classList.contains('open');
   document.querySelectorAll('#emojiGrid .ig.open').forEach(x => x !== ig && x.classList.remove('open'));
   if (open){ const grid = ig.querySelector('.emoji-grid'); if (!grid.children.length){ grid.innerHTML = groupHTML(VGROUPS[ig.dataset.g][1]); markSel(); } }
   ig.classList.toggle('open', open);
-  if (open) setTimeout(() => ig.scrollIntoView({block:'nearest', behavior:'smooth'}), 220);
-});
-$('#frameRow').addEventListener('click', e => {
-  const b = e.target.closest('[data-frame]'); if (!b || !frameCfg) return;
-  frameCfg.color = b.dataset.frame; frameCfg.onColor(b.dataset.frame); iconDirty = true;
-  document.querySelectorAll('#frameRow .swatch').forEach(x => x.classList.toggle('active', x === b));
-  paintFrameHead(); paintPreview(); $('#emojiGrid').style.color = iconInk();
+  if(open)setTimeout(()=>{if(ig.isConnected&&ig.classList.contains('open'))ig.scrollIntoView({block:'nearest',behavior:reduceMotion()?'instant':'smooth'});},reduceMotion()?0:MOTION.panel);
 });
 iconDialog.addEventListener('close', () => { if (iconDirty){ iconDirty = false; renderAll(); } });
 $('#emojiGrid').addEventListener('click', e => { const b = e.target.closest('[data-icon]'); if (b){ iconDialog.close(); iconCb && iconCb(b.dataset.icon); } });
@@ -3231,7 +3292,7 @@ const PRIO = {crit:{n:'Crítica', i:'flame', c:'var(--expense)', r:0, h:'Lo prim
 const prioOf = g => PRIO[g.prio] ? g.prio : 'norm';
 const goalsSorted = () => myGoals().map((g, i) => ({g, i})).sort((a, b) => (goalDone(a.g) - goalDone(b.g)) || (PRIO[prioOf(a.g)].r - PRIO[prioOf(b.g)].r) || a.i - b.i).map(x => x.g);
 const prioBadge = g => { const p = prioOf(g); return p === 'norm' || goalDone(g) ? '' : `<span class="prio" style="--pc:${PRIO[p].c}">${ic(PRIO[p].i)}${PRIO[p].n}</span>`; };
-function goalDone(g){ return Number(g.target) > 0 && goalSaved(g) >= Number(g.target); }
+function goalDone(g){ return Number(g.target)>0&&Math.round(goalSaved(g)*100)>=Math.round(Number(g.target)*100); }
 const monthsBetween = (a, b) => { const [y1,m1] = a.split('-').map(Number), [y2,m2] = b.split('-').map(Number); return (y2 - y1) * 12 + (m2 - m1); };
 // Categoría de gasto de ahorro (por nombre o ícono): sus gastos pueden ir a una meta
 // ---- Ahorro: meta (% de ingresos) y forma de medirlo ----
@@ -3320,7 +3381,7 @@ function renderGoals(){
     let stats;
     if (goalDone(g)) stats = `<div class="goal-done">${ic('party-popper')} ¡Meta lograda!</div>`;
     else {
-      const ml = g.deadline ? monthsBetween(tm, g.deadline.slice(0,7)) + 1 : 0;
+      const expired=g.deadline&&g.deadline<todayISO(),ml=g.deadline&&!expired?monthsBetween(tm,g.deadline.slice(0,7))+1:0;
       // Ritmo: promedio de aportes de los últimos 3 meses (incluye este)
       const r3 = [0, 1, 2].map(k => shiftMonth(tm, -k)).map(mm => sum(gx.filter(x => x.t.date.slice(0, 7) === mm).map(x => x.t)));
       const pace = r3.reduce((a, v) => a + v, 0) / 3;
@@ -3328,8 +3389,8 @@ function renderGoals(){
       if (pace > 0){
         const n = Math.ceil(rem / pace), when = shiftMonth(tm, n), w = monthLong(when).toLowerCase();
         const late = g.deadline && when > g.deadline.slice(0, 7) ? monthsBetween(g.deadline.slice(0, 7), when) : 0;
-        eta = late ? `<div class="goal-eta warn">${ic('clock')} A tu ritmo llegas en ${w}, ${late} ${late === 1 ? 'mes' : 'meses'} tarde</div>`
-                   : `<div class="goal-eta ok">${ic('trending-up')} A tu ritmo la logras en ${w}</div>`;
+        eta = late ? `<div class="goal-eta warn">${ic('clock')} Si mantienes tu promedio, llegarías en ${w}, después de la fecha objetivo</div>`
+                   : `<div class="goal-eta ok">${ic('trending-up')} Si mantienes tu promedio, llegarías en ${w}</div>`;
       } else eta = `<div class="goal-eta">${ic('clock')} Sin aportes en los últimos 3 meses</div>`;
       stats = eta + `<div class="goal-stats">${stat('Faltan', fmt(rem))}${g.deadline ? (ml > 0 ? stat('Ahorra al mes', fmt(rem / ml)) : stat('Plazo', 'Vencido', 'neg')) : stat('Plazo', 'Libre')}${stat('Este mes', fmt(monthAmt), monthAmt ? 'pos' : '')}</div>`;
     }
@@ -3339,7 +3400,7 @@ function renderGoals(){
     const shareTag = g.shared ? `<span class="share-tag">${ic('users')}${g._foreign ? 'De ' + esc(owner.name) : 'Con ' + esc(other.name)}</span>` : '';
     return `<div class="card goal-card${goalDone(g) ? '' : ' p-' + prioOf(g)}${g.shared ? ' shared' : ''}">
       <div class="goal-head"><div class="ico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</div>
-        <div style="flex:1;min-width:0"><div class="name">${esc(g.name)}</div><div class="small muted g-sub">${shareTag}${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
+        <div style="flex:1;min-width:0"><div class="name">${esc(g.name)}</div><div class="small muted g-sub">${shareTag}${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return g.deadline >= todayISO() && ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
         ${g._foreign ? '' : `<button class="iconbtn" data-goal-edit="${g.id}" title="Editar">${ic('pencil')}</button>`}</div>
       <div class="goal-amt"><b>${fmt(saved)}</b><span class="muted small">de ${fmt(target)}</span><span class="goal-pct" style="color:${strokeOn(dc(g.color))}">${pct.toFixed(0)}%</span></div>
       ${g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span data-k="goal:${g.id}:${pr.id}" data-w="${w.toFixed(2)}" style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
@@ -3477,6 +3538,27 @@ const curIdxOf = (y, tm) => tm.slice(0, 4) === y ? Number(tm.slice(5, 7)) - 1 : 
 const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const fmt0 = n => n ? Math.round(n).toLocaleString('es-PE') : '–';
 const alphaHex = a => Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, '0');
+function projectionStatus(x){
+ const pill=(text,kind='neutral')=>`<span class="alert-pill ${kind}">${text}</span>`;
+ if(!(x.budget>0))return pill('Sin presupuesto');
+ if(isSavingCat(x.c.id))return x.reg>=x.budget-.005?pill('Ahorro cumplido','good'):pill(`Por ahorrar: ${fmt(x.budget-x.reg)}`);
+ const actual=budgetStatus(x.reg,x.budget),forecast=budgetStatus(x.base,x.budget);
+ if(actual==='over')return pill(`Superado: ${fmt(x.reg-x.budget)}`,'over');
+ if(forecast==='over')return pill(`Superaría por ${fmt(x.base-x.budget)}`,'warn');
+ if(actual==='complete')return pill('Completo','complete');
+ if(forecast==='complete')return pill('Alcanzaría el presupuesto','complete');
+ if(forecast==='near')return pill(`Margen estimado: ${fmt(x.budget-x.base)}`,'warn');
+ return pill('Dentro del presupuesto');
+}
+function projectionExplanation(x){
+ const parts=[`${fmt(x.reg)} registrados`];
+ if(x.plan)parts.push(`${fmt(x.plan)} programados`);
+ if(x.pendRec)parts.push(`${fmt(x.pendRec)} recurrentes pendientes`);
+ if(x.pace)parts.push(`~${fmt(x.pace)} por ritmo de gasto`);
+ if(x.rest)parts.push(`${fmt(x.rest)} reservados hasta completar el presupuesto`);
+ return parts.join(' + ');
+}
+
 function renderAnalysis(){
   const y = currentMonth.slice(0,4), tm = thisMonth();
   const months = MONTHS_ES.map((_, i) => `${y}-${String(i + 1).padStart(2, '0')}`);
@@ -3586,33 +3668,27 @@ function renderAnalysis(){
   // Proyección detallada
   const pr = projection(m);
   if (!pr){ const v = m < tm ? `${monthLong(m)} ya cerró` : ''; $('#projDetail').innerHTML = `<div class="small muted">${v}: la proyección se calcula para el mes en curso y los siguientes.</div>`; return; }
-  const bExp = totalBudget(m, 'expense'), pb = pr.projInc - pr.projExp;
-  const statusPill = x => !x.budget ? '<span class="pill" style="background:var(--surface-2);color:var(--muted)">Sin presupuesto</span>'
-    : isSavingCat(x.c.id) ? (x.base >= x.budget ? '<span class="pill" style="background:var(--income-soft);color:var(--income)">Cumplido</span>' : `<span class="pill" style="background:var(--surface-2);color:var(--muted)">Faltan ${fmt(x.budget - x.base)}</span>`)
-    : x.base > x.budget ? `<span class="pill" style="background:var(--expense-soft);color:var(--expense)">Excedería ${fmt(x.base - x.budget)}</span>`
-    : x.base > x.budget * .9 ? '<span class="alert-pill warn">Ajustado</span>'
-    : '<span class="pill" style="background:var(--income-soft);color:var(--income)">En rango</span>';
+  const bExp = totalBudget(m, 'expense'), pb = pr.projInc - pr.projExp,cash=balanceOfMonth(m),closing=cash.previous+pb;
+  const statusPill=projectionStatus;
   const list = pr.cats.filter(x => x.proj > 0 || x.budget > 0).sort((a,b) => b.proj - a.proj);
   const line = (label, val, cls = '', sub = '', strong = false) => `<div class="pj-line${strong ? ' strong' : ''}"><div>${label}${sub ? `<div class="small muted">${sub}</div>` : ''}</div><b class="${cls}">${val}</b></div>`;
-  const how = x => !x.n && !x.pendRec && !x.plan ? 'Sin gastos aún'
-    : x.frequent ? `${fmt(x.reg)} gastado + ~${fmt(x.pace)} por tu ritmo de ${fmt(x.perDay)}/día`
-    : x.plan ? `${fmt(x.reg)} gastado + ${fmt(x.plan)} programado`
-    : x.pendRec ? `${fmt(x.reg)} gastado + ${fmt(x.pendRec)} de recurrentes por venir`
-    : `${fmt(x.reg)} · pago puntual, no se proyecta`;
-  $('#projDetail').innerHTML = `<div class="small muted" style="margin-bottom:10px">${m === tm ? `Faltan <b>${pr.left} día${pr.left === 1 ? '' : 's'}</b> para cerrar el mes.` : 'Mes aún no empieza.'} Es la misma cifra que «Libre al cierre» del Resumen:</div>
+  const how=projectionExplanation;
+  $('#projDetail').innerHTML = `<div class="small muted" style="margin-bottom:10px">${m === tm ? `Faltan <b>${pr.left} día${pr.left === 1 ? '' : 's'}</b> para cerrar el mes.` : 'Mes aún no empieza.'} Estimación basada en registros, pagos pendientes y presupuesto; puede cambiar. No es tu saldo bancario:</div>
     <div class="pj-box">
       ${line('Gastos ya registrados', fmt(pr.spent))}
       ${line('+ Recurrentes por venir', fmt(pr.recLeft), '', pr.recLeft ? 'Pagos fijos que aún no se registran' : 'No queda ninguno este mes')}
       ${pr.planTot ? line('+ Pagos programados', fmt(pr.planTot), '', 'Movimientos con fecha futura de este mes') : ''}
-      ${line('+ Gasto variable estimado', fmt(pr.paceTot), '', pr.paceTot ? 'Categorías con gastos frecuentes, según tu ritmo diario' : 'Aún no hay gastos frecuentes para proyectar')}
-      ${pr.restTot ? line('+ Presupuesto aún sin usar', fmt(pr.restTot), '', 'Se asume que usarás lo que te queda del presupuesto') : ''}
-      ${line('= Gastos estimados', fmt(pr.projExp), 'neg', bExp ? `Presupuesto: ${fmt(bExp)}` : '', true)}
+      ${line('+ Gasto variable estimado', fmt(pr.paceTot), '', pr.paceTot ? 'Categorías con gastos frecuentes, según tu ritmo diario' : 'Se necesitan al menos 3 gastos no recurrentes por categoría')}
+      ${pr.restTot ? line('+ Reserva hasta completar el presupuesto', fmt(pr.restTot), '', 'Escenario conservador: reserva adicional; no es un gasto registrado') : ''}
+      ${line('= Salidas previstas y reservas', fmt(pr.projExp), 'neg', bExp ? `Presupuesto: ${fmt(bExp)}` : '', true)}
     </div>
-    ${line('Ingresos estimados', fmt(pr.projInc), 'pos', pr.incRec > .005 ? `${fmt(pr.incReg)} registrados + ${fmt(pr.incRec)} por cobrar o esperados` : '', true)}
-    ${line(pb >= 0 ? 'Libre al cierre' : 'Faltarían al cierre', fmt(Math.abs(pb)), pb >= 0 ? 'pos' : 'neg', pr.projInc ? `${(pb / pr.projInc * 100).toFixed(0)}% de tus ingresos` : '', true)}
+    ${line('Ingresos estimados', fmt(pr.projInc), 'pos', pr.incRec > .005 ? `${fmt(pr.incReg)} recibidos o programados + ${fmt(pr.incRec)} esperados` : '', true)}
+    ${line(pb >= 0 ? 'Resultado estimado del mes' : 'Déficit estimado del mes', fmt(Math.abs(pb)), pb >= 0 ? 'pos' : 'neg', pr.projInc ? `${(pb / pr.projInc * 100).toFixed(0)}% de tus ingresos` : '', true)}
+    ${line('Saldo anterior registrado',fmt(cash.previous),'',cash.provisional?'Referencia provisional: los meses previos aún no han cerrado.':'Arrastre de meses anteriores; no es ingreso de este mes.')}
+    ${line('Saldo estimado al cierre',fmt(closing),closing<0?'neg':'pos','Saldo anterior + resultado estimado del mes.',true)}
     <div class="small muted" style="margin:14px 0 2px;font-weight:700">Por categoría</div>
     ${list.length ? (() => { const on = list.filter(x => x.n || x.pendRec || x.plan), off = list.filter(x => !on.includes(x)); const pr2 = x => `<div class="cmp-row" style="grid-template-columns:34px 1fr auto"><div class="ico" style="background:${soft(x.c.color)}">${iconHTML(x.c.icon, x.c.color)}</div>
-      <div><div style="font-weight:600">${esc(x.c.name)} <span class="small muted" style="font-weight:600">→ ${fmt(x.proj)}${x.budget ? ' de ' + fmt(x.budget) : ''}</span></div><div class="small muted">${how(x)}</div></div>${statusPill(x)}</div>`; return on.map(pr2).join('') + zeroGroup(off.map(pr2), `categoría${off.length > 1 ? 's' : ''} sin gastos aún (en rango)`); })()
+      <div><div style="font-weight:600">${esc(x.c.name)} <span class="small muted" style="font-weight:600">→ ${fmt(x.proj)}${x.budget ? ' de ' + fmt(x.budget) : ''}</span></div><div class="small muted">${how(x)}</div></div>${statusPill(x)}</div>`; return on.map(pr2).join('') + zeroGroup(off.map(pr2), `categoría${off.length > 1 ? 's' : ''} sin gastos registrados`); })()
       : '<div class="small muted">Registra gastos o define presupuesto para ver la proyección por categoría.</div>'}`;
 }
 $('#yearPrev').onclick = () => goMonth(shiftMonth(currentMonth, -12));
@@ -4322,7 +4398,7 @@ window.addEventListener('resize', () => { if (!profMenu.hidden) closeProfMenu();
 profMenu.addEventListener('click', e => {
   const b = e.target.closest('[data-prof]'); if (!b) return; closeProfMenu();
   const id = b.dataset.prof;
-  if (id === 'edit'){ showTab('settings'); setTimeout(() => $('#profCard').scrollIntoView({block:'start', behavior:'smooth'}), 120); return; }
+  if (id === 'edit'){ showTab('settings'); setTimeout(() => $('#profCard').scrollIntoView({block:'start', behavior:reduceMotion()?'instant':'smooth'}), 120); return; }
   switchProfile(id);
 });
 function loadProfileState(){
@@ -4463,17 +4539,17 @@ function renderBoth(){
       const txs = txOfMonth(m), inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), sv = savingsOf(m);
       const series = months.map(mm => sum(txOfMonth(mm).filter(t => t.type === 'expense')));
       const top = txs.filter(t => t.type === 'expense').map(t => { const c = getCat(t.catId); return {t, c:{name:c.name, icon:c.icon, color:c.color}}; });
-      return {pr, inc, exp, saved:sv.saved || 0, rate:sv.rate, series, top};
+      return {pr, inc, exp, cash:balanceOfMonth(m).total,previous:balanceOfMonth(m).previous,saved:sv.saved || 0, rate:sv.rate, series, top};
     });
   });
-  const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), saved = T('saved'), bal = inc - exp;
+  const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), saved = T('saved'), bal = T('cash');
   const kpi = (lbl, icon, val, sub, cls, style) => `<div class="card kpi ${cls}"><div class="label"><span class="dot" style="${style}">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><div class="small muted">${sub}</div></div>`;
   const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5);
   box.innerHTML = `<div class="both-head"><h2>Ambos · ${monthLong(m)}</h2><div class="small muted">Solo lectura. Para registrar o editar, elige un usuario en el botón de arriba.</div></div>
     <div class="kpis">
       ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), rows.map(r => `${esc(r.pr.name)}: ${fmt(r.inc)}`).join(' · '), 'k-inc', 'background:var(--income-soft);color:var(--income)')}
       ${kpi('Gastos de ambos', 'arrow-up', fmt(exp), rows.map(r => `${esc(r.pr.name)}: ${fmt(r.exp)}`).join(' · '), 'k-exp', 'background:var(--expense-soft);color:var(--expense)')}
-      ${kpi('Balance conjunto', 'scale', `<span class="${bal >= 0 ? 'pos' : 'neg'}">${fmt(bal)}</span>`, inc > 0 ? `Les sobró el ${Math.round(bal / inc * 100)}% de sus ingresos` : 'Aún sin ingresos este mes', '', '--k:var(--k-blue)')}
+      ${kpi('Saldo acumulado conjunto', 'scale', `<span class="${bal >= 0 ? 'pos' : 'neg'}">${fmt(bal)}</span>`, `Saldo anterior: ${fmt(T('previous'))} · Resultado del mes: ${fmt(inc-exp)}`, '', '--k:var(--k-blue)')}
       ${kpi('Ahorro conjunto', 'piggy-bank', fmt(saved), inc > 0 ? `${(saved / inc * 100).toFixed(1)}% de los ingresos de ambos` : '—', '', '--k:var(--k-violet)')}
     </div>
     <div class="grid2 top">
@@ -4602,7 +4678,7 @@ function setupSettings(){
    details.style.height='';details.open=true;
    const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+2;
    if(!animate||reduceMotion()||Math.abs(from-to)<1){details.open=open;return;}
-   animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:300,easing:'cubic-bezier(.22,.68,.2,1)'});
+   animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});
    animation.onfinish=()=>{details.open=expanded;animation=null;};
   };
   summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(animation?!expanded:!details.open);});
@@ -4668,7 +4744,7 @@ function openSettingsSection(id,focus=false){
  root.querySelector('.settings-home').hidden=!!id;
  root.querySelectorAll('[data-settings-target]').forEach(b=>{if(b.dataset.settingsTarget===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  const target=id?$('#settings-panel-'+id):root.querySelector('.settings-nav');
- if(changed&&!reduceMotion())target.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'cubic-bezier(.2,.7,.2,1)'});
+ if(changed)motionAnimate(target,[{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}]);
  if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else root.querySelector('[data-settings-target]').focus({preventScroll:true});}
 }
 function renderSettingsStatus(){
@@ -4707,6 +4783,11 @@ function renderAll(){
   checkGoalCelebration();
 }
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>{
+ if(reduceMotion())document.getAnimations().forEach(a=>{try{if(a.effect.getTiming().iterations===Infinity)a.cancel();else a.finish();}catch(e){a.cancel();}});
+ if(typeof Chart!=='undefined')Object.values(Chart.instances).forEach(chart=>{chart.stop();chart.options.animation=reduceMotion()?false:{duration:MOTION.data,easing:'easeOutQuart'};chart.update('none');});
+ renderAll();
+});
 renderAll();
 updateSyncInfo();
 // App instalable (GitHub Pages u otro sitio https): funciona sin conexión y toma la versión nueva al abrir con internet

@@ -1386,3 +1386,82 @@ html .cat-row input[data-act=name]{min-width:0;width:100%}
 /* Las cifras grandes conservan sus dígitos en una tabla desplazable. */
 .bud-table.wide-values{table-layout:auto;min-width:640px}.bud-table.wide-values th.c-plan,.bud-table.wide-values th.c-real,.bud-table.wide-values th.c-diff{width:auto!important}.bud-table.wide-values .cname{max-width:220px;white-space:normal}.bud-table.wide-values td.num{padding-left:12px;padding-right:12px}
 
+
+/* 1.9.5: fechas recurrentes y cierre mensual */
+#txDialog.rec-mode .row2{grid-template-columns:minmax(0,1fr)}
+.rec-date-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.rec-date-modes .btn{white-space:normal;min-height:40px}
+.rec-date-modes [aria-pressed="true"]{background:var(--primary-soft);color:var(--primary);border-color:var(--primary)}
+#fDay:disabled{display:none}
+#recDateHint,.rec-date-preview{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.rec-date-preview{display:block;padding:10px 12px;border-radius:10px;background:var(--surface-2);color:var(--text)}
+#txDialog .check{align-items:flex-start;line-height:1.5;gap:10px}
+#txDialog .check input{flex-shrink:0;margin-top:2px}
+#txDialog .dlg-foot{padding-top:12px}
+#closeDialog[open]{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
+#closeDialog .dlg-head,#closeDialog .dlg-foot{flex-shrink:0}
+#closeDialog .dlg-head{gap:12px;padding-bottom:12px}
+#closeDialog .dlg-head h3{min-width:0;font-size:18px;overflow-wrap:anywhere}
+#closeDialog .dlg-head .iconbtn{flex-shrink:0}
+#closeDialog .dlg-body{overflow-y:auto;min-height:0;gap:16px}
+#closeDialog .dlg-foot{padding-top:12px;border-top:1px solid var(--border)}
+#closeDialog p{margin:0;line-height:1.6}
+.cl-context{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+#closeDialog .cl-hero{align-items:flex-start;background:var(--surface-2)}
+#closeDialog .cl-hero[data-tone="good"]{background:var(--income-soft)}
+#closeDialog .cl-hero[data-tone="bad"]{background:var(--expense-soft)}
+#closeDialog .cl-hero div{min-width:0;overflow-wrap:anywhere}
+#closeDialog .cl-hero b{font-size:clamp(22px,5vw,30px);line-height:1.3;margin:4px 0;font-variant-numeric:tabular-nums}
+#closeDialog .cd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+#closeDialog .cd-stats>div:last-child{grid-column:1/-1}
+#closeDialog .cd-stats b{white-space:normal;overflow-wrap:anywhere;font-size:16px}
+.cl-balances{display:grid;gap:10px;padding:12px 0;border-block:1px solid var(--border)}
+.cl-balances>div{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.cl-balances b{text-align:right;overflow-wrap:anywhere;min-width:0}
+#closeDialog .cl-list{gap:12px}
+.cl-pending{padding:12px;background:var(--surface-2);border-radius:10px}
+#closeDialog .cl-note{font-size:12px}
+@media(max-width:380px){#closeDialog .cd-stats{grid-template-columns:minmax(0,1fr)}#closeDialog .dlg-foot{flex-wrap:wrap}#closeDialog .dlg-foot .btn{flex:1;white-space:normal}.cl-balances>div{flex-wrap:wrap}}
+#closeDialog .cl-hero[data-tone="good"]>.vi{color:var(--income)}#closeDialog .cl-hero[data-tone="bad"]>.vi{color:var(--expense)}
+
+/* 1.9.6: importes centrados, categorías sin colisiones y botón Nuevo */
+#closeDialog .cl-hero{display:grid;justify-items:center;text-align:center;gap:8px;padding:18px 16px}
+#closeDialog .cl-hero b{color:var(--text)}
+#closeDialog .cd-stats>div,#closeDialog .cl-balances>div{display:grid;justify-items:center;align-content:center;text-align:center;gap:6px;padding:14px 12px;border-radius:12px;min-width:0}
+#closeDialog .cd-stats span,#closeDialog .cl-balances span{font-size:12px;line-height:1.5;color:var(--muted)}
+#closeDialog .cd-stats b,#closeDialog .cl-balances b{font-size:clamp(16px,2.5vw,20px);font-variant-numeric:tabular-nums;text-align:center;line-height:1.4;max-width:100%;overflow-wrap:anywhere}
+#closeDialog [data-tone="income"]{background:var(--income-soft)}
+#closeDialog [data-tone="expense"]{background:var(--expense-soft)}
+#closeDialog [data-tone="saving"]{background:color-mix(in srgb,var(--k-violet) 15%,var(--surface))}
+#closeDialog [data-tone="saving"] b{color:color-mix(in srgb,var(--k-violet) 48%,var(--text))}
+#closeDialog [data-tone="previous"]{background:color-mix(in srgb,var(--k-blue) 14%,var(--surface))}
+#closeDialog .cl-balances{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0;border:0}
+/* La fecha de pago dispone de una fila propia incluso dentro de tarjetas de escritorio estrechas. */
+html #catsIncome .cat-row,html #catsExpense .cat-row{grid-template-columns:18px 44px minmax(0,1fr) auto!important;column-gap:8px;row-gap:4px;min-width:0;padding:12px 0}
+html #tab-cats .cat-row>.grip{grid-column:1;grid-row:1}
+html #tab-cats .cat-row>.ico{grid-column:2;grid-row:1}
+html #tab-cats .cat-row>input[data-act=name]{grid-column:3;grid-row:1;min-width:0;width:100%;padding-inline:8px;text-overflow:ellipsis}
+html #tab-cats .cat-row>.row-acts{grid-column:4;grid-row:1;display:flex;gap:2px;min-width:0}
+html #tab-cats .cat-row>.pay-btn{grid-column:3/-1;grid-row:2;justify-self:start;max-width:100%;min-width:0;height:auto;min-height:34px;padding:7px 10px;white-space:normal;text-align:left;line-height:1.5}
+html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:normal;overflow:visible}
+#tab-cats .toolbar{flex-wrap:wrap;gap:10px}
+#tab-cats .toolbar h3{min-width:0;overflow-wrap:anywhere}
+@media(max-width:560px){html #catsIncome .cat-row,html #catsExpense .cat-row{grid-template-columns:16px 36px minmax(0,1fr) auto!important;column-gap:5px}html #tab-cats .cat-row>.ico{width:36px;height:36px}html #tab-cats .row-acts .iconbtn{width:30px;height:36px}html #tab-cats .cat-row>input[data-act=name]{padding-inline:4px}}
+@media(max-width:380px){#closeDialog .cl-balances{grid-template-columns:minmax(0,1fr)}}
+.fab{transition:transform 240ms var(--motion-ease),box-shadow 320ms var(--motion-ease),background-color 240ms var(--motion-ease);animation:fabArrive 480ms var(--motion-ease) both}
+.fab::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.14) 48%,transparent 76%);opacity:0;animation:fabGlow 5s ease-in-out 2;animation-delay:1s}
+.fab .vi{transition:transform 320ms var(--motion-ease)}
+@media(hover:hover) and (pointer:fine){.fab:hover{transform:translateY(-3px);box-shadow:0 12px 28px color-mix(in srgb,var(--primary) 32%,transparent),inset 0 1px 0 rgba(255,255,255,.2)}.fab:hover .vi{transform:rotate(12deg)}}
+.fab:active{transform:translateY(0) scale(.97)}
+.fab.is-open .vi{transform:rotate(45deg)}
+.fab.launch::after{animation:fabRipple 550ms var(--motion-ease)}
+@keyframes fabGlow{0%,65%,100%{opacity:0}30%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.fab,.fab::before,.fab.launch::after{animation:none!important;transition:none!important}.fab:hover,.fab:active,.fab:hover .vi,.fab.is-open .vi{transform:none}}
+
+/* 1.9.7: cierre breve */
+#closeDialog .cl-summary{list-style:none;display:grid;gap:0;padding:0;margin:0;font-size:12px;line-height:1.6}
+#closeDialog .cl-summary li{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 14px;padding:9px 0;border-bottom:1px solid var(--border)}
+#closeDialog .cl-summary li:last-child{border-bottom:0;padding-bottom:0}
+#closeDialog .cl-summary span{color:var(--muted)}
+#closeDialog .cl-summary b{font-weight:600;text-align:right;overflow-wrap:anywhere;max-width:100%;margin-left:auto}
+#closeDialog .cl-pending-brief{font-size:11px}

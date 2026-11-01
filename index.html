@@ -49,7 +49,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.9.4'; window.__APP_DATE = '2026-10-29';
+window.__APP_VERSION = '1.9.7'; window.__APP_DATE = '2026-11-01';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -316,7 +316,13 @@ window.addEventListener('error', function (e) {
       <div class="field" id="fGoalField" hidden><label>Meta de ahorro (opcional)</label><div class="chips" id="fGoalChips"></div></div>
       <div class="row2">
         <div class="field" id="fDateField"><label for="fDate">Fecha</label><input type="date" id="fDate"></div>
-        <div class="field" id="fDayField" hidden><label>Día del mes</label><input type="number" id="fDay" min="1" max="31" placeholder="1–31"></div>
+        <div class="field" id="fDayField" hidden>
+          <label for="fDay">Fecha de cada mes</label>
+          <div class="rec-date-modes" role="group" aria-label="Elegir fecha mensual"><button type="button" id="recFixed" class="btn sm" aria-pressed="true">Día fijo</button><button type="button" id="recMonthEnd" class="btn sm" aria-pressed="false">Fin de mes</button></div>
+          <input type="number" id="fDay" inputmode="numeric" min="1" max="31" step="1" placeholder="1–31" aria-describedby="recDateHint recDatePreview">
+          <span class="small muted" id="recDateHint"></span>
+          <span class="rec-date-preview" id="recDatePreview" role="status" aria-live="polite"></span>
+        </div>
         <div class="field"><label for="fDesc">Descripción <span class="muted">(opcional)</span></label><input type="text" id="fDesc" placeholder="Ej. Mercado"></div>
       </div>
       <label class="check" id="fAutoField" hidden><input type="checkbox" id="fAuto" checked> Registrar automáticamente cada mes en su día</label>
@@ -397,7 +403,7 @@ window.addEventListener('error', function (e) {
     <div class="dlg-foot"><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn primary">Retirar</button></div>
   </form>
 </dialog>
-<dialog id="closeDialog" class="wl-dlg">
+<dialog id="closeDialog" class="wl-dlg" aria-labelledby="clTitle">
   <div class="dlg-head"><h3 style="margin:0" id="clTitle"></h3><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
   <div class="dlg-body" id="clBody"></div>
   <div class="dlg-foot"><button type="button" class="btn" data-cl="an">Ver análisis</button><button type="button" class="btn primary" data-close>Listo</button></div>
@@ -1586,6 +1592,7 @@ $('#fGoalChips').addEventListener('click', e => { const b = e.target.closest('[d
 function setMode(){
   const rec = txMode === 'rec';
   $('#fDateField').hidden = rec; $('#fDayField').hidden = !rec; $('#fAutoField').hidden = !rec;
+  txDialog.classList.toggle('rec-mode', rec);
   renderTxChips();
 }
 // preset: {type, catId, amount, method, desc, date, goalId, recId}
@@ -1636,13 +1643,26 @@ function openRec(id, preset){
   $('#txTitle').textContent = r ? 'Editar recurrente' : 'Nuevo recurrente';
   $('#fAmount').value = r ? r.amount : pz.amount || '';
   $('#fDay').value = r ? r.day : preset ? '' : new Date().getDate();
+  updateRecDate();
   $('#fDesc').value = r ? r.desc : pz.desc || '';
   $('#fAuto').checked = r ? !!r.auto : true;
   $('#txDelete').style.display = r ? '' : 'none';
   txDialog.showModal();
-  setTimeout(() => (preset ? $('#fDay') : $('#fAmount')).focus(), 50);
+  setTimeout(() => (preset ? $('#recFixed') : $('#fAmount')).focus(), 50);
   if (preset) toast('Elige el día del mes en que te cobran', {icon:'calendar'});
 }
+function updateRecDate(){
+  const day = Number($('#fDay').value), end = day === 31;
+  $('#recFixed').setAttribute('aria-pressed', String(!end));
+  $('#recMonthEnd').setAttribute('aria-pressed', String(end));
+  $('#fDay').disabled = end;
+  $('#recDateHint').textContent = end ? 'Siempre el último día: 28, 29, 30 o 31, según el mes.' : 'Elige del 1 al 31. Si el mes no tiene ese día, se usa su último día.';
+  const valid = Number.isInteger(day) && day >= 1 && day <= 31;
+  $('#recDatePreview').textContent = valid ? 'Fechas: ' + [0,1,2].map(n => fmtDateLong(dateFor(shiftMonth(thisMonth(), n), day))).join(' · ') : 'Ingresa un día para ver las próximas fechas.';
+}
+$('#fDay').addEventListener('input', updateRecDate);
+$('#recMonthEnd').onclick = () => { $('#fDay').value = 31; updateRecDate(); };
+$('#recFixed').onclick = () => { if ($('#fDay').disabled) $('#fDay').value = Math.min(30, new Date().getDate()); updateRecDate(); $('#fDay').focus(); };
 // Borra con opción de deshacer (sin pedir confirmación)
 function delTxUndo(id){
   const idx = state.transactions.findIndex(x => x.id === id); if (idx < 0) return;
@@ -1679,15 +1699,15 @@ $('#txForm').addEventListener('submit', async e => {
   if (!selCat) return toast('Elige una categoría');
   const desc = $('#fDesc').value.trim();
   if (txMode === 'rec'){
-    const day = Math.min(31, Math.max(0, parseInt($('#fDay').value, 10) || 0));
-    if (!day) return toast('Ingresa el día del mes (1–31)');
+    const day = Number($('#fDay').value);
+    if (!Number.isInteger(day) || day < 1 || day > 31) return toast('Ingresa un día entero del 1 al 31');
     const data = {type:txType, amount, catId:selCat, method:selMethod, desc, day, auto:$('#fAuto').checked};
     const isNew = !editingId; let r;
     if (!isNew){ r = state.recurring.find(x => x.id === editingId); Object.assign(r, data); }
     else { r = {id:uid(), active:true, start:thisMonth(), skipped:[], ...data}; state.recurring.push(r); }
     txDialog.close();
     if (isNew && r.auto && new Date().getDate() >= Math.min(day, daysIn(thisMonth()))){
-      const yes = await ask({title:'¿Registrar también el de este mes?', msg:`El día ${day} ya pasó. Si ya lo anotaste a mano, elige "No".`, ok:'Sí, registrar', cancel:'No', danger:false, icon:'🔁'});
+      const yes = await ask({title:'¿Registrar también el de este mes?', msg:`La fecha de este mes (${fmtDateLong(dateFor(thisMonth(), day))}) ya llegó. Si ya lo anotaste a mano, elige "No".`, ok:'Sí, registrar', cancel:'No', danger:false, icon:'🔁'});
       if (!yes) r.skipped.push(thisMonth());
     }
     save(); runAutoRecurring(true); renderAll();
@@ -2124,7 +2144,7 @@ function renderRec(){
   $('#recPendingTitle').textContent = 'Por confirmar · ' + monthLong(m);
   const pendRow = r => {
     const c = getCat(r.catId), isI = r.type === 'income', due = recDue(r, m);
-    const status = r.auto && !due ? `automático el día ${r.day}` : due ? '<span class="neg">vencido</span>' : `vence el día ${r.day}`;
+    const status = r.auto && !due ? `automático el ${Math.min(r.day, daysIn(m))}${r.day === 31 ? " (fin de mes)" : ""}` : due ? '<span class="neg">vencido</span>' : `vence el ${Math.min(r.day, daysIn(m))}${r.day === 31 ? " (fin de mes)" : ""}`;
     return `<div class="prow rec-row">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name">${recLabel(r)}</div><div class="small muted">${esc(c.name)} · ${status}</div></div>
@@ -2149,7 +2169,7 @@ function renderRec(){
       const c = getCat(r.catId), paused = r.active === false;
       return `<div class="prow rec-row${paused ? ' paused' : ''}">
         <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
-        <div><div class="name">${recLabel(r)}</div><div class="small muted">Día ${r.day} · ${r.auto ? 'Automático' : 'Manual'}${r.method ? ' · ' + esc(r.method) : ''}${paused ? ' · En pausa' : ''}</div></div>
+        <div><div class="name">${recLabel(r)}</div><div class="small muted">${r.day === 31 ? "Fin de mes" : "Día " + r.day} · ${r.auto ? 'Automático' : 'Manual'}${r.method ? ' · ' + esc(r.method) : ''}${paused ? ' · En pausa' : ''}</div></div>
         <div class="amt"><b>${fmt(r.amount)}</b></div>
         <div class="row-actions"><button class="iconbtn" data-rec-edit="${r.id}" title="Editar">${ic('pencil')}</button>
           <button class="iconbtn" data-rec-toggle="${r.id}" title="${paused ? 'Reanudar' : 'Pausar'}">${ic(paused ? 'play' : 'pause')}</button>
@@ -2398,28 +2418,30 @@ $('#wdForm').addEventListener('submit', e => {
 
 // ---------- Cierre de mes: al empezar un mes nuevo, cómo te fue en el anterior ----------
 function maybeMonthClose(){
-  const tm = thisMonth(), pm = shiftMonth(tm, -1);
-  if (state.settings.lastClose === tm || !state.settings.onboarded && !state.transactions.length) return;
+  const tm = thisMonth(), pm = shiftMonth(tm, -1), dialog = $('#closeDialog');
+  if (bothMode || document.querySelector('dialog[open]') || state.settings.lastClose === tm || !state.settings.onboarded && !state.transactions.length) return;
   const txs = txOfMonth(pm); if (!txs.length){ state.settings.lastClose = tm; return save(); }
-  const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), bExp = totalBudget(pm, 'expense'), sv = savingsOf(pm);
-  const st = catsOf('expense').filter(c => !isSavingCat(c.id)).map(c => ({c, b: getBudget(pm, c.id), r: realBy(pm, c.id)})).filter(x => x.b > 0);
-  const over = st.filter(x => x.r > x.b + .005).sort((a, z) => (z.r - z.b) - (a.r - a.b)), best = st.filter(x => x.r <= x.b).sort((a, z) => (z.b - z.r) - (a.b - a.r))[0];
-  const mes = monthLong(pm).split(' ')[0];
-  $('#clTitle').textContent = `Así cerró ${mes.toLowerCase()}`;
-  const k = (l, v, cls = '') => `<div><span>${l}</span><b class="${cls}">${v}</b></div>`;
-  $('#clBody').innerHTML = `<div class="cl-hero">${ic(inc - exp >= 0 ? 'party-popper' : 'triangle-alert')}<div><b>${inc - exp >= 0 ? `Te sobraron ${fmt(inc - exp)}` : `Gastaste ${fmt(exp - inc)} más de lo que ingresó`}</b><span>${inc ? `${((inc - exp) / inc * 100).toFixed(0)}% de tus ingresos` : 'Sin ingresos registrados'}</span></div></div>
-    <div class="cd-stats">${k('Ingresos', fmt(inc), 'pos')}${k('Gastos', fmt(exp))}${k(sv.pct ? `Ahorro · meta ${sv.pct}%` : 'Ahorro', sv.rate != null ? sv.rate.toFixed(1) + '%' : '—', sv.pct && sv.saved >= sv.target ? 'pos' : '')}</div>
-    <ul class="cl-list">
-      ${bExp ? `<li>${exp <= bExp ? `${ic('check')}<span>Cerraste <b>${fmt(bExp - exp)}</b> por debajo del presupuesto.` : `${ic('triangle-alert')}<span>Te pasaste <b>${fmt(exp - bExp)}</b> del presupuesto.`}</span></li>` : ''}
-      ${over.length ? `<li>${ic('triangle-alert')}<span>Se pasaron: ${over.slice(0, 3).map(x => `<b>${esc(x.c.name)}</b> (+${fmt(x.r - x.b)})`).join(', ')}.</span></li>` : ''}
-      ${best && best.b - best.r > 0 ? `<li>${ic('sparkles')}<span>Donde más ahorraste: <b>${esc(best.c.name)}</b>, ${fmt(best.b - best.r)} bajo lo previsto.</span></li>` : ''}
-      ${sv.pct ? `<li>${sv.saved >= sv.target ? `${ic('check')}<span>Cumpliste tu meta de ahorro.` : `${ic('target')}<span>Te faltaron <b>${fmt(sv.target - sv.saved)}</b> para tu meta de ahorro.`}</span></li>` : ''}
+  const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), bExp = totalBudget(pm, 'expense'), sv = savingsOf(pm), cash = balanceOfMonth(pm);
+  const pending = recPending(pm), pendingExp = sum(pending.filter(r => r.type === 'expense')), pendingInc = sum(pending.filter(r => r.type === 'income'));
+  const result = cash.result, positive = result > .005;
+  $('#clTitle').textContent = 'Cierre de ' + monthLong(pm).toLowerCase();
+  const k = (l,v,cls='',tone='neutral') => `<div data-tone="${tone}"><span>${l}</span><b class="${cls}">${v}</b></div>`;
+  $('#clBody').innerHTML = `<p class="cl-context">${esc(profOf(activeProfile).name)} · Movimientos registrados de ${monthLong(pm).toLowerCase()}</p>
+    <div class="cl-hero" data-tone="${result < -.005 ? 'bad' : positive ? 'good' : 'neutral'}">${ic(result < -.005 ? 'triangle-alert' : positive ? 'check' : 'minus')}<div><span>Resultado del mes</span><b>${fmt(result)}</b><span>${result < -.005 ? 'Los gastos superaron los ingresos del mes.' : positive ? 'Ingresos menos gastos registrados.' : 'Ingresos y gastos en equilibrio.'}</span></div></div>
+    <div class="cd-stats">${k('Ingresos',fmt(inc),'pos','income')}${k('Gastos',fmt(exp),'neg','expense')}${k(saveMode() === 'set' ? 'Ahorro separado' : 'Ahorro del mes',fmt(sv.saved),sv.saved < 0 ? 'neg' : '',sv.saved < 0 ? 'expense' : 'saving')}</div>
+    <div class="cl-balances">${k('Saldo anterior',fmt(cash.previous),'','previous')}${k('Saldo al cierre',fmt(cash.total),cash.total < 0 ? 'neg' : '',cash.total < 0 ? 'expense' : 'saving')}</div>
+    <ul class="cl-summary" aria-label="Balance del mes">
+      <li><span>Presupuesto</span><b class="${bExp > 0 && exp > bExp + .005 ? 'neg' : ''}">${bExp <= 0 ? 'Sin definir' : Math.abs(exp-bExp)<.005 ? 'Completo' : exp > bExp ? fmt(exp-bExp) + ' de exceso' : fmt(bExp-exp) + ' disponibles'}</b></li>
+      ${sv.pct ? `<li><span>Meta de ahorro · ${sv.pct}%</span><b>${sv.base <= 0 ? 'Sin ingresos' : sv.saved >= sv.target ? 'Cumplida' : 'Faltan ' + fmt(sv.target-sv.saved)}</b></li>` : ''}
+      ${pending.length ? `<li class="cl-pending-brief" title="Recurrentes sin confirmar, no incluidos en los totales."><span>Sin incluir · ${plural(pending.length,'recurrente')}</span><b>${pendingExp ? fmt(pendingExp) + ' gastos' : ''}${pendingExp && pendingInc ? ' · ' : ''}${pendingInc ? fmt(pendingInc) + ' ingresos' : ''}</b></li>` : ''}
     </ul>`;
+  dialog.dataset.month = pm;
+  dialog.showModal();
   state.settings.lastClose = tm; save();
-  $('#closeDialog').showModal();
-  if (bExp > 0 && exp <= bExp) setTimeout(confetti, 450);
 }
-$('#closeDialog').addEventListener('click', e => { if (e.target.closest('[data-cl=an]')){ $('#closeDialog').close(); goMonth(shiftMonth(thisMonth(), -1)); showTab('analysis'); } });
+$('#closeDialog').addEventListener('click', e => { if (e.target.closest('[data-cl=an]')){ const m = $('#closeDialog').dataset.month; $('#closeDialog').close(); goMonth(m); showTab('analysis'); } });
+// Si había otro formulario abierto al iniciar, mostrar el resumen cuando termine.
+document.addEventListener('close', e => { if (e.target instanceof HTMLDialogElement && e.target.id !== 'closeDialog') setTimeout(maybeMonthClose, 250); }, true);
 
 /* ---------- Proyección del mes en curso ---------- */
 // Proyección del cierre del mes en curso:
@@ -2835,14 +2857,16 @@ function applyBrand(){
   $('#appIcon').innerHTML = isV(i) ? svgIcon(i.slice(4), 'currentColor') : esc(i); $('#appIcon').style.background = ''; document.title = n;
   applyUiIcons(); applyThemeVars(); applyAccent(); applyFont(); setFavicon(i);
 }
-// Ícono de la pestaña del navegador: el mismo ícono de la app sobre el color del tema (en vez del globo gris)
+// Símbolo completo sobre transparencia: legible también en pestañas de 16 px.
 function setFavicon(icon){
-  const col = (cssVar('--primary-fill') || cssVar('--primary') || '#4f46e5').trim(), ink = hexLum(col) > .55 ? '#1b2232' : '#ffffff';
+  const col = (cssVar('--primary-fill') || cssVar('--primary') || '#4f46e5').trim();
   const name = isV(icon) ? icon.slice(4) : null;
-  const inner = name && VICONS[name] ? `<g transform="translate(5 5) scale(.9167)" fill="none" stroke="${ink}" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${VICONS[name]}</g>`
-    : `<text x="16" y="22.5" font-size="17" text-anchor="middle">${esc(icon)}</text>`;
-  const svg = `<svg xmlns="http:\/\/www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="${col}"/>${inner}</svg>`;
-  const l = $('#favicon'); if (l) l.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  const inner = name && VICONS[name] ? `<g class="mark" fill="none" stroke="${esc(col)}" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">${VICONS[name]}</g>`
+    : `<text x="12" y="12" dominant-baseline="central" font-size="21" text-anchor="middle">${esc(icon || '💰')}</text>`;
+  // Ajusta el contraste al fondo de la pestaña, independientemente del tema de la app.
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><style>.mark{stroke:color-mix(in srgb,${esc(col)} 82%,#1b2232)}@media(prefers-color-scheme:dark){.mark{stroke:color-mix(in srgb,${esc(col)} 65%,#fff)}}</style>${inner}</svg>`;
+  const l = $('#favicon'), href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  if (l){ l.type = 'image/svg+xml'; l.setAttribute('sizes','any'); if (l.getAttribute('href') !== href) l.href = href; }
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = (cssVar('--bg') || '#f4f5f9').trim();
 }
 // Tono de acento (pestaña activa, desplegables) tomado del color del logo

@@ -56,7 +56,7 @@ function renderYearReadout(){
   const el=$('#yearReadout'),data=analysisData;if(!data||data.first<0){el.innerHTML='';return;}
   if(!data.months.includes(analysisSelectedMonth)||data.cum[data.months.indexOf(analysisSelectedMonth)]==null){const i=data.months.indexOf(currentMonth);analysisSelectedMonth=i>=0&&data.cum[i]!=null?currentMonth:data.months.findLast((_,j)=>data.cum[j]!=null);}
   const months=data.months.filter((_,j)=>data.cum[j]!=null),previousMonth=shiftMonth(analysisSelectedMonth,-1),current=analysisDisplayValue(analysisSelectedMonth),previous=analysisDisplayValue(previousMonth),change=analysisChange(current,previous),difference=current!=null&&previous!=null?current-previous:0,tone=Math.abs(difference)<.005?'neutral':((difference>0)===(analysisMetric==='expense')?'bad':'good');
-  el.innerHTML=`<div class="year-readout-month"><label for="yearReadoutMonth">Mes seleccionado${analysisSelectedMonth===thisMonth()?'<span class="analysis-period-state" title="El mes no ha terminado. Se compara lo registrado hasta hoy con el mes anterior completo.">En curso</span>':''}</label><select id="yearReadoutMonth">${months.map(m=>`<option value="${m}"${m===analysisSelectedMonth?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select></div><dl><div><dt>${analysisMetric==='savings'&&analysisChartMode==='total'?'Acumulado':ANALYSIS_METRICS[analysisMetric].label}</dt><dd data-analysis-value="current">${analysisFormat(current)}</dd></div><div><dt>${analysisPreviousLabel(analysisSelectedMonth)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div></dl><span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${analysisMetric==='rate'?'Diferencia en puntos porcentuales entre ambas tasas.':'Diferencia relativa respecto al período anterior.'}">${change}${change.startsWith('+')||change.startsWith('−')?' vs. mes anterior':''}</span>${analysisMetric==='savings'&&analysisChartMode==='total'?`<span class="analysis-accumulated">Ahorro del mes: <b>${fmt(data.bal[data.months.indexOf(analysisSelectedMonth)])}</b></span>`:''}`;
+  el.innerHTML=`<div class="year-readout-month"><div class="analysis-month-caption" id="analysisMonthCaption">Mes seleccionado${analysisSelectedMonth===thisMonth()?'<span class="analysis-period-state" title="El mes no ha terminado. Se compara lo registrado hasta hoy con el mes anterior completo.">En curso</span>':''}</div><details class="analysis-month-picker"><summary id="analysisMonthTrigger" aria-labelledby="analysisMonthCaption analysisMonthName"><span class="analysis-month-icon" aria-hidden="true">${ic('calendar')}</span><span id="analysisMonthName">${esc(monthLong(analysisSelectedMonth))}</span>${CHEV}</summary><div class="analysis-month-menu"><div class="analysis-month-year">${analysisSelectedMonth.slice(0,4)}<span>Elegir mes</span></div><div class="analysis-month-options">${months.map(m=>`<button type="button" data-analysis-month="${m}" aria-pressed="${m===analysisSelectedMonth}"><span>${esc(monthLong(m).replace(/ \d{4}$/,''))}</span>${m===analysisSelectedMonth?CHECK:''}</button>`).join('')}</div></div></details><select id="yearReadoutMonth" hidden aria-hidden="true" tabindex="-1">${months.map(m=>`<option value="${m}"${m===analysisSelectedMonth?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select></div><dl><div><dt>${analysisMetric==='savings'&&analysisChartMode==='total'?'Acumulado':ANALYSIS_METRICS[analysisMetric].label}</dt><dd data-analysis-value="current">${analysisFormat(current)}</dd></div><div><dt>${analysisPreviousLabel(analysisSelectedMonth)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div></dl><span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${analysisMetric==='rate'?'Diferencia en puntos porcentuales entre ambas tasas.':'Diferencia relativa respecto al período anterior.'}">${change}${change.startsWith('+')||change.startsWith('−')?' vs. mes anterior':''}</span>${analysisMetric==='savings'&&analysisChartMode==='total'?`<span class="analysis-accumulated">Ahorro del mes: <b>${fmt(data.bal[data.months.indexOf(analysisSelectedMonth)])}</b></span>`:''}`;
 }
 function selectAnalysisMonth(month){analysisSelectedMonth=month;if(analysisDetailPeriod!=='year')analysisDetailPeriod=month;renderYearReadout();renderAnalysisDetails();}
 function renderAnalysisChart(){
@@ -156,9 +156,40 @@ $('#anKpis').addEventListener('click',e=>{const button=e.target.closest('[data-a
 document.addEventListener('click',e=>{const link=e.target.closest('[data-analysis-movements]');if(link)openMovs({scope:'year',type:link.dataset.analysisMovements});});
 document.addEventListener('click',e=>{const button=e.target.closest('[data-year-mode]');if(!button)return;analysisChartMode=button.dataset.yearMode;renderAnalysis();enhanceAccessibility();});
 document.addEventListener('change',e=>{
-  if(e.target.id==='yearReadoutMonth'){const focused=document.activeElement===e.target;selectAnalysisMonth(e.target.value);if(focused)$('#yearReadoutMonth').focus({preventScroll:true});chYear?.update('none');return;}
+  if(e.target.id==='yearReadoutMonth'){const focused=document.activeElement===e.target||!!document.activeElement?.closest('.analysis-month-picker');selectAnalysisMonth(e.target.value);if(focused)$('#analysisMonthTrigger').focus({preventScroll:true});chYear?.update('none');return;}
   if(e.target.id==='analysisDetailPeriod'){const focused=document.activeElement===e.target;analysisDetailPeriod=e.target.value;if(analysisDetailPeriod!=='year')analysisSelectedMonth=analysisDetailPeriod;renderYearReadout();renderAnalysisDetails();if(focused)$('#analysisDetailPeriod').focus({preventScroll:true});chYear?.update('none');}
 });
+
+// El menú se abre hacia el lado con espacio y conserva su desplazamiento interno.
+document.addEventListener('toggle',e=>{
+ const picker=e.target;if(!picker.matches?.('.analysis-month-picker')||!picker.open)return;
+ const rect=picker.getBoundingClientRect(),header=document.querySelector('.topbar').getBoundingClientRect();
+ const top=Math.max(12,header.bottom+12),bottom=innerHeight-(matchMedia('(max-width:700px)').matches?92:16);
+ const above=rect.top-top,below=bottom-rect.bottom,up=below<340&&above>below;
+ picker.classList.toggle('opens-up',up);
+ picker.style.setProperty('--month-menu-space',Math.max(100,Math.min(280,(up?above:below)-68))+'px');
+ const list=picker.querySelector('.analysis-month-options'),selected=list.querySelector('[aria-pressed=true]');
+ if(selected)list.scrollTop=selected.offsetTop-list.offsetTop-list.clientHeight/2+selected.offsetHeight/2;
+},true);
+// Delegación única: el panel se vuelve a dibujar al seleccionar una barra o un mes.
+document.addEventListener('click',e=>{
+ const option=e.target.closest('[data-analysis-month]');
+ if(option){const select=$('#yearReadoutMonth');select.value=option.dataset.analysisMonth;select.dispatchEvent(new Event('change',{bubbles:true}));return;}
+ const picker=$('.analysis-month-picker');if(picker?.open&&!picker.contains(e.target))picker.open=false;
+});
+document.addEventListener('keydown',e=>{
+ const picker=e.target.closest('.analysis-month-picker');if(!picker)return;
+ if(e.key==='Escape'&&picker.open){e.preventDefault();picker.open=false;$('#analysisMonthTrigger').focus();return;}
+ if(!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+ e.preventDefault();picker.open=true;
+ const options=[...picker.querySelectorAll('[data-analysis-month]')];
+ let i=options.indexOf(document.activeElement);
+ if(i<0)i=options.findIndex(b=>b.getAttribute('aria-pressed')==='true');
+ else i=Math.max(0,Math.min(options.length-1,i+(['ArrowDown','ArrowRight'].includes(e.key)?1:-1)));
+ if(e.key==='Home')i=0;if(e.key==='End')i=options.length-1;
+ options[i]?.focus({preventScroll:true});options[i]?.scrollIntoView({block:'nearest'});
+});
+
 matchMedia('(max-width:700px)').addEventListener('change',()=>{if(activeTab()==='analysis'){renderAnalysis();enhanceAccessibility();}});
 
 function renderAnalysis(){

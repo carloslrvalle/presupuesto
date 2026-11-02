@@ -40,7 +40,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.17'; window.__APP_DATE = '2026-11-02';
+window.__APP_VERSION = '1.10.18'; window.__APP_DATE = '2026-11-02';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1683,7 +1683,7 @@ movActionMenu.addEventListener('click',async e=>{
 $('#movFilterToggle').onclick=toggleMovementFilters;
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');
-let txType = 'expense', editingId = null, selCat = null, selMethod = null, selGoal = null, txMode = 'tx', txRecId = null;
+let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null, txMode = 'tx', txRecId = null;
 let txCategoryExpanded=false,txNewCategoryIcon='svg:tag';
 function txCategoryMarkup(cats){
  const q=($('#txCategorySearch')?.value||'').trim().toLocaleLowerCase();
@@ -1725,6 +1725,14 @@ $('#txCategorySearch').addEventListener('keydown',e=>{if(e.key==='Enter')e.preve
 $('#txCategoryIcon').onclick=()=>openIcon(icon=>{txNewCategoryIcon=icon;paintTxCategoryIcon();},{color:$('#txCategoryColor').value,soft:true,onColor:color=>{$('#txCategoryColor').value=color;paintTxCategoryIcon();}},txNewCategoryIcon);
 $('#txCategoryColor').addEventListener('input',paintTxCategoryIcon);
 
+// La sugerencia se deriva de movimientos guardados del perfil: no del formulario cancelado.
+function suggestedTxMethod(catId,type){
+  const methods=state.settings.methods||[];
+  const recent=state.transactions.filter(t=>t.type===type&&!isPlanned(t)&&(!t.method||methods.includes(t.method)))
+    .slice().sort((a,b)=>(Number(b.created)||0)-(Number(a.created)||0)||b.date.localeCompare(a.date));
+  const previous=recent.find(t=>t.catId===catId)||recent[0];
+  return previous?(previous.method||''):(methods[0]||'');
+}
 function renderTxChips(){
   const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
   gf.hidden = !(txMode === 'tx' && (txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
@@ -1733,20 +1741,19 @@ function renderTxChips(){
   const cats = catsOf(txType).filter(c => !c.archived || c.id === selCat);
   if (!cats.some(c => c.id === selCat)) selCat = cats[0] ? cats[0].id : null;
   $('#fCatChips').innerHTML = txCategoryMarkup(cats);
-  const ms = state.settings.methods || [];
-  if (!ms.includes(selMethod)) selMethod = ms[0] || '';
-  $('#fMethodChips').innerHTML = ms.map(m => `<button type="button" class="chip${m === selMethod ? ' active' : ''}" data-method="${esc(m)}">${esc(m)}</button>`).join('')
-    || '<span class="small muted">Agrega métodos de pago en la pestaña Datos.</span>';
+  if(selMethod==null)selMethod=suggestedTxMethod(selCat,txType);
+  const ms=[...new Set([...(state.settings.methods||[]),...(selMethod?[selMethod]:[]),''])];
+  $('#fMethodChips').innerHTML=ms.map(m=>`<button type="button" class="chip${m===selMethod?' active':''}" aria-pressed="${m===selMethod}" data-method="${esc(m)}">${esc(m||'Sin especificar')}</button>`).join('');
 }
 function setTxType(type){
-  if(txType!==type)resetTxCategoryUI();
+  if(txType!==type){resetTxCategoryUI();if(!txMethodExplicit)selMethod=null;}
   txType = type;
   document.querySelectorAll('#txSeg button').forEach(b => b.classList.toggle('active', b.dataset.type === type));
   renderTxChips(); renderQuick();
 }
 $('#txSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.type); });
-$('#fCatChips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b){ selCat = b.dataset.cat; renderTxChips(); } });
-$('#fMethodChips').addEventListener('click', e => { const b = e.target.closest('[data-method]'); if (b){ selMethod = b.dataset.method; renderTxChips(); } });
+$('#fCatChips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b){ selCat = b.dataset.cat; if(!txMethodExplicit)selMethod=null; renderTxChips(); } });
+$('#fMethodChips').addEventListener('click', e => { const b = e.target.closest('[data-method]'); if (b){ selMethod = b.dataset.method; txMethodExplicit=true; renderTxChips(); } });
 $('#fGoalChips').addEventListener('click', e => { const b = e.target.closest('[data-goal]'); if (b){ selGoal = b.dataset.goal || null; renderTxChips(); } });
 function setMode(){
   const rec = txMode === 'rec';
@@ -1759,7 +1766,7 @@ function setMode(){
 function quickPicks(type){
   const from = shiftMonth(thisMonth(), -3) + '-01', seen = {};
   state.transactions.filter(t => t.type === type && t.date >= from && !t.recId && !t.goalId).forEach(t => {
-    const k = [t.catId, (t.desc || '').toLowerCase(), t.amount].join('|'); (seen[k] = seen[k] || {t, n:0}).n++; });
+    const k = [t.catId, (t.desc || '').toLowerCase(), t.amount,t.method||''].join('|'); (seen[k] = seen[k] || {t, n:0}).n++; });
   return Object.values(seen).filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date)).slice(0, 6).map(x => x.t);
 }
 let quickOK = false;
@@ -1768,12 +1775,12 @@ function renderQuick(){
   const list = txMode === 'tx' && quickOK ? quickPicks(txType) : [];
   el.hidden = !list.length;
   el.innerHTML = list.length ? `<span class="q-l">Frecuentes</span>` + list.map(t => { const c = getCat(t.catId);
-    return `<button type="button" class="q-chip" data-quick="${t.id}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span>${esc(t.desc || c.name)}<b>${fmt(t.amount)}</b></button>`; }).join('') : '';
+    return `<button type="button" class="q-chip" data-quick="${t.id}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="q-copy">${esc(t.desc || c.name)}<small>${esc(t.method||'Sin especificar')}</small></span><b>${fmt(t.amount)}</b></button>`; }).join('') : '';
 }
 document.addEventListener('click', e => {
   const q = e.target.closest('[data-quick]'); if (!q) return;
   const t = state.transactions.find(x => x.id === q.dataset.quick); if (!t) return;
-  $('#fAmount').value = t.amount; selCat = t.catId; selMethod = t.method || selMethod; $('#fDesc').value = t.desc || '';
+  $('#fAmount').value = t.amount; selCat = t.catId; selMethod = t.method || ''; txMethodExplicit=true; $('#fDesc').value = t.desc || '';
   renderTxChips(); q.classList.add('picked'); setTimeout(() => q.classList.remove('picked'), 400);
   $('#txForm button[type=submit]').focus();
 });
@@ -1783,7 +1790,7 @@ function openTx(id, preset){
   const t = id ? state.transactions.find(x => x.id === id) : null;
   const p = t || preset || {};
   txRecId = p.recId || null;
-  selCat = p.catId || null; selMethod = p.method || null; selGoal = p.goalId || null;
+  selCat = p.catId || null; txMethodExplicit=!!t||Object.prototype.hasOwnProperty.call(p,'method'); selMethod=txMethodExplicit?(p.method||''):null; selGoal = p.goalId || null;
   txType = p.type || txType; setMode(); setTxType(txType);
   $('#txTitle').textContent = t ? 'Editar movimiento' : (preset && preset.recId) ? 'Registrar recurrente' : (preset && preset.goalId) ? 'Aporte a meta' : 'Nuevo movimiento';
   $('#fAmount').value = p.amount || '';
@@ -1797,7 +1804,7 @@ function openRec(id, preset){
   resetTxCategoryUI();
   txMode = 'rec'; editingId = id || null; txRecId = null; selGoal = null; quickOK = false; $('#txDup').style.display = 'none';
   const r = id ? state.recurring.find(x => x.id === id) : null, pz = preset || {};
-  selCat = r ? r.catId : pz.catId || null; selMethod = r ? r.method : null;
+  selCat = r ? r.catId : pz.catId || null; txMethodExplicit=!!r||Object.prototype.hasOwnProperty.call(pz,'method'); selMethod=txMethodExplicit?((r||pz).method||''):null;
   txType = r ? r.type : pz.type || txType; setMode(); setTxType(txType);
   $('#txTitle').textContent = r ? 'Editar recurrente' : 'Nuevo recurrente';
   $('#fAmount').value = r ? r.amount : pz.amount || '';

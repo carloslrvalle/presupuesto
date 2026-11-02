@@ -1894,3 +1894,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
  #movBody .history-secondary,#movBody .history-description,#movBody .history-detail{font-size:11px;line-height:1.5}
  #movBody.mov-history.selecting .history-edit{grid-template-columns:18px 30px minmax(0,1fr) fit-content(44%);gap:8px}
 }
+
+/* 1.10.18: los frecuentes distinguen el método de pago que repetirán. */
+.q-chip{max-width:100%;white-space:normal}.q-chip .q-copy{min-width:0;overflow-wrap:anywhere;text-align:left}.q-chip .q-copy small{display:block;font-size:11px;line-height:1.5;color:var(--muted);font-weight:400}

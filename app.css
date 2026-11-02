@@ -1855,3 +1855,42 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 /* 1.10.16: el importe del acumulado cabe junto al mes anterior en móvil. */
 @media(max-width:600px){#yearReadout [data-analysis-value=current]{font-size:clamp(20px,5.6vw,24px)}}
+
+/* 1.10.17: movimientos agrupados, categoría principal e importe a la derecha. */
+#movBody.mov-history{padding:0 18px 12px}
+#movBody .history-day+.history-day{margin-top:8px;border-top:1px solid var(--border)}
+#movBody .history-day-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:16px 48px 6px 0;min-height:0}
+#movBody .history-day-date{display:flex;flex:1;align-items:baseline;flex-wrap:wrap;gap:2px 7px;min-width:0}
+#movBody .history-day-date h3{font-size:12px;font-weight:600}
+#movBody .history-day-date>span:not(.plan-pill){display:inline;font-size:11px}
+#movBody .history-day-totals{max-width:50%;justify-content:flex-end;font-size:11px;gap:2px 8px;flex-shrink:0}
+#movBody.mov-history .history-row{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:4px;padding:0;border:0;border-radius:9px}
+#movBody.mov-history .history-edit{display:grid;grid-template-columns:34px minmax(0,1fr) fit-content(44%);align-items:center;gap:12px;min-height:64px;padding:10px 0}
+#movBody .history-edit>.history-icon{grid-column:1;grid-row:1;align-self:center;margin:0;width:34px;height:34px;border-radius:11px}
+#movBody .history-edit>.history-copy{grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:0;min-width:0}
+#movBody .history-primary{display:block;min-width:0;line-height:1.45}
+#movBody .history-category{display:block;grid-column:auto;grid-row:auto;width:auto;max-width:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;font-size:14px;line-height:1.45;font-weight:600}
+#movBody .history-secondary{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;min-width:0;font-size:12px;line-height:1.5}
+#movBody .history-description,#movBody .history-detail{display:inline;grid-column:auto;grid-row:auto;min-width:0;width:auto;margin:0;white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip;font-size:12px;font-weight:400;line-height:1.5;color:var(--muted);-webkit-line-clamp:unset}
+#movBody .history-description::before{content:none;display:none}
+#movBody .history-description+.history-detail::before{content:'·';margin-right:8px;color:var(--muted)}
+#movBody .history-edit>.history-amount{grid-column:3;grid-row:1;align-self:center;justify-self:end;text-align:right;margin:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;font-size:14px;line-height:1.45}
+#movBody .history-options{width:44px;height:44px;align-self:center;margin:0;color:var(--muted)}
+#movBody.mov-history.selecting .history-row{grid-template-columns:minmax(0,1fr)}
+#movBody.mov-history.selecting .history-edit{grid-template-columns:18px 34px minmax(0,1fr) fit-content(44%);gap:10px}
+#movBody.selecting .history-edit::before{grid-column:1;grid-row:1;margin:0;align-self:center}
+#movBody.selecting .history-edit>.history-icon{grid-column:2;grid-row:1}
+#movBody.selecting .history-edit>.history-copy{grid-column:3;grid-row:1}
+#movBody.selecting .history-edit>.history-amount{grid-column:4;grid-row:1}
+#movBody.selecting .history-options{display:none}
+@media(max-width:700px){
+ #movBody.mov-history{padding:0 12px 10px}
+ #movBody .history-day-head{gap:8px;padding:14px 48px 4px 0}
+ #movBody .history-day-date h3,#movBody .history-day-totals{font-size:11px}
+ #movBody .history-day-date>span:not(.plan-pill){font-size:10px}
+ #movBody.mov-history .history-edit{grid-template-columns:30px minmax(0,1fr) fit-content(44%);gap:8px;min-height:64px;padding:10px 0}
+ #movBody .history-edit>.history-icon{width:30px;height:30px;border-radius:9px}
+ #movBody .history-category,#movBody .history-edit>.history-amount{font-size:13px}
+ #movBody .history-secondary,#movBody .history-description,#movBody .history-detail{font-size:11px;line-height:1.5}
+ #movBody.mov-history.selecting .history-edit{grid-template-columns:18px 30px minmax(0,1fr) fit-content(44%);gap:8px}
+}

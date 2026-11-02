@@ -40,7 +40,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.16'; window.__APP_DATE = '2026-11-02';
+window.__APP_VERSION = '1.10.17'; window.__APP_DATE = '2026-11-02';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -1316,7 +1316,7 @@ function movementHistory(list,dayLbl,filtered){
   const totals=[expense?`<span>− ${fmt(expense)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
   return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h3 id="history-day-${day}">${label}</h3>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div><div class="history-day-totals" aria-label="Totales del día">${totals}</div></header><ul class="history-items">${items.map(t=>{
    const c=getCat(t.catId),isI=t.type==='income';
-   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${t.id}"><button type="button" class="history-edit" data-edit="${t.id}" aria-label="Editar ${esc(c.name)}${t.desc?': '+esc(t.desc):''}"><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary${t.desc?' has-description':''}"><span class="history-category" title="${esc(c.name)}">${esc(c.name)}</span>${t.desc?`<span class="history-description" title="${esc(t.desc)}">${esc(t.desc)}</span>`:''}</span>${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span><b class="history-amount ${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${t.id}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${t.id}"><button type="button" class="history-edit" data-edit="${t.id}" aria-label="Editar ${esc(c.name)}${t.desc?': '+esc(t.desc):''}"><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-category" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${t.id}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
   }).join('')}</ul></section>`;
  }).join('');
 }
@@ -1678,7 +1678,7 @@ movActionMenu.addEventListener('keydown',e=>{
 });
 movActionMenu.addEventListener('click',async e=>{
  const b=e.target.closest('[data-mov-action]');if(!b||!movAction)return;const id=movAction.id;closeMovActionMenu();
- if(b.dataset.movAction==='edit')openTx(id);else{await fadeOut(document.querySelector(`#movBody tr[data-row="${id}"]`));delTxUndo(id);}
+ if(b.dataset.movAction==='edit')openTx(id);else{await fadeOut(document.querySelector(`#movBody [data-row="${id}"]`));delTxUndo(id);}
 });
 $('#movFilterToggle').onclick=toggleMovementFilters;
 /* ---------- Diálogo movimiento ---------- */
@@ -1837,7 +1837,7 @@ function delTxUndo(id){
 // Resalta brevemente una fila de la tabla de movimientos
 function highlightSaved(id){
   if (reduceMotion()) return;
-  const el = document.querySelector(`#movBody tr[data-row="${id}"]`) || document.querySelector(`[data-go-tx="${id}"]`) || document.querySelector(`#calDay [data-edit="${id}"]`)?.closest('.prow');
+  const el = document.querySelector(`#movBody [data-row="${id}"]`) || document.querySelector(`[data-go-tx="${id}"]`) || document.querySelector(`#calDay [data-edit="${id}"]`)?.closest('.prow');
   if (!el) return; el.classList.remove('just'); void el.offsetWidth; el.classList.add('just');
   if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
 }

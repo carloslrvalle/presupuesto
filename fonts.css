@@ -34,3 +34,8 @@
 @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:500;font-display:swap;src:url('./fonts/spacegrotesk-500.woff2') format('woff2')}
 @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:600;font-display:swap;src:url('./fonts/spacegrotesk-600.woff2') format('woff2')}
 @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:700;font-display:swap;src:url('./fonts/spacegrotesk-700.woff2') format('woff2')}
+
+@font-face{font-family:'Geist';font-style:normal;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/Geist/webfonts/Geist%5Bwght%5D.woff2') format('woff2')}
+@font-face{font-family:'Geist';font-style:italic;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/Geist/webfonts/Geist-Italic%5Bwght%5D.woff2') format('woff2')}
+@font-face{font-family:'Geist Mono';font-style:normal;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/GeistMono/webfonts/GeistMono%5Bwght%5D.woff2') format('woff2')}
+@font-face{font-family:'Geist Mono';font-style:italic;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/GeistMono/webfonts/GeistMono-Italic%5Bwght%5D.woff2') format('woff2')}

@@ -49,7 +49,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.3'; window.__APP_DATE = '2026-11-01';
+window.__APP_VERSION = '1.10.4'; window.__APP_DATE = '2026-11-01';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -2920,6 +2920,8 @@ const FONTS = [
   {id:'jakarta', name:'Plus Jakarta', desc:'La original: moderna y amable', body:`"Plus Jakarta Sans",${SANS_FB}`},
   {id:'claude', name:'Estilo Claude', desc:'Serif editorial, como las respuestas de Claude', body:`"Source Serif 4",${SERIF_FB}`, num:'"lnum","tnum"'},
   {id:'claudemix', name:'Claude mixto', desc:'Títulos y cifras serif, texto sans', head:`"Source Serif 4",${SERIF_FB}`, body:`"Inter",${SANS_FB}`, num:'"tnum"'},
+  {id:'geist', name:'Geist', desc:'Limpia y moderna, con cifras claras', body:`"Geist",${SANS_FB}`, num:'"tnum"'},
+  {id:'geistmono', name:'Geist Mono', desc:'Monoespaciada, ideal para tablas y cifras', body:`"Geist Mono",ui-monospace,monospace`, num:'"tnum"'},
   {id:'inter', name:'Inter', desc:'Neutra y muy legible en pantalla', body:`"Inter",${SANS_FB}`, num:'"tnum"'},
   {id:'dmsans', name:'DM Sans', desc:'Geométrica y limpia', body:`"DM Sans",${SANS_FB}`},
   {id:'manrope', name:'Manrope', desc:'Compacta, ideal para cifras', body:`"Manrope",${SANS_FB}`},

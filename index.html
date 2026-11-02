@@ -49,7 +49,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.9.7'; window.__APP_DATE = '2026-11-01';
+window.__APP_VERSION = '1.10.3'; window.__APP_DATE = '2026-11-01';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -107,7 +107,7 @@ window.addEventListener('error', function (e) {
 
 <main class="wrap">
   <!-- DASHBOARD -->
-  <section class="tab active" id="tab-dashboard">
+  <section class="tab active" id="tab-dashboard"><div class="plan-period" data-plan-controls></div>
     <div class="insight" id="insight" hidden><span class="i-ic"></span><div id="insightText"></div></div>
     <div class="kpis dashboard-kpis">
       <details class="card kpi metric-disclosure k-inc"><summary><div class="label"><span class="dot ui-ic" data-e="⬇️" style="background:var(--income-soft);color:var(--income)"></span>Ingresos del mes</div><div class="value" id="kIncome"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="kIncomeSub"></div><div class="metric-footer small muted" id="kIncomeFoot"></div><button type="button" class="metric-action" data-metric-go="income">Ver movimientos<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
@@ -140,7 +140,7 @@ window.addEventListener('error', function (e) {
       <div class="toolbar mov-filters">
         
         
-        <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
+        <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
         <select id="fltMethod" aria-label="Filtrar por método"></select></div><button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
         <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar descripción, categoría o monto…"></div>
       </div>
@@ -169,7 +169,7 @@ window.addEventListener('error', function (e) {
 
   <!-- PRESUPUESTO -->
   <section class="tab" id="tab-budget">
-    <div class="toolbar">
+    <div class="toolbar budget-actions"><div class="plan-period" data-plan-controls></div>
       
       <span class="spacer"></span><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Los cambios se guardan al editar. «Copiar del mes anterior» trae los montos del mes pasado y «Usar como base» los aplica a los meses que aún no tienen presupuesto propio."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
       <div class="btn-row">
@@ -295,6 +295,11 @@ window.addEventListener('error', function (e) {
 
 <button class="fab" id="fab" title="Nuevo movimiento" aria-label="Nuevo movimiento"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
+<dialog id="periodDialog" aria-labelledby="periodTitle">
+  <div class="dlg-head"><h3 id="periodTitle" style="margin:0">Período del presupuesto</h3><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M6 18 18 6"/></svg></button></div>
+  <div class="dlg-body" id="periodBody"></div>
+  <div class="dlg-foot"><button type="button" class="btn" data-close>Cancelar</button><button type="button" class="btn primary" id="periodApply">Aplicar</button></div>
+</dialog>
 <!-- Dialog: movimiento -->
 <dialog id="txDialog">
   <form id="txForm">
@@ -490,7 +495,7 @@ let _txIdx = null;
 /* Registro de cambios para sincronizar entre dispositivos: cada registro guarda cuándo cambió (u) y los borrados quedan anotados */
 var _snapRec = null;
 var SYNC_COLLS = ['categories', 'transactions', 'recurring', 'goals'];
-var SYNC_SETTINGS = ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose'];
+var SYNC_SETTINGS = ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose','budgetCycle'];
 function syncSettings(){ const o = {}; SYNC_SETTINGS.forEach(k => o[k] = state.settings[k]); return o; }
 function recKey(r){ const o = Object.assign({}, r); delete o.u; return JSON.stringify(o); }
 function snapState(){
@@ -584,6 +589,141 @@ const payActive = (c, m) => { if (!c || c.type !== 'income' || !c.pay) return tr
 const getBudget = (m, catId) => { const cc = state.categories.find(x => x.id === catId); if (cc && (!payActive(cc, m) || isArch(cc, m))) return 0; const b = state.budgets[m]; if (b && b[catId] != null) return Number(b[catId]); return Number(getCat(catId).defaultBudget || 0); };
 const realBy = (m, catId) => sum(txOfMonth(m).filter(t => t.catId === catId));
 const totalBudget = (m, type) => catsOf(type).reduce((a,c) => a + getBudget(m, c.id), 0);
+/* ---------- Planificación por ciclo de sueldo (sin cambiar las fechas reales) ---------- */
+function cycleConfig(){ return state.settings.budgetCycle || {}; }
+function cycleDay(){ const n=Number(cycleConfig().day); return Number.isInteger(n)&&n>=1&&n<=31?n:25; }
+function cycleEnabled(){ return cycleConfig().enabled === true; }
+function cycleView(name=activeTab()){ return !bothMode && cycleEnabled() && ['dashboard','budget'].includes(name); }
+function dateOffset(iso,n){ const [y,m,d]=iso.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10); }
+function cyclePeriod(m,day=cycleDay()){
+  const start=dateFor(day===1?m:shiftMonth(m,-1),day),next=dateFor(day===1?shiftMonth(m,1):m,day);
+  return {anchor:m,start,end:dateOffset(next,-1),day};
+}
+function cycleMonthForDate(date=todayISO(),day=cycleDay()){ const m=date.slice(0,7);return day===1||date<dateFor(m,day)?m:shiftMonth(m,1); }
+function cycleLabel(m){ const p=cyclePeriod(m);return fmtDateLong(p.start)+' – '+fmtDateLong(p.end); }
+function cycleBudgetKey(id){ return 'cycle'+cycleDay()+':'+id; }
+function cycleBudget(m,id){
+  const key=cycleBudgetKey(id),budgets=state.budgets;
+  if(Object.prototype.hasOwnProperty.call(budgets[m]||{},key))return Number(budgets[m][key])||0;
+  const base=(cycleConfig().defaults||{})[cycleDay()];
+  if(base&&Object.prototype.hasOwnProperty.call(base,id))return Number(base[id])||0;
+  const previous=Object.keys(budgets).filter(x=>x<m&&Object.prototype.hasOwnProperty.call(budgets[x]||{},key)).sort().pop();
+  return previous?Number(budgets[previous][key])||0:getBudget(cyclePeriod(m).start.slice(0,7),id);
+}
+function ensureCyclePlan(m){
+  if(!cycleView())return;
+  let changed=false;const out=state.budgets[m]||(state.budgets[m]={});
+  state.categories.forEach(c=>{const key=cycleBudgetKey(c.id);if(!Object.prototype.hasOwnProperty.call(out,key)){out[key]=cycleBudget(m,c.id);changed=true;}});
+  if(changed)save();
+}
+function cycleTx(m,all=false){const p=cyclePeriod(m),today=todayISO();return state.transactions.filter(t=>t.date>=p.start&&t.date<=p.end&&(all||t.date<=today));}
+function cycleReal(m,id){return sum(cycleTx(m).filter(t=>t.catId===id));}
+function cycleTotal(m,type){return catsOf(type).filter(c=>!isArch(c,cyclePeriod(m).start.slice(0,7))||cycleReal(m,c.id)).reduce((s,c)=>s+cycleBudget(m,c.id),0);}
+function cyclePlanned(m,type,id){return sum(cycleTx(m,true).filter(t=>isPlanned(t)&&(!type||t.type===type)&&(!id||t.catId===id)));}
+function cycleSavings(m){
+ const txs=cycleTx(m),inc=sum(txs.filter(t=>t.type==='income')),exps=txs.filter(t=>t.type==='expense'),sep=sum(exps.filter(t=>isSavingCat(t.catId)||t.goalId)),cons=sum(exps)-sep;
+ const saved=saveMode()==='set'?sep:inc-cons,pct=Number((state.settings.savePctM||{})[cycleBudgetKey(m)]??state.settings.savePct)||0,base=inc>0?inc:cycleTotal(m,'income');
+ return {inc,sep,cons,free:inc-cons-sep,saved,pct,base,target:base*pct/100,rate:inc>0?saved/inc*100:null};
+}
+function cycleBalance(m){
+ const p=cyclePeriod(m),today=todayISO();let previous=0,result=0;
+ state.transactions.forEach(t=>{if(t.date>today||t.date>p.end||!['income','expense'].includes(t.type))return;const cents=Math.round((Number(t.amount)||0)*100)*(t.type==='income'?1:-1);if(t.date<p.start)previous+=cents;else result+=cents;});
+ return {previous:previous/100,result:result/100,total:(previous+result)/100,provisional:p.start>today};
+}
+function cyclePending(m){
+ const p=cyclePeriod(m),out=[];
+ for(let mm=p.start.slice(0,7);mm<=p.end.slice(0,7);mm=shiftMonth(mm,1)){
+  recPending(mm).forEach(r=>{const date=dateFor(mm,r.day);if(date>=p.start&&date<=p.end)out.push({...r,month:mm,date});});
+ }
+ return out;
+}
+function cycleProjection(m){
+ const pending=cyclePending(m),txs=cycleTx(m);
+ const total=type=>{
+  const known=catsOf(type).reduce((s,c)=>{const real=sum(txs.filter(t=>t.type===type&&t.catId===c.id)),plan=cyclePlanned(m,type,c.id),rec=sum(pending.filter(r=>r.type===type&&r.catId===c.id));return s+Math.max(real+plan+rec,cycleBudget(m,c.id));},0);
+  return known+sum(txs.filter(t=>t.type===type&&!state.categories.some(c=>c.id===t.catId)))+sum(cycleTx(m,true).filter(t=>isPlanned(t)&&t.type===type&&!state.categories.some(c=>c.id===t.catId)));
+ };
+ return {projInc:total('income'),projExp:total('expense')};
+}
+function planTx(m){return cycleView()?cycleTx(m):txOfMonth(m);}
+function planTxAll(m){return cycleView()?cycleTx(m,true):txOfMonthAll(m);}
+function planReal(m,id){return cycleView()?cycleReal(m,id):realBy(m,id);}
+function planBudget(m,id){return cycleView()?cycleBudget(m,id):getBudget(m,id);}
+function planTotal(m,type){return cycleView()?cycleTotal(m,type):totalBudget(m,type);}
+function planPlanned(m,type,id){return cycleView()?cyclePlanned(m,type,id):plannedOf(m,type,id);}
+function planSavings(m){return cycleView()?cycleSavings(m):savingsOf(m);}
+function planBalance(m){return cycleView()?cycleBalance(m):balanceOfMonth(m);}
+function planCurrentMonth(){return cycleView()?cycleMonthForDate():thisMonth();}
+function planLabel(m){return cycleView()?cycleLabel(m):monthLong(m);}
+const cycleCalendarMonths={},cycleSelectedMonths={};
+if(cycleEnabled())currentMonth=cycleMonthForDate();
+function syncPlanningNavigation(name){
+ if(!cycleEnabled())return;
+ const was=cycleView(),next=cycleView(name);
+ if(was&&!next){cycleSelectedMonths[activeProfile]=currentMonth;currentMonth=cycleCalendarMonths[activeProfile]||thisMonth();}
+ else if(!was&&next){cycleCalendarMonths[activeProfile]=currentMonth;currentMonth=cycleSelectedMonths[activeProfile]||cycleMonthForDate();}
+ if(was!==next){monthInput.value=currentMonth;dirty=new Set(Object.keys(VIEWS));}
+}
+function planningHeader(){
+ const cy=cycleView();$('#monthLabel').textContent=cy?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
+ $('#monthLabel').title=cy?cycleLabel(currentMonth):'Elegir mes';
+ const labels=document.querySelectorAll('#tab-dashboard .kpi .label');
+ [cy?'Ingresos del ciclo':'Ingresos del mes',cy?'Gastos del ciclo':'Gastos del mes','Saldo acumulado','Tasa de ahorro'].forEach((text,i)=>{if(!labels[i])return;for(const node of labels[i].childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){node.textContent=text;break;}});
+ $('#topExp').closest('.card').querySelector('h3').textContent=cy?'Top 5 gastos del ciclo':'Top 5 gastos del mes';
+ $('#barsWrap').closest('.card').querySelector('h3').textContent=cy?'Ingresos vs gastos · últimos 6 ciclos':'Ingresos vs gastos · últimos 6 meses';
+ const copy=$('#btnCopyPrev span');if(copy)copy.textContent=cy?'Copiar ciclo anterior':'Copiar mes anterior';
+}
+function shortPeriodLabel(m){const p=cyclePeriod(m);return p.start.slice(0,4)!==p.end.slice(0,4)?cycleLabel(m):[p.start,p.end].map(d=>fmtDateLong(d).replace(/\s+\d{4}$/,'')).join(' – ');}
+function renderPeriodControls(){
+ const cy=cycleEnabled();
+ document.querySelectorAll('[data-plan-controls]').forEach(el=>{
+  el.innerHTML=`<button type="button" class="btn period-trigger" data-period-open aria-haspopup="dialog" aria-controls="periodDialog">${ic('calendar-days')}<span>${cy?'Ciclo · día '+cycleDay():'Mes calendario'}</span>${ic('chevron-down')}</button><span class="period-range" title="${cy?cycleLabel(currentMonth):monthLong(currentMonth)}">${cy?shortPeriodLabel(currentMonth):monthLong(currentMonth)}</span>${el.closest('#tab-dashboard')?'<button type="button" class="info-tip" aria-label="Ayuda del período" data-tip="El ciclo reúne compras de dos meses en un solo presupuesto. Cada movimiento conserva su fecha; el análisis mensual sigue por calendario.">'+ic('info')+'</button>':''}`;
+ });
+ const help=$('#tab-budget .toolbar>.info-tip');if(help)help.dataset.tip='Elige mes o ciclo con el calendario. Copiar trae el plan anterior; Usar como base lo aplica a períodos futuros sin plan propio. Tus movimientos conservan su fecha.';
+ planningHeader();
+}
+let periodDraft=null;
+function renderPeriodEditor(){
+ const d=periodDraft;
+ $('#periodBody').innerHTML=`<div class="seg period-mode" role="group" aria-label="Tipo de período"><button type="button" data-period-mode="calendar" aria-pressed="${!d.enabled}" class="${d.enabled?'':'active'}">Mes calendario</button><button type="button" data-period-mode="cycle" aria-pressed="${d.enabled}" class="${d.enabled?'active':''}">Ciclo de sueldo</button></div>${d.enabled?'<div class="period-day-head"><b>Empieza el día</b><span>Elegido: '+d.day+'</span></div><div class="period-day-grid" role="group" aria-label="Día de inicio del ciclo">'+Array.from({length:31},(_,i)=>'<button type="button" data-period-day="'+(i+1)+'" aria-pressed="'+(d.day===i+1)+'" class="'+(d.day===i+1?'selected':'')+'">'+(i+1)+'</button>').join('')+'</div><p class="small muted">Los días 29–31 se ajustan al último día cuando el mes es más corto.</p>':'<p class="small muted">Presupuesto del primer al último día de cada mes.</p>'}<p class="period-data-note">Las compras y los presupuestos guardados conservan sus datos.</p>`;
+}
+function openPeriodEditor(){periodDraft={enabled:cycleEnabled(),day:cycleDay()};renderPeriodEditor();$('#periodDialog').showModal();}
+document.addEventListener('click',e=>{if(e.target.closest('[data-period-open]'))openPeriodEditor();});
+document.addEventListener('click',e=>{
+ if(!periodDraft||!e.target.closest('#periodDialog'))return;
+ const mode=e.target.closest('[data-period-mode]'),day=e.target.closest('[data-period-day]');
+ if(mode){periodDraft.enabled=mode.dataset.periodMode==='cycle';renderPeriodEditor();$('#periodDialog [data-period-mode="'+mode.dataset.periodMode+'"]').focus();}
+ if(day){periodDraft.day=Number(day.dataset.periodDay);renderPeriodEditor();$('#periodDialog [data-period-day="'+periodDraft.day+'"]').focus();}
+ if(e.target.closest('#periodApply')){const draft=periodDraft;$('#periodDialog').close();setPlanningMode(draft.enabled,draft.day);document.querySelector('.tab.active [data-period-open]')?.focus({preventScroll:true});}
+});
+function setPlanningMode(enabled,day=cycleDay()){
+ const wasEnabled=cycleEnabled(),previousDay=cycleDay(),was=cycleView();if(was)cycleSelectedMonths[activeProfile]=currentMonth;else cycleCalendarMonths[activeProfile]=currentMonth;
+ state.settings.budgetCycle={...cycleConfig(),enabled,day};
+ if(wasEnabled!==enabled||day!==previousDay)state.settings.lastClose=enabled?cycleBudgetKey(cycleMonthForDate()):thisMonth();
+ currentMonth=enabled?cycleMonthForDate():cycleCalendarMonths[activeProfile]||thisMonth();
+ cycleSelectedMonths[activeProfile]=enabled?currentMonth:cycleSelectedMonths[activeProfile];monthInput.value=currentMonth;
+ save();renderAll();toast(enabled?'Ciclo activo: '+cycleLabel(currentMonth):'Vista por mes calendario');
+}
+let planningToday=todayISO();
+function refreshPlanningDate(){
+ const today=todayISO();if(today===planningToday||document.querySelector('dialog[open]'))return;
+ const previous=cycleMonthForDate(planningToday);planningToday=today;_txIdx=null;
+ if(cycleView()){if(currentMonth===previous){currentMonth=cycleMonthForDate(today);monthInput.value=currentMonth;}renderAll();maybeMonthClose();}
+}
+window.addEventListener('focus',refreshPlanningDate);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPlanningDate();});
+setInterval(refreshPlanningDate,60000);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-plan-mode]');if(b)setPlanningMode(b.dataset.planMode==='cycle');});
+document.addEventListener('change',e=>{if(e.target.matches('[data-cycle-day]'))setPlanningMode(true,Number(e.target.value));});
+function renderCycleInsight(m,inc,exp,budget){
+ const box=$('#insight'),remaining=budget-exp;box.hidden=false;box.dataset.tone=remaining<-.005?'bad':'good';box.querySelector('.i-ic').innerHTML=ic(remaining<-.005?'triangle-alert':'calendar-days');
+ $('#insightText').innerHTML=`${fmt(exp)} gastados${budget>0?` · <b>${fmt(Math.abs(remaining))}</b> ${remaining<0?'de exceso':'del presupuesto disponibles'}`:''}.`;
+}
+function renderCycleSaveCard(){
+ const m=currentMonth,sv=cycleSavings(m),own=(state.settings.savePctM||{})[cycleBudgetKey(m)]!=null,mode=saveMode();
+ $('#budSave').innerHTML=`<h3>${ic('piggy-bank')} Meta de ahorro del ciclo</h3><div class="sv-form"><label class="sv-l" for="svPct">Meta</label><div class="sv-c"><span class="sv-in"><input type="number" id="svPct" min="0" max="100" step="1" value="${sv.pct||''}" placeholder="20"><i>%</i></span></div><span class="sv-l">Aplica a</span><label class="check sv-c"><input type="checkbox" id="svAll"${own?'':' checked'}><span>Meta general${own?' · excepción en este ciclo':''}</span></label><span class="sv-l">Cuenta como ahorro</span><div class="seg sv-c"><button type="button" data-svmode="set" class="${mode==='set'?'active':''}">Lo que separo</button><button type="button" data-svmode="left" class="${mode==='left'?'active':''}">Lo que sobra</button></div></div><div class="sv-tip"><b>${fmt(sv.saved)}</b> ${sv.pct?'de '+fmt(sv.target):'ahorrados en el ciclo'}${sv.rate!=null?' · '+sv.rate.toFixed(1)+'%':''}</div>`;
+}
+
 const hexLum = hex => { const h = String(hex || '').replace('#',''); if (h.length !== 6) return .4;
   const [r,g,b] = [0,2,4].map(i => parseInt(h.substr(i,2),16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4));
   return .2126 * r + .7152 * g + .0722 * b; };
@@ -658,13 +798,15 @@ function motionAnimate(el,frames,kind='move'){
 }
 function toggleDisclosure(details,summary){
  const current=details._disclosure,open=current?!current.open:!details.open,from=details.getBoundingClientRect().height;
- if(current)current.animation.cancel();
+ if(current){current.animation.cancel();current.contentAnimation?.cancel();}
  details.style.overflow='hidden';details.open=true;
  const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+parseFloat(getComputedStyle(details).borderTopWidth||0)+parseFloat(getComputedStyle(details).borderBottomWidth||0);
  const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
  if(reduceMotion()||Math.abs(from-to)<1){finish();return;}
+ const content=details.querySelector('.metric-expanded');
+ const contentAnimation=content?.animate(open?[{opacity:0,transform:'translateY(-5px)'},{opacity:1,transform:'none'}]:[{opacity:1},{opacity:0}],{duration:open?MOTION.panel:MOTION.fast,easing:MOTION.ease});
  const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});
- details._disclosure={animation,open};animation.onfinish=finish;
+ details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
 }
 document.addEventListener('click',e=>{
  const summary=e.target.closest('summary');if(!summary)return;
@@ -737,6 +879,7 @@ cfDialog.addEventListener('close', () => cfDone(null));
 
 /* ---------- Tabs y mes ---------- */
 function showTab(name){
+  syncPlanningNavigation(name);
   if (typeof selMode !== 'undefined' && selMode) setSelMode(false);
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
@@ -754,6 +897,7 @@ function showTab(name){
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
   if (name === 'dashboard' || name === 'analysis') dirty.add(name); // se redibujan siempre para que los gráficos tomen su tamaño
+  planningHeader();
   renderView(name);
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
@@ -929,7 +1073,7 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
  incomeFoot.title=pp.length?pp.map(x=>`${x.c.name}: ${payRange(x.a,x.b,m)}`).join('\n'):pInc?`${fmt(pInc)} con fecha futura`:'';
  $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso':'Disponible',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'');
  const expenseFoot=$('#kExpenseFoot');expenseFoot.innerHTML=!bExp?'Define un presupuesto':budgetStatus(exp,bExp)==='complete'?'Presupuesto completo':expenseRemaining<0?'Presupuesto superado':pace||pExp?pace||`${fmt(pExp)} programados`:`${Math.round(exp/bExp*100)}% del presupuesto usado`;
- $('#balanceParts').innerHTML=row('Saldo anterior',fmt(cash.previous))+row('Resultado del mes',fmt(cash.result),cash.result<0?'neg':'');
+ $('#balanceParts').innerHTML=row('Saldo anterior',fmt(cash.previous))+row(cycleView()?'Resultado del ciclo':'Resultado del mes',fmt(cash.result),cash.result<0?'neg':'');
  $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';
  $('#kBalanceSub').innerHTML=closed?'Cierre registrado':cash.provisional?'Saldo previo provisional':`Cierre estimado: <b class="${closing<0?'neg':'pos'}">${fmt(closing)}</b>`;
  $('#kSavingsSub').innerHTML=row(saveMode()==='set'?'Separado':'Ahorro calculado',fmt(sv.saved))+row(sv.pct?`Objetivo (${sv.pct}%)`:'Objetivo',sv.pct?fmt(sv.target):'Sin definir');
@@ -938,45 +1082,46 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
 }
 
 function renderDashboard(){
-  const m = currentMonth, txs = txOfMonth(m);
+  const cy=cycleView();ensureCyclePlan(currentMonth);renderPeriodControls();
+  const m = currentMonth, txs = planTx(m);
   const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense'));
-  const bInc = totalBudget(m,'income'), bExp = totalBudget(m,'expense'), bal = inc - exp;
+  const bInc = planTotal(m,'income'), bExp = planTotal(m,'expense'), bal = inc - exp;
   countUp($('#kIncome'), inc);
-  const pInc = plannedOf(m, 'income'), pExp = plannedOf(m, 'expense');
-  const pp = pendingPays(m);
+  const pInc = planPlanned(m, 'income'), pExp = planPlanned(m, 'expense');
+  const pp = cy ? [] : pendingPays(m);
   countUp($('#kExpense'), exp);
   // Cuánto puedes gastar por día hasta fin de mes (sin contar lo que es para ahorrar ni lo ya programado)
   // Gastos: lo que el presupuesto aún permite gastar (no es dinero disponible, es el plan)
   let pace = '';
   const pend = Math.max(0, bExp - exp);
-  if (m === thisMonth() && bExp > exp){
-    const daysLeft = daysIn(m) - new Date().getDate() + 1;
-    const savLeft = catsOf('expense').filter(c => isSavingCat(c.id)).reduce((a, c) => a + Math.max(0, getBudget(m, c.id) - realBy(m, c.id)), 0);
+  if (m === planCurrentMonth() && bExp > exp){
+    const daysLeft = cy ? Math.max(1, Math.round((Date.parse(cyclePeriod(m).end)-Date.parse(todayISO()))/864e5)+1) : daysIn(m)-new Date().getDate()+1;
+    const savLeft = catsOf('expense').filter(c => isSavingCat(c.id)).reduce((a, c) => a + Math.max(0, planBudget(m, c.id) - planReal(m, c.id)), 0);
     const free = bExp - exp - pExp - savLeft;
     const how = [`Gastos pendientes según tu presupuesto: ${fmt(bExp - exp)}`, pExp ? `− ${fmt(pExp)} ya programados` : '', savLeft ? `− ${fmt(savLeft)} reservados para ahorro` : '', `= ${fmt(free)} para el día a día ÷ ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} que quedan`, 'Es un tope para no pasarte del presupuesto, no dinero disponible en tu cuenta.'].filter(Boolean).join('\n');
     if (free > 0) pace = `<span class="per-day" title="${how}">Para no pasarte: máx. <b>${fmt(free / daysLeft)}</b>/día</span>`;
   }
-  const cash=balanceOfMonth(m);
+  const cash=planBalance(m);
   countUp($('#kBalance'),cash.total,'money','value '+(cash.total>=0?'pos':'neg'));
   // Balance: cuánto quedaría libre al cierre (después del presupuesto, que ya incluye lo que separas para ahorro)
   // Mes cerrado: lo real. Mes en curso o futuro: la proyección (misma cifra que Análisis)
-  const closed = m < thisMonth(), prj = closed ? null : projection(m);
+  const closed = m < planCurrentMonth(), prj = closed ? null : cy ? cycleProjection(m) : projection(m);
   const incEnd = closed ? inc : prj.projInc, expEnd = closed ? exp : prj.projExp, freeEnd = incEnd - expEnd;
   const closing=cash.previous+freeEnd;
-  const sv = savingsOf(m);
+  const sv = planSavings(m);
   if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value' + (sv.pct ? (sv.saved >= sv.target ? ' pos' : '') : '')); else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
   renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv});
 
   // Recurrentes pendientes
-  const pendN = recPending(m).filter(r => !r.auto && recDue(r, m)).length;
+  const pendN = cy ? cyclePending(m).filter(r=>!r.auto&&r.date<=todayISO()).length : recPending(m).filter(r => !r.auto && recDue(r, m)).length;
 
   const pm = shiftMonth(m, -1);
   const rows = type => {
-    const list = catsOf(type).map(c => ({c, real: realBy(m,c.id), budget: getBudget(m,c.id)})).filter(x => x.real || x.budget)
+    const list = catsOf(type).map(c => ({c, real: planReal(m,c.id), budget: planBudget(m,c.id)})).filter(x => x.real || x.budget)
       .sort((a,b) => b.real - a.real || b.budget - a.budget);
-    if (!list.length) return type === 'income' ? emptyBox('target', 'Aún no defines cuánto esperas recibir este mes.', 'budget', 'Definir', true) : emptyBox('target', 'Define cuánto quieres gastar por categoría y aquí verás tu avance.', 'budget', 'Definir presupuesto');
-    const act = list.filter(x => x.real || plannedOf(m, type, x.c.id)), zero = list.filter(x => !act.includes(x));
-    const row = x => progressRow(x.c, x.real, x.budget, type, realBy(pm, x.c.id), pm);
+    if (!list.length) return type === 'income' ? emptyBox('target', 'Aún no defines cuánto esperas recibir este período.', 'budget', 'Definir', true) : emptyBox('target', 'Define cuánto quieres gastar por categoría y aquí verás tu avance.', 'budget', 'Definir presupuesto');
+    const act = list.filter(x => x.real || planPlanned(m, type, x.c.id)), zero = list.filter(x => !act.includes(x));
+    const row = x => progressRow(x.c, x.real, x.budget, type, planReal(pm, x.c.id), pm);
     if (type === 'expense' && act.length){
       // Solo lo que necesita atención (pasadas o al límite) y, para completar, las de mayor gasto; el resto está en Presupuesto
       const need = x => !isSavingCat(x.c.id) && x.budget > 0 && x.real / x.budget >= .85;
@@ -986,18 +1131,18 @@ function renderDashboard(){
       return (hot.length ? '' : `<div class="bva-ok">${ic('check')} Todas tus categorías van dentro del presupuesto</div>`) + shown.map(row).join('')
         + `<button type="button" class="bva-more" data-gotab="budget">${more > 0 ? `Ver las ${more} categorías restantes en Presupuesto` : 'Ver todo en Presupuesto'} ${ic('chevron-right')}</button>`;
     }
-    return (act.map(row).join('') || emptyBox('receipt', type === 'income' ? 'Aún no registras ingresos este mes.' : 'Aún no registras gastos este mes.', type, 'Registrar', true))
+    return (act.map(row).join('') || emptyBox('receipt', type === 'income' ? 'Aún no registras ingresos este período.' : 'Aún no registras gastos este período.', type, 'Registrar', true))
       + zeroGroup(zero.map(row), `categoría${zero.length > 1 ? 's' : ''} sin movimientos aún · ${fmt(zero.reduce((a, x) => a + x.budget, 0))} ${type === 'income' ? 'esperado' : 'presupuestado'}`);
   };
   $('#bvaExpense').innerHTML = rows('expense');
   animateBars($('#tab-dashboard'));
-  renderInsight(m, txs, inc, exp, bExp, pendN);
+  if(cy)renderCycleInsight(m,inc,exp,bExp);else renderInsight(m, txs, inc, exp, bExp, pendN);
 
   const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.amount - a.amount).slice(0,5);
   $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<div class="prow link" data-go-tx="${t.id}" title="Editar movimiento" style="grid-template-columns:34px 1fr auto">
     <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
     <div><div class="name">${esc(t.desc || c.name)}</div><div class="small muted">${t.desc ? esc(c.name) + ' · ' : ''}${t.method ? esc(t.method) + ' · ' : ''}${fmtDate(t.date)}</div></div>
-    <div class="amt"><b class="xp">${fmt(t.amount)}</b></div></div>`; }).join('') : emptyBox('receipt', 'Aquí verás tus 5 gastos más grandes del mes.', null, '', true);
+    <div class="amt"><b class="xp">${fmt(t.amount)}</b></div></div>`; }).join('') : emptyBox('receipt', 'Aquí verás tus 5 gastos más grandes del período.', null, '', true);
 
   renderCharts();
 }
@@ -1073,8 +1218,8 @@ function renderCharts(){
 
   // Dona
   const m = currentMonth;
-  let data = catsOf('expense').map(c => ({c, v: realBy(m,c.id)})).filter(x => x.v > 0).sort((a,b) => b.v - a.v);
-  const orphan = sum(txOfMonth(m).filter(t => t.type === 'expense' && !state.categories.some(c => c.id === t.catId)));
+  let data = catsOf('expense').map(c => ({c, v: planReal(m,c.id)})).filter(x => x.v > 0).sort((a,b) => b.v - a.v);
+  const orphan = sum(planTx(m).filter(t => t.type === 'expense' && !state.categories.some(c => c.id === t.catId)));
   if (orphan) data.push({c:getCat(null), v:orphan});
   { const tot = data.reduce((a, x) => a + x.v, 0), small = data.filter((x, i) => i >= 5 && x.v / tot < .04);
     if (small.length >= 2){ data = data.filter(x => !small.includes(x)); data.push({c:{id:'_otras', name:`Otras (${small.length})`, icon:'svg:chart-pie', color:'#9aa3b5'}, v: small.reduce((a, x) => a + x.v, 0), group: small}); } }
@@ -1082,7 +1227,7 @@ function renderCharts(){
   // Al cambiar de mes los gráficos se transforman en vez de redibujarse desde cero
   const morphD = chartMorph && chDonut && chDonut.canvas && chDonut.canvas.isConnected && data.length > 0;
   if (chDonut && !morphD){ chDonut.destroy(); chDonut = null; }
-  if (!data.length){ dw.innerHTML = emptyBox('chart-pie', 'Aún no hay gastos este mes. Cuando registres uno verás aquí cómo se reparte.', 'expense', 'Registrar gasto'); }
+  if (!data.length){ dw.innerHTML = emptyBox('chart-pie', 'Aún no hay gastos en este período. Cuando registres uno verás aquí cómo se reparte.', 'expense', 'Registrar gasto'); }
   else {
     if (!dw.querySelector('#donutLegend')) dw.innerHTML = '<div class="donut-c"><canvas id="chDonut"></canvas></div><div class="donut-l" id="donutLegend"></div>';
     const totalD = data.reduce((a, x) => a + x.v, 0);
@@ -1116,20 +1261,20 @@ function renderCharts(){
 
   // Barras
   const months = Array.from({length:6}, (_,i) => shiftMonth(m, i-5));
-  const incs = months.map(x => sum(txOfMonth(x).filter(t => t.type === 'income')));
-  const exps = months.map(x => sum(txOfMonth(x).filter(t => t.type === 'expense')));
+  const incs = months.map(x => sum(planTx(x).filter(t => t.type === 'income')));
+  const exps = months.map(x => sum(planTx(x).filter(t => t.type === 'expense')));
   const bw = $('#barsWrap');
   const morphB = chartMorph && chBars && chBars.canvas && chBars.canvas.isConnected && (incs.some(Boolean) || exps.some(Boolean));
   if (chBars && !morphB){ chBars.destroy(); chBars = null; }
   if (!incs.some(Boolean) && !exps.some(Boolean)){ bw.innerHTML = emptyBox('chart-column', 'Aún no hay movimientos en los últimos 6 meses.', 'tx', 'Nuevo movimiento'); return; }
   if (!bw.querySelector('canvas')) bw.innerHTML = '<canvas id="chBars"></canvas>';
-  const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? savingsOf(mm).saved : null), cur = months.length - 1, ink = cssVar('--k-violet');
+  const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? planSavings(mm).saved : null), cur = months.length - 1, ink = cssVar('--k-violet');
   const nul = arr => arr.map((v, i) => has(i) ? v : null);
   const barBg = v => c => vGrad(cssVar(v), c.dataIndex === cur || c.active ? 'ff' : 'b3', c.dataIndex === cur || c.active ? '66' : '3a')(c);
-  if (morphB){ chBars.data.labels = months.map(monthShort); chBars.data.datasets[0].data = nul(incs); chBars.data.datasets[1].data = nul(exps); chBars.update(); return; }
+  if (morphB){ chBars.data.labels = months.map(mm=>cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm)); chBars.data.datasets[0].data = nul(incs); chBars.data.datasets[1].data = nul(exps); chBars.update(); return; }
   chBars = new Chart($('#chBars'), {
     plugins:[legendGap],
-    data:{labels:months.map(monthShort), datasets:[
+    data:{labels:months.map(mm=>cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm)), datasets:[
       {type:'bar', label:'Ingresos', data:nul(incs), backgroundColor:barBg('--income-chart'), hoverBackgroundColor:barBg('--income-chart'), solid:'--income-chart', borderRadius:7, borderSkipped:false, maxBarThickness:22, categoryPercentage:.72, barPercentage:.86},
       {type:'bar', label:'Gastos', data:nul(exps), backgroundColor:barBg('--expense-chart'), hoverBackgroundColor:barBg('--expense-chart'), solid:'--expense-chart', borderRadius:7, borderSkipped:false, maxBarThickness:22, categoryPercentage:.72, barPercentage:.86}
 ]},
@@ -1181,7 +1326,7 @@ function renderMovs(){
   fillCatFilter(); fillMethodFilter();
   const ft = $('#fltType').value, fc = $('#fltCat').value, fm = $('#fltMethod').value, scope = $('#fltScope').value, q = $('#fltText').value.trim().toLowerCase();
   const y = currentMonth.slice(0, 4);
-  const base = scope === 'all' ? state.transactions : scope === 'year' ? state.transactions.filter(t => t.date.slice(0, 4) === y) : txOfMonthAll(currentMonth);
+  const base = scope === 'cycle' ? cycleTx(currentMonth,true) : scope === 'all' ? state.transactions : scope === 'year' ? state.transactions.filter(t => t.date.slice(0, 4) === y) : txOfMonthAll(currentMonth);
   const match = t => { if (!q) return true; const c = getCat(t.catId);
     return [(t.desc || ''), c.name, t.method || '', String(t.amount), fmt(t.amount)].some(x => x.toLowerCase().includes(q)); };
   const list = base.filter(t => (!ft || t.type === ft) && (!fc || t.catId === fc) && (!fm || t.method === fm) && match(t))
@@ -1189,7 +1334,7 @@ function renderMovs(){
   const pl = list.filter(isPlanned);
   const real = list.filter(t => !isPlanned(t)); // los programados se cuentan aparte, igual que en el Resumen
   const inc = sum(real.filter(t => t.type === 'income')), exp = sum(real.filter(t => t.type === 'expense'));
-  $('#movSummary').innerHTML='<span class="mov-count">'+plural(list.length,'movimiento')+' '+(scope==='all'?'en total':'en '+(scope==='year'?y:monthLong(currentMonth)))+'</span><span class="mov-total"><span>Ingresos</span><b class="pos">'+fmt(inc)+'</b></span><span class="mov-total"><span>Gastos</span><b class="xp">'+fmt(exp)+'</b></span>'+(pl.length?'<span class="mov-planned-total">'+plural(pl.length,'programado')+' · '+fmt(sum(pl))+'</span>':'');
+  $('#movSummary').innerHTML='<span class="mov-count">'+plural(list.length,'movimiento')+' '+(scope==='all'?'en total':'en '+(scope==='year'?y:scope==='cycle'?cycleLabel(currentMonth):monthLong(currentMonth)))+'</span><span class="mov-total"><span>Ingresos</span><b class="pos">'+fmt(inc)+'</b></span><span class="mov-total"><span>Gastos</span><b class="xp">'+fmt(exp)+'</b></span>'+(pl.length?'<span class="mov-planned-total">'+plural(pl.length,'programado')+' · '+fmt(sum(pl))+'</span>':'');
   const extraCount=Number(!!fc)+Number(!!fm)+Number(!!ft)+Number(scope!=='month');$('#movFilterToggle').textContent=(extraCount?'Filtros ('+extraCount+')':'Filtros');
 
   // Agrupados por día, con el total del día en el encabezado
@@ -1260,35 +1405,36 @@ function enhanceSelect(sel){
 function openCatDetail(id){
   const c = state.categories.find(x => x.id === id); if (!c) return;
   const m = currentMonth, isI = c.type === 'income', ms = Array.from({length:6}, (_, i) => shiftMonth(m, i - 5));
-  const vals = ms.map(mm => realBy(mm, id)), max = Math.max(1, ...vals), b = getBudget(m, id), withData = vals.filter(Boolean);
+  const vals = ms.map(mm => planReal(mm, id)), max = Math.max(1, ...vals), b = planBudget(m, id), withData = vals.filter(Boolean);
   const avg = withData.length ? withData.reduce((a, v) => a + v, 0) / withData.length : 0, cur = vals[5];
-  const txs = txOfMonthAll(m).filter(t => t.catId === id).sort((a, z) => z.date.localeCompare(a.date));
+  const txs = planTxAll(m).filter(t => t.catId === id).sort((a, z) => z.date.localeCompare(a.date));
   const col = themeInk(dc(c.color));
-  $('#cdTitle').innerHTML = `<div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><div><h3 style="margin:0">${esc(c.name)}</h3><div class="small muted">${monthLong(m)}</div></div>`;
+  $('#cdTitle').innerHTML = `<div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><div><h3 style="margin:0">${esc(c.name)}</h3><div class="small muted">${planLabel(m)}</div></div>`;
   $('#cdBody').innerHTML = `
     <div class="cd-stats">
-      <div><span>Este mes</span><b>${fmt(cur)}</b></div>
+      <div><span>Este período</span><b>${fmt(cur)}</b></div>
       <div><span>${isI ? 'Esperado' : 'Presupuesto'}</span><b>${b ? fmt(b) : '—'}</b></div>
-      <div><span>Promedio mensual</span><b>${fmt(avg)}</b></div>
+      <div><span>Promedio por período</span><b>${fmt(avg)}</b></div>
     </div>
     <div class="cd-chart">${ms.map((mm, i) => `<div class="cd-col${i === 5 ? ' cur' : ''}" title="${monthShort(mm)}: ${fmt(vals[i])}"><div class="cd-bar"><span class="cd-v">${vals[i] ? compactS(vals[i]) : ''}</span><i style="height:${Math.max(vals[i] ? 6 : 2, vals[i] / max * 100)}%;background:${col}"></i></div><span class="cd-m">${MONTHS_ES[Number(mm.slice(5, 7)) - 1]}</span></div>`).join('')}
 </div>
-    <div class="cd-list"><div class="cd-lh">${plural(txs.length, 'movimiento')} en ${monthLong(m).split(' ')[0].toLowerCase()}</div>
+    <div class="cd-list"><div class="cd-lh">${plural(txs.length, 'movimiento')} ${cycleView()?'en este ciclo':'en '+monthLong(m).split(' ')[0].toLowerCase()}</div>
       ${txs.length ? txs.slice(0, 8).map(t => `<button type="button" class="cd-tx" data-cd-edit="${t.id}"><span class="cd-d">${fmtDate(t.date).slice(0, 5)}</span><span class="cd-n">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}<small>${esc(t.method || '')}</small></span><b class="${isI ? 'pos' : 'xp'}">${fmt(t.amount)}</b></button>`).join('') : '<div class="small muted" style="padding:8px 0">Sin movimientos este mes.</div>'}
       ${txs.length > 8 ? `<div class="small muted" style="padding:6px 0 0">y ${txs.length - 8} más…</div>` : ''}</div>
     <div class="cd-foot"><button type="button" class="btn" data-cd-all>${ic('list')} Ver en Movimientos</button><button type="button" class="btn primary" data-cd-add>${ic('plus')} Registrar</button></div>`;
   $('#catDialog').dataset.cat = id;
+  $('#catDialog').dataset.cycleMonth = cycleView()?m:'';
   if (!$('#catDialog').open) $('#catDialog').showModal();
 }
 $('#catDialog').addEventListener('click', e => {
   const d = $('#catDialog'), id = d.dataset.cat, c = state.categories.find(x => x.id === id);
   if (e.target === d) return d.close();
   const ed = e.target.closest('[data-cd-edit]'); if (ed){ d.close(); return openTx(ed.dataset.cdEdit); }
-  if (e.target.closest('[data-cd-all]')){ d.close(); return openMovs({type:c.type, cat:id}); }
+  if (e.target.closest('[data-cd-all]')){ d.close(); return openMovs({type:c.type, cat:id,scope:d.dataset.cycleMonth?'cycle':'month',month:d.dataset.cycleMonth||null}); }
   if (e.target.closest('[data-cd-add]')){ d.close(); return openTx(null, {type:c.type, catId:id}); }
 });
-function openMovs({type = '', cat = '', scope = 'month', view = 'list'} = {}){
-  showTab('movs'); setMovView(view);
+function openMovs({type = '', cat = '', scope = 'month', view = 'list',month=null} = {}){
+  showTab('movs'); if(month){currentMonth=month;monthInput.value=month;planningHeader();} setMovView(view);
   if (view !== 'list') return;
   const set = (id, v) => { const el = $(id), changed = el.value !== v; el.value = v; if (changed){ const f = el.closest('.fsel'); f.classList.remove('flash'); void f.offsetWidth; f.classList.add('flash'); } };
   set('#fltScope', scope); set('#fltType', type); fillCatFilter(); set('#fltCat', cat); set('#fltMethod', ''); $('#fltText').value = '';
@@ -1298,6 +1444,7 @@ function goFromCard(go){
   if (go === 'analysis') return showTab('analysis');
   if (go === 'budget') return showTab('budget');
   if (go === 'cal') return openMovs({view:'cal'});
+  if(cycleView()&&!go.startsWith('y-'))return openMovs({scope:'cycle',type:go==='all'?'':go,month:currentMonth});
   const [scope, type] = go.startsWith('y-') ? ['year', go.slice(2)] : ['month', go];
   openMovs({scope, type: type === 'all' ? '' : type});
 }
@@ -1628,7 +1775,7 @@ function openTx(id, preset){
   txType = p.type || txType; setMode(); setTxType(txType);
   $('#txTitle').textContent = t ? 'Editar movimiento' : (preset && preset.recId) ? 'Registrar recurrente' : (preset && preset.goalId) ? 'Aporte a meta' : 'Nuevo movimiento';
   $('#fAmount').value = p.amount || '';
-  $('#fDate').value = p.date || (currentMonth === thisMonth() ? todayISO() : currentMonth + '-01');
+  $('#fDate').value = p.date || (cycleView() ? (cycleMonthForDate()===currentMonth?todayISO():cyclePeriod(currentMonth).start) : currentMonth === thisMonth() ? todayISO() : currentMonth + '-01');
   $('#fDesc').value = p.desc || '';
   $('#txDelete').style.display = t ? '' : 'none'; $('#txDup').style.display = t ? '' : 'none';
   txDialog.showModal();
@@ -1732,7 +1879,7 @@ $('#txForm').addEventListener('submit', async e => {
   else state.transactions.push({id:uid(), created:Date.now(), ...data});
   const savedId = editingId || state.transactions[state.transactions.length - 1].id;
   save(); txDialog.close();
-  const mov = data.date.slice(0,7);
+  const mov = cycleView()?cycleMonthForDate(data.date):data.date.slice(0,7);
   if (mov !== currentMonth){ currentMonth = mov; monthInput.value = mov; }
   renderAll(); toast(editingId ? 'Movimiento actualizado ✅' : 'Movimiento registrado ✅');
   requestAnimationFrame(() => highlightSaved(savedId));
@@ -1778,29 +1925,30 @@ function keepFocus(render){
 }
 /* ---------- Presupuesto ---------- */
 function budgetTable(type){
-  const m = currentMonth, cats = catsOf(type).filter(c => !isArch(c, m) || realBy(m, c.id)), isE = type === 'expense';
+  const m = currentMonth, cats = catsOf(type).filter(c => !isArch(c, cycleView()?cyclePeriod(m).start.slice(0,7):m) || planReal(m, c.id)), isE = type === 'expense';
   let tb = 0, tr = 0;
   const body = cats.map(c => {
-    const b = getBudget(m,c.id), r = realBy(m,c.id); tb += b; tr += r;
+    const b = planBudget(m,c.id), r = planReal(m,c.id); tb += b; tr += r;
     const sav = isE && isSavingCat(c.id); // en la categoría de ahorro, pasarse del plan es bueno
     const diff = isE && !sav ? b - r : r - b, raw = b > 0 ? r / b * 100 : 0, pct = Math.min(raw, 100);
     const status=budgetStatus(r,b),alert=isE&&!sav?(status==='over'?'over':status==='near'?'warn':status==='complete'?'complete':''):'';
     return `<tr class="${alert}">
       <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="cname">${esc(c.name)}</span></div></td>
-      <td class="num">${payActive(c, m) ? `<input type="number" class="budget-input" min="0" step="10" data-bud="${c.id}" value="${b || ''}" placeholder="0">` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
-      <td class="num${r ? '' : ' muted'}">${fmt(r)}${plannedOf(m, type, c.id) ? `<div class="plan-line">+ ${fmt(plannedOf(m, type, c.id))} prog.</div>` : ''}</td>
-      <td class="num">${!b && !r ? '<span class="muted">—</span>' : isE && !sav ? `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - plannedOf(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(plannedOf(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - plannedOf(m, type, c.id))}</div>` : ''}` : diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`}</td>
+      <td class="num">${(cycleView() || payActive(c, m)) ? `<input type="number" class="budget-input" min="0" step="10" data-bud="${c.id}" value="${b || ''}" placeholder="0">` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
+      <td class="num${r ? '' : ' muted'}">${fmt(r)}${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
+      <td class="num">${!b && !r ? '<span class="muted">—</span>' : isE && !sav ? `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}` : diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`}</td>
       <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}">${b > 0 ? pctTxt(raw) : '—'}</span></td>
     </tr>`;
   }).join('');
   const td = isE ? tb - tr : tr - tb;
   const tdCell = isE ? `<td class="num ${td >= 0 ? 'pos' : 'neg'}">${fmt(td)}</td>` : `<td class="num ${td >= 0 ? 'pos' : 'muted'}">${td >= 0 ? (td > .005 ? '+' : '') + fmt(td) : fmt(-td)}</td>`;
-  const wideValues = [tb,tr,td,...cats.map(c=>getBudget(m,c.id)),...cats.map(c=>realBy(m,c.id))].some(v=>Math.abs(v)>=100000);
+  const wideValues = [tb,tr,td,...cats.map(c=>planBudget(m,c.id)),...cats.map(c=>planReal(m,c.id))].some(v=>Math.abs(v)>=100000);
   return `<table class="bud-table${wideValues?' wide-values':''}">
     <thead><tr><th>Categoría</th><th class="num c-plan"><span class="hide-m">${isE ? 'Presupuesto' : 'Esperado'}</span><span class="show-m">Plan</span></th><th class="num c-real">Real</th><th class="num c-diff"><span class="hide-m">${isE ? 'Disponible' : 'Por recibir'}</span><span class="show-m">${isE ? 'Queda' : 'Falta'}</span></th><th class="num c-av" title="Avance">%</th></tr></thead>
     <tbody>${body}</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(tb)}</td><td class="num">${fmt(tr)}</td>${tdCell}<td class="av"><span class="av-pct${isE && tr > tb ? ' over' : ''}">${tb ? pctTxt(tr / tb * 100) : '—'}</span></td></tr></tfoot></table><div class="budget-mobile-total"><strong>Total</strong><div><span>Plan</span><b>${fmt(tb)}</b></div><div><span>${isE ? 'Queda' : 'Diferencia'}</span><b class="${td >= 0 ? 'pos' : 'muted'}">${fmt(td)}</b></div><div><span>Avance</span><b>${tb ? pctTxt(tr / tb * 100) : '—'}</b></div></div>`;
 }
 function renderSaveCard(){
+  if(cycleView())return renderCycleSaveCard();
   const m = currentMonth, sv = savingsOf(m), own = (state.settings.savePctM || {})[m] != null, mode = saveMode();
   const mes = monthLong(m).split(' ')[0].toLowerCase();
   let status = '';
@@ -1831,11 +1979,11 @@ function renderSaveCard(){
 }
 document.addEventListener('change', e => {
   if (e.target.id === 'svPct' || e.target.id === 'svAll'){
-    const v = Math.min(100, Math.max(0, Number($('#svPct').value) || 0)), all = $('#svAll').checked, m = currentMonth;
+    const v = Math.min(100, Math.max(0, Number($('#svPct').value) || 0)), all = $('#svAll').checked, m = cycleView()?cycleBudgetKey(currentMonth):currentMonth;
     state.settings.savePctM = {...(state.settings.savePctM || {})};
     if (all){ state.settings.savePct = v; delete state.settings.savePctM[m]; }
     else state.settings.savePctM[m] = v;
-    save(); keepFocus(() => { renderSaveCard(); renderDashboard(); }); toast(v ? `Meta de ahorro: ${v}%${all ? '' : ' en ' + monthLong(m)}` : 'Meta de ahorro quitada');
+    save(); keepFocus(() => { renderSaveCard(); renderDashboard(); }); toast(v ? `Meta de ahorro: ${v}%${all ? '' : cycleView() ? ' en este ciclo' : ' en ' + monthLong(m)}` : 'Meta de ahorro quitada');
   }
 });
 document.addEventListener('click', e => {
@@ -1843,6 +1991,7 @@ document.addEventListener('click', e => {
   state.settings.saveMode = b.dataset.svmode; save(); renderSaveCard(); renderDashboard(); if (activeTab() === 'analysis') renderAnalysis();
 });
 function renderBudget(){
+  ensureCyclePlan(currentMonth);renderPeriodControls();
   renderSaveCard();
   const before = [...document.querySelectorAll('#tab-budget tfoot td')].map(t => t.textContent);
   $('#budExpense').innerHTML = budgetTable('expense');
@@ -1854,15 +2003,17 @@ $('#tab-budget').addEventListener('change', e => {
   const inp = e.target.closest('[data-bud]'); if (!inp) return;
   const m = currentMonth;
   state.budgets[m] = state.budgets[m] || {};
-  state.budgets[m][inp.dataset.bud] = Math.max(0, parseFloat(inp.value) || 0);
+  state.budgets[m][cycleView()?cycleBudgetKey(inp.dataset.bud):inp.dataset.bud] = Math.max(0, parseFloat(inp.value) || 0);
   save(); keepFocus(() => { renderBudget(); renderDashboard(); });
 });
 $('#btnCopyPrev').onclick = () => {
+  if(cycleView()){const m=currentMonth,p=shiftMonth(m,-1);state.budgets[m]=state.budgets[m]||{};state.categories.forEach(c=>state.budgets[m][cycleBudgetKey(c.id)]=cycleBudget(p,c.id));save();renderAll();return toast('Presupuesto copiado del ciclo anterior');}
   const prev = shiftMonth(currentMonth,-1), obj = {};
   state.categories.forEach(c => obj[c.id] = getBudget(prev, c.id));
-  state.budgets[currentMonth] = obj; save(); renderAll(); toast('Presupuesto copiado de ' + monthLong(prev));
+  state.budgets[currentMonth] = {...(state.budgets[currentMonth]||{}),...obj}; save(); renderAll(); toast('Presupuesto copiado de ' + monthLong(prev));
 };
 $('#btnSetDefault').onclick = () => {
+  if(cycleView()){const config=cycleConfig(),defaults={...(config.defaults||{})};defaults[cycleDay()]=Object.fromEntries(state.categories.map(c=>[c.id,cycleBudget(currentMonth,c.id)]));state.settings.budgetCycle={...config,defaults};save();renderAll();return toast('Base guardada para los próximos ciclos');}
   state.categories.forEach(c => c.defaultBudget = getBudget(currentMonth, c.id));
   save(); renderAll(); toast('Guardado como presupuesto base 📌');
 };
@@ -1905,7 +2056,7 @@ const endCatDrag = e => {
 };
 document.addEventListener('pointerup', endCatDrag); document.addEventListener('pointercancel', endCatDrag);
 // ---- Selector visual de días de pago (categorías de ingreso) ----
-const ppEl = document.createElement('div'); ppEl.className = 'pp'; ppEl.setAttribute('role', 'dialog');
+const ppEl = document.createElement('div'); ppEl.id='payPicker'; ppEl.className = 'pp'; ppEl.setAttribute('role', 'dialog');ppEl.setAttribute('aria-labelledby','ppTitle');
 if ('popover' in HTMLElement.prototype) ppEl.setAttribute('popover', 'manual');
 document.body.appendChild(ppEl);
 let ppS = null;
@@ -1914,10 +2065,10 @@ function openPayPicker(btn, id){
   closePayPicker();
   const c = state.categories.find(x => x.id === id); if (!c) return;
   ppS = {id, btn, c, ...payCfg(c.pay), pend: null, orig: c.pay || ''};
-  btn.classList.add('open'); renderPayPicker();
+  btn.classList.add('open');btn.setAttribute('aria-expanded','true'); renderPayPicker();
   if (ppEl.showPopover){ try{ if (ppEl.matches(':popover-open')) ppEl.hidePopover(); ppEl.showPopover(); }catch(e){} }
   placePayPicker();
-  requestAnimationFrame(() => ppEl.classList.add('show'));
+  requestAnimationFrame(() => {ppEl.classList.add('show');placePayPicker();ppEl.querySelector('.pp-d.in,.pp-seg button.active')?.focus({preventScroll:true});});
 }
 function placePayPicker(){
   if (!ppS) return;
@@ -1926,19 +2077,24 @@ function placePayPicker(){
   let top = r.bottom + 8; if (top + h > innerHeight - 8) top = r.top - h - 8 > 8 ? r.top - h - 8 : Math.max(8, innerHeight - h - 8);
   ppEl.style.left = left + 'px'; ppEl.style.top = top + 'px';
 }
-function closePayPicker(keep = true){
+function commitPayPending(S){
+ if(S.pend==null)return;let x=S.pend,y=S.pend;S.pend=null;
+ S.w=S.w.filter(([p,q])=>{if(q>=x-1&&p<=y+1){x=Math.min(x,p);y=Math.max(y,q);return false;}return true;});
+ S.w.push([x,y]);S.w.sort((a,b)=>a[0]-b[0]);
+}
+function closePayPicker(keep = true,focusBack = true){
   if (!ppS) return;
-  const S = ppS; ppS = null; S.btn.classList.remove('open'); ppEl.classList.remove('show'); if (typeof dpClose === 'function') dpClose();
-  setTimeout(() => { if (!ppS && ppEl.hidePopover){ try{ ppEl.hidePopover(); }catch(e){} } }, 200);
+  const S = ppS,restoreFocus=focusBack&&ppEl.contains(document.activeElement); if(keep)commitPayPending(S); ppS = null; S.btn.classList.remove('open');S.btn.setAttribute('aria-expanded','false'); ppEl.classList.remove('show'); if (typeof dpClose === 'function') dpClose();
+  setTimeout(() => { if (!ppS){ if(ppEl.hidePopover){try{ppEl.hidePopover();}catch(e){}} if(restoreFocus)[...document.querySelectorAll('#catsIncome .cat-row')].find(r=>r.dataset.id===S.id)?.querySelector('.pay-btn')?.focus({preventScroll:true}); } }, reduceMotion()?0:MOTION.panel);
   const val = payEncode(S);
   if (keep && val !== S.orig){ S.c.pay = val; save(); renderAll(); toast(val ? `${S.c.name}: ${payHumanCfg(payCfg(val)).toLowerCase()}` : 'Día de pago quitado', {icon:'calendar-days'}); }
 }
 function renderPayPicker(){
-  const S = ppS, inW = d => S.w.find(([a, b]) => d >= a && d <= b);
+  const S = ppS, focused=document.activeElement,restore=focused?.closest('.pp')?['data-pd','data-pm','data-ppmode','data-pp'].map(k=>focused.hasAttribute(k)?'['+k+'="'+focused.getAttribute(k)+'"]':null).find(Boolean):null, inW = d => S.w.find(([a, b]) => d >= a && d <= b);
   const cell = d => { const w = inW(d), cls = ['pp-d', d >= 31 ? 'fin' : ''];
     if (w){ cls.push('in'); if (d === w[0]) cls.push('start'); if (d === w[1]) cls.push('end'); }
     if (S.pend === d) cls.push('pend');
-    return `<button type="button" class="${cls.join(' ')}" data-pd="${d}">${d >= 31 ? 'Fin de mes' : d}</button>`; };
+    return `<button type="button" class="${cls.join(' ')}" data-pd="${d}" aria-label="${d===31?'Fin de mes':'Día '+d}" aria-pressed="${!!w || S.pend===d}">${d >= 31 ? 'Fin de mes' : d}</button>`; };
   const days = `<div class="pp-g">${Array.from({length:31}, (_, i) => cell(i + 1)).join('')}</div>`;
   const help = {monthly: S.pend ? `Ahora toca el último día del rango, o el mismo ${S.pend >= 31 ? 'botón' : 'día'} si llega solo ese día.` : 'Toca un día. Si llega en un rango, toca el primero y luego el último. Toca un día marcado para quitarlo.',
     months: S.pend ? 'Ahora toca el último día del rango (o el mismo día).' : 'Marca los meses en que llega y, si quieres, el día o rango.',
@@ -1946,21 +2102,23 @@ function renderPayPicker(){
   let body;
   if (S.mode === 'dates') body = `<div class="pp-dates">${S.dates.map(d => `<span class="pp-date">${ic('calendar-check')}${dateLong(d)}<button type="button" data-ppdel="${d}" aria-label="Quitar">${ic('x')}</button></span>`).join('') || '<span class="small muted">Aún no hay fechas.</span>'}</div>
       <button type="button" class="pp-add" data-pp="adddate">${ic('plus')} Agregar fecha</button>`;
-  else body = (S.mode === 'months' ? `<div class="pp-sub">Meses</div><div class="pp-m">${MONTHS_ES.map((n, i) => `<button type="button" class="pp-mo${S.months.includes(i + 1) ? ' on' : ''}" data-pm="${i + 1}">${n}</button>`).join('')}</div><div class="pp-sub">Día <span>(opcional)</span></div>` : '') + days;
+  else body = (S.mode === 'months' ? `<div class="pp-sub">Meses</div><div class="pp-m">${MONTHS_ES.map((n, i) => `<button type="button" class="pp-mo${S.months.includes(i + 1) ? ' on' : ''}" data-pm="${i + 1}" aria-pressed="${S.months.includes(i+1)}">${n}</button>`).join('')}</div><div class="pp-sub">Día <span>(opcional)</span></div>` : '') + days;
   const sumTxt = S.pend ? `Desde el ${S.pend >= 31 ? 'fin de mes' : S.pend}…` : payHumanCfg(S);
   const none = S.mode === 'dates' ? !S.dates.length : S.mode === 'months' ? !S.months.length : !S.w.length && !S.pend;
-  ppEl.innerHTML = `<div class="pp-h"><div class="ico" style="background:${soft(S.c.color)}">${iconHTML(S.c.icon, S.c.color)}</div><b>Día de pago · ${esc(S.c.name)}</b></div>
-    <div class="seg pp-seg">${[['monthly','Cada mes'],['months','Ciertos meses'],['dates','Fecha exacta']].map(([k, l]) => `<button type="button" data-ppmode="${k}" class="${S.mode === k ? 'active' : ''}">${l}</button>`).join('')}</div>
+  ppEl.innerHTML = `<div class="pp-h"><div class="ico" style="background:${soft(S.c.color)}">${iconHTML(S.c.icon, S.c.color)}</div><div><b id="ppTitle">Día de pago</b><span class="pp-category">${esc(S.c.name)}</span></div><button type="button" class="iconbtn" data-pp="cancel" aria-label="Cancelar selección">${ic('x')}</button></div>
+    <div class="seg pp-seg">${[['monthly','Cada mes'],['months','Ciertos meses'],['dates','Fecha exacta']].map(([k, l]) => `<button type="button" aria-pressed="${S.mode===k}" data-ppmode="${k}" class="${S.mode === k ? 'active' : ''}">${l}</button>`).join('')}</div>
     <p class="pp-help">${help}</p>
     <div class="pp-body">${body}</div>
     <div class="pp-sum${none ? ' none' : ''}">${ic(none ? 'calendar' : 'calendar-check')}<span>${sumTxt}</span></div>
     <div class="pp-f"><button type="button" data-pp="clear">Quitar todo</button><button type="button" class="ok" data-pp="ok">Listo</button></div>`;
+  if(restore)ppEl.querySelector(restore)?.focus({preventScroll:true});
+  placePayPicker();
 }
 ppEl.addEventListener('click', e => {
   if (!ppS) return;
   const S = ppS, a = e.target.closest('[data-pp]');
   const md = e.target.closest('[data-ppmode]');
-  if (md){ S.mode = md.dataset.ppmode; S.pend = null; renderPayPicker(); placePayPicker(); ppEl.querySelector('.pp-body').classList.add('swap'); return; }
+  if (md){ commitPayPending(S);S.mode = md.dataset.ppmode; S.pend = null; renderPayPicker(); placePayPicker(); ppEl.querySelector('.pp-body').classList.add('swap'); return; }
   const pm = e.target.closest('[data-pm]');
   if (pm){ const n = Number(pm.dataset.pm); S.months = S.months.includes(n) ? S.months.filter(x => x !== n) : [...S.months, n].sort((x, y) => x - y); renderPayPicker(); return; }
   const del = e.target.closest('[data-ppdel]');
@@ -1969,7 +2127,7 @@ ppEl.addEventListener('click', e => {
     if (a.dataset.pp === 'clear'){ S.w = []; S.months = []; S.dates = []; S.pend = null; renderPayPicker(); placePayPicker(); }
     else if (a.dataset.pp === 'adddate'){ const base = S.dates.length ? S.dates[S.dates.length - 1] : todayISO();
       dpOpen(a, {mode:'date', value:'', align:'center', onPick: v => { if (v && ppS){ if (!ppS.dates.includes(v)) ppS.dates = [...ppS.dates, v].sort(); renderPayPicker(); placePayPicker(); } }}); if (dpS) { dpS.y = Number(base.slice(0, 4)); dpS.m = Number(base.slice(5, 7)); dpRender(); dpPlace(); } }
-    else closePayPicker();
+    else closePayPicker(a.dataset.pp !== 'cancel');
     return;
   }
   const b = e.target.closest('[data-pd]'); if (!b) return;
@@ -1985,7 +2143,7 @@ ppEl.addEventListener('click', e => {
   }
   renderPayPicker();
 });
-document.addEventListener('pointerdown', e => { if (ppS && !ppEl.contains(e.target) && !ppS.btn.contains(e.target) && !dpEl.contains(e.target)) closePayPicker(); }, true);
+document.addEventListener('pointerdown', e => { if (ppS && !ppEl.contains(e.target) && !ppS.btn.contains(e.target) && !dpEl.contains(e.target)) closePayPicker(true,false); }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && ppS && !dpS){ e.preventDefault(); e.stopPropagation(); closePayPicker(false); } }, true);
 addEventListener('resize', () => closePayPicker());
 function renderCats(){
@@ -1995,7 +2153,7 @@ function renderCats(){
       <span class="grip" role="button" tabindex="0" title="Arrastra o usa las flechas para ordenar" aria-keyshortcuts="ArrowUp ArrowDown" aria-label="Ordenar ${esc(c.name)} con flecha arriba o abajo">${GRIP}</span>
       <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}">${iconHTML(c.icon, c.color)}</button>
       <input type="text" data-act="name" aria-label="Nombre de la categoría ${esc(c.name)}" value="${esc(c.name)}">
-      ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" title="Día de pago">${ic('calendar-days')}<span>${c.pay ? payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
+      ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="Día de pago">${ic('calendar-days')}<span>${c.pay ? payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
       <span class="row-acts"><button class="iconbtn" data-act="arch" title="Archivar: deja de aparecer, pero conserva su historial">${ic('archive')}</button><button class="iconbtn" data-act="del" title="Eliminar">${ic('trash-2')}</button></span>
     </div>`).join('') || '<div class="muted small" style="padding:10px 0">Sin categorías.</div>';
     if (arch.length) $(type === 'income' ? '#catsIncome' : '#catsExpense').insertAdjacentHTML('beforeend', `<details class="arch-group"><summary>${CHEV_D}${arch.length} ${arch.length === 1 ? 'categoría archivada' : 'categorías archivadas'}</summary>${arch.map(c => `<div class="arch-row" data-id="${c.id}"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span>${esc(c.name)}<small>desde ${monthLong(c.archived).toLowerCase()}</small></span><button class="btn sm" data-unarch="${c.id}">${ic('archive-restore')} Restaurar</button></div>`).join('')}</details>`);
@@ -2418,16 +2576,16 @@ $('#wdForm').addEventListener('submit', e => {
 
 // ---------- Cierre de mes: al empezar un mes nuevo, cómo te fue en el anterior ----------
 function maybeMonthClose(){
-  const tm = thisMonth(), pm = shiftMonth(tm, -1), dialog = $('#closeDialog');
-  if (bothMode || document.querySelector('dialog[open]') || state.settings.lastClose === tm || !state.settings.onboarded && !state.transactions.length) return;
-  const txs = txOfMonth(pm); if (!txs.length){ state.settings.lastClose = tm; return save(); }
-  const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), bExp = totalBudget(pm, 'expense'), sv = savingsOf(pm), cash = balanceOfMonth(pm);
-  const pending = recPending(pm), pendingExp = sum(pending.filter(r => r.type === 'expense')), pendingInc = sum(pending.filter(r => r.type === 'income'));
+  const cy=cycleEnabled(),tm = cy?cycleMonthForDate():thisMonth(), pm = shiftMonth(tm, -1), dialog = $('#closeDialog'),closeKey=cy?cycleBudgetKey(tm):tm;
+  if (bothMode || document.querySelector('dialog[open]') || state.settings.lastClose === closeKey || !state.settings.onboarded && !state.transactions.length) return;
+  const txs = cy?cycleTx(pm):txOfMonth(pm); if (!txs.length){ state.settings.lastClose = closeKey; return save(); }
+  const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), bExp = cy?cycleTotal(pm,'expense'):totalBudget(pm, 'expense'), sv = cy?cycleSavings(pm):savingsOf(pm), cash = cy?cycleBalance(pm):balanceOfMonth(pm);
+  const pending = cy?cyclePending(pm):recPending(pm), pendingExp = sum(pending.filter(r => r.type === 'expense')), pendingInc = sum(pending.filter(r => r.type === 'income'));
   const result = cash.result, positive = result > .005;
-  $('#clTitle').textContent = 'Cierre de ' + monthLong(pm).toLowerCase();
+  $('#clTitle').textContent = cy?'Cierre del ciclo':'Cierre de ' + monthLong(pm).toLowerCase();
   const k = (l,v,cls='',tone='neutral') => `<div data-tone="${tone}"><span>${l}</span><b class="${cls}">${v}</b></div>`;
-  $('#clBody').innerHTML = `<p class="cl-context">${esc(profOf(activeProfile).name)} · Movimientos registrados de ${monthLong(pm).toLowerCase()}</p>
-    <div class="cl-hero" data-tone="${result < -.005 ? 'bad' : positive ? 'good' : 'neutral'}">${ic(result < -.005 ? 'triangle-alert' : positive ? 'check' : 'minus')}<div><span>Resultado del mes</span><b>${fmt(result)}</b><span>${result < -.005 ? 'Los gastos superaron los ingresos del mes.' : positive ? 'Ingresos menos gastos registrados.' : 'Ingresos y gastos en equilibrio.'}</span></div></div>
+  $('#clBody').innerHTML = `<p class="cl-context">${esc(profOf(activeProfile).name)} · ${cy?cycleLabel(pm):"Movimientos registrados de "+monthLong(pm).toLowerCase()}</p>
+    <div class="cl-hero" data-tone="${result < -.005 ? 'bad' : positive ? 'good' : 'neutral'}">${ic(result < -.005 ? 'triangle-alert' : positive ? 'check' : 'minus')}<div><span>Resultado ${cy?"del ciclo":"del mes"}</span><b>${fmt(result)}</b><span>${result < -.005 ? 'Los gastos superaron los ingresos del período.' : positive ? 'Ingresos menos gastos registrados.' : 'Ingresos y gastos en equilibrio.'}</span></div></div>
     <div class="cd-stats">${k('Ingresos',fmt(inc),'pos','income')}${k('Gastos',fmt(exp),'neg','expense')}${k(saveMode() === 'set' ? 'Ahorro separado' : 'Ahorro del mes',fmt(sv.saved),sv.saved < 0 ? 'neg' : '',sv.saved < 0 ? 'expense' : 'saving')}</div>
     <div class="cl-balances">${k('Saldo anterior',fmt(cash.previous),'','previous')}${k('Saldo al cierre',fmt(cash.total),cash.total < 0 ? 'neg' : '',cash.total < 0 ? 'expense' : 'saving')}</div>
     <ul class="cl-summary" aria-label="Balance del mes">
@@ -2435,11 +2593,11 @@ function maybeMonthClose(){
       ${sv.pct ? `<li><span>Meta de ahorro · ${sv.pct}%</span><b>${sv.base <= 0 ? 'Sin ingresos' : sv.saved >= sv.target ? 'Cumplida' : 'Faltan ' + fmt(sv.target-sv.saved)}</b></li>` : ''}
       ${pending.length ? `<li class="cl-pending-brief" title="Recurrentes sin confirmar, no incluidos en los totales."><span>Sin incluir · ${plural(pending.length,'recurrente')}</span><b>${pendingExp ? fmt(pendingExp) + ' gastos' : ''}${pendingExp && pendingInc ? ' · ' : ''}${pendingInc ? fmt(pendingInc) + ' ingresos' : ''}</b></li>` : ''}
     </ul>`;
-  dialog.dataset.month = pm;
+  dialog.dataset.month = pm;dialog.dataset.cycle=String(cy);dialog.querySelector('[data-cl=an]').textContent=cy?'Ver presupuesto':'Ver análisis';
   dialog.showModal();
-  state.settings.lastClose = tm; save();
+  state.settings.lastClose = closeKey; save();
 }
-$('#closeDialog').addEventListener('click', e => { if (e.target.closest('[data-cl=an]')){ const m = $('#closeDialog').dataset.month; $('#closeDialog').close(); goMonth(m); showTab('analysis'); } });
+$('#closeDialog').addEventListener('click', e => { if (e.target.closest('[data-cl=an]')){ const m = $('#closeDialog').dataset.month; $('#closeDialog').close(); showTab($('#closeDialog').dataset.cycle==='true'?'budget':'analysis'); goMonth(m); } });
 // Si había otro formulario abierto al iniciar, mostrar el resumen cuando termine.
 document.addEventListener('close', e => { if (e.target instanceof HTMLDialogElement && e.target.id !== 'closeDialog') setTimeout(maybeMonthClose, 250); }, true);
 
@@ -3217,7 +3375,7 @@ function mergeData(a, b) {
   var sb = num(mb.su) >= num(ma.su) && b.settings ? b : a;
   return {
     categories: cats, transactions: coll('transactions'), recurring: coll('recurring'), goals: coll('goals'), budgets: budgets,
-    methods: (sb.methods && sb.methods.length ? sb.methods : (a.methods || b.methods || [])), settings: sb.settings || a.settings || b.settings || {},
+    methods: (Array.isArray(sb.methods) ? sb.methods : (Array.isArray(a.methods) ? a.methods : (Array.isArray(b.methods) ? b.methods : []))), settings: sb.settings || a.settings || b.settings || {},
     meta: {del: del, bu: bu, su: Math.max(num(ma.su), num(mb.su)), co: Math.max(num(ma.co), num(mb.co))},
     updatedAt: Math.max(num(a.updatedAt), num(b.updatedAt))
   };
@@ -3225,14 +3383,16 @@ function mergeData(a, b) {
 /* MERGE:end */
 
 function applyRemote(d, keepSync){
+  const previousCycleEnabled=cycleEnabled(),previousCycleDay=cycleDay();
   d = cleanState(d);
   state.meta = d.meta && typeof d.meta === 'object' ? d.meta : (state.meta || {});
   state.categories = d.categories; state.transactions = d.transactions || []; state.budgets = d.budgets || {};
-  if (Array.isArray(d.methods) && d.methods.length) state.settings.methods = d.methods;
+  if (Array.isArray(d.methods)) state.settings.methods = d.methods;
   if (Array.isArray(d.recurring)) state.recurring = d.recurring;
   if (Array.isArray(d.goals)) state.goals = d.goals;
   if (d.settings && typeof d.settings === 'object')
-    ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose'].forEach(k => { if (d.settings[k] != null && d.settings[k] !== '') state.settings[k] = d.settings[k]; });
+    ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose','budgetCycle'].forEach(k => { if (d.settings[k] != null && d.settings[k] !== '') state.settings[k] = d.settings[k]; });
+  if(['dashboard','budget'].includes(activeTab())&&(previousCycleEnabled!==cycleEnabled()||previousCycleDay!==cycleDay())){currentMonth=cycleEnabled()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;}
   state.updatedAt = d.updatedAt || Date.now();
   if (d.rev != null) sync.rev = Number(d.rev) || 0;
   if (!keepSync) sync.pending = false;
@@ -3431,7 +3591,7 @@ function pushOtherPending(){
       if (res.merged){
         const d = mergeData(res.merged, snap);
         ['categories', 'transactions', 'recurring', 'goals', 'budgets', 'meta'].forEach(k => { if (d[k]) st[k] = d[k]; });
-        if (Array.isArray(d.methods) && d.methods.length) st.settings.methods = d.methods;
+        if (Array.isArray(d.methods)) st.settings.methods = d.methods;
         if (d.settings) SYNC_SETTINGS.forEach(k => { if (d.settings[k] != null && d.settings[k] !== '') st.settings[k] = d.settings[k]; });
       }
       try { localStorage.setItem(storeKey(other), JSON.stringify(st)); } catch(e){}
@@ -3456,6 +3616,7 @@ async function switchProfile(id){
     activeProfile = id; try { localStorage.setItem(ACT_KEY, id); } catch(e){}
     const bp = (sync.byProf || {})[id] || {}; sync.rev = Number(bp.rev) || 0; sync.pending = !!bp.pending; sync.lastSync = bp.lastSync || 0;
     loadProfileState(); _doneSet = null;
+    currentMonth=cycleView()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;
     if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
     Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
     renderProfileUI(); if (activeTab() === 'both') showTab('dashboard'); renderAll(); updateSyncInfo();
@@ -3837,7 +3998,7 @@ $('#tab-cats').addEventListener('keydown',e=>{
 function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n); VIEWS[n](); enhanceAccessibility(); }
 function renderAll(){
   if (lastRenderMonth !== currentMonth){ resetBars(); lastRenderMonth = currentMonth; }
-  $('#monthLabel').textContent = monthLong(currentMonth);
+  planningHeader();
   applyBrand(); renderThemes(); renderFonts();
   methodsInput.value = (state.settings.methods||[]).join(', '); renderSettingsOverview();
   // Solo se dibuja la pestaña visible; las demás quedan marcadas y se dibujan al abrirlas

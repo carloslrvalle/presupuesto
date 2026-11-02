@@ -1465,3 +1465,45 @@ html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:norm
 #closeDialog .cl-summary span{color:var(--muted)}
 #closeDialog .cl-summary b{font-weight:600;text-align:right;overflow-wrap:anywhere;max-width:100%;margin-left:auto}
 #closeDialog .cl-pending-brief{font-size:11px}
+
+@media(min-width:701px){html .bud-table{min-width:560px}html .bud-table th.c-plan{width:112px}html .bud-table th.c-real,html .bud-table th.c-diff{width:124px}}
+
+/* 1.10.1: período compacto y selectores alineados */
+.plan-period{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;min-width:0;margin:0 0 16px;padding:0}
+.plan-period .period-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 12px;font-size:12px;background:var(--surface);flex-shrink:0}
+.period-trigger>.vi{width:16px;height:16px;flex-shrink:0}.period-trigger>.vi:last-child{width:13px;height:13px;color:var(--muted)}
+.period-range{font-size:12px;color:var(--muted);line-height:1.6;font-variant-numeric:tabular-nums}
+#tab-dashboard>.plan-period{padding:0 2px}.plan-period .info-tip{margin-left:0;order:1}.plan-period .period-range{order:2}
+.budget-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.budget-actions>.plan-period{flex:1 1 290px;margin:0}.budget-actions>.spacer{display:none}.budget-actions>.info-tip{order:0;flex-shrink:0}.budget-actions>.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+#periodDialog{width:min(420px,calc(100% - 32px))}#periodDialog .dlg-head{gap:12px}#periodDialog .dlg-head h3{font-size:17px}#periodDialog .dlg-body{gap:14px}
+#periodDialog .period-mode button.active{background:var(--surface);color:var(--primary);box-shadow:var(--shadow)}
+.period-mode button{min-height:42px;line-height:1.4;white-space:normal}
+.period-day-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px}.period-day-head span{color:var(--muted)}
+.period-day-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.period-day-grid button{min-width:0;height:38px;padding:0;display:grid;place-items:center;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-variant-numeric:tabular-nums;cursor:pointer}
+.period-day-grid button.selected{background:var(--primary-fill,var(--primary));color:var(--on-primary,#fff);border-color:var(--primary)}
+.period-day-grid button:hover:not(.selected){background:var(--surface-2)}
+.period-data-note{font-size:11px;color:var(--muted);padding-top:12px;border-top:1px solid var(--border);margin:0;line-height:1.6}
+#periodDialog p.small{margin:0;font-size:12px;line-height:1.6}#periodDialog .dlg-foot{padding-top:12px;border-top:1px solid var(--border)}
+#monthLabel{overflow:hidden;text-overflow:ellipsis}
+.pp{width:350px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:16px;overflow-y:auto;overscroll-behavior:contain;transform-origin:top center}
+.pp:popover-open,.pp.show{display:flex;flex-direction:column}
+.pp-h{display:grid;grid-template-columns:32px minmax(0,1fr) 28px;gap:10px;align-items:center;margin:0}
+.pp-h>div{min-width:0}.pp-h b{display:block;font-size:14px;line-height:1.4}.pp-category{display:block;font-size:11px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere;margin-top:2px}.pp-h .iconbtn{width:28px;height:32px}
+.pp .pp-seg{gap:2px;flex-shrink:0}.pp .pp-seg button{display:grid;place-items:center;min-height:40px;white-space:normal;line-height:1.3;padding:7px 4px;font-size:11px;min-width:0;text-align:center}
+.pp-help{min-height:0;flex-shrink:0;font-size:11px;line-height:1.6;margin:10px 0}
+.pp-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;flex-shrink:1;padding:2px}
+.pp-g{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.pp-d{display:grid;place-items:center;min-width:0;height:36px;padding:0;line-height:1;font-size:13px;font-variant-numeric:tabular-nums}
+.pp-d.fin{grid-column:1/-1;margin-top:4px;font-size:12px;height:36px}
+.pp-d.start,.pp-d.end{color:var(--surface)}.pp-d.pend{color:var(--on-primary,#fff)}
+.pp-d.fin.in::before{inset:2px;border-radius:9px}.pp-d.fin.start::after,.pp-d.fin.end::after{inset:2px;border-radius:9px}
+.pp-m{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.pp-mo{font-size:12px;display:grid;place-items:center;line-height:1;padding:0}.pp-mo.on{color:var(--surface)}
+.pp-sum{flex-shrink:0;align-items:flex-start;font-size:12px;line-height:1.5;padding:10px;margin-top:10px}.pp-sum>.vi{margin-top:1px}.pp-sum span{min-width:0;overflow-wrap:anywhere}
+.pp-f{flex-shrink:0;gap:10px;padding-top:10px;margin-top:10px;border-top:1px solid var(--border)}.pp-f button{min-height:36px}
+.pp-h,.pp-f{flex-shrink:0}
+.dashboard-kpis{align-items:start}
+@keyframes tabR{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}@keyframes tabL{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@keyframes mNext{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}@keyframes mPrev{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@media(max-width:560px){.plan-period{gap:6px 10px}.period-range{font-size:11px}.budget-actions>.plan-period{flex-basis:calc(100% - 42px)}.budget-actions>.btn-row{width:100%}.budget-actions>.btn-row .btn{flex:1;justify-content:center;font-size:11px;padding-inline:9px}.plan-period .period-trigger{font-size:11px;padding-inline:10px}.plan-period .info-tip{margin-left:0}.pp{padding:12px}.period-day-grid{gap:5px}.period-day-grid button{height:36px}}

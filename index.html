@@ -49,7 +49,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.4'; window.__APP_DATE = '2026-11-01';
+window.__APP_VERSION = '1.10.6'; window.__APP_DATE = '2026-11-01';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -817,14 +817,27 @@ document.addEventListener('click',e=>{
 
 // Números que cuentan hasta su valor
 const numMemo = {};
+function fitMetricValue(el,texts=el?._fitTexts||[el?.textContent||'']){
+ if(!el?.matches('.kpi .value'))return;
+ el.style.removeProperty('font-size');
+ const available=el.clientWidth;if(!available)return;
+ const style=getComputedStyle(el),size=parseFloat(style.fontSize),canvas=fitMetricValue.canvas||(fitMetricValue.canvas=document.createElement('canvas')),ctx=canvas.getContext('2d');
+ ctx.font=style.fontStyle+' '+style.fontWeight+' '+style.fontSize+' '+style.fontFamily;
+ const spacing=parseFloat(style.letterSpacing)||0,width=Math.max(...texts.map(text=>ctx.measureText(text).width+Math.max(0,text.length-1)*spacing));
+ if(width>available)el.style.fontSize=Math.max(12,size*(available-2)/width)+'px';
+}
+function fitMetricValues(){document.querySelectorAll('.tab.active .kpi .value').forEach(el=>fitMetricValue(el));}
+window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
+if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
 function countUp(el, to, kind = 'money', cls){
   if (!el) return; const key = el.id || el.dataset.k, from = numMemo[key] ?? 0; numMemo[key] = to;
   const f = v => kind === 'pct' ? v.toFixed(1) + '%' : fmt(v);
   if (cls !== undefined) el.className = cls;
   cancelAnimationFrame(el._raf);
-  if (reduceMotion() || from === to){ el.textContent = f(to); return; }
+  el._fitTexts=[f(from),f(to)];fitMetricValue(el);
+  if (reduceMotion() || from === to){ el.textContent = f(to);el._fitTexts=[f(to)];fitMetricValue(el); return; }
   const t0 = performance.now(), dur = MOTION.data, ease = x => 1 - Math.pow(1 - x, 4);
-  const step = now => { if(reduceMotion()){el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el.textContent = f(from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step); };
+  const step = now => { if(reduceMotion()){el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el.textContent = f(from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step);else {el._fitTexts=[f(to)];fitMetricValue(el);} };
   el._raf = requestAnimationFrame(step);
 }
 // Barras que crecen: desde cero al entrar a la pestaña o cambiar de mes; desde su valor anterior en el resto de cambios
@@ -1934,9 +1947,9 @@ function budgetTable(type){
     const status=budgetStatus(r,b),alert=isE&&!sav?(status==='over'?'over':status==='near'?'warn':status==='complete'?'complete':''):'';
     return `<tr class="${alert}">
       <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="cname">${esc(c.name)}</span></div></td>
-      <td class="num">${(cycleView() || payActive(c, m)) ? `<input type="number" class="budget-input" min="0" step="10" data-bud="${c.id}" value="${b || ''}" placeholder="0">` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
-      <td class="num${r ? '' : ' muted'}">${fmt(r)}${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
-      <td class="num">${!b && !r ? '<span class="muted">—</span>' : isE && !sav ? `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}` : diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`}</td>
+      <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<input type="number" class="budget-input" min="0" step="10" data-bud="${c.id}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0">` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
+      <td class="num${r ? '' : ' muted'}" data-mobile-label="Real">${fmt(r)}${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
+      <td class="num" data-mobile-label="${isE?'Disponible':'Por recibir'}">${!b && !r ? '<span class="muted">—</span>' : isE && !sav ? `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}` : diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`}</td>
       <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}">${b > 0 ? pctTxt(raw) : '—'}</span></td>
     </tr>`;
   }).join('');
@@ -2922,6 +2935,15 @@ const FONTS = [
   {id:'claudemix', name:'Claude mixto', desc:'Títulos y cifras serif, texto sans', head:`"Source Serif 4",${SERIF_FB}`, body:`"Inter",${SANS_FB}`, num:'"tnum"'},
   {id:'geist', name:'Geist', desc:'Limpia y moderna, con cifras claras', body:`"Geist",${SANS_FB}`, num:'"tnum"'},
   {id:'geistmono', name:'Geist Mono', desc:'Monoespaciada, ideal para tablas y cifras', body:`"Geist Mono",ui-monospace,monospace`, num:'"tnum"'},
+  {id:'geistserif', name:'Geist Serif', desc:'Serif con detalles expresivos', body:`"Geist Serif",${SERIF_FB}`, num:'"tnum"'},
+  {id:'geistserifheart', name:'Geist Serif Heart', desc:'Serif con detalles de corazón', body:`"Geist Serif Heart",${SERIF_FB}`, num:'"tnum"'},
+  {id:'geistserifsquare', name:'Geist Serif Square', desc:'Serif con remates cuadrados', body:`"Geist Serif Square",${SERIF_FB}`, num:'"tnum"'},
+  {id:'geistseriftriangle', name:'Geist Serif Triangle', desc:'Serif con remates triangulares', body:`"Geist Serif Triangle",${SERIF_FB}`, num:'"tnum"'},
+  {id:'geistpixelcircle', name:'Geist Pixel Circle', desc:'Píxeles circulares', body:`"Geist Pixel Circle",ui-monospace,monospace`, num:'"tnum"'},
+  {id:'geistpixelgrid', name:'Geist Pixel Grid', desc:'Retícula de píxeles', body:`"Geist Pixel Grid",ui-monospace,monospace`, num:'"tnum"'},
+  {id:'geistpixelline', name:'Geist Pixel Line', desc:'Píxeles lineales', body:`"Geist Pixel Line",ui-monospace,monospace`, num:'"tnum"'},
+  {id:'geistpixelsquare', name:'Geist Pixel Square', desc:'Píxeles cuadrados', body:`"Geist Pixel Square",ui-monospace,monospace`, num:'"tnum"'},
+  {id:'geistpixeltriangle', name:'Geist Pixel Triangle', desc:'Píxeles triangulares', body:`"Geist Pixel Triangle",ui-monospace,monospace`, num:'"tnum"'},
   {id:'inter', name:'Inter', desc:'Neutra y muy legible en pantalla', body:`"Inter",${SANS_FB}`, num:'"tnum"'},
   {id:'dmsans', name:'DM Sans', desc:'Geométrica y limpia', body:`"DM Sans",${SANS_FB}`},
   {id:'manrope', name:'Manrope', desc:'Compacta, ideal para cifras', body:`"Manrope",${SANS_FB}`},
@@ -3743,6 +3765,7 @@ function renderBoth(){
     </div>
     <div class="both-bottom">${sharedGoalsCard()}
     <div class="card both-top"><h3>Top 5 gastos del mes de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${x.t.date}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos este mes.</div>'}</div></div>`;
+  requestAnimationFrame(fitMetricValues);
   if (chBoth){ chBoth.destroy(); chBoth = null; }
   if (typeof Chart === 'undefined') return;
   chartTheme();
@@ -3997,7 +4020,7 @@ $('#tab-cats').addEventListener('keydown',e=>{
   const a=state.categories.indexOf(c),b=state.categories.indexOf(next);[state.categories[a],state.categories[b]]=[state.categories[b],state.categories[a]];save();renderCats();
   [...document.querySelectorAll('.cat-row')].find(r=>r.dataset.id===id)?.querySelector('.grip').focus();toast('Categoría reordenada');
 });
-function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n); VIEWS[n](); enhanceAccessibility(); }
+function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n); VIEWS[n](); enhanceAccessibility(); requestAnimationFrame(fitMetricValues); }
 function renderAll(){
   if (lastRenderMonth !== currentMonth){ resetBars(); lastRenderMonth = currentMonth; }
   planningHeader();

@@ -39,3 +39,13 @@
 @font-face{font-family:'Geist';font-style:italic;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/Geist/webfonts/Geist-Italic%5Bwght%5D.woff2') format('woff2')}
 @font-face{font-family:'Geist Mono';font-style:normal;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/GeistMono/webfonts/GeistMono%5Bwght%5D.woff2') format('woff2')}
 @font-face{font-family:'Geist Mono';font-style:italic;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/GeistMono/webfonts/GeistMono-Italic%5Bwght%5D.woff2') format('woff2')}
+
+@font-face{font-family:'Geist Serif';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistSerif/webfonts/GeistSerif-Regular.woff2') format('woff2')}
+@font-face{font-family:'Geist Serif Heart';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistSerif/webfonts/GeistSerif-Heart.woff2') format('woff2')}
+@font-face{font-family:'Geist Serif Square';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistSerif/webfonts/GeistSerif-Square.woff2') format('woff2')}
+@font-face{font-family:'Geist Serif Triangle';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistSerif/webfonts/GeistSerif-Triangle.woff2') format('woff2')}
+@font-face{font-family:'Geist Pixel Circle';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistPixel/webfonts/GeistPixel-Circle.woff2') format('woff2')}
+@font-face{font-family:'Geist Pixel Grid';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistPixel/webfonts/GeistPixel-Grid.woff2') format('woff2')}
+@font-face{font-family:'Geist Pixel Line';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistPixel/webfonts/GeistPixel-Line.woff2') format('woff2')}
+@font-face{font-family:'Geist Pixel Square';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistPixel/webfonts/GeistPixel-Square.woff2') format('woff2')}
+@font-face{font-family:'Geist Pixel Triangle';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/geist-font/GeistPixel/webfonts/GeistPixel-Triangle.woff2') format('woff2')}

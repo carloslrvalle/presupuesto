@@ -1729,3 +1729,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #calDay .row-actions .iconbtn{width:44px;height:44px}
   .cal-day-head .btn{min-height:44px}
 }
+
+/* 1.10.11: importes exactos también en la gráfica de escritorio. */
+@media(min-width:701px){
+  #yearWrap{height:300px}
+  .chart-readout{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;padding-top:14px;border-top:1px solid var(--border);margin-top:12px}
+  .chart-readout:empty{display:none}
+  .chart-readout>strong{font-size:14px;text-transform:capitalize}
+  .chart-readout dl{display:flex;gap:28px;margin:0}
+  .chart-readout dt{font-size:12px;color:var(--muted)}
+  .chart-readout dd{margin:4px 0 0;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums}
+  .chart-readout>span{margin-left:auto;font-size:12px}
+}

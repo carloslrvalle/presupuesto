@@ -40,7 +40,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.10'; window.__APP_DATE = '2026-11-02';
+window.__APP_VERSION = '1.10.11'; window.__APP_DATE = '2026-11-02';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -194,7 +194,7 @@ window.addEventListener('error', function (e) {
       <div class="year-nav"><button id="yearPrev" title="Año anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="yearLabel"></span><button id="yearNext" title="Año siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
     </div>
     <div class="kpis" id="anKpis"></div>
-    <div class="card" style="margin-top:16px"><h3>Ahorro mensual y acumulado</h3><p class="small muted chart-explanation" id="yearChartHelp">Barras: ahorro de cada mes. Línea: total acumulado. Cada serie tiene su propia escala.</p><div class="analysis-mobile chart-modes" id="yearChartModes" role="group" aria-label="Serie de ahorro"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div><div class="chart-wrap" id="yearWrap"><canvas id="chYear"></canvas></div><div class="analysis-mobile chart-readout" id="yearReadout" aria-live="polite"></div></div>
+    <div class="card" style="margin-top:16px"><h3>Ahorro mensual y acumulado</h3><p class="small muted chart-explanation" id="yearChartHelp">Barras: ahorro de cada mes. Línea: suma acumulada. Ambas se leen con la misma escala en soles.</p><div class="analysis-mobile chart-modes" id="yearChartModes" role="group" aria-label="Serie de ahorro"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div><div class="chart-wrap" id="yearWrap"><canvas id="chYear"></canvas></div><div class="chart-readout" id="yearReadout" aria-live="polite"></div></div>
     <div class="card" style="margin-top:16px"><h3>Detalle anual por categoría</h3><div class="analysis-mobile" id="yearMobileDetail"></div><div class="table-wrap" id="yearTable" tabindex="0" role="region" aria-label="Detalle anual por categoría; desplaza horizontalmente para ver todos los meses"></div></div>
     <div class="grid2">
       <div class="card"><h3 id="cmpTitle">Comparación con el mes anterior</h3><div id="cmpList"></div></div>
@@ -2681,23 +2681,28 @@ function renderYearReadout(){
     const i=data.months.indexOf(currentMonth);analysisSelectedMonth=i>=0&&data.cum[i]!=null?currentMonth:data.months.findLast((_,j)=>data.cum[j]!=null);
   }
   const i=data.months.indexOf(analysisSelectedMonth);
-  el.innerHTML=`<strong>${esc(monthLong(analysisSelectedMonth))}</strong><dl><div><dt>Del mes</dt><dd data-year-value="month">${fmt(data.bal[i])}</dd></div><div><dt>Acumulado</dt><dd data-year-value="total">${fmt(data.cum[i])}</dd></div></dl><span class="small muted">Toca otro mes del gráfico para ver sus importes.</span>`;
+  el.innerHTML=`<strong>${esc(monthLong(analysisSelectedMonth))}</strong><dl><div><dt>Del mes</dt><dd data-year-value="month">${fmt(data.bal[i])}</dd></div><div><dt>Acumulado</dt><dd data-year-value="total">${fmt(data.cum[i])}</dd></div></dl><span class="small muted">Selecciona otro mes del gráfico para ver sus importes.</span>`;
 }
-function renderMobileYearChart(){
+// Ambas series usan el mismo eje: un mismo importe siempre ocupa la misma altura.
+function renderYearSavingsChart(){
   if(chYear)chYear.destroy();chartTheme();
-  const data=analysisData, cumulative=analysisChartMode==='total';
+  const data=analysisData,phone=mobileAnalysis(),cumulative=analysisChartMode==='total';
   const last=data.months.findLastIndex((_,i)=>data.cum[i]!=null),indices=data.months.map((_,i)=>i).slice(data.first,last+1);
-  const values=indices.map(i=>cumulative?data.cum[i]:data.bal[i]);
-  const color=cssVar(cumulative?'--k-violet':'--income-chart');
+  const violet=cssVar('--k-violet'),positive=cssVar('--income-chart'),negative=cssVar('--expense-chart');
+  const line={type:'line',label:'Acumulado',solid:'--k-violet',data:indices.map(i=>data.cum[i]),yAxisID:'y',borderColor:violet,backgroundColor:violet,borderWidth:2.5,tension:0,fill:false,spanGaps:false,pointRadius:4,pointHoverRadius:6,pointHitRadius:12,pointBackgroundColor:violet,pointBorderColor:cssVar('--surface'),pointBorderWidth:1.5,order:0};
+  const bars={type:'bar',label:'Del mes',solid:'--income-chart',data:indices.map(i=>data.bal[i]),yAxisID:'y',backgroundColor:c=>c.raw<0?negative:positive,borderRadius:5,borderSkipped:false,maxBarThickness:phone?30:42,categoryPercentage:.7,barPercentage:.8,order:1};
+  const datasets=phone?[cumulative?line:bars]:[line,bars];
   if(!$('#chYear'))$('#yearWrap').innerHTML='<canvas id="chYear"></canvas>';
   chYear=new Chart($('#chYear'),{
-    type:cumulative?'line':'bar',
-    data:{labels:indices.map(i=>MONTHS_ES[i]),datasets:[{label:cumulative?'Ahorro acumulado':'Ahorro del mes',data:values,backgroundColor:ctx=>!cumulative&&ctx.raw<0?cssVar('--expense-chart'):color,borderColor:color,borderWidth:cumulative?2:0,borderRadius:5,borderSkipped:false,maxBarThickness:30,tension:0,fill:false,pointRadius:3,pointHoverRadius:5,pointHitRadius:12}]},
+    type:phone&&cumulative?'line':'bar',
+    data:{labels:indices.map(i=>MONTHS_ES[i]),datasets},
+    // El gráfico combinado se dibuja de una vez: línea y barras no quedan en cuadros de animación distintos.
     options:{maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:10,right:8}},
       onClick:(event,items)=>{const item=items[0];if(!item)return;analysisSelectedMonth=data.months[indices[item.index]];renderYearReadout();},
-      plugins:{legend:{display:false},tooltip:{enabled:false}},
-      scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,maxTicksLimit:6,font:{size:11}}},
-        y:{beginAtZero:true,grace:'10%',grid:{color:cssVar('--border')},border:{display:false},ticks:{callback:compactS,maxTicksLimit:4,font:{size:11},padding:6}}}}
+      plugins:{legend:{...LEGEND,display:!phone,labels:{...LEGEND.labels,generateLabels:chart=>chart.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:cssVar(ds.solid),strokeStyle:cssVar(ds.solid),lineWidth:ds.type==='line'?2.5:0,pointStyle:ds.type==='line'?'line':'rectRounded',hidden:!chart.isDatasetVisible(i),datasetIndex:i,fontColor:cssVar('--muted')}))}},
+        tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+ctx.dataset.label+': '+fmt(ctx.parsed.y),labelColor:ctx=>{const color=ctx.dataset.type==='bar'&&ctx.raw<0?negative:cssVar(ctx.dataset.solid);return {backgroundColor:color,borderColor:color};}}}},
+      scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,maxTicksLimit:phone?6:12,font:{size:phone?11:12}}},
+        y:{beginAtZero:true,grace:'10%',grid:{color:ctx=>ctx.tick.value===0?cssVar('--muted'):cssVar('--border')},border:{display:false},ticks:{callback:compactS,maxTicksLimit:phone?4:6,font:{size:phone?11:12},padding:8}}}}
   });
 }
 function renderMobileYearDetail(grid,tot,bal,months){
@@ -2753,43 +2758,14 @@ function renderAnalysis(){
   const firstData = tot.findIndex(t => t.inc || t.exp);
   let acc = 0; const cum = months.map((m, i) => firstData >= 0 && i >= firstData && (m <= tm || tot[i].inc || tot[i].exp) ? (acc += bal[i]) : null);
   analysisData={months,bal,balC,cum,tot,grid,first:firstData};
-  $('#yearChartHelp').textContent=mobileAnalysis()?(analysisChartMode==='total'?'Total ahorrado desde el primer mes con registros.':'Ahorro registrado en cada mes, sin movimientos programados.'):'Barras: ahorro de cada mes. Línea: total acumulado. Cada serie tiene su propia escala.';
+  $('#yearChartHelp').textContent=mobileAnalysis()?(analysisChartMode==='total'?'Total ahorrado desde el primer mes con registros.':'Ahorro registrado en cada mes, sin movimientos programados.'):'Barras: ahorro de cada mes. Línea: suma acumulada. Ambas se leen con la misma escala en soles.';
   $('#yearChartModes').hidden=!nData;
   $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.yearMode===analysisChartMode)));
   renderYearReadout();
   if (chYear && !nData){ chYear.destroy(); chYear = null; }
   if (!nData){ $('#yearWrap').innerHTML = emptyBox('chart-line', `Aún no hay movimientos registrados en ${y}. Los programados aparecerán aquí cuando llegue su fecha.`); }
   else if (typeof Chart === 'undefined'){ $('#yearWrap').innerHTML = '<div class="empty">No se pudieron cargar los gráficos.</div>'; }
-  else if(mobileAnalysis())renderMobileYearChart();
-  else {
-    if (chYear) chYear.destroy();
-    chartTheme();
-    const vio = cssVar('--k-violet'), cIdx = curIdxOf(y, tm);
-    // Alinea el cero de ambos ejes aunque haya meses en negativo
-    const vals = balC.filter(v => v != null), cv = cum.filter(v => v != null);
-    const r1 = [Math.min(0, ...vals), Math.max(0, ...vals)], r2 = [Math.min(0, ...cv), Math.max(0, ...cv)];
-    if (r1[0] === r1[1]) r1[1] = 1; if (r2[0] === r2[1]) r2[1] = 1;
-    // fracción del alto que necesita cada eje bajo y sobre el cero; ambos ejes usan la mayor para que el 0 coincida
-    const fr = r => [-r[0] / (r[1] - r[0]), r[1] / (r[1] - r[0])];
-    const pN = Math.max(fr(r1)[0], fr(r2)[0]), pP = Math.max(fr(r1)[1], fr(r2)[1]);
-    const rng = r => { const k = Math.max(pN ? -r[0] / pN : 0, pP ? r[1] / pP : 0) * 1.1; return [-pN * k, pP * k]; };
-    const [y0, y1] = rng(r1), [z0, z1] = rng(r2);
-    if (!$('#chYear')) $('#yearWrap').innerHTML = '<canvas id="chYear"></canvas>';
-    chYear = new Chart($('#chYear'), {
-      plugins:[legendGap],
-      data:{labels:MONTHS_ES, datasets:[
-        {type:'line', label:'Acumulado · eje derecho', solid:'--k-violet', data:cum, yAxisID:'y1', borderColor:vio, borderWidth:2, tension:0, fill:false, spanGaps:false, animation:false,
-          backgroundColor:c => { const {ctx, chartArea:ar} = c.chart; if (!ar) return vio + '22'; const g = ctx.createLinearGradient(0, ar.top, 0, ar.bottom); g.addColorStop(0, vio + '40'); g.addColorStop(1, vio + '00'); return g; },
-          pointRadius:c => c.raw == null ? 0 : 3, pointHoverRadius:c => c.raw == null ? 0 : 5, pointHitRadius:8, pointBackgroundColor:vio, pointBorderColor:cssVar('--surface'), pointBorderWidth:1.5, order:0},
-        {type:'bar', label:'Del mes · eje izquierdo', solid:'--income-chart', data:balC, backgroundColor:c => vGrad((c.raw ?? 0) >= 0 ? cssVar('--income-chart') : cssVar('--expense-chart'))(c), borderRadius:8, borderSkipped:false, maxBarThickness:24, order:1}]},
-      options:{maintainAspectRatio:false, animation:stagger(55), interaction:{mode:'index', intersect:false}, layout:{padding:{top:2, right:4, left:2}},
-        plugins:{legend:{...LEGEND, labels:{...LEGEND.labels, generateLabels: ch => ch.data.datasets.map((d, i) => ({text:d.label, fillStyle:cssVar(d.solid), strokeStyle:cssVar(d.solid), lineWidth:d.type === 'line'?2:0, pointStyle:d.type === 'line'?'line':'rectRounded', hidden:!ch.isDatasetVisible(i), datasetIndex:i, fontColor:cssVar('--muted')}))}},
-          tooltip:{filter: i => i.raw != null, callbacks:{label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`, labelColor: ctx => { const c = cssVar(ctx.dataset.type === 'bar' && ctx.raw < 0 ? '--expense-chart' : ctx.dataset.solid); return {backgroundColor:c, borderColor:c, borderRadius:5}; }}}},
-        scales:{x:{grid:{display:false}, border:{display:false}, ticks:{maxTicksLimit:innerWidth<=600?6:12, maxRotation:0, color: c => c.index === cIdx ? cssVar('--text') : cssVar('--muted'), font: c => ({weight: c.index === cIdx ? '700' : '500'})}},
-          y:{min:y0, max:y1, afterBuildTicks:trimTicks, grid:{color:cssVar('--border')}, border:{display:false}, ticks:{callback:compactS, maxTicksLimit:innerWidth<=600?4:6, padding:8}},
-          y1:{position:'right', min:z0, max:z1, afterBuildTicks:trimTicks, grid:{display:false}, border:{display:false}, ticks:{callback:compactS, maxTicksLimit:innerWidth<=600?4:6, color:vio, padding:8}}}}
-    });
-  }
+  else renderYearSavingsChart();
 
   // Tabla anual
   const curIdx = tm.slice(0,4) === y ? Number(tm.slice(5,7)) - 1 : -1;

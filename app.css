@@ -1919,3 +1919,76 @@ button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:v
 @media(max-width:600px){#syncConflictDialog{padding:16px;max-height:88dvh}#syncConflictDialog .dlg-actions{bottom:-16px}}
 
 .sync-tab-dialog{width:min(480px,calc(100vw - 24px));padding:22px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px}.sync-tab-dialog p{font-size:13px;line-height:1.6;color:var(--muted)}.sync-tab-dialog .dlg-actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* 1.10.22: las tablas de Presupuesto reciben el ancho que necesitan. */
+#tab-budget .bud-grid{grid-template-columns:minmax(0,1fr)}
+#tab-budget .bud-table .catcell .ico{flex-shrink:0;display:grid;place-items:center}
+#tab-budget .bud-table .catcell .ico svg,#tab-budget .bud-table .catcell .ico .vi{width:18px;height:18px;flex:none;display:block}
+@media(min-width:901px){
+ #tab-budget .bud-table,#tab-budget .bud-table.wide-values{width:100%;min-width:0;table-layout:fixed}
+ #tab-budget .bud-table th.c-plan{width:18%!important}
+ #tab-budget .bud-table th.c-real{width:19%!important}
+ #tab-budget .bud-table th.c-diff{width:21%!important}
+ #tab-budget .bud-table th.c-av{width:8%!important}
+ #tab-budget .bud-table th,#tab-budget .bud-table td{padding:12px 8px;vertical-align:middle}
+ #tab-budget .bud-table th:first-child,#tab-budget .bud-table td:first-child{padding-left:0}
+ #tab-budget .bud-table th:last-child,#tab-budget .bud-table td:last-child{padding-right:0}
+ #tab-budget .bud-table .catcell{align-items:center;gap:10px}
+ #tab-budget .bud-table .cname,#tab-budget .bud-table.wide-values .cname{display:block;max-width:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.45}
+ #tab-budget .bud-table .budget-input{width:100%;max-width:140px;min-width:0;min-height:42px;height:42px;padding:8px 10px!important}
+ #tab-budget .bud-table .plan-line{white-space:normal;overflow-wrap:anywhere}
+ #tab-budget .bud-table.wide-values td.num{white-space:normal;overflow-wrap:anywhere}
+ #tab-budget .bud-table.wide-values .budget-input{max-width:none}
+}
+@media(min-width:1201px){
+ #tab-budget .bud-grid{grid-template-columns:minmax(0,1fr) 340px;gap:18px}
+ #tab-budget .bud-grid>.card{grid-column:1/-1}
+ #tab-budget .bud-side{display:contents}
+ #tab-budget #budSave{grid-column:2;grid-row:2}
+ #tab-budget .bud-side>.card:last-child{grid-column:1;grid-row:2}
+ #tab-budget #budSave .sv-form{grid-template-columns:minmax(0,1fr);gap:8px}
+ #tab-budget #budSave .sv-l{margin-top:6px}
+ #tab-budget #budSave .sv-c{min-width:0}
+ #tab-budget #budSave .sv-seg .seg button{white-space:normal}
+ #tab-budget .bud-grid:has(.wide-values){grid-template-columns:minmax(0,1fr)}
+ #tab-budget .bud-grid:has(.wide-values) .bud-side{display:grid}
+ #tab-budget .bud-grid:has(.wide-values) #budSave,#tab-budget .bud-grid:has(.wide-values) .bud-side>.card:last-child{grid-column:auto;grid-row:auto}
+ #tab-budget .bud-grid:has(.wide-values) #budSave .sv-form{grid-template-columns:150px minmax(0,1fr)}
+}
+
+#tab-budget .bud-table tr.over td:first-child{box-shadow:none}
+#tab-budget .bud-table .cname{max-width:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+#tab-budget #budSave .seg button.active{background:var(--surface);color:var(--primary);box-shadow:var(--shadow)}
+
+/* 1.10.23: un marco de contenido común al cambiar de sección. */
+:root{--content-width:960px;--page-gutter:16px;--section-gap:16px}
+main.wrap,.topbar>.wrap{max-width:calc(var(--content-width) + 2 * var(--page-gutter));padding-inline:var(--page-gutter)}
+main.wrap>.tab{width:100%;max-width:var(--content-width);margin-inline:auto;min-width:0}
+#tab-movs>.toolbar,#tab-movs>.mview,#view-list{max-width:var(--content-width)}
+main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
+/* Las tablas conservan todo el ancho del marco; no vuelven a paneles estrechos. */
+#tab-budget .bud-grid{grid-template-columns:minmax(0,1fr);gap:var(--section-gap)}
+#tab-budget .bud-side{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--section-gap)}
+#tab-budget #budSave,#tab-budget .bud-side>.card:last-child{grid-column:auto;grid-row:auto}
+#tab-budget #budSave .sv-form{grid-template-columns:132px minmax(0,1fr);gap:12px 14px}
+#tab-budget #budSave .sv-l{margin-top:0}
+@media(max-width:700px){:root{--page-gutter:12px}}
+@media(max-width:600px){#tab-budget #budSave .sv-form{grid-template-columns:minmax(0,1fr);gap:8px}}
+
+/* 1.10.24: una escala común para los indicadores de Resumen, Análisis y Ambos. */
+:root{--metric-title-size:13px;--metric-value-size:26px;--metric-meta-size:12px;--metric-padding:18px;--metric-label-height:39px;--metric-icon-size:30px}
+#tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
+#tab-dashboard .metric-disclosure>summary,#bothBody .metric-disclosure>summary{container-type:inline-size;padding:var(--metric-padding)}
+#anKpis .analysis-metric{padding:var(--metric-padding)}
+#tab-dashboard .metric-disclosure>summary .label,#bothBody .metric-disclosure>summary .label,#anKpis .analysis-metric .label{font-size:var(--metric-title-size);font-weight:600;line-height:1.45;min-height:var(--metric-label-height);gap:8px;padding-right:18px;align-items:center;overflow-wrap:anywhere}
+#tab-dashboard .metric-disclosure .dot,#bothBody .metric-disclosure .dot,#anKpis .analysis-metric .dot{width:var(--metric-icon-size);height:var(--metric-icon-size);flex-shrink:0}
+#tab-dashboard .metric-disclosure>summary .value,#bothBody .metric-disclosure>summary .value,#anKpis .analysis-metric .value{font-family:var(--font-head);font-size:min(var(--metric-value-size),12.5cqi);font-weight:700;line-height:1.45;letter-spacing:-.5px;margin:12px 0 7px}
+#tab-dashboard .metric-expanded,#bothBody .metric-expanded{padding:0 var(--metric-padding) var(--metric-padding)}
+#tab-dashboard .metric-details,#tab-dashboard .metric-footer,#bothBody .metric-details,#bothBody .metric-footer,#anKpis .analysis-metric .small{font-size:var(--metric-meta-size);line-height:1.5}
+#tab-dashboard .metric-chevron,#bothBody .metric-chevron,#anKpis .metric-selection{right:12px;top:14px}
+#tab-dashboard .metric-disclosure.k-inc,#tab-dashboard .metric-disclosure.k-exp,#bothBody .metric-disclosure.k-inc,#bothBody .metric-disclosure.k-exp{background:var(--surface);border-color:var(--border)}
+@media(max-width:900px){#tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+@media(max-width:600px){:root{--metric-title-size:12px;--metric-value-size:24px;--metric-meta-size:11px;--metric-padding:14px}#tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{gap:10px}}
+@media(max-width:380px){:root{--metric-padding:12px;--metric-icon-size:26px;--metric-label-height:54px}}
+#tab-dashboard .metric-disclosure>summary .value,#bothBody .metric-disclosure>summary .value,#anKpis .analysis-metric .value{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:600px){#bothBody .both-kpis{--metric-label-height:54px}}@media(max-width:380px){#bothBody .both-kpis{--metric-label-height:72px}}

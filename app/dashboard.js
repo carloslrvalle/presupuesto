@@ -290,7 +290,7 @@ function renderCharts(){
       const meta = ch.getDatasetMeta(0), arc = meta.data[0]; if (!arc) return;
       const {ctx} = ch, x = arc.x, y = arc.y, act = ch.getActiveElements()[0];
       const fam = cssVar('--font-head') || 'system-ui, sans-serif', size = Math.max(14, Math.min(26, arc.innerRadius / 3.4));
-      const D = ch.$d || {data:[], totalD:0};
+      const D = ch.$d || {data,totalD};
       let top = 'Total gastado', mid = fmt(D.totalD), bot = `${D.data.length} categoría${D.data.length > 1 ? 's' : ''}`;
       if (act && D.data[act.index]){ const d = D.data[act.index]; top = d.c.name.length > 16 ? d.c.name.slice(0, 15) + '…' : d.c.name; mid = fmt(d.v); bot = (d.v / D.totalD * 100).toFixed(1) + '% del total'; }
       ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';

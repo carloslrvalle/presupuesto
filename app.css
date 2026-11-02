@@ -1852,3 +1852,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
  #yearReadoutMonth{font-size:16px}
 }
 @media(max-width:380px){#yearReadout dl{grid-template-columns:minmax(0,1fr)}}
+
+/* 1.10.16: el importe del acumulado cabe junto al mes anterior en móvil. */
+@media(max-width:600px){#yearReadout [data-analysis-value=current]{font-size:clamp(20px,5.6vw,24px)}}

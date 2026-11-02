@@ -40,7 +40,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.14'; window.__APP_DATE = '2026-11-02';
+window.__APP_VERSION = '1.10.16'; window.__APP_DATE = '2026-11-02';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -2735,10 +2735,29 @@ function renderAnalysisChart(){
   const valid=dataset.data.filter(v=>v!=null),lower=Math.min(0,...valid),upper=Math.max(0,...valid),span=upper-lower||1;
   const step=10**Math.floor(Math.log10(span));
   const domainMin=lower<0?(percentage?Math.floor((lower-span*.1)/step)*step:lower-span*.16):0,domainMax=upper>0?(percentage?Math.ceil((upper+span*.1)/step)*step:upper+span*.16):(lower<0?0:1);
+  // Revela el trazo real y desplaza su punta sobre cada segmento, sin mover los datos.
+  const trace={id:'analysisLineTrace',
+    afterInit(chart){if(line)chart.$analysisTrace={progress:reduceMotion()?1:0,start:null,raf:0,head:null};},
+    beforeUpdate(chart,args){const t=chart.$analysisTrace;if(t&&args.mode==='none'){cancelAnimationFrame(t.raf);t.raf=0;t.progress=1;}},
+    resize(chart){const t=chart.$analysisTrace;if(t&&t.start!=null){cancelAnimationFrame(t.raf);t.raf=0;t.progress=1;}},
+    beforeDatasetDraw(chart,args){
+      const t=chart.$analysisTrace;if(!t||t.progress>=1||args.index!==0)return;
+      if(reduceMotion()){t.progress=1;return;}
+      const points=chart.getDatasetMeta(0).data,valid=points.filter(p=>!p.skip),segments=[];
+      let length=0;for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i];if(a.skip||b.skip)continue;const distance=Math.hypot(b.x-a.x,b.y-a.y);segments.push({a,b,distance});length+=distance;}
+      if(!valid.length){t.progress=1;return;}
+      let remaining=length*(.5-.5*Math.cos(Math.PI*t.progress)),head={x:valid[0].x,y:valid[0].y};
+      for(const {a,b,distance} of segments){const fraction=distance?Math.min(1,remaining/distance):1;head={x:a.x+(b.x-a.x)*fraction,y:a.y+(b.y-a.y)*fraction};if(remaining<=distance)break;remaining-=distance;}
+      t.head=head;chart.ctx.save();chart.ctx.beginPath();chart.ctx.rect(chart.chartArea.left-8,chart.chartArea.top-8,Math.max(0,head.x-chart.chartArea.left+8),chart.chartArea.height+16);chart.ctx.clip();t.clipped=true;
+    },
+    afterDatasetDraw(chart){const t=chart.$analysisTrace;if(!t?.clipped)return;chart.ctx.restore();t.clipped=false;const {ctx}=chart,{x,y}=t.head;ctx.save();ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=cssVar('--surface');ctx.stroke();ctx.restore();},
+    afterDraw(chart){const t=chart.$analysisTrace;if(!t||t.progress>=1||t.raf)return;if(t.start==null)t.start=performance.now();t.raf=requestAnimationFrame(now=>{t.raf=0;if(!chart.canvas)return;t.progress=reduceMotion()?1:Math.min(1,(now-t.start)/1300);chart.draw();});},
+    afterDestroy(chart){const t=chart.$analysisTrace;if(t)cancelAnimationFrame(t.raf);}
+  };
   const valueLabels={id:'yearValueLabels',afterDatasetsDraw(chart){
     if(indices.length>3)return;
     const {ctx,chartArea:area}=chart,meta=chart.getDatasetMeta(0);ctx.save();ctx.font='600 12px '+curFont().body;ctx.textAlign='center';ctx.textBaseline='middle';
-    meta.data.forEach((point,i)=>{const value=dataset.data[i];if(value==null||point.skip)return;
+    meta.data.forEach((point,i)=>{const value=dataset.data[i];if(value==null||point.skip||(chart.$analysisTrace?.progress<1&&point.x>chart.$analysisTrace.head?.x))return;
       let text=analysisFormat(value),width=ctx.measureText(text).width;
       if(width>(area.width/indices.length)*.8){text=percentage?analysisPercent(value):compactS(value);width=ctx.measureText(text).width;}
       const x=Math.max(area.left+width/2,Math.min(area.right-width/2,point.x)),rawY=point.y+(value<0?16:-16),y=Math.max(area.top+8,Math.min(area.bottom-8,rawY));
@@ -2747,8 +2766,13 @@ function renderAnalysisChart(){
   }};
   if(!$('#chYear'))$('#yearWrap').innerHTML='<canvas id="chYear"></canvas>';
   chYear=new Chart($('#chYear'),{
-    type:line?'line':'bar',plugins:[valueLabels],data:{labels:indices.map(i=>MONTHS_ES[i]),datasets:[dataset]},
-    options:{maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:indices.length<=3?24:8,right:12,bottom:8}},
+    type:line?'line':'bar',plugins:[trace,valueLabels],data:{labels:indices.map(i=>MONTHS_ES[i]),datasets:[dataset]},
+    options:{maintainAspectRatio:false,
+      // Las barras crecen desde cero; las líneas se revelan con su punto viajero.
+      animation:reduceMotion()||line?false:{duration:650,easing:'easeOutQuart'},
+      animations:line?false:{numbers:{duration:0},colors:{duration:0},y:{type:'number',properties:['y'],duration:650,easing:'easeOutQuart',from:ctx=>ctx.chart.scales.y.getPixelForValue(0)}},
+      transitions:{active:{animation:{duration:0}},resize:{animation:{duration:0}}},
+      interaction:{mode:'index',intersect:false},layout:{padding:{top:indices.length<=3?24:8,right:12,bottom:8}},
       onClick:(event,items)=>{const item=items[0];if(!item)return;selectAnalysisMonth(data.months[indices[item.index]]);chYear.update('none');},
       plugins:{legend:{display:false},tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+dataset.label+': '+analysisFormat(ctx.parsed.y)}}},
       scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,autoSkip:false,maxTicksLimit:12,callback:function(value){const label=this.getLabelForValue(value);return phone&&innerWidth<=440?label.slice(0,1):label;},color:ctx=>data.months[indices[ctx.index]]===analysisSelectedMonth?cssVar('--text'):cssVar('--muted'),font:ctx=>({size:phone?10:12,weight:data.months[indices[ctx.index]]===analysisSelectedMonth?700:400}),padding:10}},

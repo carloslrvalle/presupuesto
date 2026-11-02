@@ -1821,3 +1821,34 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 .analysis-detail-actions:empty{display:none}.analysis-detail-actions{margin-top:16px}
 .year-chart-body:has(#yearReadout:empty){grid-template-columns:minmax(0,1fr)}
+
+/* 1.10.14: lectura sobria, jerarquía del mes y doce meses sin desplazamiento. */
+.year-chart-head{margin-bottom:22px}
+.year-chart-head h3{font-size:17px;letter-spacing:-.02em;margin-bottom:6px}
+.year-chart-head .chart-explanation{min-height:0;font-size:12px;line-height:1.5;max-width:52ch}
+.year-chart-body{grid-template-columns:minmax(0,1fr) 220px;gap:28px}
+#yearWrap{height:272px}
+#yearReadout{border-left:0;padding:0 0 0 8px;gap:18px}
+#yearReadoutMonth{background:transparent;border-color:var(--border);font-size:13px}
+#yearReadout dl{gap:18px}
+#yearReadout [data-analysis-value=current]{font-size:26px;line-height:1.25;letter-spacing:-.035em;color:var(--text)}
+#yearReadout [data-analysis-value=previous]{font-size:16px;font-weight:500;color:var(--muted)}
+#yearReadout .analysis-change{padding:0;background:transparent;font-size:11px;line-height:1.6;font-weight:500}
+#yearReadout .analysis-change[data-tone=good]{color:var(--income)}
+#yearReadout .analysis-change[data-tone=bad]{color:var(--expense)}
+.analysis-metric.selected{box-shadow:none;background:color-mix(in srgb,var(--primary) 5%,var(--surface))}
+.analysis-metric:not(.selected) .metric-selection{opacity:.35}
+@media(max-width:800px){
+ .year-chart-body{grid-template-columns:minmax(0,1fr);gap:18px}
+ #yearReadout{border-top:1px solid var(--border);padding:18px 0 0;gap:14px}
+ #yearReadout dl{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ #yearReadout [data-analysis-value=current]{font-size:24px}
+ #yearReadout [data-analysis-value=previous]{font-size:15px}
+}
+@media(max-width:600px){
+ .year-chart-head{margin-bottom:18px}
+ .year-chart-head h3{font-size:16px}
+ #yearWrap{height:248px}
+ #yearReadoutMonth{font-size:16px}
+}
+@media(max-width:380px){#yearReadout dl{grid-template-columns:minmax(0,1fr)}}

@@ -40,7 +40,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.13'; window.__APP_DATE = '2026-11-02';
+window.__APP_VERSION = '1.10.14'; window.__APP_DATE = '2026-11-02';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -2729,9 +2729,9 @@ function renderAnalysisChart(){
   if(values.every(v=>v==null)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-line','Registra ingresos para calcular la tasa de ahorro.');return;}
   if(['income','expense'].includes(analysisMetric)&&values.every(v=>v===0)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-column','No hay '+metric.label.toLowerCase()+' registrados en este año.');return;}
   const dataset={type:line?'line':'bar',label:cumulative?'Ahorro acumulado':metric.label,unit:percentage?'pct':'money',data:indices.map(i=>values[i]),yAxisID:'y',borderColor:line?color:undefined,
-    backgroundColor:ctx=>{const base=!line&&ctx.raw<0?negative:color;return !line&&data.months[indices[ctx.dataIndex]]!==analysisSelectedMonth?mixHex(base,cssVar('--surface'),.18):base;},
-    borderWidth:line?2.5:0,borderRadius:5,borderSkipped:false,maxBarThickness:phone?44:58,categoryPercentage:.64,barPercentage:.85,tension:0,fill:false,spanGaps:false,
-    pointRadius:ctx=>data.months[indices[ctx.dataIndex]]===analysisSelectedMonth?5:3.5,pointHoverRadius:6,pointHitRadius:12,pointBackgroundColor:color,pointBorderColor:cssVar('--surface'),pointBorderWidth:1.5};
+    backgroundColor:ctx=>{const base=!line&&ctx.raw<0?negative:color;return !line&&data.months[indices[ctx.dataIndex]]!==analysisSelectedMonth?mixHex(base,cssVar('--surface'),.40):base;},
+    borderWidth:line?2:0,borderRadius:4,borderSkipped:false,maxBarThickness:phone?44:58,categoryPercentage:.64,barPercentage:.85,tension:0,fill:false,spanGaps:false,
+    pointRadius:ctx=>data.months[indices[ctx.dataIndex]]===analysisSelectedMonth?5:2,pointHoverRadius:6,pointHitRadius:12,pointBackgroundColor:color,pointBorderColor:cssVar('--surface'),pointBorderWidth:1.5};
   const valid=dataset.data.filter(v=>v!=null),lower=Math.min(0,...valid),upper=Math.max(0,...valid),span=upper-lower||1;
   const step=10**Math.floor(Math.log10(span));
   const domainMin=lower<0?(percentage?Math.floor((lower-span*.1)/step)*step:lower-span*.16):0,domainMax=upper>0?(percentage?Math.ceil((upper+span*.1)/step)*step:upper+span*.16):(lower<0?0:1);
@@ -2751,8 +2751,8 @@ function renderAnalysisChart(){
     options:{maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:indices.length<=3?24:8,right:12,bottom:8}},
       onClick:(event,items)=>{const item=items[0];if(!item)return;selectAnalysisMonth(data.months[indices[item.index]]);chYear.update('none');},
       plugins:{legend:{display:false},tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+dataset.label+': '+analysisFormat(ctx.parsed.y)}}},
-      scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,maxTicksLimit:phone?6:12,font:{size:phone?11:12},padding:8}},
-        y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>ctx.tick.value===0?cssVar('--muted'):cssVar('--border')},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}}
+      scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,autoSkip:false,maxTicksLimit:12,callback:function(value){const label=this.getLabelForValue(value);return phone&&innerWidth<=440?label.slice(0,1):label;},color:ctx=>data.months[indices[ctx.index]]===analysisSelectedMonth?cssVar('--text'):cssVar('--muted'),font:ctx=>({size:phone?10:12,weight:data.months[indices[ctx.index]]===analysisSelectedMonth?700:400}),padding:10}},
+        y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>mixHex(cssVar(ctx.tick.value===0?'--muted':'--border'),cssVar('--surface'),ctx.tick.value===0?.42:.38),lineWidth:ctx=>ctx.tick.value===0?1.2:1},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}}
   });
 }
 function renderMobileYearDetail(){

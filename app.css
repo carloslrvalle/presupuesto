@@ -38,7 +38,7 @@ html{scrollbar-gutter:stable}
 #errBar{position:fixed;left:12px;right:12px;top:12px;z-index:1001;padding:10px 14px;border-radius:12px;background:var(--expense);color:#fff;font-size:13px;line-height:1.4;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
 :root{--font-body:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--font-head:var(--font-body);--num-feat:normal}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-feature-settings:var(--num-feat);font-size:15px;line-height:1.45}
-button,input,select{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 /* Títulos y cifras grandes usan la fuente de títulos */
 h1,h2,h3,#appName,.kpi .value,.goal-amt b,.sv-amt b,.cal-stats b,.cs b,.cd-stats b,.dlg-head h3,.tc-row b,.pp-h b{font-family:var(--font-head)}
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
@@ -48,7 +48,7 @@ h1,h2,h3,#appName,.kpi .value,.goal-amt b,.sv-amt b,.cal-stats b,.cs b,.cd-stats
 .topbar.scrolled{background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 20px -14px rgba(20,25,40,.28)}
 .topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;padding-bottom:6px;flex-wrap:wrap}
 /* Marca minimalista: ícono en el color del tema, sin recuadro, y título grande */
-.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:21px;letter-spacing:-.5px;min-height:42px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:21px;letter-spacing:-.5px;min-height:42px}
 .brand .logo{width:36px;height:36px;margin-left:-4px;border-radius:10px;border:0;background:transparent;color:var(--accent-ink,var(--primary));display:grid;place-items:center;font-size:24px;cursor:pointer;transition:transform .35s var(--spring),background-color .2s,color .3s}
 .brand .logo .vi{width:28px;height:28px;stroke-width:2.1}
 .brand .logo:hover{transform:rotate(-6deg) scale(1.08);background:var(--surface-2)}
@@ -1541,3 +1541,24 @@ html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:norm
  html .budget-actions>.btn-row .btn span{min-width:0;white-space:normal}
  html .budget-actions>.btn-row .btn>.vi{flex-shrink:0}
 }
+
+/* Galería de paletas: la muestra usa los mismos colores de las series reales. */
+.theme-grid,.theme-more-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.theme-option{min-width:0;display:flex;flex-direction:column;gap:8px}
+.theme-option .theme-card{width:100%;flex:1;padding:9px;gap:8px;align-content:start}
+.theme-preview{position:relative;background:var(--preview-bg);border-radius:9px;padding:10px;display:grid;gap:8px;border:1px solid color-mix(in srgb,var(--muted) 15%,transparent)}
+.theme-preview-bars{height:40px;display:flex;align-items:flex-end;gap:4px;padding:0 3px;border-bottom:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
+.theme-preview-bars i{flex:1;background:var(--preview-income);border-radius:3px 3px 0 0}
+.theme-preview-bars i.out{background:var(--preview-expense);margin-right:3px}
+.theme-preview-line{width:100%;height:32px;overflow:visible}.theme-preview-line path{stroke:var(--preview-saving);stroke-width:2;fill:none}.theme-preview-line circle{fill:var(--preview-saving)}
+.theme-preview-categories{display:flex;gap:4px}.theme-preview-categories i{height:5px;border-radius:3px;flex:1}
+.theme-mode-label{padding:0 3px;font-size:11px;color:var(--muted);line-height:1.4;text-align:left}
+.theme-card .tc-row{align-items:flex-start}.theme-card .tc-row b{white-space:normal;overflow-wrap:anywhere;overflow:visible}
+.theme-key{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:11px;color:var(--muted);padding:4px 0}
+.theme-key span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--key);margin-right:6px}
+.theme-more{grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:12px}.theme-more>summary{cursor:pointer;font-size:13px;font-weight:600;padding:8px 0 16px}.theme-more>summary span{font-weight:400;color:var(--muted);margin-left:8px}
+.chart-explanation{margin:-4px 0 10px;max-width:65ch}
+@media(max-width:760px){.theme-grid,.theme-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:360px){.theme-grid,.theme-more-grid{gap:8px}.theme-option .theme-card{padding:7px}.theme-preview{padding:7px}.theme-mode-label{font-size:10px}}
+
+.kpi .value.savings-positive{color:var(--k-violet)}

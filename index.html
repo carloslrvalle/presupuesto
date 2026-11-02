@@ -40,7 +40,7 @@
 <script>
 /* Si algo falla al abrir, se muestra el motivo en pantalla en lugar de quedar a medias */
 window.__bootErrs = [];
-window.__APP_VERSION = '1.10.11'; window.__APP_DATE = '2026-11-02';
+window.__APP_VERSION = '1.10.13'; window.__APP_DATE = '2026-11-02';
 window.addEventListener('error', function (e) {
   if (!e.message || /ResizeObserver|^Script error/i.test(e.message)) return;
   var msg = (e.message || 'Error') + (e.lineno ? ' (línea ' + e.lineno + ':' + (e.colno || 0) + ')' : '');
@@ -193,12 +193,17 @@ window.addEventListener('error', function (e) {
     <div class="toolbar">
       <div class="year-nav"><button id="yearPrev" title="Año anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="yearLabel"></span><button id="yearNext" title="Año siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
     </div>
-    <div class="kpis" id="anKpis"></div>
-    <div class="card" style="margin-top:16px"><h3>Ahorro mensual y acumulado</h3><p class="small muted chart-explanation" id="yearChartHelp">Barras: ahorro de cada mes. Línea: suma acumulada. Ambas se leen con la misma escala en soles.</p><div class="analysis-mobile chart-modes" id="yearChartModes" role="group" aria-label="Serie de ahorro"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div><div class="chart-wrap" id="yearWrap"><canvas id="chYear"></canvas></div><div class="chart-readout" id="yearReadout" aria-live="polite"></div></div>
-    <div class="card" style="margin-top:16px"><h3>Detalle anual por categoría</h3><div class="analysis-mobile" id="yearMobileDetail"></div><div class="table-wrap" id="yearTable" tabindex="0" role="region" aria-label="Detalle anual por categoría; desplaza horizontalmente para ver todos los meses"></div></div>
-    <div class="grid2">
-      <div class="card"><h3 id="cmpTitle">Comparación con el mes anterior</h3><div id="cmpList"></div></div>
-      <div class="card"><h3>Proyección de cierre</h3><div id="projDetail"></div></div>
+    <p class="analysis-guide">Elige una tarjeta para explorar sus meses.</p><div class="kpis" id="anKpis" role="group" aria-label="Indicador de análisis"></div>
+    <div class="card year-chart-card" id="yearChartCard" style="margin-top:16px">
+      <div class="year-chart-head"><div><h3 id="analysisChartTitle">Ingresos mes a mes</h3><p class="small muted chart-explanation" id="yearChartHelp">Ingresos registrados en cada mes.</p></div>
+        <div class="chart-modes" id="yearChartModes" role="group" aria-label="Serie de ahorro"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div>
+      </div>
+      <div class="year-chart-body"><div class="chart-wrap" id="yearWrap"><canvas id="chYear"></canvas></div><div class="chart-readout" id="yearReadout" aria-live="polite"></div></div>
+    </div>
+    <div class="analysis-details">
+      <details class="analysis-detail" id="analysisCategoryDetail"><summary><span id="analysisDetailTitle">Detalle por categoría</span><small id="analysisDetailHint">Ingresos</small></summary><div class="analysis-detail-body"><div class="analysis-mobile" id="yearMobileDetail"></div><div class="table-wrap" id="yearTable" tabindex="0" role="region" aria-label="Detalle mensual del indicador"></div><div class="analysis-detail-actions" id="analysisMovementsAction"></div></div></details>
+      <details class="analysis-detail" id="analysisCompareDetail"><summary><span>Comparar meses</span><small id="cmpTitle"></small></summary><div class="analysis-detail-body" id="cmpList"></div></details>
+      <details class="analysis-detail" id="analysisProjectionDetail"><summary><span>Proyección de cierre</span><small id="projContext">Escenario global del mes</small></summary><div class="analysis-detail-body" id="projDetail"></div></details>
     </div>
   </section>
 
@@ -1909,9 +1914,20 @@ $('#txDelete').onclick = async () => {
 };
 $('#fab').onclick = () => (activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx()); // en Recurrentes el + crea un recurrente (en el celular no hay botón propio)
 $('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
-const fabHome=document.createComment('new-movement-button');$('#fab').before(fabHome);
-function placeMobileNewButton(){const button=$('#fab');if(matchMedia('(max-width:600px)').matches)document.querySelector('.head-right').insertBefore(button,$('#btnSettings'));else fabHome.after(button);}
-placeMobileNewButton();matchMedia('(max-width:600px)').addEventListener('change',placeMobileNewButton);
+// El botón conserva su posición flotante; se aparta mientras se desplaza la página.
+let fabScrollTimer,fabTouchActive=false;
+function showFloatingNew(){clearTimeout(fabScrollTimer);$('#fab').classList.remove('fab-scroll-hidden');}
+function hideFloatingNewOnScroll(){
+  const button=$('#fab');if(!matchMedia('(max-width:600px)').matches||txDialog.open||button.matches(':focus-visible'))return;
+  button.classList.add('fab-scroll-hidden');clearTimeout(fabScrollTimer);
+  if(!fabTouchActive)fabScrollTimer=setTimeout(showFloatingNew,450);
+}
+document.addEventListener('touchstart',()=>{fabTouchActive=true;},{passive:true});
+for(const event of ['touchend','touchcancel'])document.addEventListener(event,()=>{fabTouchActive=false;if($('#fab').classList.contains('fab-scroll-hidden')){clearTimeout(fabScrollTimer);fabScrollTimer=setTimeout(showFloatingNew,450);}},{passive:true});
+window.addEventListener('scroll',hideFloatingNewOnScroll,{passive:true});
+document.addEventListener('touchmove',e=>{if(!e.target.closest?.('dialog[open]'))hideFloatingNewOnScroll();},{passive:true});
+$('#fab').addEventListener('focus',showFloatingNew);
+matchMedia('(max-width:600px)').addEventListener('change',showFloatingNew);
 
 $('#fab').addEventListener('click',()=>{
  const b=$('#fab');b.classList.remove('launch');void b.offsetWidth;b.classList.add('launch','is-open');
@@ -2646,7 +2662,7 @@ function projection(m){
 }
 
 /* ---------- Análisis ---------- */
-let chYear, analysisData, analysisSelectedMonth='', analysisDetailPeriod='', analysisChartMode='month';
+let chYear, analysisData, analysisSelectedMonth='', analysisDetailPeriod='', analysisChartMode='month', analysisMetric='income';
 const mobileAnalysis=()=>matchMedia('(max-width:700px)').matches;
 const curIdxOf = (y, tm) => tm.slice(0, 4) === y ? Number(tm.slice(5, 7)) - 1 : -1;
 const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -2674,55 +2690,113 @@ function projectionExplanation(x){
 }
 
 
-function renderYearReadout(){
-  const el=$('#yearReadout'), data=analysisData;
-  if(!data||data.first<0){el.innerHTML='';return;}
-  if(!data.months.includes(analysisSelectedMonth)||data.cum[data.months.indexOf(analysisSelectedMonth)]==null){
-    const i=data.months.indexOf(currentMonth);analysisSelectedMonth=i>=0&&data.cum[i]!=null?currentMonth:data.months.findLast((_,j)=>data.cum[j]!=null);
-  }
-  const i=data.months.indexOf(analysisSelectedMonth);
-  el.innerHTML=`<strong>${esc(monthLong(analysisSelectedMonth))}</strong><dl><div><dt>Del mes</dt><dd data-year-value="month">${fmt(data.bal[i])}</dd></div><div><dt>Acumulado</dt><dd data-year-value="total">${fmt(data.cum[i])}</dd></div></dl><span class="small muted">Selecciona otro mes del gráfico para ver sus importes.</span>`;
+const ANALYSIS_METRICS={
+  income:{label:'Ingresos',title:'Ingresos mes a mes',color:'--income-chart',help:'Ingresos registrados; no incluye cobros programados.'},
+  expense:{label:'Gastos',title:'Gastos mes a mes',color:'--expense-chart',help:'Gastos registrados; no incluye pagos programados.'},
+  savings:{label:'Ahorro',title:'Ahorro mes a mes',color:'--k-violet',help:'Ahorro de cada mes según la forma de ahorro que elegiste.'},
+  rate:{label:'Tasa de ahorro',title:'Tasa de ahorro mes a mes',color:'--primary',help:'Ahorro sobre los ingresos del mes. Sin ingresos, no hay tasa.'}
+};
+const analysisPercent=value=>value==null?'—':Number(value).toLocaleString('es-PE',{maximumFractionDigits:1,minimumFractionDigits:1})+'%';
+const analysisFormat=value=>value==null?'Sin ingresos':analysisMetric==='rate'?analysisPercent(value):fmt(value);
+function analysisValues(){const d=analysisData;return analysisMetric==='income'?d.tot.map(t=>t.inc):analysisMetric==='expense'?d.tot.map(t=>t.exp):analysisMetric==='rate'?d.rates:analysisChartMode==='total'?d.cum:d.bal;}
+function analysisMonthlyValue(month){
+  const d=analysisData,index=d?.months.indexOf(month)??-1;
+  if(index>=0)return analysisMetric==='income'?d.tot[index].inc:analysisMetric==='expense'?d.tot[index].exp:analysisMetric==='rate'?d.rates[index]:d.bal[index];
+  const tx=txOfMonth(month),income=sum(tx.filter(t=>t.type==='income'));
+  return analysisMetric==='income'?income:analysisMetric==='expense'?sum(tx.filter(t=>t.type==='expense')):analysisMetric==='rate'?(income?savingsOf(month).saved/income*100:null):savingsOf(month).saved;
 }
-// Ambas series usan el mismo eje: un mismo importe siempre ocupa la misma altura.
-function renderYearSavingsChart(){
+function analysisDisplayValue(month){if(analysisMetric==='savings'&&analysisChartMode==='total'){const index=analysisData.months.indexOf(month);return index>=0?(analysisData.cum[index]??0):0;}return analysisMonthlyValue(month);}
+function analysisPreviousLabel(month){return analysisMetric==='savings'&&analysisChartMode==='total'&&month.endsWith('-01')?'Inicio de '+month.slice(0,4):monthLong(shiftMonth(month,-1));}
+function analysisChange(current,previous){
+  if(current==null||previous==null)return 'Sin base comparable';
+  const difference=current-previous;if(Math.abs(difference)<.005)return 'Sin cambio';
+  if(analysisMetric==='rate')return (difference>0?'+':'−')+Math.abs(difference).toFixed(1)+' pp';
+  if(Math.abs(previous)<.005)return 'Sin base previa';
+  return (difference>0?'+':'−')+(Math.abs(difference)/Math.abs(previous)*100).toFixed(1)+'%';
+}
+function renderYearReadout(){
+  const el=$('#yearReadout'),data=analysisData;if(!data||data.first<0){el.innerHTML='';return;}
+  if(!data.months.includes(analysisSelectedMonth)||data.cum[data.months.indexOf(analysisSelectedMonth)]==null){const i=data.months.indexOf(currentMonth);analysisSelectedMonth=i>=0&&data.cum[i]!=null?currentMonth:data.months.findLast((_,j)=>data.cum[j]!=null);}
+  const months=data.months.filter((_,j)=>data.cum[j]!=null),previousMonth=shiftMonth(analysisSelectedMonth,-1),current=analysisDisplayValue(analysisSelectedMonth),previous=analysisDisplayValue(previousMonth),change=analysisChange(current,previous),difference=current!=null&&previous!=null?current-previous:0,tone=Math.abs(difference)<.005?'neutral':((difference>0)===(analysisMetric==='expense')?'bad':'good');
+  el.innerHTML=`<div class="year-readout-month"><label for="yearReadoutMonth">Mes seleccionado${analysisSelectedMonth===thisMonth()?'<span class="analysis-period-state" title="El mes no ha terminado. Se compara lo registrado hasta hoy con el mes anterior completo.">En curso</span>':''}</label><select id="yearReadoutMonth">${months.map(m=>`<option value="${m}"${m===analysisSelectedMonth?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select></div><dl><div><dt>${analysisMetric==='savings'&&analysisChartMode==='total'?'Acumulado':ANALYSIS_METRICS[analysisMetric].label}</dt><dd data-analysis-value="current">${analysisFormat(current)}</dd></div><div><dt>${analysisPreviousLabel(analysisSelectedMonth)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div></dl><span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${analysisMetric==='rate'?'Diferencia en puntos porcentuales entre ambas tasas.':'Diferencia relativa respecto al período anterior.'}">${change}${change.startsWith('+')||change.startsWith('−')?' vs. mes anterior':''}</span>${analysisMetric==='savings'&&analysisChartMode==='total'?`<span class="analysis-accumulated">Ahorro del mes: <b>${fmt(data.bal[data.months.indexOf(analysisSelectedMonth)])}</b></span>`:''}`;
+}
+function selectAnalysisMonth(month){analysisSelectedMonth=month;if(analysisDetailPeriod!=='year')analysisDetailPeriod=month;renderYearReadout();renderAnalysisDetails();}
+function renderAnalysisChart(){
   if(chYear)chYear.destroy();chartTheme();
-  const data=analysisData,phone=mobileAnalysis(),cumulative=analysisChartMode==='total';
+  const data=analysisData,phone=mobileAnalysis(),metric=ANALYSIS_METRICS[analysisMetric],cumulative=analysisMetric==='savings'&&analysisChartMode==='total',percentage=analysisMetric==='rate',line=cumulative||percentage;
   const last=data.months.findLastIndex((_,i)=>data.cum[i]!=null),indices=data.months.map((_,i)=>i).slice(data.first,last+1);
-  const violet=cssVar('--k-violet'),positive=cssVar('--income-chart'),negative=cssVar('--expense-chart');
-  const line={type:'line',label:'Acumulado',solid:'--k-violet',data:indices.map(i=>data.cum[i]),yAxisID:'y',borderColor:violet,backgroundColor:violet,borderWidth:2.5,tension:0,fill:false,spanGaps:false,pointRadius:4,pointHoverRadius:6,pointHitRadius:12,pointBackgroundColor:violet,pointBorderColor:cssVar('--surface'),pointBorderWidth:1.5,order:0};
-  const bars={type:'bar',label:'Del mes',solid:'--income-chart',data:indices.map(i=>data.bal[i]),yAxisID:'y',backgroundColor:c=>c.raw<0?negative:positive,borderRadius:5,borderSkipped:false,maxBarThickness:phone?30:42,categoryPercentage:.7,barPercentage:.8,order:1};
-  const datasets=phone?[cumulative?line:bars]:[line,bars];
+  const values=analysisValues(),color=cssVar(metric.color),negative=cssVar('--expense-chart');
+  if(values.every(v=>v==null)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-line','Registra ingresos para calcular la tasa de ahorro.');return;}
+  if(['income','expense'].includes(analysisMetric)&&values.every(v=>v===0)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-column','No hay '+metric.label.toLowerCase()+' registrados en este año.');return;}
+  const dataset={type:line?'line':'bar',label:cumulative?'Ahorro acumulado':metric.label,unit:percentage?'pct':'money',data:indices.map(i=>values[i]),yAxisID:'y',borderColor:line?color:undefined,
+    backgroundColor:ctx=>{const base=!line&&ctx.raw<0?negative:color;return !line&&data.months[indices[ctx.dataIndex]]!==analysisSelectedMonth?mixHex(base,cssVar('--surface'),.18):base;},
+    borderWidth:line?2.5:0,borderRadius:5,borderSkipped:false,maxBarThickness:phone?44:58,categoryPercentage:.64,barPercentage:.85,tension:0,fill:false,spanGaps:false,
+    pointRadius:ctx=>data.months[indices[ctx.dataIndex]]===analysisSelectedMonth?5:3.5,pointHoverRadius:6,pointHitRadius:12,pointBackgroundColor:color,pointBorderColor:cssVar('--surface'),pointBorderWidth:1.5};
+  const valid=dataset.data.filter(v=>v!=null),lower=Math.min(0,...valid),upper=Math.max(0,...valid),span=upper-lower||1;
+  const step=10**Math.floor(Math.log10(span));
+  const domainMin=lower<0?(percentage?Math.floor((lower-span*.1)/step)*step:lower-span*.16):0,domainMax=upper>0?(percentage?Math.ceil((upper+span*.1)/step)*step:upper+span*.16):(lower<0?0:1);
+  const valueLabels={id:'yearValueLabels',afterDatasetsDraw(chart){
+    if(indices.length>3)return;
+    const {ctx,chartArea:area}=chart,meta=chart.getDatasetMeta(0);ctx.save();ctx.font='600 12px '+curFont().body;ctx.textAlign='center';ctx.textBaseline='middle';
+    meta.data.forEach((point,i)=>{const value=dataset.data[i];if(value==null||point.skip)return;
+      let text=analysisFormat(value),width=ctx.measureText(text).width;
+      if(width>(area.width/indices.length)*.8){text=percentage?analysisPercent(value):compactS(value);width=ctx.measureText(text).width;}
+      const x=Math.max(area.left+width/2,Math.min(area.right-width/2,point.x)),rawY=point.y+(value<0?16:-16),y=Math.max(area.top+8,Math.min(area.bottom-8,rawY));
+      ctx.fillStyle=cssVar('--text');ctx.fillText(text,x,y);
+    });ctx.restore();
+  }};
   if(!$('#chYear'))$('#yearWrap').innerHTML='<canvas id="chYear"></canvas>';
   chYear=new Chart($('#chYear'),{
-    type:phone&&cumulative?'line':'bar',
-    data:{labels:indices.map(i=>MONTHS_ES[i]),datasets},
-    // El gráfico combinado se dibuja de una vez: línea y barras no quedan en cuadros de animación distintos.
-    options:{maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:10,right:8}},
-      onClick:(event,items)=>{const item=items[0];if(!item)return;analysisSelectedMonth=data.months[indices[item.index]];renderYearReadout();},
-      plugins:{legend:{...LEGEND,display:!phone,labels:{...LEGEND.labels,generateLabels:chart=>chart.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:cssVar(ds.solid),strokeStyle:cssVar(ds.solid),lineWidth:ds.type==='line'?2.5:0,pointStyle:ds.type==='line'?'line':'rectRounded',hidden:!chart.isDatasetVisible(i),datasetIndex:i,fontColor:cssVar('--muted')}))}},
-        tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+ctx.dataset.label+': '+fmt(ctx.parsed.y),labelColor:ctx=>{const color=ctx.dataset.type==='bar'&&ctx.raw<0?negative:cssVar(ctx.dataset.solid);return {backgroundColor:color,borderColor:color};}}}},
-      scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,maxTicksLimit:phone?6:12,font:{size:phone?11:12}}},
-        y:{beginAtZero:true,grace:'10%',grid:{color:ctx=>ctx.tick.value===0?cssVar('--muted'):cssVar('--border')},border:{display:false},ticks:{callback:compactS,maxTicksLimit:phone?4:6,font:{size:phone?11:12},padding:8}}}}
+    type:line?'line':'bar',plugins:[valueLabels],data:{labels:indices.map(i=>MONTHS_ES[i]),datasets:[dataset]},
+    options:{maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:indices.length<=3?24:8,right:12,bottom:8}},
+      onClick:(event,items)=>{const item=items[0];if(!item)return;selectAnalysisMonth(data.months[indices[item.index]]);chYear.update('none');},
+      plugins:{legend:{display:false},tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+dataset.label+': '+analysisFormat(ctx.parsed.y)}}},
+      scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,maxTicksLimit:phone?6:12,font:{size:phone?11:12},padding:8}},
+        y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>ctx.tick.value===0?cssVar('--muted'):cssVar('--border')},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}}
   });
 }
-function renderMobileYearDetail(grid,tot,bal,months){
-  const y=months[0].slice(0,4),hasData=tot.some(t=>t.inc||t.exp),el=$('#yearMobileDetail');
-  if(!hasData){el.innerHTML=emptyBox('list',`Aún no hay movimientos registrados en ${y}.`,null,'',true);return;}
-  if(analysisDetailPeriod!=='year'&&!months.includes(analysisDetailPeriod)){
-    const current=months.indexOf(currentMonth);analysisDetailPeriod=current>=0&&(tot[current].inc||tot[current].exp)?currentMonth:months.findLast((_,i)=>tot[i].inc||tot[i].exp);
-  }
-  const all=analysisDetailPeriod==='year',index=months.indexOf(analysisDetailPeriod),amount=values=>all?values.reduce((a,b)=>a+b,0):values[index];
-  const rows=type=>{
+function renderMobileYearDetail(){
+  const d=analysisData,{grid,tot,bal,months}=d,y=months[0].slice(0,4),el=$('#yearMobileDetail');
+  if(d.first<0){el.innerHTML=emptyBox('list',`Aún no hay registros en ${y}.`,null,'',true);return;}
+  if(analysisDetailPeriod!=='year'&&!months.includes(analysisDetailPeriod))analysisDetailPeriod=analysisSelectedMonth;
+  const all=analysisDetailPeriod==='year',index=months.indexOf(analysisDetailPeriod),amount=values=>all?values.reduce((a,b)=>a+(b||0),0):values[index];
+  const selector=`<label class="analysis-period-label" for="analysisDetailPeriod">Ver importes de</label><select id="analysisDetailPeriod"><option value="year"${all?' selected':''}>Todo ${y}</option>${months.map(m=>`<option value="${m}"${m===analysisDetailPeriod?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select>`;
+  if(analysisMetric==='income'||analysisMetric==='expense'){
+    const type=analysisMetric,total=amount(tot.map(t=>type==='income'?t.inc:t.exp));
     const list=catsOf(type).map(c=>({c,values:grid[type+':'+c.id]})).concat([{c:getCat(null),values:grid[type+':_none']}]).filter(x=>x.values&&amount(x.values));
-    return list.sort((a,b)=>amount(b.values)-amount(a.values)).map(({c,values})=>{const value=amount(values);return `<div class="mobile-year-item${Math.abs(value)>=100000?' large-value':''}"><span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span>${esc(c.name)}</span><b data-category-amount="${c.id}">${fmt(value)}</b></div>`}).join('')||'<p class="small muted">Sin movimientos registrados.</p>';
-  };
-  el.innerHTML=`<label class="analysis-period-label" for="analysisDetailPeriod">Ver importes de</label><select id="analysisDetailPeriod"><option value="year"${all?' selected':''}>Todo ${y}</option>${months.map(m=>`<option value="${m}"${m===analysisDetailPeriod?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select>
-    <div class="mobile-year-section"><h4>Ingresos <span class="pos" data-year-detail="income">${fmt(amount(tot.map(t=>t.inc)))}</span></h4>${rows('income')}</div>
-    <div class="mobile-year-section"><h4>Gastos <span data-year-detail="expense">${fmt(amount(tot.map(t=>t.exp)))}</span></h4>${rows('expense')}</div>
-    <div class="mobile-year-saving"><span>Ahorro ${all?'del año':'del mes'}</span><b data-year-detail="saving">${fmt(amount(bal))}</b></div>`;
+    el.innerHTML=selector+`<div class="mobile-year-section"><h4>${ANALYSIS_METRICS[type].label}<span data-year-detail="${type}">${fmt(total)}</span></h4>${list.sort((a,b)=>amount(b.values)-amount(a.values)).map(({c,values})=>`<div class="mobile-year-item${Math.abs(amount(values))>=100000?' large-value':''}"><span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span>${esc(c.name)}</span><b data-category-amount="${c.id}">${fmt(amount(values))}</b></div>`).join('')||'<p class="small muted">Sin movimientos registrados.</p>'}</div>`;
+  }else{
+    const income=amount(tot.map(t=>t.inc)),saved=amount(bal),rate=income?saved/income*100:null;
+    el.innerHTML=selector+`<dl class="analysis-detail-values"><div><dt>Ahorro</dt><dd>${fmt(saved)}</dd></div>${analysisMetric==='rate'?`<div><dt>Ingresos</dt><dd>${fmt(income)}</dd></div><div><dt>Tasa de ahorro</dt><dd data-year-detail="rate">${analysisPercent(rate)}</dd></div>`:''}</dl><p class="small muted">${analysisMetric==='rate'?'La tasa anual se calcula con los ingresos y el ahorro totales; no es el promedio de los porcentajes.':saveMode()==='set'?'Importes separados en tu categoría de ahorro y metas.':'Ingresos menos gastos de consumo.'}</p>`;
+  }
 }
+function renderAnalysisDetails(){
+  const d=analysisData;if(!d)return;const {grid,tot,bal,cum,months}=d,y=months[0].slice(0,4),metric=ANALYSIS_METRICS[analysisMetric];
+  $('#analysisDetailTitle').textContent=analysisMetric==='income'||analysisMetric==='expense'?'Detalle por categoría':'Detalle por mes';
+  $('#analysisDetailHint').textContent=metric.label+' · '+y;
+  $('#analysisMovementsAction').innerHTML=['income','expense'].includes(analysisMetric)?`<button type="button" class="btn sm" data-analysis-movements="${analysisMetric}">${ic('list')} Ver movimientos del año</button>`:'';
+  renderMobileYearDetail();
+  const selectedIndex=months.indexOf(analysisSelectedMonth),head=`<thead><tr><th>${analysisMetric==='income'||analysisMetric==='expense'?'Categoría':'Concepto'}</th>${MONTHS_ES.map((name,i)=>`<th class="num${i===selectedIndex?' cur':''}">${name}</th>`).join('')}<th class="num">${analysisMetric==='rate'?'Anual':'Total'}</th></tr></thead>`;
+  const sum=values=>values.reduce((a,v)=>a+(v||0),0),row=(label,values,total,percentage=false)=>`<tr><td>${label}</td>${values.map(v=>`<td class="num">${v==null?'—':percentage?analysisPercent(v):fmt0(v)}</td>`).join('')}<td class="num"><b>${total==null?'—':percentage?analysisPercent(total):fmt0(total)}</b></td></tr>`;
+  let rows='';
+  if(analysisMetric==='income'||analysisMetric==='expense'){
+    const type=analysisMetric,keys=catsOf(type).map(c=>({c,values:grid[type+':'+c.id]})).concat([{c:getCat(null),values:grid[type+':_none']}]).filter(x=>x.values);
+    rows=keys.sort((a,b)=>sum(b.values)-sum(a.values)).map(({c,values})=>row(`<div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</div><span class="yn">${esc(c.name)}</span></div>`,values,sum(values))).join('');
+    const values=tot.map(t=>type==='income'?t.inc:t.exp);rows+=row('Total '+metric.label.toLowerCase(),values,sum(values));
+  }else if(analysisMetric==='savings'){rows=row('Ahorro del mes',bal,sum(bal))+row('Acumulado',cum,cum.findLast(v=>v!=null));}
+  else{const incomes=tot.map(t=>t.inc),annualIncome=sum(incomes);rows=row('Ingresos',incomes,annualIncome)+row('Ahorro',bal,sum(bal))+row('Tasa de ahorro',d.rates,annualIncome?sum(bal)/annualIncome*100:null,true);}
+  $('#yearTable').innerHTML=d.first<0?emptyBox('list',`Sin registros en ${y}.`,null,'',true):`<table class="year-table">${head}<tbody>${rows}</tbody></table>`;
+  const month=analysisSelectedMonth||currentMonth,previous=shiftMonth(month,-1),currentValue=analysisDisplayValue(month),previousValue=analysisDisplayValue(previous);
+  $('#cmpTitle').textContent=monthLong(month)+' vs. '+analysisPreviousLabel(month);
+  $('#cmpList').innerHTML=`<div class="analysis-compare-grid"><div><span>${analysisPreviousLabel(month)}</span><b>${analysisFormat(previousValue)}</b></div><div><span>${monthLong(month)}</span><b>${analysisFormat(currentValue)}</b></div></div><p class="small muted analysis-compare-change">${metric.label}: ${analysisChange(currentValue,previousValue)}</p>`;
+}
+$('#anKpis').addEventListener('click',e=>{const button=e.target.closest('[data-analysis-metric]');if(!button)return;analysisMetric=button.dataset.analysisMetric;renderAnalysis();enhanceAccessibility();if(!e.detail)document.querySelector(`[data-analysis-metric="${analysisMetric}"]`).focus({preventScroll:true});else{const card=$('#yearChartCard');if(card.getBoundingClientRect().top>innerHeight*.55){const header=document.querySelector('.topbar'),gap=getComputedStyle(header).position==='sticky'?header.getBoundingClientRect().height:0;window.scrollTo({top:scrollY+card.getBoundingClientRect().top-gap-16,behavior:reduceMotion()?'instant':'smooth'});}}});
+document.addEventListener('click',e=>{const link=e.target.closest('[data-analysis-movements]');if(link)openMovs({scope:'year',type:link.dataset.analysisMovements});});
 document.addEventListener('click',e=>{const button=e.target.closest('[data-year-mode]');if(!button)return;analysisChartMode=button.dataset.yearMode;renderAnalysis();enhanceAccessibility();});
-document.addEventListener('change',e=>{if(e.target.id!=='analysisDetailPeriod')return;analysisDetailPeriod=e.target.value;if(analysisData)renderMobileYearDetail(analysisData.grid,analysisData.tot,analysisData.bal,analysisData.months);});
+document.addEventListener('change',e=>{
+  if(e.target.id==='yearReadoutMonth'){const focused=document.activeElement===e.target;selectAnalysisMonth(e.target.value);if(focused)$('#yearReadoutMonth').focus({preventScroll:true});chYear?.update('none');return;}
+  if(e.target.id==='analysisDetailPeriod'){const focused=document.activeElement===e.target;analysisDetailPeriod=e.target.value;if(analysisDetailPeriod!=='year')analysisSelectedMonth=analysisDetailPeriod;renderYearReadout();renderAnalysisDetails();if(focused)$('#analysisDetailPeriod').focus({preventScroll:true});chYear?.update('none');}
+});
 matchMedia('(max-width:700px)').addEventListener('change',()=>{if(activeTab()==='analysis'){renderAnalysis();enhanceAccessibility();}});
 
 function renderAnalysis(){
@@ -2744,70 +2818,30 @@ function renderAnalysis(){
 
   // KPIs del año (el ahorro se mide igual que en el Resumen: lo que separo o lo que sobra)
   const ySv = months.reduce((a, mm) => { const v = savingsOf(mm); a.saved += v.saved; if (v.pct && v.inc && mm <= thisMonth()){ a.goalMonths++; if (v.saved >= v.target) a.hit++; } return a; }, {saved:0, goalMonths:0, hit:0});
-  const KPI_COL = {'⬇️':'var(--income)','⬆️':'var(--expense)','🐷':'var(--k-violet)','📊':'var(--text)'};
-  const kpi = (ic, bg, label, val, sub, cls = '') => `<div class="card kpi link ${{'⬇️':'k-inc','⬆️':'k-exp'}[ic] || ''}" data-go="${{'⬇️':'y-income','⬆️':'y-expense','🐷':'y-all','📊':'y-all'}[ic]}" role="button" tabindex="0"><div class="label"><span class="dot" style="background:${bg};color:${KPI_COL[ic] || 'var(--text)'}">${uiIc(ic)}</span>${label}</div><div class="value ${cls}" data-k="an:${label}" data-num="${typeof val === 'number' ? val : ''}" data-kind="${String(label).startsWith('Tasa') ? 'pct' : 'money'}">${typeof val === 'number' ? '' : val}</div><div class="small muted">${sub}</div></div>`;
-  $('#anKpis').innerHTML =
-    kpi('⬇️','var(--income-soft)','Ingresos ' + y, yInc, `Promedio ${fmt(yInc / withData)} al mes`) +
-    kpi('⬆️','var(--expense-soft)','Gastos ' + y, yExp, `Promedio ${fmt(yExp / withData)} al mes`) +
-    kpi('🐷','color-mix(in srgb,var(--k-violet) 15%,var(--surface))','Ahorro ' + y, ySv.saved, nData ? (saveMode() === 'set' ? 'Lo que separaste' : 'Lo que te sobró') : 'Sin movimientos aún', ySv.saved >= 0 ? 'savings-positive' : 'neg') +
-    kpi('📊','var(--surface-2)','Tasa de ahorro', yInc ? ySv.saved / yInc * 100 : '—', ySv.goalMonths ? `Meta cumplida en ${ySv.hit} de ${ySv.goalMonths} ${ySv.goalMonths === 1 ? 'mes' : 'meses'}` : 'Del total de ingresos del año');
+  const kpi=(id,icon,value,sub,cls='')=>{const metric=ANALYSIS_METRICS[id],on=analysisMetric===id;return `<button type="button" class="card kpi analysis-metric${on?' selected':''}" data-analysis-metric="${id}" aria-pressed="${on}" aria-controls="yearChartCard"><div class="label"><span class="dot" style="color:var(${metric.color});background:color-mix(in srgb,var(${metric.color}) 14%,var(--surface))">${ic(icon)}</span>${metric.label}</div><span class="metric-selection" aria-hidden="true">${ic(on?'check':'chevron-down')}</span><div class="value ${cls}" data-k="an:${id}" data-num="${typeof value==='number'?value:''}" data-kind="${id==='rate'?'pct':'money'}">${typeof value==='number'?'':value}</div><div class="small muted">${sub}</div></button>`;};
+  $('#anKpis').innerHTML=kpi('income','arrow-down',yInc,`Promedio ${fmt(yInc/withData)} al mes`)+kpi('expense','arrow-up',yExp,`Promedio ${fmt(yExp/withData)} al mes`)+kpi('savings','piggy-bank',ySv.saved,saveMode()==='set'?'Lo que separaste':'Lo que te sobró',ySv.saved>=0?'savings-positive':'neg')+kpi('rate','chart-pie',yInc?ySv.saved/yInc*100:'—',ySv.goalMonths?`Meta cumplida en ${ySv.hit} de ${ySv.goalMonths} meses`:'Sin ingresos registrados');
   $('#anKpis').querySelectorAll('[data-num]').forEach(el => { if (el.dataset.num !== '') countUp(el, Number(el.dataset.num), el.dataset.kind); });
 
   // Gráfico: ahorro mensual + acumulado
   const bal = months.map(mm => savingsOf(mm).saved), balC = tot.map((t, i) => t.inc || t.exp ? bal[i] : null);
   const firstData = tot.findIndex(t => t.inc || t.exp);
   let acc = 0; const cum = months.map((m, i) => firstData >= 0 && i >= firstData && (m <= tm || tot[i].inc || tot[i].exp) ? (acc += bal[i]) : null);
-  analysisData={months,bal,balC,cum,tot,grid,first:firstData};
-  $('#yearChartHelp').textContent=mobileAnalysis()?(analysisChartMode==='total'?'Total ahorrado desde el primer mes con registros.':'Ahorro registrado en cada mes, sin movimientos programados.'):'Barras: ahorro de cada mes. Línea: suma acumulada. Ambas se leen con la misma escala en soles.';
-  $('#yearChartModes').hidden=!nData;
+  analysisData={months,bal,balC,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData};
+  if(!months.includes(analysisSelectedMonth))analysisSelectedMonth=currentMonth;
+  const metric=ANALYSIS_METRICS[analysisMetric];$('#analysisChartTitle').textContent=analysisMetric==='savings'&&analysisChartMode==='total'?'Ahorro acumulado':metric.title;
+  $('#yearChartHelp').textContent=analysisMetric==='savings'&&analysisChartMode==='total'?'Total ahorrado desde el primer mes con registros.':metric.help;
+  $('#yearChartModes').hidden=!nData||analysisMetric!=='savings';
   $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.yearMode===analysisChartMode)));
   renderYearReadout();
   if (chYear && !nData){ chYear.destroy(); chYear = null; }
   if (!nData){ $('#yearWrap').innerHTML = emptyBox('chart-line', `Aún no hay movimientos registrados en ${y}. Los programados aparecerán aquí cuando llegue su fecha.`); }
   else if (typeof Chart === 'undefined'){ $('#yearWrap').innerHTML = '<div class="empty">No se pudieron cargar los gráficos.</div>'; }
-  else renderYearSavingsChart();
+  else renderAnalysisChart();
 
-  // Tabla anual
-  const curIdx = tm.slice(0,4) === y ? Number(tm.slice(5,7)) - 1 : -1;
-  const head = `<thead><tr><th>Categoría</th>${MONTHS_ES.map((n, i) => `<th class="num${i === curIdx ? ' cur' : ''}">${n}</th>`).join('')}<th class="num">Total</th><th class="num">Prom.</th></tr></thead>`;
-  const section = type => {
-    const keys = catsOf(type).map(c => ({c, k: type + ':' + c.id})).concat([{c:getCat(null), k: type + ':_none'}]).filter(x => grid[x.k]);
-    if (!keys.length) return `<tr><td class="muted small" colspan="15">Sin ${type === 'income' ? 'ingresos' : 'gastos'} en ${y}</td></tr>`;
-    const max = Math.max(1, ...keys.flatMap(x => grid[x.k]));
-    return keys.sort((a,b) => grid[b.k].reduce((s,v) => s + v, 0) - grid[a.k].reduce((s,v) => s + v, 0)).map(({c, k}) => {
-      const vals = grid[k], total = vals.reduce((s,v) => s + v, 0);
-      return `<tr><td><div class="catcell" title="${esc(c.name)}"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="yn">${esc(c.name)}</span></div></td>${
-        vals.map(v => `<td class="num${v ? ' heat' : ' muted'}"${v ? ` style="background:${dc(c.color)}${alphaHex(.08 + .32 * v / max)}"` : ''}>${fmt0(v)}</td>`).join('')
-      }<td class="num"><b>${fmt0(total)}</b></td><td class="num muted">${fmt0(total / withData)}</td></tr>`;
-    }).join('');
-  };
-  const sumRow = (label, arr, cls = '') => { const t = arr.reduce((s,v) => s + v, 0); return `<tr class="sub"><td>${label}</td>${arr.map(v => `<td class="num ${cls}">${fmt0(v)}</td>`).join('')}<td class="num ${cls}">${fmt0(t)}</td><td class="num muted">${fmt0(t / withData)}</td></tr>`; };
-  let acc2 = 0; const cumRow = months.map((m, i) => (m <= tm || tot[i].inc || tot[i].exp) ? (acc2 += bal[i]) : 0);
-  $('#yearTable').innerHTML = !nData ? emptyBox('list', `Cuando registres movimientos en ${y} verás aquí cada categoría mes a mes.`, null, '', true) : `<table class="year-table">${head}<tbody>
-    <tr class="sec"><td colspan="15"><span class="sec-ic">${uiIc('💰')}</span>Ingresos</td></tr>${section('income')}${sumRow('Total ingresos', tot.map(t => t.inc), 'pos')}
-    <tr class="sec"><td colspan="15"><span class="sec-ic">${uiIc('💸')}</span>Gastos</td></tr>${section('expense')}${sumRow('Total gastos', tot.map(t => t.exp), 'neg')}
-    <tr class="sec"><td colspan="15"><span class="sec-ic">${uiIc('🐷')}</span>Ahorro</td></tr>
-    <tr class="sub"><td>Ahorro del mes</td>${bal.map(v => `<td class="num ${v > 0 ? 'pos' : v < 0 ? 'neg' : 'muted'}">${fmt0(v)}</td>`).join('')}<td class="num ${ySav >= 0 ? 'pos' : 'neg'}">${fmt0(ySav)}</td><td class="num muted">${fmt0(ySav / withData)}</td></tr>
-    <tr><td>Acumulado</td>${cumRow.map(v => `<td class="num">${fmt0(v)}</td>`).join('')}<td></td><td></td></tr>
-  </tbody></table>`;
-
-  // Comparación con el mes anterior
-  renderMobileYearDetail(grid,tot,bal,months);
-  const m = currentMonth, pm = shiftMonth(m, -1);
-  $('#cmpTitle').textContent = `${monthLong(m)} vs ${monthLong(pm)}`;
-  const tIncM = sum(txOfMonth(m).filter(t => t.type === 'income')), tIncP = sum(txOfMonth(pm).filter(t => t.type === 'income'));
-  const tExpM = sum(txOfMonth(m).filter(t => t.type === 'expense')), tExpP = sum(txOfMonth(pm).filter(t => t.type === 'expense'));
-  const cmpRow = (icon, color, name, prev, cur, type) => `<div class="cmp-row"><div class="ico" style="background:${soft(color)};color:${strokeOn(color)}">${icon}</div>
-    <div><div class="name" style="font-weight:600">${name}</div><div class="small muted">${fmt(prev)} → ${fmt(cur)}</div></div>
-    <div class="small ${((cur - prev) > 0) === (type === 'expense') ? 'neg' : 'pos'}" style="text-align:right;font-weight:700">${cur === prev ? '' : (cur > prev ? '+' : '−') + fmt(Math.abs(cur - prev))}</div>
-    <div style="min-width:90px;text-align:right">${deltaTxt(cur, prev, type, pm)}</div></div>`;
-  const catCmp = catsOf('expense').map(c => ({c, cur: realBy(m, c.id), prev: realBy(pm, c.id)})).filter(x => x.cur || x.prev)
-    .sort((a,b) => Math.abs(b.cur - b.prev) - Math.abs(a.cur - a.prev)).filter(x => Math.abs(x.cur - x.prev) >= 1).slice(0, 3);
-  const sM = savingsOf(m).saved, sP = savingsOf(pm).saved;
-  $('#cmpList').innerHTML = !(tIncP || tExpP) ? emptyBox('chart-column', `Cuando tengas movimientos en ${monthLong(pm)} verás aquí la comparación mes a mes.`) : (tIncM || tIncP || tExpM || tExpP)
-    ? cmpRow(uiIc('⬇️'), cssVar('--income-chart'), 'Ingresos', tIncP, tIncM, 'income') + cmpRow(uiIc('⬆️'), cssVar('--expense-chart'), 'Gastos', tExpP, tExpM, 'expense') + cmpRow(uiIc('🐷'), cssVar('--k-violet'), 'Ahorro', sP, sM, 'income')
-      + (catCmp.length ? '<div class="small muted" style="margin:12px 0 2px;font-weight:700">Lo que más cambió</div>' + catCmp.map(x => cmpRow(iconHTML(x.c.icon, x.c.color), x.c.color, esc(x.c.name), x.prev, x.cur, 'expense')).join('') : '')
-    : '<div class="small muted">Aún no hay movimientos en estos meses.</div>';
+  renderAnalysisDetails();
+  const m=currentMonth;
+  $('#analysisProjectionDetail').hidden=m<tm;
+  $('#projContext').textContent='Escenario global · '+monthLong(m);
 
   // Proyección detallada
   const pr = projection(m);
@@ -4062,10 +4096,10 @@ function enhanceAccessibility(){
     d.querySelectorAll('[data-close]').forEach(b=>{if(!b.textContent.trim()&&!b.getAttribute('aria-label'))b.setAttribute('aria-label','Cerrar');});
   });
   document.querySelectorAll('.field>label:not([for])').forEach(label=>{const control=label.parentElement.querySelector('input:not([type=checkbox]),select,textarea');if(control?.id&&!label.querySelector('input'))label.htmlFor=control.id;});
-  const charts={chDonut:'Distribución de gastos por categoría. Los importes se detallan en la lista contigua.',chBars:'Ingresos y gastos de los últimos seis meses.',chYear:'Ahorro mensual y acumulado.',chBoth:'Gastos de ambos usuarios durante los últimos seis meses.'};
+  const charts={chDonut:'Distribución de gastos por categoría. Los importes se detallan en la lista contigua.',chBars:'Ingresos y gastos de los últimos seis meses.',chYear:$('#analysisChartTitle').textContent+'.',chBoth:'Gastos de ambos usuarios durante los últimos seis meses.'};
   Object.entries(charts).forEach(([id,name])=>{const c=document.getElementById(id);if(c){
     const chart=typeof Chart!=='undefined'?Chart.getChart(c):null;
-    const values=chart?(chart.data.labels||[]).map((label,i)=>String(label)+': '+chart.data.datasets.map(d=>(d.label?d.label+' ':'')+(d.data[i] == null ? 'sin datos' : fmt(Number(d.data[i])||0))).join(', ')).join('; '):'';
+    const values=chart?(chart.data.labels||[]).map((label,i)=>String(label)+': '+chart.data.datasets.map(d=>(d.label?d.label+' ':'')+(d.data[i] == null ? 'sin datos' : d.unit==='pct'?analysisPercent(Number(d.data[i])):fmt(Number(d.data[i])||0))).join(', ')).join('; '):'';
     c.setAttribute('role','img');c.setAttribute('aria-label',name+(values?' '+values:''));
   }});
 }

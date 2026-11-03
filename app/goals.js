@@ -47,7 +47,7 @@ function renderGoals(){
     // Datos clave en tres bloques, en lugar de una frase larga
     const stat = (k, v, cls = '') => `<div class="gs"><span>${k}</span><b class="${cls}">${v}</b></div>`;
     let stats;
-    if (goalDone(g)) stats = `<div class="goal-done">${ic('party-popper')} ¡Meta lograda!</div>`;
+    if (goalDone(g)) stats = `<div class="goal-done">${ic('check')} Meta lograda</div>`;
     else {
       const expired=g.deadline&&g.deadline<todayISO(),ml=g.deadline&&!expired?monthsBetween(tm,g.deadline.slice(0,7))+1:0;
       // Ritmo: promedio de aportes de los últimos 3 meses (incluye este)
@@ -66,16 +66,16 @@ function renderGoals(){
     const owner = profOf(goalOwner(g)), other = profOf(goalOwner(g) === 'p1' ? 'p2' : 'p1'), sp = goalSplit(g), spT = sp.p1 + sp.p2;
     const share = g.shared ? `<div class="goal-split"><div class="gsp-leg">${profiles.list.map(pr => `<span>${avatarBox(pr, 'xs')}${esc(pr.name)} <b>${fmt(sp[pr.id])}</b>${spT > 0 ? ` <em>${Math.round(sp[pr.id] / spT * 100)}%</em>` : ''}</span>`).join('')}</div></div>` : '';
     const shareTag = g.shared ? `<span class="share-tag">${ic('users')}${g._foreign ? 'De ' + esc(owner.name) : 'Con ' + esc(other.name)}</span>` : '';
-    return `<div class="card goal-card${goalDone(g) ? '' : ' p-' + prioOf(g)}${g.shared ? ' shared' : ''}">
+    return `<div class="card goal-card${goalDone(g)?' completed':''}${goalDone(g) ? '' : ' p-' + prioOf(g)}${g.shared ? ' shared' : ''}">
       <div class="goal-head"><div class="ico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</div>
         <div style="flex:1;min-width:0"><div class="name">${esc(g.name)}</div><div class="small muted g-sub">${shareTag}${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return g.deadline >= todayISO() && ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
         ${g._foreign ? '' : `<button class="iconbtn" data-goal-edit="${g.id}" title="Editar">${ic('pencil')}</button>`}</div>
-      <div class="goal-amt"><b>${fmt(saved)}</b><span class="muted small">de ${fmt(target)}</span><span class="goal-pct" style="color:var(--accent-ink,var(--primary))">${pct.toFixed(0)}%</span></div>
-      ${g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span data-k="goal:${g.id}:${pr.id}" data-w="${w.toFixed(2)}" style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
+      <div class="goal-value"><div class="goal-amt"><b>${fmt(saved)}</b><span class="muted small">de ${fmt(target)}</span>${goalDone(g)?'':`<span class="goal-pct" style="color:var(--accent-ink,var(--primary))">${pct.toFixed(0)}%</span>`}</div>
+      ${goalDone(g)?'':g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span data-k="goal:${g.id}:${pr.id}" data-w="${w.toFixed(2)}" style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
         : `<div class="bar big"><span data-k="goal:${g.id}" data-w="${pct.toFixed(2)}" style="width:${pct}%;background:${barFill(g.color)}"></span></div>`}
-      ${share}
-      ${stats}
-      ${goalOut(g) ? `<div class="goal-out">${ic('hand-coins')} ${g._foreign ? esc(owner.name) + ' retiró' : 'Retiraste'} ${fmt(goalOut(g))} en total</div>` : ''}
+      </div>
+      <div class="goal-status">${stats}${goalOut(g)?`<div class="goal-out">${ic('hand-coins')} ${g._foreign?esc(owner.name)+' retiró':'Retiraste'} ${fmt(goalOut(g))} en total</div>`:''}</div>
+      <div class="goal-sharing">${g.shared?`<details class="goal-contributions"><summary>Ver aportes</summary>${share}</details>`:share}</div>
       <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn sm" data-goal-add="${g.id}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn sm ghost" data-goal-out="${g.id}">${ic('hand-coins')} Retirar</button>` : ''}</div>
     </div>`;
   }).join('');

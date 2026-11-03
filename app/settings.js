@@ -98,19 +98,11 @@ function setupSettings(){
   const details=document.createElement('details');details.className='settings-disclosure '+extra;
   const summary=document.createElement('summary');summary.textContent=title;details.append(summary);
   const body=document.createElement('div');body.className='settings-disclosure-body';body.append(card);details.append(body);
-  let animation=null,expanded=false;
   details.setExpanded=(open,animate=true)=>{
    if(details.id==='settingsConnectionConfig'&&!settingsConnectionReady())open=true;
-   expanded=open;
-   const from=details.getBoundingClientRect().height;
-   if(animation){animation.cancel();animation=null;}
-   details.style.height='';details.open=true;
-   const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+2;
-   if(!animate||reduceMotion()||Math.abs(from-to)<1){details.open=open;return;}
-   animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});
-   animation.onfinish=()=>{details.open=expanded;animation=null;};
+   toggleDisclosure(details,summary,open,animate);
   };
-  summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(animation?!expanded:!details.open);});
+  summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(details._disclosure?!details._disclosure.open:!details.open);});
   return details;
  }
  users.querySelector('p').textContent='Cada usuario conserva sus propios datos y preferencias. Toca su nombre, avatar o foto para editarlo.';
@@ -172,9 +164,9 @@ function openSettingsSection(id,focus=false){
  root.querySelectorAll('.settings-panel').forEach(p=>{p.hidden=p.id!=='settings-panel-'+id;});
  root.querySelector('.settings-home').hidden=!!id;
  root.querySelectorAll('[data-settings-target]').forEach(b=>{if(b.dataset.settingsTarget===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
- const target=id?$('#settings-panel-'+id):root.querySelector('.settings-nav');
- if(changed)motionAnimate(target,[{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}]);
- if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else root.querySelector('[data-settings-target]').focus({preventScroll:true});}
+ const target=id?$('#settings-panel-'+id):root.querySelector('.settings-home');
+ if(changed)motionAnimate(target,[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}]);
+ if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else root.querySelector('.settings-home [data-settings-target]').focus({preventScroll:true});}
 }
 function renderSettingsStatus(){
  if(!$('#settingsStatusTitle'))return;

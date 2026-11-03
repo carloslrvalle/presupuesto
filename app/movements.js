@@ -182,6 +182,7 @@ function setMovView(v){
   document.querySelectorAll('#tab-movs .mview').forEach(el => el.hidden = el.id !== 'view-' + v);
   $('#btnNewTx').hidden = v === 'rec'; $('#btnNewRec').hidden = v !== 'rec';
   moveViewInd();
+  updateCreationControls();$('#btnSelect').hidden=v!=='list';
   if (v === 'cal') renderCalendar();
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
@@ -397,7 +398,7 @@ function txCategoryMarkup(cats){
  const count={};state.transactions.filter(t=>t.type===txType).forEach(t=>count[t.catId]=(count[t.catId]||0)+1);
  let list=cats.slice().sort((a,b)=>(count[b.id]||0)-(count[a.id]||0));
  if(txCategoryExpanded&&q)list=list.filter(c=>c.name.toLocaleLowerCase().includes(q));
- if(!txCategoryExpanded){list=list.slice(0,9);const selected=cats.find(c=>c.id===selCat);if(selected&&!list.some(c=>c.id===selected.id))list.push(selected);}
+ if(!txCategoryExpanded){list=list.slice(0,4);const selected=cats.find(c=>c.id===selCat);if(selected&&!list.some(c=>c.id===selected.id)){if(list.length===4)list.pop();list.push(selected);}}
  $('#txCategorySearchBox').hidden=!txCategoryExpanded;
  $('#txAllCategories').textContent=txCategoryExpanded?'Ver menos':`Ver todas (${cats.length})`;
  $('#txAllCategories').setAttribute('aria-expanded',String(txCategoryExpanded));
@@ -422,7 +423,7 @@ function createTxCategory(){
  $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();
  toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
 }
-$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';renderTxChips();if(txCategoryExpanded)$('#txCategorySearch').focus();};
+$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';motionResize($('#fCatChips'),renderTxChips);if(txCategoryExpanded)$('#txCategorySearch').focus();};
 $('#txCategorySearch').addEventListener('input',renderTxChips);
 $('#txNewCategory').onclick=openTxCategoryEditor;
 $('#txCancelCategory').onclick=()=>{$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txNewCategory').focus();};
@@ -453,7 +454,7 @@ function renderTxChips(){
   $('#fMethodChips').innerHTML=ms.map(m=>`<button type="button" class="chip${m===selMethod?' active':''}" aria-pressed="${m===selMethod}" data-method="${esc(m)}">${esc(m||'Sin especificar')}</button>`).join('');
 }
 function setTxType(type){
-  if(txType!==type){resetTxCategoryUI();if(!txMethodExplicit)selMethod=null;}
+  if(txType!==type){quickExpanded=false;resetTxCategoryUI();if(!txMethodExplicit)selMethod=null;}
   txType = type;
   document.querySelectorAll('#txSeg button').forEach(b => b.classList.toggle('active', b.dataset.type === type));
   renderTxChips(); renderQuick();
@@ -476,14 +477,16 @@ function quickPicks(type){
     const k = [t.catId, (t.desc || '').toLowerCase(), t.amount,t.method||''].join('|'); (seen[k] = seen[k] || {t, n:0}).n++; });
   return Object.values(seen).filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date)).slice(0, 6).map(x => x.t);
 }
-let quickOK = false;
+let quickOK = false, quickExpanded = false;
 function renderQuick(){
   const el = $('#txQuick'); if (!el) return;
   const list = txMode === 'tx' && quickOK ? quickPicks(txType) : [];
   el.hidden = !list.length;
-  el.innerHTML = list.length ? `<span class="q-l">Frecuentes</span>` + list.map(t => { const c = getCat(t.catId);
-    return `<button type="button" class="q-chip" data-quick="${t.id}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="q-copy">${esc(t.desc || c.name)}<small>${esc(t.method||'Sin especificar')}</small></span><b>${fmt(t.amount)}</b></button>`; }).join('') : '';
+  el.innerHTML = list.length ? `<div class="quick-head"><span class="q-l">Frecuentes</span>${list.length>3?`<button type="button" class="quick-toggle" data-quick-toggle aria-controls="txQuickItems" aria-expanded="${quickExpanded}">${quickExpanded?'Ver menos':'Ver más'}</button>`:''}</div><div class="quick-items" id="txQuickItems">` + (quickExpanded?list:list.slice(0,3)).map(t => { const c = getCat(t.catId);
+    return `<button type="button" class="q-chip" data-quick="${t.id}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="q-copy">${esc(t.desc || c.name)}<small>${esc(t.method||'Sin especificar')}</small></span><b>${fmt(t.amount)}</b></button>`; }).join('')+'</div>' : '';
 }
+document.addEventListener('click',e=>{if(!e.target.closest('[data-quick-toggle]'))return;motionResize($('#txQuick'),()=>{quickExpanded=!quickExpanded;renderQuick();});$('#txQuick [data-quick-toggle]')?.focus({preventScroll:true});});
+
 document.addEventListener('click', e => {
   const q = e.target.closest('[data-quick]'); if (!q) return;
   const t = state.transactions.find(x => x.id === q.dataset.quick); if (!t) return;
@@ -494,7 +497,7 @@ document.addEventListener('click', e => {
 function openTx(id, preset){
   if(localTabChanged)return toast('⚠️ Hay cambios en otra pestaña. Recarga antes de editar.');
   resetTxCategoryUI();
-  txMode = 'tx'; editingId = id || null; quickOK = !id && !preset;
+  quickExpanded=false;txMode = 'tx'; editingId = id || null; quickOK = !id && !preset;
   const t = id ? state.transactions.find(x => x.id === id) : null;
   const p = t || preset || {};
   txRecId = p.recId || null;
@@ -505,8 +508,8 @@ function openTx(id, preset){
   $('#fDate').value = p.date || (cycleView() ? (cycleMonthForDate()===currentMonth?todayISO():cyclePeriod(currentMonth).start) : currentMonth === thisMonth() ? todayISO() : currentMonth + '-01');
   $('#fDesc').value = p.desc || '';
   $('#txDelete').style.display = t ? '' : 'none'; $('#txDup').style.display = t ? '' : 'none';
-  txDialog.showModal();
-  setTimeout(() => $('#fAmount').focus(), 50);
+  txDialog.showModal();txDialog.scrollTop=0;txDialog.querySelector('.dlg-body').scrollTop=0;
+  setTimeout(() => $('#fAmount').focus({preventScroll:true}), 50);
 }
 function openRec(id, preset){
   resetTxCategoryUI();
@@ -521,8 +524,8 @@ function openRec(id, preset){
   $('#fDesc').value = r ? r.desc : pz.desc || '';
   $('#fAuto').checked = r ? !!r.auto : true;
   $('#txDelete').style.display = r ? '' : 'none';
-  txDialog.showModal();
-  setTimeout(() => (preset ? $('#recFixed') : $('#fAmount')).focus(), 50);
+  txDialog.showModal();txDialog.scrollTop=0;txDialog.querySelector('.dlg-body').scrollTop=0;
+  setTimeout(() => (preset ? $('#recFixed') : $('#fAmount')).focus({preventScroll:true}), 50);
   if (preset) toast('Elige el día del mes en que te cobran', {icon:'calendar'});
 }
 function updateRecDate(){
@@ -628,7 +631,7 @@ $('#txDelete').onclick = async () => {
   }
   const id = editingId; txDialog.close(); delTxUndo(id);
 };
-$('#fab').onclick = () => (activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx()); // en Recurrentes el + crea un recurrente (en el celular no hay botón propio)
+$('#fab').onclick = () => activeTab()==='goals'?openGoal():(activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx()); // en Recurrentes el + crea un recurrente (en el celular no hay botón propio)
 $('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
 // El botón conserva su posición flotante; se aparta mientras se desplaza la página.
 let fabScrollTimer,fabTouchActive=false;
@@ -665,4 +668,13 @@ function keepFocus(render){
     const el = key && document.querySelector(key);
     if (el){ el.focus({preventScroll:true}); try{ if (pos) el.setSelectionRange(...pos); else el.select && el.select(); }catch(e){} }
   }, 0);
+}
+
+// Una acción global, contextual y ausente en pantallas de configuración.
+function updateCreationControls(){
+ const button=$('#fab'),tab=activeTab(),rec=tab==='movs'&&movView==='rec';
+ button.hidden=bothMode||['settings','cats'].includes(tab);
+ button.title=tab==='goals'?'Nueva meta':rec?'Nuevo recurrente':'Nuevo movimiento';button.setAttribute('aria-label',button.title);
+ button.querySelector('.fab-label').textContent=button.title;
+ $('#btnNewTx').hidden=true;$('#btnNewRec').hidden=true;
 }

@@ -56,14 +56,14 @@ function progressRow(c, real, budget, type, prev, prevM){
   if (saving){ if (budget > 0 && pct >= 100) tag = `<span class="alert-pill good">${ic('check')}Cumplido</span>`; }
   else if (type === 'expense' && status==='over'){ alert = 'over'; tag = `<span class="alert-pill over">${ic('triangle-alert')}Superado</span>`; }
   else if (type === 'expense' && status==='complete'){ tag = '<span class="alert-pill complete">Completo</span>'; }
-  else if (type === 'expense' && status==='near'){ alert = 'warn'; tag = `<span class="alert-pill warn">Queda ${fmt(budget-real)}</span>`; }
+  else if (type === 'expense' && status==='near'){ alert = 'warn'; tag = ''; }
   else if(type==='income'&&budget>0&&real>=budget-.005){tag='<span class="alert-pill good">Ingreso recibido</span>';}
   return `<div class="prow ${alert} link" data-go-cat="${c.id || ''}" data-go-type="${type}" title="Ver movimientos de ${esc(c.name)}">
     <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
     <div class="pr-main">
       <div class="pr-top"><span class="name">${esc(c.name)}</span>${tag}<span class="pr-amt"><b>${fmt(real)}</b>${budget > 0 ? `<span class="muted"> de ${fmt(budget)}</span>` : ''}</span></div>
       <div class="bar"><span data-k="dash:${type}:${c.id}" data-w="${Math.min(pct,100).toFixed(2)}" style="width:${Math.min(pct,100)}%;background:${color}"></span></div>
-      <div class="pr-meta"><span>${prowMeta(real, budget, type, saving)}</span>${prevM && prev && Math.abs(real - prev) / prev >= .01 ? deltaTxt(real, prev, type, prevM) : ''}</div>
+      <div class="pr-meta"><span>${status==='complete'||(saving&&tag)?'':prowMeta(real, budget, type, saving)}</span>${prevM && prev && Math.abs(real - prev) / prev >= .01 ? deltaTxt(real, prev, type, prevM) : ''}</div>
     </div>
   </div>`;
 }
@@ -113,6 +113,8 @@ function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
   if (!alerts.length && inc > 0 && inc - exp > 0 && bExp > 0 && exp > 0) text += ' Sin excesos en las categorías con presupuesto.';
   const icon = over.length || (bExp > 0 && exp > bExp) ? 'triangle-alert' : near.length ? 'circle-alert' : full.length?'check':'sparkles';
   box.dataset.tone = over.length || (bExp > 0 && exp > bExp) ? 'bad' : near.length ? 'warn' : full.length?'neutral':'good';
+  // Una sola conclusión; el desglose permanece en los indicadores y Presupuesto.
+  text=bExp>0&&exp>bExp+.005?`Exceso de <b>${fmt(exp-bExp)}</b> en el presupuesto de gastos.`:over.length?`${over.length} ${over.length===1?'categoría supera':'categorías superan'} su presupuesto.`:near.length?`${near.length} ${near.length===1?'categoría tiene':'categorías tienen'} poco margen disponible.`:parts[0]+'.';
   text += recLine;
   if (el.innerHTML !== text){ el.innerHTML = text; box.querySelector('.i-ic').innerHTML = ic(icon); box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap'); }
   box.hidden = false;
@@ -237,14 +239,14 @@ function chartTheme(){
   Chart.defaults.font.family = cssVar('--font-body') || 'system-ui, sans-serif';
   Chart.defaults.color = cssVar('--muted');
   Chart.defaults.animation.duration=reduceMotion()?0:MOTION.data;
-  Chart.defaults.animation.easing='easeOutQuart';
+  Chart.defaults.animation.easing=MOTION.dataEasing;
   const tt = Chart.defaults.plugins.tooltip;
   const dk = isDarkUI();
   Object.assign(tt, {backgroundColor: dk ? '#16181d' : cssVar('--text'), titleColor: dk ? cssVar('--text') : cssVar('--bg'), bodyColor: dk ? cssVar('--muted') : cssVar('--bg'), borderColor: dk ? '#2a2e37' : 'transparent', borderWidth: dk ? 1 : 0, padding:10, cornerRadius:10, boxPadding:4, usePointStyle:true, titleFont:{weight:'700'}});
 }
 // Degradado vertical de un color (más intenso arriba)
 const vGrad = (hex, a1 = 'ff', a2 = '55') => c => { const {ctx, chartArea:ar} = c.chart; if (!ar) return hex; const g = ctx.createLinearGradient(0, ar.bottom, 0, ar.top); g.addColorStop(0, hex + a2); g.addColorStop(1, hex + a1); return g; };
-const stagger=()=>reduceMotion()||innerWidth<=700?false:{duration:MOTION.data,easing:'easeOutQuart'};
+const stagger=()=>reduceMotion()?false:{duration:MOTION.data,easing:MOTION.dataEasing};
 const compactS = v => { const a = Math.abs(v), r = x => (Math.round(x * 10) / 10).toString().replace(/\.0$/, ''); return (v < 0 ? '−' : '') + 'S/ ' + (a >= 1e6 ? r(a / 1e6) + 'M' : a >= 1000 ? r(a / 1000) + 'k' : Math.round(a)); };
 // Quita la marca del borde del eje si queda pegada a la anterior (evita etiquetas encimadas como «S/ 440» sobre «S/ 400»)
 function trimTicks(sc){ const t = sc.ticks; if (t.length < 4) return; const h = Math.floor(t.length / 2), step = t[h].value - t[h - 1].value;
@@ -305,7 +307,7 @@ function renderCharts(){
     } else {
       chDonut = new Chart($('#chDonut'), {type:'doughnut', plugins:[centre],
         data:{labels:data.map(x => iconText(x.c)), datasets:[{data:data.map(x => x.v), backgroundColor:sliceCols(data, 0), hoverBackgroundColor:sliceCols(data, .06), borderColor:cssVar('--surface'), hoverBorderColor:cssVar('--surface'), borderWidth:3, hoverOffset:6}]},
-        options:{maintainAspectRatio:false, animation:reduceMotion()||innerWidth<=700?false:{duration:MOTION.data,easing:'easeOutQuart',animateRotate:true,animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'70%'}
+        options:{maintainAspectRatio:false, animation:reduceMotion()||innerWidth<=700?false:{duration:MOTION.data,easing:MOTION.dataEasing,animateRotate:true,animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'70%'}
       });
       chDonut.$d = {data, totalD};
     }

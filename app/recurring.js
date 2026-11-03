@@ -58,7 +58,7 @@ function renderRec(){
       <div><div class="name">${recLabel(r)}</div><div class="small muted">Omitido este mes</div></div>
       <div class="amt">${fmt(r.amount)}</div>
       <div class="row-actions"><button class="btn sm" data-rec-unskip="${r.id}">${ic('undo-2')} Restaurar</button></div></div>`; };
-  $('#recPending').innerHTML = (pend.length ? pend.sort((a,b) => a.day - b.day).map(pendRow).join('') : emptyBox('check', 'Todo al día en este mes.', null, '', true, 'ok'))
+  $('#recPending').innerHTML = (pend.length ? pend.sort((a,b) => a.day - b.day).map(pendRow).join('') : '<p class="rec-all-clear small muted">Todo al día en este mes.</p>')
     + skipped.map(skipRow).join('');
 
   ['expense','income'].forEach(type => {
@@ -70,9 +70,9 @@ function renderRec(){
         <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
         <div><div class="name">${recLabel(r)}</div><div class="small muted">${r.day === 31 ? "Fin de mes" : "Día " + r.day} · ${r.auto ? 'Automático' : 'Manual'}${r.method ? ' · ' + esc(r.method) : ''}${paused ? ' · En pausa' : ''}</div></div>
         <div class="amt"><b>${fmt(r.amount)}</b></div>
-        <div class="row-actions"><button class="iconbtn" data-rec-edit="${r.id}" title="Editar">${ic('pencil')}</button>
-          <button class="iconbtn" data-rec-toggle="${r.id}" title="${paused ? 'Reanudar' : 'Pausar'}">${ic(paused ? 'play' : 'pause')}</button>
-          <button class="iconbtn" data-rec-del="${r.id}" title="Eliminar">${ic('trash-2')}</button></div>
+        <div class="row-actions"><details class="rec-actions"><summary aria-label="Opciones de ${recLabel(r)}">⋯</summary><div class="rec-action-list"><button class="iconbtn" data-rec-edit="${r.id}" title="Editar">${ic('pencil')} Editar</button>
+          <button class="iconbtn" data-rec-toggle="${r.id}" title="${paused ? 'Reanudar' : 'Pausar'}">${ic(paused ? 'play' : 'pause')} ${paused?'Reanudar':'Pausar'}</button>
+          <button class="iconbtn" data-rec-del="${r.id}" title="Eliminar">${ic('trash-2')} Eliminar</button></div></details></div>
       </div>`; }).join('') + `<div class="list-total"><span>Total mensual</span><span class="${type === 'income' ? 'pos' : 'xp'}">${fmt(total)}</span></div>`
       : emptyBox('repeat', `Aún no tienes ${type === 'income' ? 'ingresos' : 'gastos'} recurrentes.`, 'rec', 'Nuevo', true);
   });
@@ -88,6 +88,7 @@ $('#view-rec').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
   const id = b.dataset.recOk || b.dataset.recCustom || b.dataset.recSkip || b.dataset.recUnskip || b.dataset.recEdit || b.dataset.recToggle || b.dataset.recDel;
   const r = id && state.recurring.find(x => x.id === id); if (!r) return;
+  const menu=b.closest('.rec-actions');if(menu)menu.open=false;
   const m = currentMonth;
   if (b.dataset.recOk){ state.transactions.push(recTx(r, m)); save(); renderAll(); toast('Registrado ✅'); }
   if (b.dataset.recCustom) openTx(null, {type:r.type, catId:r.catId, amount:r.amount, method:r.method, desc:r.desc, date:dateFor(m, r.day), recId:r.id});
@@ -99,3 +100,6 @@ $('#view-rec').addEventListener('click', async e => {
     await fadeOut(b.closest('.prow')); state.recurring = state.recurring.filter(x => x.id !== r.id); save(); renderAll(); toast('Recurrente eliminado');
   }
 });
+
+document.addEventListener('pointerdown',e=>{document.querySelectorAll('.rec-actions[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const d=e.target.closest('.rec-actions[open]');if(d){e.preventDefault();d.open=false;d.querySelector('summary').focus();}});

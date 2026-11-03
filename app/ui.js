@@ -134,7 +134,10 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
   let v = _cv.get(n); if (v === undefined){ v = _cv.cs.getPropertyValue(n).trim(); _cv.set(n, v); } return v; };
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
-const MOTION={fast:160,move:240,panel:280,data:420,signal:800,ease:'cubic-bezier(.2,.7,.2,1)'};
+const MOTION={fast:160,move:240,panel:280,data:420,trace:1300,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.2,.7,.2,1)'};
+const motionDataEase=x=>1-Math.pow(1-x,4);
+// Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
+const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
 function motionAnimate(el,frames,kind='move'){
  if(!el)return;
  if(el._motion){el._motion.cancel();el._motion=null;}
@@ -142,14 +145,20 @@ function motionAnimate(el,frames,kind='move'){
  const animation=el.animate(frames,{duration:MOTION[kind],easing:MOTION.ease});el._motion=animation;
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
-function toggleDisclosure(details,summary){
- const current=details._disclosure,open=current?!current.open:!details.open,from=details.getBoundingClientRect().height;
+function motionResize(el,update){
+ const from=el.getBoundingClientRect().height;el._resize?.cancel();el._resize=null;el.style.overflow='';update();const to=el.getBoundingClientRect().height;
+ if(reduceMotion()||Math.abs(from-to)<1)return;
+ el.style.overflow='hidden';const animation=el.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});el._resize=animation;
+ animation.onfinish=()=>{el.style.overflow='';el._resize=null;};
+}
+function toggleDisclosure(details,summary,wanted,animate=true){
+ const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=details.getBoundingClientRect().height;
  if(current){current.animation.cancel();current.contentAnimation?.cancel();}
  details.style.overflow='hidden';details.open=true;
  const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+parseFloat(getComputedStyle(details).borderTopWidth||0)+parseFloat(getComputedStyle(details).borderBottomWidth||0);
  const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
- if(reduceMotion()||Math.abs(from-to)<1){finish();return;}
- const content=details.querySelector('.metric-expanded');
+ if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
+ const content=details.querySelector(':scope>.metric-expanded,:scope>.disclosure-body,:scope>.analysis-detail-body,:scope>.settings-disclosure-body,:scope>.goal-split');
  const contentAnimation=content?.animate(open?[{opacity:0,transform:'translateY(-5px)'},{opacity:1,transform:'none'}]:[{opacity:1},{opacity:0}],{duration:open?MOTION.panel:MOTION.fast,easing:MOTION.ease});
  const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});
  details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
@@ -157,7 +166,7 @@ function toggleDisclosure(details,summary){
 document.addEventListener('click',e=>{
  const summary=e.target.closest('summary');if(!summary)return;
  const details=summary.parentElement;
- if(details.tagName!=='DETAILS'||details.classList.contains('settings-disclosure'))return;
+ if(details.tagName!=='DETAILS'||details.matches('.settings-disclosure,.analysis-month-picker,.rec-actions'))return;
  e.preventDefault();toggleDisclosure(details,summary);
 });
 
@@ -182,7 +191,7 @@ function countUp(el, to, kind = 'money', cls){
   cancelAnimationFrame(el._raf);
   el._fitTexts=[f(from),f(to)];fitMetricValue(el);
   if (reduceMotion() || from === to){ el.textContent = f(to);el._fitTexts=[f(to)];fitMetricValue(el); return; }
-  const t0 = performance.now(), dur = MOTION.data, ease = x => 1 - Math.pow(1 - x, 4);
+  const t0 = performance.now(), dur = MOTION.data, ease = motionDataEase;
   const step = now => { if(reduceMotion()){el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el.textContent = f(from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step);else {el._fitTexts=[f(to)];fitMetricValue(el);} };
   el._raf = requestAnimationFrame(step);
 }
@@ -261,6 +270,7 @@ function showTab(name){
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
   if (name === 'movs') moveViewInd();
+  updateCreationControls();
 
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra

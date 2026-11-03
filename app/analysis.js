@@ -84,12 +84,12 @@ function renderAnalysisChart(){
       const points=chart.getDatasetMeta(0).data,valid=points.filter(p=>!p.skip),segments=[];
       let length=0;for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i];if(a.skip||b.skip)continue;const distance=Math.hypot(b.x-a.x,b.y-a.y);segments.push({a,b,distance});length+=distance;}
       if(!valid.length){t.progress=1;return;}
-      let remaining=length*(.5-.5*Math.cos(Math.PI*t.progress)),head={x:valid[0].x,y:valid[0].y};
+      let remaining=length*motionTraceEase(t.progress),head={x:valid[0].x,y:valid[0].y};
       for(const {a,b,distance} of segments){const fraction=distance?Math.min(1,remaining/distance):1;head={x:a.x+(b.x-a.x)*fraction,y:a.y+(b.y-a.y)*fraction};if(remaining<=distance)break;remaining-=distance;}
       t.head=head;chart.ctx.save();chart.ctx.beginPath();chart.ctx.rect(chart.chartArea.left-8,chart.chartArea.top-8,Math.max(0,head.x-chart.chartArea.left+8),chart.chartArea.height+16);chart.ctx.clip();t.clipped=true;
     },
     afterDatasetDraw(chart){const t=chart.$analysisTrace;if(!t?.clipped)return;chart.ctx.restore();t.clipped=false;const {ctx}=chart,{x,y}=t.head;ctx.save();ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=cssVar('--surface');ctx.stroke();ctx.restore();},
-    afterDraw(chart){const t=chart.$analysisTrace;if(!t||t.progress>=1||t.raf)return;if(t.start==null)t.start=performance.now();t.raf=requestAnimationFrame(now=>{t.raf=0;if(!chart.canvas)return;t.progress=reduceMotion()?1:Math.min(1,(now-t.start)/1300);chart.draw();});},
+    afterDraw(chart){const t=chart.$analysisTrace;if(!t||t.progress>=1||t.raf)return;if(t.start==null)t.start=performance.now();t.raf=requestAnimationFrame(now=>{t.raf=0;if(!chart.canvas)return;t.progress=reduceMotion()?1:Math.min(1,(now-t.start)/MOTION.trace);chart.draw();});},
     afterDestroy(chart){const t=chart.$analysisTrace;if(t)cancelAnimationFrame(t.raf);}
   };
   const valueLabels={id:'yearValueLabels',afterDatasetsDraw(chart){
@@ -107,8 +107,8 @@ function renderAnalysisChart(){
     type:line?'line':'bar',plugins:[trace,valueLabels],data:{labels:indices.map(i=>MONTHS_ES[i]),datasets:[dataset]},
     options:{maintainAspectRatio:false,
       // Las barras crecen desde cero; las líneas se revelan con su punto viajero.
-      animation:reduceMotion()||line?false:{duration:650,easing:'easeOutQuart'},
-      animations:line?false:{numbers:{duration:0},colors:{duration:0},y:{type:'number',properties:['y'],duration:650,easing:'easeOutQuart',from:ctx=>ctx.chart.scales.y.getPixelForValue(0)}},
+      animation:reduceMotion()||line?false:{duration:MOTION.data,easing:MOTION.dataEasing},
+      animations:line?false:{numbers:{duration:0},colors:{duration:0},y:{type:'number',properties:['y'],duration:MOTION.data,easing:MOTION.dataEasing,from:ctx=>ctx.chart.scales.y.getPixelForValue(0)}},
       transitions:{active:{animation:{duration:0}},resize:{animation:{duration:0}}},
       interaction:{mode:'index',intersect:false},layout:{padding:{top:indices.length<=3?24:8,right:12,bottom:8}},
       onClick:(event,items)=>{const item=items[0];if(!item)return;selectAnalysisMonth(data.months[indices[item.index]]);chYear.update('none');},
@@ -148,9 +148,7 @@ function renderAnalysisDetails(){
   }else if(analysisMetric==='savings'){rows=row('Ahorro del mes',bal,sum(bal))+row('Acumulado',cum,cum.findLast(v=>v!=null));}
   else{const incomes=tot.map(t=>t.inc),annualIncome=sum(incomes);rows=row('Ingresos',incomes,annualIncome)+row('Ahorro',bal,sum(bal))+row('Tasa de ahorro',d.rates,annualIncome?sum(bal)/annualIncome*100:null,true);}
   $('#yearTable').innerHTML=d.first<0?emptyBox('list',`Sin registros en ${y}.`,null,'',true):`<table class="year-table">${head}<tbody>${rows}</tbody></table>`;
-  const month=analysisSelectedMonth||currentMonth,previous=shiftMonth(month,-1),currentValue=analysisDisplayValue(month),previousValue=analysisDisplayValue(previous);
-  $('#cmpTitle').textContent=monthLong(month)+' vs. '+analysisPreviousLabel(month);
-  $('#cmpList').innerHTML=`<div class="analysis-compare-grid"><div><span>${analysisPreviousLabel(month)}</span><b>${analysisFormat(previousValue)}</b></div><div><span>${monthLong(month)}</span><b>${analysisFormat(currentValue)}</b></div></div><p class="small muted analysis-compare-change">${metric.label}: ${analysisChange(currentValue,previousValue)}</p>`;
+
 }
 $('#anKpis').addEventListener('click',e=>{const button=e.target.closest('[data-analysis-metric]');if(!button)return;analysisMetric=button.dataset.analysisMetric;renderAnalysis();enhanceAccessibility();if(!e.detail)document.querySelector(`[data-analysis-metric="${analysisMetric}"]`).focus({preventScroll:true});else{const card=$('#yearChartCard');if(card.getBoundingClientRect().top>innerHeight*.55){const header=document.querySelector('.topbar'),gap=getComputedStyle(header).position==='sticky'?header.getBoundingClientRect().height:0;window.scrollTo({top:scrollY+card.getBoundingClientRect().top-gap-16,behavior:reduceMotion()?'instant':'smooth'});}}});
 document.addEventListener('click',e=>{const link=e.target.closest('[data-analysis-movements]');if(link)openMovs({scope:'year',type:link.dataset.analysisMovements});});
@@ -222,7 +220,7 @@ function renderAnalysis(){
   analysisData={months,bal,balC,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData};
   if(!months.includes(analysisSelectedMonth))analysisSelectedMonth=currentMonth;
   const metric=ANALYSIS_METRICS[analysisMetric];$('#analysisChartTitle').textContent=analysisMetric==='savings'&&analysisChartMode==='total'?'Ahorro acumulado':metric.title;
-  $('#yearChartHelp').textContent=analysisMetric==='savings'&&analysisChartMode==='total'?'Total ahorrado desde el primer mes con registros.':metric.help;
+  $('#yearChartHelp').dataset.tip=analysisMetric==='savings'&&analysisChartMode==='total'?'Total ahorrado desde el primer mes con registros.':metric.help;
   $('#yearChartModes').hidden=!nData||analysisMetric!=='savings';
   $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.yearMode===analysisChartMode)));
   renderYearReadout();

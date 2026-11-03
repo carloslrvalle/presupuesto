@@ -33,7 +33,8 @@ $('#fileImport').addEventListener('change', e => {
   r.readAsText(f);
 });
 $('#btnCsv').onclick = () => {
-  const q = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  // Un texto que empieza con = + - @ se abriría como fórmula en Excel/Sheets.
+  const q = v => { let s = String(v ?? ''); if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g,'""')}"`; };
   const rows = [['Fecha','Tipo','Categoría','Descripción','Método','Monto']].concat(
     [...state.transactions].sort((a,b) => a.date.localeCompare(b.date)).map(t => [t.date, t.type==='income'?'Ingreso':'Gasto', getCat(t.catId).name, t.desc, t.method, t.amount]));
   download(`movimientos-${todayISO()}.csv`, '\ufeff' + rows.map(r => r.map(q).join(';')).join('\n'), 'text/csv');

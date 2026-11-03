@@ -653,8 +653,21 @@ $('#fab').addEventListener('click',()=>{
  setTimeout(()=>b.classList.remove('launch'),550);
 });
 txDialog.addEventListener('close',()=>$('#fab').classList.remove('is-open'));
-const resizeTxViewport=()=>txDialog.style.setProperty('--tx-viewport',Math.max(180,(window.visualViewport?.height||innerHeight)-24)+'px');
-window.visualViewport?.addEventListener('resize',resizeTxViewport);resizeTxViewport();
+// En el celular el teclado tapa la parte baja de la pantalla: la hoja se apoya sobre él y el campo activo queda a la vista.
+function keepTxFieldVisible(){
+ const a=document.activeElement,body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!a||!body.contains(a))return;
+ const b=body.getBoundingClientRect(),r=a.getBoundingClientRect();
+ if(r.bottom>b.bottom-8)body.scrollTop+=r.bottom-b.bottom+8;else if(r.top<b.top+8)body.scrollTop-=b.top+8-r.top;
+}
+const resizeTxViewport=()=>{
+ const vv=window.visualViewport,h=vv?.height||innerHeight;
+ const keyboard=vv?Math.max(0,Math.round(document.documentElement.clientHeight-vv.height-vv.offsetTop)):0;
+ txDialog.style.setProperty('--tx-viewport',Math.max(180,h-24)+'px');
+ txDialog.style.setProperty('--tx-keyboard',keyboard+'px');
+ requestAnimationFrame(keepTxFieldVisible);
+};
+window.visualViewport?.addEventListener('resize',resizeTxViewport);window.visualViewport?.addEventListener('scroll',resizeTxViewport);resizeTxViewport();
+txDialog.addEventListener('focusin',()=>setTimeout(keepTxFieldVisible,350));
 $('#btnNewTx').onclick = () => openTx();
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 

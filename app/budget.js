@@ -86,12 +86,13 @@ $('#tab-budget').addEventListener('change', e => {
 $('#btnCopyPrev').onclick = () => {
   if(cycleView()){const m=currentMonth,p=shiftMonth(m,-1);state.budgets[m]=state.budgets[m]||{};state.categories.forEach(c=>state.budgets[m][cycleBudgetKey(c.id)]=cycleBudget(p,c.id));save();renderAll();return toast('Presupuesto copiado del ciclo anterior');}
   const prev = shiftMonth(currentMonth,-1), obj = {};
-  state.categories.forEach(c => obj[c.id] = getBudget(prev, c.id));
+  // Un ingreso que no llega en uno de los dos meses (p. ej. gratificación) conserva su monto esperado.
+  state.categories.forEach(c => { if (payActive(c, prev) && payActive(c, currentMonth) && !isArch(c, prev)) obj[c.id] = getBudget(prev, c.id); });
   state.budgets[currentMonth] = {...(state.budgets[currentMonth]||{}),...obj}; save(); renderAll(); toast('Presupuesto copiado de ' + monthLong(prev));
 };
 $('#btnSetDefault').onclick = () => {
   if(cycleView()){const config=cycleConfig(),defaults={...(config.defaults||{})};defaults[cycleDay()]=Object.fromEntries(state.categories.map(c=>[c.id,cycleBudget(currentMonth,c.id)]));state.settings.budgetCycle={...config,defaults};save();renderAll();return toast('Base guardada para los próximos ciclos');}
-  state.categories.forEach(c => c.defaultBudget = getBudget(currentMonth, c.id));
+  state.categories.forEach(c => { if (payActive(c, currentMonth) && !isArch(c, currentMonth)) c.defaultBudget = getBudget(currentMonth, c.id); });
   save(); renderAll(); toast('Guardado como presupuesto base 📌');
 };
 
@@ -272,7 +273,8 @@ $('#tab-cats').addEventListener('click', async e => {
     if (!(await ask({title:`¿Eliminar "${c.name}"?`, msg, icon:c.icon, iconColor:c.color}))) return;
     await fadeOut(row);
     state.categories = state.categories.filter(x => x.id !== c.id);
-    Object.values(state.budgets).forEach(b => delete b[c.id]);
+    Object.values(state.budgets).forEach(b => Object.keys(b).forEach(k => { if (k === c.id || k.endsWith(':' + c.id)) delete b[k]; }));
+    Object.values(cycleConfig().defaults || {}).forEach(base => { if (base) delete base[c.id]; });
     save(); renderAll(); toast('Categoría eliminada');
   }
 });

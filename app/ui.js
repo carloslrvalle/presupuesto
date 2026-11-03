@@ -275,7 +275,7 @@ function showTab(name){
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
-$('#btnSettings').onclick = () => showTab('settings');
+$('#btnSettings').onclick = () => { showTab('settings'); openSettingsSection(null); };
 const goTab = showTab;
 function moveTabInd(){
   const b = $('#tabs button.active'), ind = $('#tabInd'); ind.style.opacity = b ? 1 : 0; if (!b) return;

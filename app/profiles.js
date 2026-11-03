@@ -1,6 +1,6 @@
 // Presupuesto: profiles.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
 /* ---------- Usuarios: cambiar de perfil, editarlos y vista «Ambos» ---------- */
-function avatarHTML(pr){ return pr.photo ? `<img src="${pr.photo}" alt="">` : iconHTML(pr.icon || 'svg:user', pr.color); }
+function avatarHTML(pr){ return /^data:image\//.test(pr.photo || '') ? `<img src="${esc(pr.photo)}" alt="">` : iconHTML(pr.icon || 'svg:user', pr.color); }
 function avatarBox(pr, cls = ''){ return `<span class="prof-av ${cls}" style="background:${pr.photo ? 'transparent' : soft(pr.color)}">${avatarHTML(pr)}</span>`; }
 function renderProfileUI(){
   const chip = $('#profChip'); if (!chip) return;
@@ -153,6 +153,15 @@ async function enterBoth(){
   { const mw = document.querySelector('main.wrap'); if (mw){ mw.classList.remove('prof-swap'); void mw.offsetWidth; mw.classList.add('prof-swap'); } }
   refreshOther(true);
 }
+// Sheets guarda los métodos fuera de settings: se rearma la copia local igual que applyRemote, sin perder métodos ni ajustes locales.
+function otherStateFromRemote(id,data){
+  const prev = profileState(id) || {}, d = cleanState(SyncCore.clone(data)), settings = {...(prev.settings || {})};
+  if (d.settings && typeof d.settings === 'object') SYNC_SETTINGS.forEach(k => { if (Object.prototype.hasOwnProperty.call(d.settings, k)) settings[k] = d.settings[k]; else delete settings[k]; });
+  if (Array.isArray(d.methods)) settings.methods = d.methods; else if (!Array.isArray(settings.methods)) settings.methods = [];
+  const out = {...prev, categories:d.categories, transactions:d.transactions || [], budgets:d.budgets || {}, recurring:Array.isArray(d.recurring) ? d.recurring : (prev.recurring || []), goals:Array.isArray(d.goals) ? d.goals : (prev.goals || []), meta:d.meta && typeof d.meta === 'object' ? d.meta : (prev.meta || {}), settings, updatedAt:d.updatedAt || Date.now()};
+  if (d.rev != null) out.rev = d.rev;
+  delete out.methods; return out;
+}
 // Trae lo último del otro usuario desde Sheets (para «Ambos» y las metas compartidas), como máximo cada minuto
 let otherAt = 0;
 async function refreshOther(force){
@@ -163,7 +172,7 @@ async function refreshOther(force){
     const j = await callSheets({action:'load', profile:other});
     if (j.protocol===2 && j.data && Array.isArray(j.data.categories) && j.data.categories.length && other === otherProfile()){
       if(sync.byProf?.[other]?.pending||syncConflict(other)||Number(j.data.rev)<Number(sync.byProf?.[other]?.rev||0))return;
-      try { localData.writeText(storeKey(other),JSON.stringify(cleanState(j.data))); }catch(e){localSaveFailed=true;setBadge('err','No se pudo guardar aquí');updateSyncInfo();return;}
+      try { localData.writeText(storeKey(other),JSON.stringify(otherStateFromRemote(other,j.data))); }catch(e){localSaveFailed=true;setBadge('err','No se pudo guardar aquí');updateSyncInfo();return;}
       rememberSyncBase(j.data,j.data.rev,other);
       sync.byProf = sync.byProf || {}; sync.byProf[other] = {rev:Number(j.data.rev) || 0, pending:false, lastSync:Date.now()}; saveSync();
       _oth = null; dirty.add('goals'); dirty.add('both');

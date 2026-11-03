@@ -2038,3 +2038,16 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 
 .analysis-month-picker.opens-up .analysis-month-menu{top:auto;bottom:calc(100% + 8px)}
 .analysis-month-options{max-height:var(--month-menu-space,280px)}
+
+/* 1.10.27: calendario despejado; estadísticas y semanas bajo demanda. */
+#calGrid{grid-template-columns:repeat(7,minmax(0,1fr))}
+.cal-summary{margin-top:16px}
+.cal-summary .cal-stats{margin:0 0 20px;min-width:0}
+.cal-summary .cal-stats .cs{border:0;background:var(--surface-2);box-shadow:none}
+.cal-week-heading{font-size:13px;margin:0 0 10px}
+.cal-week-totals{margin:0;display:grid;gap:0}
+.cal-week-totals>div{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
+.cal-week-totals>div:last-child{border-bottom:0}
+.cal-week-totals dt{color:var(--muted)}
+.cal-week-totals dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;text-align:right}
+@media(max-width:380px){.cal-summary .cal-stats{grid-template-columns:minmax(0,1fr)}}

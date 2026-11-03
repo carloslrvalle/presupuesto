@@ -215,9 +215,10 @@ function renderCalendar(){
   const totExp = sum(txOfMonth(m).filter(t => t.type === 'expense'));
   // El promedio diario solo cuenta lo ya ocurrido (no los gastos con fecha futura)
   const pastExp = sum(txOfMonth(m).filter(t => t.type === 'expense')), avg = daysPassed ? pastExp / daysPassed : 0;
-  let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((d, i) => `<div class="cal-h${i > 4 ? ' we' : ''}">${d}</div>`).join('') + '<div class="cal-h wk">Semana</div>';
-  let col = 0, week = 0, idx = 0;
-  const closeWeek = () => { html += `<div class="cal-wk${week ? '' : ' zero'}" style="--i:${idx++}" title="Gastos de la semana: ${fmt(week)}"><span class="small muted">Total</span><b>${week ? calendarAmount(week) : '—'}</b></div>`; week = 0; col = 0; };
+  let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((d, i) => `<div class="cal-h${i > 4 ? ' we' : ''}">${d}</div>`).join('');
+  let col = 0, week = 0, idx = 0, weekStart = 1;
+  const weeks = [];
+  const closeWeek = end => { weeks.push({start:weekStart,end,total:week});weekStart=end+1;week=0;col=0; };
   for (let i = 0; i < first; i++){ html += '<div class="cal-pad"></div>'; col++; }
   for (let d = 1; d <= dim; d++){
     const o = byDay[d], iso = dateFor(m, d), recs = recBy[d] || [], we = col > 4;
@@ -227,11 +228,13 @@ function renderCalendar(){
     const dayLabel=`${fmtDateLong(iso)}. Ingresos: ${fmt(o?.inc||0)}. Gastos: ${fmt(o?.exp||0)}${recs.length?'. Recurrentes pendientes: '+recs.length:''}`;
     html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${esc(dayLabel)}" title="${esc(dayLabel)}" aria-pressed="${iso===calSel}">
       <span class="cd-n">${d}</span>${recs.length ? `<span class="cd-r" title="${recs.length} recurrente(s) pendiente(s)">${ic('repeat')}</span>` : ''}${hot ? '<span class="cd-hot" title="Gasto alto">●</span>' : ''}
-      <span class="cd-amts" aria-hidden="true">${o && o.inc ? `<span class="cd-i">+${calendarAmount(o.inc)}</span>` : ''}${o && o.exp ? `<span class="cd-e">−${calendarAmount(o.exp)}</span>` : ''}</span></button>`;
-    if (++col === 7) closeWeek();
+      </button>`;
+    if (++col === 7) closeWeek(d);
   }
-  if (col){ while (col < 7){ html += '<div class="cal-pad"></div>'; col++; } closeWeek(); }
+  if (col){ while (col < 7){ html += '<div class="cal-pad"></div>'; col++; } closeWeek(dim); }
   $('#calGrid').innerHTML = html;
+  $('#calSummaryMonth').textContent=monthLong(m);
+  $('#calWeekTotals').innerHTML=weeks.map(w=>`<div><dt>${w.start===w.end?'Día '+w.start:'Días '+w.start+'–'+w.end}</dt><dd>${fmt(w.total)}</dd></div>`).join('');
   // Estadísticas del mes
   const top = Object.entries(byDay).sort((a, b) => b[1].exp - a[1].exp)[0];
   const zero = daysPassed ? Array.from({length:daysPassed}, (_, i) => i + 1).filter(d => !byDay[d] || !byDay[d].exp).length : 0;

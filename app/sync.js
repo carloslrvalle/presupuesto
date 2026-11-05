@@ -108,6 +108,8 @@ async function callSheets(payload){
     const config=$('#settingsConnectionConfig');if(config&&config.setExpanded)config.setExpanded(false);
     renderSettingsStatus();
   }
+  if(j.data)validateStateData(j.data);
+  if(j.profiles?.list?.length)validateProfilesData(j.profiles);
   if (j.profiles && Array.isArray(j.profiles.list) && j.profiles.list.length === 2 && (Number(j.profiles.u) || 0) > (Number(profiles.u) || 0)){ profiles = j.profiles; saveProfiles(); renderProfileUI(); }
   return j;
 }
@@ -119,6 +121,7 @@ function rememberSyncBase(data,rev,profile=activeProfile){return writeSyncCache(
 function clearSyncConflict(profile=activeProfile){syncCacheMemory.delete(syncCacheKey('conflict',profile));localData.remove(syncCacheKey('conflict',profile));}
 function acceptSyncRemote(remote,profile=activeProfile){
  if(!remote||!Array.isArray(remote.categories)||!Array.isArray(remote.transactions))throw new Error('Sheets devolvió datos incompletos. Se conserva la copia local.');
+ validateStateData(remote);
  const base=readSyncCache('base',profile),local=SyncCore.clone(snapshot()),rev=Number(remote.rev)||0;
  if(rev<Math.max(Number(sync.rev)||0,Number(base?.rev)||0)){setBadge(sync.pending?'pending':'ok',sync.pending?'Pendiente de sincronizar':'Sincronizado');updateSyncInfo();return false;}
  const empty=!remote.categories.length&&!remote.transactions.length&&!remote.goals?.length;
@@ -152,7 +155,7 @@ function syncConflictValue(value,path=[]){
 function openSyncConflicts(){
  const saved=syncConflict();if(!saved)return;const result=SyncCore.reconcile(readSyncCache('base')?.data||null,snapshot(),saved.remote);
  if(!result.conflicts.length){clearSyncConflict();acceptSyncRemote(saved.remote);if(sync.auto)pushNow();return;}
- syncConflictDialog.innerHTML='<form id="syncConflictForm"><div class="dlg-head"><h3 id="syncConflictTitle">Revisar cambios · '+esc(profOf(activeProfile).name)+'</h3><button type="button" class="iconbtn" data-sync-conflict-close aria-label="Cerrar">'+ic('x')+'</button></div><p>Dos dispositivos modificaron el mismo dato. Elige qué conservar. Los cambios compatibles se combinan automáticamente.</p><div class="sync-conflict-list">'+result.conflicts.map((item,i)=>'<fieldset><legend>'+esc(syncConflictLabel(item,saved.remote))+'</legend>'+['local','remote'].map(side=>'<label><input type="radio" required name="choice'+i+'" value="'+side+'"><span><small>'+(side==='local'?'En este dispositivo':'En Sheets')+'</small><b>'+esc(syncConflictValue(item[side],item.path))+'</b></span></label>').join('')+'</fieldset>').join('')+'</div><div class="dlg-actions"><button type="button" class="btn" data-sync-conflict-close>Revisar después</button><button type="submit" class="btn primary">Conservar selección</button></div></form>';
+ syncConflictDialog.innerHTML='<form id="syncConflictForm"><div class="dlg-head"><h3 id="syncConflictTitle">Revisar cambios · '+esc(profOf(activeProfile).name)+'</h3><button type="button" class="iconbtn" data-sync-conflict-close aria-label="Cerrar">'+ic('x')+'</button></div><div class="dlg-body"><p>Dos dispositivos modificaron el mismo dato. Elige qué conservar. Los cambios compatibles se combinan automáticamente.</p><div class="sync-conflict-list">'+result.conflicts.map((item,i)=>'<fieldset><legend>'+esc(syncConflictLabel(item,saved.remote))+'</legend>'+['local','remote'].map(side=>'<label><input type="radio" required name="choice'+i+'" value="'+side+'"><span><small>'+(side==='local'?'En este dispositivo':'En Sheets')+'</small><b>'+esc(syncConflictValue(item[side],item.path))+'</b></span></label>').join('')+'</fieldset>').join('')+'</div></div><div class="dlg-actions dlg-foot"><button type="button" class="btn" data-sync-conflict-close>Revisar después</button><button type="submit" class="btn primary">Conservar selección</button></div></form>';
  syncConflictDialog.querySelectorAll('[data-sync-conflict-close]').forEach(b=>b.onclick=()=>syncConflictDialog.close());
  const profile=activeProfile,url=sync.url;
  syncConflictDialog.querySelector('form').onsubmit=e=>{e.preventDefault();if(profile!==activeProfile||url!==sync.url){syncConflictDialog.close();return;}
@@ -220,6 +223,7 @@ function mergeData(a, b) {
 
 function applyRemote(d, keepSync){
   const previousCycleEnabled=cycleEnabled(),previousCycleDay=cycleDay();
+  validateStateData(d);
   d = cleanState(d);
   state.meta = d.meta && typeof d.meta === 'object' ? d.meta : (state.meta || {});
   state.categories = d.categories; state.transactions = d.transactions || []; state.budgets = d.budgets || {};
@@ -284,8 +288,8 @@ async function startupLoad(){
   const j=await callSheets({action:'load'});if(j.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
   if(profile!==activeProfile||connection!==sync.url+'|'+sync.token)return;
   if(!acceptSyncRemote(j.data,profile))return;
-  if(sync.pending){setBadge('pending','Guardado aquí · Pendiente de sincronizar');if(sync.auto)await pushNow();}
-  else setBadge('ok','Sincronizado');updateSyncInfo();
+  if(sync.pending){setBadge('pending','Guardado aquí · Pendiente de sincronizar');if(sync.auto&&!await pushNow())return false;}
+  else setBadge('ok','Sincronizado');updateSyncInfo();return true;
  }catch(err){if(profile!==activeProfile||connection!==sync.url+'|'+sync.token)return;setBadge('err','Sin confirmar en Sheets');updateSyncInfo(err.message);scheduleSyncRecovery(err);}
 }
 

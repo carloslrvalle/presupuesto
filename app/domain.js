@@ -167,14 +167,18 @@ function projection(m){
     const plan = plannedOf(m, 'expense', c.id), budget = getBudget(m, c.id), base = reg + pendRec + plan + pace;
     return {c, reg, pendRec, plan, pace, perDay, frequent, n: all.length, base, rest: Math.max(0, budget - base), proj: Math.max(base, budget), budget};
   });
-  const orphan = sum(txs.filter(t => t.type === 'expense' && !state.categories.some(c => c.id === t.catId)));
+  const orphanTxs=txOfMonthAll(m).filter(t=>!state.categories.some(c=>c.id===t.catId)),orphanExpenses=orphanTxs.filter(t=>t.type==='expense');
+  if(orphanExpenses.length){
+    const actual=orphanExpenses.filter(t=>!isPlanned(t)),reg=sum(actual),plan=sum(orphanExpenses.filter(isPlanned)),base=reg+plan;
+    cats.push({c:getCat(null),reg,pendRec:0,plan,pace:0,perDay:0,frequent:false,n:actual.length,base,rest:0,proj:base,budget:0});
+  }
   const S = k => cats.reduce((a, x) => a + x[k], 0);
-  const spent = S('reg') + orphan, recLeft = S('pendRec'), paceTot = S('pace'), planTot = S('plan'), restTot = S('rest');
+  const spent = S('reg'), recLeft = S('pendRec'), paceTot = S('pace'), planTot = S('plan'), restTot = S('rest');
   const projExp = spent + recLeft + planTot + paceTot + restTot;
   const incs = catsOf('income').map(c => { const real = realBy(m, c.id), plan = plannedOf(m, 'income', c.id), rec = pend.filter(r => r.type === 'income' && r.catId === c.id).reduce((a, r) => a + Number(r.amount || 0), 0), exp = getBudget(m, c.id);
     // si la categoría tiene monto esperado, sus recurrentes ya están incluidos en él (evita contar el sueldo dos veces)
     return {c, real, plan, rec, exp, proj: exp > 0 ? Math.max(real + plan, exp) : real + plan + rec}; });
-  const incOrphan = sum(txs.filter(t => t.type === 'income' && !state.categories.some(c => c.id === t.catId)));
+  const incOrphan = sum(orphanTxs.filter(t => t.type === 'income'));
   const incReg = incs.reduce((a, x) => a + x.real + x.plan, 0) + incOrphan, projInc = incs.reduce((a, x) => a + x.proj, 0) + incOrphan;
   return {day, dim, left, cats, projExp, projInc, spent, recLeft, paceTot, planTot, restTot, incReg, incRec: projInc - incReg};
 }

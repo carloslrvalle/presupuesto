@@ -6,17 +6,26 @@ function download(name, content, type){
 }
 $('#btnExport').onclick = () => download(`presupuesto-respaldo-${todayISO()}.json`, JSON.stringify(state, null, 2), 'application/json');
 function validateBackup(d){
-  const object=v=>v&&typeof v==='object'&&!Array.isArray(v);
-  if(!object(d)||!Array.isArray(d.categories)||!Array.isArray(d.transactions))throw new Error('Respaldo inválido');
-  for(const key of ['categories','transactions','goals','recurring']){
-    if(d[key]===undefined&&['goals','recurring'].includes(key))continue;
-    if(!Array.isArray(d[key])||d[key].some(r=>!object(r)||!r.id||typeof r.id!=='string')||new Set(d[key].map(r=>r.id)).size!==d[key].length)throw new Error('Registros inválidos');
+  validateStateData(d);return cleanState(JSON.parse(JSON.stringify(d)));
+}
+function importBackup(d){
+  if(localTabChanged)throw new Error('Recarga antes de importar: otra pestaña cambió los datos');
+  const candidate=validateBackup(d),previous=state,previousSnap=_snapRec,previousDone=_doneSet,normalSave=save;
+  candidate.budgets??={};candidate.settings??={methods:[]};candidate.recurring??=[];candidate.goals??=[];
+  try{
+    state=candidate;_txIdx=null;_doneSet=null;
+    // Comprobar todas las vistas antes de persistir o programar una subida.
+    save=()=>true;
+    migrateVec();for(const view of Object.values(VIEWS))view();renderAll();
+    save=normalSave;_snapRec=previousSnap;stampChanges();state.updatedAt=Date.now();
+    localData.writeText(storeKey()+'.beforeImport',JSON.stringify(previous));
+    if(!saveLocal())throw new Error('No se pudo guardar el respaldo en este dispositivo');
+  }catch(err){
+    save=normalSave;state=previous;_snapRec=previousSnap;_doneSet=previousDone;_txIdx=null;
+    try{renderAll();}catch(renderError){reportBootError(renderError.message);}
+    throw err;
   }
-  if(d.categories.some(c=>typeof c.name!=='string'||!['income','expense'].includes(c.type)))throw new Error('Categorías inválidas');
-  if(d.transactions.some(t=>!['income','expense'].includes(t.type)||typeof t.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(t.date)||!Number.isFinite(Number(t.amount))||Number(t.amount)<=0))throw new Error('Movimientos inválidos');
-  if(d.settings!==undefined&&!object(d.settings)||d.budgets!==undefined&&!object(d.budgets))throw new Error('Configuración inválida');
-  if(d.settings?.methods!==undefined&&(!Array.isArray(d.settings.methods)||d.settings.methods.some(m=>typeof m!=='string')))throw new Error('Métodos inválidos');
-  return cleanState(d);
+  schedulePush();return true;
 }
 $('#fileImport').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
@@ -25,9 +34,8 @@ $('#fileImport').addEventListener('change', e => {
     try{
       const d = validateBackup(JSON.parse(r.result));
       if (!(await ask({title:'¿Importar este respaldo?', msg:`Reemplazará los datos actuales por los del archivo (${d.transactions.length} movimientos).`, ok:'Importar', danger:false, icon:'📥'}))){ e.target.value = ''; return; }
-      state = d; state.budgets = state.budgets || {}; state.settings = state.settings || {methods:[]}; state.recurring = state.recurring || []; state.goals = state.goals || [];
-      migrateVec(); save(); renderAll(); toast('Respaldo importado ✅');
-    }catch(err){ toast('⚠️ Archivo no válido'); }
+      importBackup(d);toast('Respaldo importado ✅');
+    }catch(err){ toast('⚠️ Archivo no válido o importación no completada: '+err.message); }
     e.target.value = '';
   };
   r.readAsText(f);

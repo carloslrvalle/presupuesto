@@ -50,11 +50,23 @@ function setPlanningMode(enabled,day=cycleDay()){
  cycleSelectedMonths[activeProfile]=enabled?currentMonth:cycleSelectedMonths[activeProfile];monthInput.value=currentMonth;
  save();renderAll();toast(enabled?'Ciclo activo: '+cycleLabel(currentMonth):'Vista por mes calendario');
 }
-let planningToday=todayISO();
+let planningToday=todayISO(),planningDateTask=null,dailyRecurringPending=false;
 function refreshPlanningDate(){
- const today=todayISO();if(today===planningToday||document.querySelector('dialog[open]'))return;
- const previous=cycleMonthForDate(planningToday);planningToday=today;_txIdx=null;
- if(cycleView()){if(currentMonth===previous){currentMonth=cycleMonthForDate(today);monthInput.value=currentMonth;}renderAll();maybeMonthClose();}
+ const today=todayISO();if(document.querySelector('dialog[open]')||localTabChanged)return;
+ if(today!==planningToday){
+  const previous=cycleView()?cycleMonthForDate(planningToday):planningToday.slice(0,7);
+  planningToday=today;_txIdx=null;dailyRecurringPending=true;
+  if(currentMonth===previous){currentMonth=cycleView()?cycleMonthForDate(today):thisMonth();monthInput.value=currentMonth;}
+  renderAll();maybeMonthClose();
+ }
+ if(!dailyRecurringPending||bothMode||planningDateTask)return planningDateTask;
+ const profile=activeProfile,connection=sync.url+'|'+sync.token;
+ planningDateTask=(async()=>{
+  const confirmed=!syncOn()||await startupSync();
+  if(!confirmed||profile!==activeProfile||connection!==sync.url+'|'+sync.token||localTabChanged||syncConflict()||document.querySelector('dialog[open]'))return;
+  dailyRecurringPending=false;if(runAutoRecurring())renderAll();
+ })().catch(err=>{setBadge('err','No se pudo actualizar el día');updateSyncInfo(err.message);}).finally(()=>{planningDateTask=null;});
+ return planningDateTask;
 }
 window.addEventListener('focus',refreshPlanningDate);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPlanningDate();});

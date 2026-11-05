@@ -12,7 +12,7 @@ function renderProfileUI(){
 const profMenu = document.createElement('div'); profMenu.className = 'prof-menu'; profMenu.hidden = true; profMenu.setAttribute('role', 'menu'); document.body.appendChild(profMenu);
 function renderProfMenu(){
   const on = id => !bothMode && id === activeProfile;
-  profMenu.innerHTML = profiles.list.map(pr => `<button type="button" role="menuitem" data-prof="${pr.id}" class="${on(pr.id) ? 'on' : ''}">${avatarBox(pr)}<span>${esc(pr.name)}</span>${on(pr.id) ? ic('check') : ''}</button>`).join('')
+  profMenu.innerHTML = profiles.list.map(pr => `<button type="button" role="menuitem" data-prof="${esc(pr.id)}" class="${on(pr.id) ? 'on' : ''}">${avatarBox(pr)}<span>${esc(pr.name)}</span>${on(pr.id) ? ic('check') : ''}</button>`).join('')
     + `<button type="button" role="menuitem" data-prof="both" class="${bothMode ? 'on' : ''}"><span class="prof-av both">${ic('users')}</span><span>Ambos <small>· solo lectura</small></span>${bothMode ? ic('check') : ''}</button><hr>`
     + `<button type="button" role="menuitem" data-prof="edit"><span class="prof-av plain">${ic('pencil')}</span><span>Editar usuarios</span></button>`;
 }
@@ -84,7 +84,7 @@ let photoFor = null;
 function renderProfEdit(){
   renderSettingsHome();
   const box = $('#profEdit'); if (!box) return;
-  box.innerHTML = profiles.list.map(pr => `<div class="pe-row" data-pid="${pr.id}">
+  box.innerHTML = profiles.list.map(pr => `<div class="pe-row" data-pid="${esc(pr.id)}">
     <button type="button" class="prof-av lg" data-pe="icon" title="Cambiar ícono y color" style="background:${pr.photo ? 'transparent' : soft(pr.color)}">${avatarHTML(pr)}</button>
     <input type="text" class="pe-name" data-pe="name" maxlength="24" value="${esc(pr.name)}" aria-label="Nombre del usuario">
     <button type="button" class="btn sm" data-pe="photo" title="${pr.photo ? 'Cambiar foto' : 'Usar una foto'}">${ic('camera')}<span class="hide-m">${pr.photo ? 'Cambiar foto' : 'Foto'}</span></button>
@@ -155,6 +155,7 @@ async function enterBoth(){
 }
 // Sheets guarda los métodos fuera de settings: se rearma la copia local igual que applyRemote, sin perder métodos ni ajustes locales.
 function otherStateFromRemote(id,data){
+  validateStateData(data);
   const prev = profileState(id) || {}, d = cleanState(SyncCore.clone(data)), settings = {...(prev.settings || {})};
   if (d.settings && typeof d.settings === 'object') SYNC_SETTINGS.forEach(k => { if (Object.prototype.hasOwnProperty.call(d.settings, k)) settings[k] = d.settings[k]; else delete settings[k]; });
   if (Array.isArray(d.methods)) settings.methods = d.methods; else if (!Array.isArray(settings.methods)) settings.methods = [];
@@ -215,7 +216,7 @@ function renderBoth(){
       <div class="card"><h3 id="bothChartTitle">Gastos de ambos · últimos 6 ${cycles?'cierres':'meses'}</h3>${cycles?'<p class="small muted">Cada serie respeta el período de su usuario.</p>':''}<div class="chart-wrap" id="bothWrap"><canvas id="chBoth"></canvas></div></div>
     </div>
     <div class="both-bottom">${sharedGoalsCard()}
-    <div class="card both-top"><h3>Top 5 gastos ${cycles?'de los períodos':'del mes'} de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${x.t.date}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos en los períodos seleccionados.</div>'}</div></div>`;
+    <div class="card both-top"><h3>Top 5 gastos ${cycles?'de los períodos':'del mes'} de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${esc(x.t.date)}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos en los períodos seleccionados.</div>'}</div></div>`;
   requestAnimationFrame(fitMetricValues);
   if (chBoth){ chBoth.destroy(); chBoth = null; }
   if (typeof Chart === 'undefined') return;

@@ -7,7 +7,11 @@ let activeProfile = (() => { try { return localData.readText(ACT_KEY) === 'p2' ?
 let bothMode = false;
 const storeKey = (id = activeProfile) => id === 'p1' ? STORE : STORE + '.' + id;
 const PROF_DEFAULT = () => ({u:0, list:[{id:'p1', name:'Usuario 1', icon:'svg:user', color:'#5e81ac', photo:''}, {id:'p2', name:'Usuario 2', icon:'svg:user-round', color:'#b48ead', photo:''}]});
-let profiles = (() => { try { const o = JSON.parse(localData.readText(PROF_KEY)); if (o && Array.isArray(o.list) && o.list.length === 2) return o; } catch(e){} return PROF_DEFAULT(); })();
+function validateProfilesData(o){
+  if(!o||!Array.isArray(o.list)||o.list.length!==2||new Set(o.list.map(p=>p?.id)).size!==2||o.list.some(p=>!p||!['p1','p2'].includes(p.id)||typeof p.name!=='string'||p.icon!=null&&typeof p.icon!=='string'||p.photo!=null&&typeof p.photo!=='string'||p.color!=null&&!/^#[a-f\d]{6}$/i.test(p.color)))throw new Error('Perfiles inválidos');
+  return o;
+}
+let profiles = (() => { try { return validateProfilesData(JSON.parse(localData.readText(PROF_KEY))); } catch(e){} return PROF_DEFAULT(); })();
 function saveProfiles(touch){ if (touch) profiles.u = Date.now(); try { localData.writeText(PROF_KEY, JSON.stringify(profiles)); } catch(e){} }
 const profOf = id => profiles.list.find(x => x.id === id) || profiles.list[0];
 function seed(){
@@ -52,7 +56,55 @@ function stampChanges(){
 }
 function save(){ if(localTabChanged){toast('⚠️ Hay cambios en otra pestaña. Recarga antes de seguir editando.');return false;} _txIdx = null; stampChanges(); state.updatedAt = Date.now(); saveLocal(); schedulePush(); }
 
-// Limpia registros dañados para que un dato raro nunca impida abrir la app
+// Contrato común para respaldos y datos recibidos. Rechaza antes de cambiar la copia vigente.
+function validateStateData(st){
+  const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+  const fail=()=>{throw new Error('Datos inválidos: revisa registros, fechas y configuración');};
+  const number=v=>(typeof v==='number'||typeof v==='string'&&v.trim()!=='')&&Number.isFinite(Number(v));
+  const id=v=>typeof v==='string'&&/^[\p{L}\p{N}_.:-]+$/u.test(v)&&!['__proto__','constructor','prototype'].includes(v);
+  const month=v=>typeof v==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+  const amount=(v,min=0)=>number(v)&&Number(v)>=min;
+  const color=v=>typeof v==='string'&&/^#(?:[a-f\d]{3}|[a-f\d]{6}|[a-f\d]{8})$/i.test(v);
+  function keys(value){if(!value||typeof value!=='object')return;for(const k of Object.keys(value)){if(['__proto__','constructor','prototype'].includes(k))fail();keys(value[k]);}}
+  if(!object(st)||!Array.isArray(st.categories)||!Array.isArray(st.transactions))fail();
+  keys(st);
+  for(const name of ['categories','transactions','recurring','goals']){
+    if(st[name]===undefined&&['recurring','goals'].includes(name))continue;
+    if(!Array.isArray(st[name]))fail();const seen=new Set();
+    for(const r of st[name]){
+      if(!object(r)||!id(r.id)||seen.has(r.id))fail();seen.add(r.id);
+      for(const k of ['name','icon','color','pay','archived','date','catId','method','desc','goalId','recId','start','deadline','prio'])if(r[k]!=null&&typeof r[k]!=='string')fail();
+      for(const k of ['catId','goalId','recId'])if(r[k]&&!id(r[k]))fail();
+      if(r.color&&!color(r.color))fail();
+      if(r.archived&&!month(r.archived)||r.deadline&&!BudgetFinance.validDate(r.deadline)||r.start&&!month(r.start))fail();
+      if(name==='categories'&&(typeof r.name!=='string'||!['income','expense'].includes(r.type)||r.defaultBudget!=null&&!amount(r.defaultBudget)))fail();
+      if(name==='transactions'&&(!['income','expense'].includes(r.type)||!BudgetFinance.validDate(r.date)||!number(r.amount)||Number(r.amount)<=0))fail();
+      if(name==='recurring'&&(!['income','expense'].includes(r.type)||!number(r.amount)||Number(r.amount)<=0||!Number.isInteger(Number(r.day))||Number(r.day)<1||Number(r.day)>31||r.skipped!=null&&(!Array.isArray(r.skipped)||r.skipped.some(m=>!month(m)))))fail();
+      if(name==='recurring')for(const k of ['auto','active'])if(r[k]!=null&&typeof r[k]!=='boolean')fail();
+      if(name==='goals'){
+        if(['target','initial'].some(k=>r[k]!=null&&!amount(r[k]))||r.shared!=null&&typeof r.shared!=='boolean')fail();
+        if(r.out!=null){if(!Array.isArray(r.out))fail();const withdrawals=new Set();for(const w of r.out){if(!object(w)||!number(w.a)||Number(w.a)<=0||!BudgetFinance.validDate(w.d)||w.n!=null&&typeof w.n!=='string'||w.id!=null&&(!id(w.id)||withdrawals.has(w.id)))fail();if(w.id)withdrawals.add(w.id);}}
+      }
+      if(name==='categories'&&r.pay?.startsWith('#')&&r.pay.slice(1).split(',').some(d=>!BudgetFinance.validDate(d)))fail();
+    }
+  }
+  if(st.budgets!==undefined){if(!object(st.budgets))fail();for(const [m,values] of Object.entries(st.budgets)){if(!month(m)||!object(values))fail();for(const [k,v] of Object.entries(values))if(!id(k)||!amount(v))fail();}}
+  if(st.settings!==undefined){
+    const s=st.settings;if(!object(s))fail();
+    for(const k of ['appName','appIcon','uiIcons','theme','font','saveMode','lastClose'])if(s[k]!=null&&typeof s[k]!=='string')fail();
+    for(const k of ['appColor','monoColor'])if(s[k]&&!color(s[k]))fail();
+    for(const k of ['onboarded','vecDone','pastelDone'])if(s[k]!=null&&typeof s[k]!=='boolean')fail();
+    if(s.methods!=null&&(!Array.isArray(s.methods)||s.methods.some(m=>typeof m!=='string')))fail();
+    if(s.recSugHidden!=null&&(!Array.isArray(s.recSugHidden)||s.recSugHidden.some(v=>!id(v))))fail();
+    if(s.savePct!=null&&(!amount(s.savePct)||Number(s.savePct)>100))fail();
+    if(s.savePctM!=null){if(!object(s.savePctM))fail();for(const [m,v] of Object.entries(s.savePctM))if(!/^(?:cycle(?:[1-9]|[12]\d|3[01]):)?\d{4}-(0[1-9]|1[0-2])$/.test(m)||!amount(v)||Number(v)>100)fail();}
+    if(s.budgetCycle!=null){const c=s.budgetCycle;if(!object(c)||c.enabled!=null&&typeof c.enabled!=='boolean'||c.day!=null&&(!Number.isInteger(Number(c.day))||Number(c.day)<1||Number(c.day)>31))fail();if(c.defaults!=null){if(!object(c.defaults))fail();for(const [day,values] of Object.entries(c.defaults)){if(!/^(?:[1-9]|[12]\d|3[01])$/.test(day)||!object(values))fail();for(const [k,v] of Object.entries(values))if(!id(k)||!amount(v))fail();}}}
+  }
+  if(st.methods!=null&&(!Array.isArray(st.methods)||st.methods.some(m=>typeof m!=='string')))fail();
+  if(st.meta!=null){if(!object(st.meta))fail();for(const k of ['del','bu'])if(st.meta[k]!=null&&!object(st.meta[k]))fail();}
+  return st;
+}
+// Normaliza formatos locales antiguos; nunca convierte una fecha civil imposible en otra.
 function cleanState(st){
   if (!st || typeof st !== 'object') return st;
   const arr = v => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
@@ -63,7 +115,7 @@ function cleanState(st){
     t.date = d.slice(0, 10); t.amount = Number(t.amount) || 0; return t;
   }).filter(t => t.date);
   if (!st.budgets || typeof st.budgets !== 'object') st.budgets = {};
-  return st;
+  validateStateData(st);return st;
 }
 let state = cleanState(load()) || seed();
 if (!state.categories || !state.categories.length) state.categories = seed().categories;

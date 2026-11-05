@@ -3,7 +3,7 @@
 function fillCatFilter(){
   const sel = $('#fltCat'), v = sel.value;
   sel.innerHTML = '<option value="">Todas las categorías</option>' +
-    ['income','expense'].map(t => `<optgroup label="${t==='income'?'Ingresos':'Gastos'}">` + catsOf(t).filter(c => !c.archived || state.transactions.some(x => x.catId === c.id)).map(c => `<option value="${c.id}" data-icon="${esc(c.icon)}" data-color="${esc(c.color)}">${esc(iconText(c))}</option>`).join('') + '</optgroup>').join('');
+    ['income','expense'].map(t => `<optgroup label="${t==='income'?'Ingresos':'Gastos'}">` + catsOf(t).filter(c => !c.archived || state.transactions.some(x => x.catId === c.id)).map(c => `<option value="${esc(c.id)}" data-icon="${esc(c.icon)}" data-color="${esc(c.color)}">${esc(iconText(c))}</option>`).join('') + '</optgroup>').join('');
   sel.value = v; if (sel.selectedIndex < 0) sel.value = '';
 }
 function fillMethodFilter(){
@@ -20,7 +20,7 @@ function movementHistory(list,dayLbl,filtered){
   const totals=[expense?`<span>− ${fmt(expense)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
   return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h3 id="history-day-${day}">${label}</h3>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div><div class="history-day-totals" aria-label="Totales del día">${totals}</div></header><ul class="history-items">${items.map(t=>{
    const c=getCat(t.catId),isI=t.type==='income';
-   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${t.id}"><button type="button" class="history-edit" data-edit="${t.id}" aria-label="Editar ${esc(c.name)}${t.desc?': '+esc(t.desc):''}"><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-category" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${t.id}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-label="Editar ${esc(c.name)}${t.desc?': '+esc(t.desc):''}"><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-category" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
   }).join('')}</ul></section>`;
  }).join('');
 }
@@ -133,7 +133,7 @@ function openCatDetail(id){
 </div>
     <details class="cd-exact"><summary>Ver importes exactos</summary><dl>${ms.map((mm,i)=>`<div><dt>${cycleView()?cycleLabel(mm):monthLong(mm)}</dt><dd>${fmt(vals[i])}</dd></div>`).join('')}</dl></details>
     <div class="cd-list"><div class="cd-lh">${plural(txs.length, 'movimiento')} ${cycleView()?'en este ciclo':'en '+monthLong(m).split(' ')[0].toLowerCase()}</div>
-      ${txs.length ? txs.slice(0, 8).map(t => `<button type="button" class="cd-tx" data-cd-edit="${t.id}"><span class="cd-d">${fmtDate(t.date).slice(0, 5)}</span><span class="cd-n">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}<small>${esc(t.method || '')}</small></span><b class="${isI ? 'pos' : 'xp'}">${fmt(t.amount)}</b></button>`).join('') : '<div class="small muted" style="padding:8px 0">Sin movimientos este mes.</div>'}
+      ${txs.length ? txs.slice(0, 8).map(t => `<button type="button" class="cd-tx" data-cd-edit="${esc(t.id)}"><span class="cd-d">${fmtDate(t.date).slice(0, 5)}</span><span class="cd-n">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}<small>${esc(t.method || '')}</small></span><b class="${isI ? 'pos' : 'xp'}">${fmt(t.amount)}</b></button>`).join('') : '<div class="small muted" style="padding:8px 0">Sin movimientos este mes.</div>'}
       ${txs.length > 8 ? `<div class="small muted" style="padding:6px 0 0">y ${txs.length - 8} más…</div>` : ''}</div>
     <div class="cd-foot"><button type="button" class="btn" data-cd-all>${ic('list')} Ver en Movimientos</button><button type="button" class="btn primary" data-cd-add>${ic('plus')} Registrar</button></div>`;
   $('#catDialog').dataset.cat = id;
@@ -264,7 +264,7 @@ function renderCalDay(){
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
       <div class="amt"><b class="${isI ? 'pos' : 'xp'}">${isI ? '+' : '−'} ${fmt(t.amount)}</b></div>
-      <div class="row-actions"><button class="iconbtn" data-edit="${t.id}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${t.id}" title="Eliminar">${ic('trash-2')}</button></div></div>`; }).join('')}
+      <div class="row-actions"><button class="iconbtn" data-edit="${esc(t.id)}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${esc(t.id)}" title="Eliminar">${ic('trash-2')}</button></div></div>`; }).join('')}
     ${recs.map(r => { const c = getCat(r.catId); return `<div class="prow cal-recurring">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name">${recLabel(r)}</div><div class="small muted">Recurrente ${r.auto ? 'automático' : 'por confirmar'}</div></div>
@@ -402,7 +402,7 @@ function txCategoryMarkup(cats){
  $('#txCategorySearchBox').hidden=!txCategoryExpanded;
  $('#txAllCategories').textContent=txCategoryExpanded?'Ver menos':`Ver todas (${cats.length})`;
  $('#txAllCategories').setAttribute('aria-expanded',String(txCategoryExpanded));
- return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${c.id}" aria-pressed="${c.id===selCat}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
+ return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
 }
 function resetTxCategoryUI(){
  txCategoryExpanded=false;$('#txCategorySearch').value='';$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');
@@ -445,7 +445,7 @@ function renderTxChips(){
   const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
   gf.hidden = !(txMode === 'tx' && (txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
   if (!gf.hidden) $('#fGoalChips').innerHTML = `<button type="button" class="chip${!selGoal ? ' active' : ''}" data-goal="">Ninguna</button>` +
-    goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" data-goal="${g.id}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
+    goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" data-goal="${esc(g.id)}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
   const cats = catsOf(txType).filter(c => !c.archived || c.id === selCat);
   if (!cats.some(c => c.id === selCat)) selCat = cats[0] ? cats[0].id : null;
   $('#fCatChips').innerHTML = txCategoryMarkup(cats);
@@ -483,7 +483,7 @@ function renderQuick(){
   const list = txMode === 'tx' && quickOK ? quickPicks(txType) : [];
   el.hidden = !list.length;
   el.innerHTML = list.length ? `<div class="quick-head"><span class="q-l">Frecuentes</span>${list.length>3?`<button type="button" class="quick-toggle" data-quick-toggle aria-controls="txQuickItems" aria-expanded="${quickExpanded}">${quickExpanded?'Ver menos':'Ver más'}</button>`:''}</div><div class="quick-items" id="txQuickItems">` + (quickExpanded?list:list.slice(0,3)).map(t => { const c = getCat(t.catId);
-    return `<button type="button" class="q-chip" data-quick="${t.id}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="q-copy">${esc(t.desc || c.name)}<small>${esc(t.method||'Sin especificar')}</small></span><b>${fmt(t.amount)}</b></button>`; }).join('')+'</div>' : '';
+    return `<button type="button" class="q-chip" data-quick="${esc(t.id)}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="q-copy">${esc(t.desc || c.name)}<small>${esc(t.method||'Sin especificar')}</small></span><b>${fmt(t.amount)}</b></button>`; }).join('')+'</div>' : '';
 }
 document.addEventListener('click',e=>{if(!e.target.closest('[data-quick-toggle]'))return;motionResize($('#txQuick'),()=>{quickExpanded=!quickExpanded;renderQuick();});$('#txQuick [data-quick-toggle]')?.focus({preventScroll:true});});
 

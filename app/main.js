@@ -74,12 +74,16 @@ else if (window.__connFromLink === 'bad') setTimeout(() => toast('⚠️ El link
 if (!_snapRec) _snapRec = snapState();
 setBadge(sync.pending?'pending':sync.lastSync?'ok':'local',sync.pending?'Pendiente de sincronizar':sync.lastSync?'Sincronizado':'Guardado en este dispositivo');updateSyncInfo();
 $('#appVer').textContent = `Versión ${window.__APP_VERSION} · ${fmtDateLong(window.__APP_DATE)}${FROM_SCRIPT ? ' · abierta desde Apps Script' : location.protocol === 'https:' ? ' · ' + location.host : ''}`;
-{ const b = document.getElementById('boot'); if (b && !window.__bootErrs.length){ b.classList.add('gone'); setTimeout(() => b.remove(), 400); } }
+{ const b = document.getElementById('boot'); if (b && !window.__bootErrs.length){ delete document.documentElement.dataset.booting;b.classList.add('gone');b.setAttribute('aria-hidden','true');if(reduceMotion())b.remove();else{b.addEventListener('transitionend',()=>b.remove(),{once:true});setTimeout(()=>b.remove(),200);} } }
 // Primero sincroniza (para no duplicar recurrentes ya creados en otro equipo) y luego registra los automáticos
+const startupProfile=activeProfile,startupConnection=sync.url+'|'+sync.token;
+requestAnimationFrame(()=>setTimeout(()=>{
+if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection)return;
 (syncOn() ? startupSync() : Promise.resolve()).then(() => { if (runAutoRecurring()) renderAll(); pushOtherPending(); setTimeout(migratePastel, 600);
   setTimeout(() => { if (document.querySelector('dialog[open]')) return;
     if (!state.settings.onboarded && state.transactions.length){ state.settings.onboarded = true; if (!state.settings.lastClose) state.settings.lastClose = thisMonth(); save(); }
     maybeMonthClose(); }, 900); });
+},0));
 if (FROM_SCRIPT && !sync.token) setTimeout(() => { showTab('settings'); setTimeout(() => { $('#syncToken').scrollIntoView({block:'center'}); $('#syncToken').focus({preventScroll:true}); }, 350); toast('Escribe tu clave (TOKEN) y toca Conectar para traer tus datos', {icon:'cloud'}); }, 400);
 // Abierta en un sitio nuevo (p. ej. GitHub Pages) sin datos ni conexión: lleva directo a conectar la hoja
 else if (!FROM_SCRIPT && !sync.url && !state.transactions.length && location.protocol !== 'file:') setTimeout(() => { showTab('settings'); setTimeout(() => { $('#syncUrl').scrollIntoView({block:'center'}); $('#syncUrl').focus({preventScroll:true}); }, 350); toast('Pega la URL /exec de tu Apps Script y tu clave para traer tus datos', {icon:'cloud'}); }, 400);

@@ -1,7 +1,6 @@
 // Presupuesto: recurring.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
 /* ---------- Recurrentes ---------- */
-const recDone = (r, m) => state.transactions.some(t => t.date.slice(0,7) === m && (t.recId === r.id ||
-  (!t.recId && t.type === r.type && t.catId === r.catId && Math.abs(Number(t.amount) - Number(r.amount)) <= Math.max(.01, Number(r.amount) * .02))));
+const recDone = (r, m) => state.transactions.some(t => t.date.slice(0,7) === m && t.recId === r.id);
 const recSkipped = (r, m) => (r.skipped || []).includes(m);
 const recDue = (r, m) => m < thisMonth() || (m === thisMonth() && new Date().getDate() >= Math.min(r.day, daysIn(m)));
 const recPending = m => state.recurring.filter(r => r.active !== false && (!r.start || r.start <= m) && !recDone(r, m) && !recSkipped(r, m));
@@ -33,8 +32,8 @@ function renderSuggestions(){
     <p class="small muted" style="margin:10px 0 4px">Estas categorías parecen pagos fijos mensuales. Conviértelas en recurrentes para que se registren solas.</p>`
     + list.map(c => `<div class="sug-row"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name" style="font-weight:600">${esc(c.name)}</div><div class="small muted">${fmt(c.defaultBudget)} al mes</div></div>
-      <button class="btn sm primary" data-sug-make="${c.id}" title="Crear recurrente">${ic('repeat')}<span class="hide-m"> Crear recurrente</span></button>
-      <button class="iconbtn" data-sug-hide="${c.id}" title="No sugerir">${ic('x')}</button></div>`).join('') + '</details>';
+      <button class="btn sm primary" data-sug-make="${esc(c.id)}" title="Crear recurrente">${ic('repeat')}<span class="hide-m"> Crear recurrente</span></button>
+      <button class="iconbtn" data-sug-hide="${esc(c.id)}" title="No sugerir">${ic('x')}</button></div>`).join('') + '</details>';
 }
 function renderRec(){
   renderUpcoming(); renderSuggestions();
@@ -48,16 +47,16 @@ function renderRec(){
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name">${recLabel(r)}</div><div class="small muted">${esc(c.name)} · ${status}</div></div>
       <div class="amt"><b class="${isI ? 'pos' : 'xp'}">${fmt(r.amount)}</b></div>
-      <div class="row-actions"><button class="btn sm primary" data-rec-ok="${r.id}">${ic('check')} Registrar</button>
-        <button class="iconbtn" data-rec-custom="${r.id}" title="Registrar con otro monto o fecha">${ic('pencil')}</button>
-        <button class="iconbtn" data-rec-skip="${r.id}" title="Omitir este mes">${ic('skip-forward')}</button></div>
+      <div class="row-actions"><button class="btn sm primary" data-rec-ok="${esc(r.id)}">${ic('check')} Registrar</button>
+        <button class="iconbtn" data-rec-custom="${esc(r.id)}" title="Registrar con otro monto o fecha">${ic('pencil')}</button>
+        <button class="iconbtn" data-rec-skip="${esc(r.id)}" title="Omitir este mes">${ic('skip-forward')}</button></div>
     </div>`;
   };
   const skipRow = r => { const c = getCat(r.catId); return `<div class="prow rec-row paused">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name">${recLabel(r)}</div><div class="small muted">Omitido este mes</div></div>
       <div class="amt">${fmt(r.amount)}</div>
-      <div class="row-actions"><button class="btn sm" data-rec-unskip="${r.id}">${ic('undo-2')} Restaurar</button></div></div>`; };
+      <div class="row-actions"><button class="btn sm" data-rec-unskip="${esc(r.id)}">${ic('undo-2')} Restaurar</button></div></div>`; };
   $('#recPending').innerHTML = (pend.length ? pend.sort((a,b) => a.day - b.day).map(pendRow).join('') : '<p class="rec-all-clear small muted">Todo al día en este mes.</p>')
     + skipped.map(skipRow).join('');
 
@@ -70,9 +69,9 @@ function renderRec(){
         <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
         <div><div class="name">${recLabel(r)}</div><div class="small muted">${r.day === 31 ? "Fin de mes" : "Día " + r.day} · ${r.auto ? 'Automático' : 'Manual'}${r.method ? ' · ' + esc(r.method) : ''}${paused ? ' · En pausa' : ''}</div></div>
         <div class="amt"><b>${fmt(r.amount)}</b></div>
-        <div class="row-actions"><details class="rec-actions"><summary aria-label="Opciones de ${recLabel(r)}">⋯</summary><div class="rec-action-list"><button class="iconbtn" data-rec-edit="${r.id}" title="Editar">${ic('pencil')} Editar</button>
-          <button class="iconbtn" data-rec-toggle="${r.id}" title="${paused ? 'Reanudar' : 'Pausar'}">${ic(paused ? 'play' : 'pause')} ${paused?'Reanudar':'Pausar'}</button>
-          <button class="iconbtn" data-rec-del="${r.id}" title="Eliminar">${ic('trash-2')} Eliminar</button></div></details></div>
+        <div class="row-actions"><details class="rec-actions"><summary aria-label="Opciones de ${recLabel(r)}">⋯</summary><div class="rec-action-list"><button class="iconbtn" data-rec-edit="${esc(r.id)}" title="Editar">${ic('pencil')} Editar</button>
+          <button class="iconbtn" data-rec-toggle="${esc(r.id)}" title="${paused ? 'Reanudar' : 'Pausar'}">${ic(paused ? 'play' : 'pause')} ${paused?'Reanudar':'Pausar'}</button>
+          <button class="iconbtn" data-rec-del="${esc(r.id)}" title="Eliminar">${ic('trash-2')} Eliminar</button></div></details></div>
       </div>`; }).join('') + `<div class="list-total"><span>Total mensual</span><span class="${type === 'income' ? 'pos' : 'xp'}">${fmt(total)}</span></div>`
       : emptyBox('repeat', `Aún no tienes ${type === 'income' ? 'ingresos' : 'gastos'} recurrentes.`, 'rec', 'Nuevo', true);
   });

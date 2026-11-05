@@ -251,18 +251,18 @@ function applyBrand(){
   const n = state.settings.appName || 'Presupuesto', i = state.settings.appIcon || 'svg:coins';
   if (document.activeElement !== nameEl) nameEl.textContent = n;
   $('#appIcon').innerHTML = isV(i) ? svgIcon(i.slice(4), 'currentColor') : esc(i); $('#appIcon').style.background = ''; document.title = n;
-  applyUiIcons(); applyThemeVars(); applyAccent(); applyFont(); setFavicon(i);
+  applyUiIcons(); applyThemeVars(); applyAccent(); applyFont(); applyBrowserChrome();cacheBootAppearance();
 }
-// Símbolo completo sobre transparencia: legible también en pestañas de 16 px.
-function setFavicon(icon){
-  const col = (cssVar('--primary-fill') || cssVar('--primary') || '#4f46e5').trim();
-  const name = isV(icon) ? icon.slice(4) : null;
-  const inner = name && VICONS[name] ? `<g class="mark" fill="none" stroke="${esc(col)}" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">${VICONS[name]}</g>`
-    : `<text x="12" y="12" dominant-baseline="central" font-size="21" text-anchor="middle">${esc(icon || '💰')}</text>`;
-  // Ajusta el contraste al fondo de la pestaña, independientemente del tema de la app.
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><style>.mark{stroke:color-mix(in srgb,${esc(col)} 82%,#1b2232)}@media(prefers-color-scheme:dark){.mark{stroke:color-mix(in srgb,${esc(col)} 65%,#fff)}}</style>${inner}</svg>`;
-  const l = $('#favicon'), href = 'data:image/svg+xml,' + encodeURIComponent(svg);
-  if (l){ l.type = 'image/svg+xml'; l.setAttribute('sizes','any'); if (l.getAttribute('href') !== href) l.href = href; }
+// Caché derivada y local por perfil; no contiene finanzas ni cambia el estado sincronizado.
+function cacheBootAppearance(){
+  try{
+    const root=document.documentElement,css=getComputedStyle(root),hex=v=>/^#[a-f\d]{6}$/i.test(v),data={mode:root.dataset.mode||'',systemDark:matchMedia('(prefers-color-scheme: dark)').matches};
+    for(const key of ['bg','text','muted']){const value=css.getPropertyValue('--'+key).trim();if(!hex(value))return;data[key]=value;}
+    const key='budgetPlanner.appearance.'+activeProfile,value=JSON.stringify(data);if(localData.readText(key)!==value)localData.writeText(key,value);
+  }catch(e){/* La caché visual es opcional; su fallo no altera el guardado financiero. */}
+}
+// El favicon identifica la app y permanece fijo; el símbolo del perfil solo personaliza la interfaz.
+function applyBrowserChrome(){
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = (cssVar('--bg') || '#f4f5f9').trim();
 }
 // Tono de acento (pestaña activa, desplegables) tomado del color del logo
@@ -381,7 +381,7 @@ function dpRender(){
     for (let i = 0; i < 42; i++){
       const d = new Date(S.y, S.m - 1, 1 - off + i), iso = ym(d) + '-' + pad2(d.getDate());
       if (i >= 35 && d.getMonth() !== S.m - 1 && i % 7 === 0) break;
-      cells.push(`<button class="dp-c${d.getMonth() !== S.m - 1 ? ' out' : ''}${iso === cur ? ' sel' : ''}${iso === now ? ' now' : ''}" data-dp="d" data-v="${iso}">${d.getDate()}</button>`);
+      cells.push(`<button class="dp-c${d.getMonth() !== S.m - 1 ? ' out' : ''}${iso === cur ? ' sel' : ''}${iso === now ? ' now' : ''}" data-dp="d" data-v="${iso}"${S.max && iso > S.max ? ' disabled' : ''}>${d.getDate()}</button>`);
     }
     head = `<button class="dp-nav" data-dp="pm" aria-label="Mes anterior">${ic('chevron-left')}</button><button class="dp-t" data-dp="tomonths" title="Elegir mes">${monthLong(S.y + '-' + pad2(S.m))}</button><button class="dp-nav" data-dp="nm" aria-label="Mes siguiente">${ic('chevron-right')}</button>`;
     body = `<div class="dp-g days">${DP_W.map(w => `<div class="dp-wd">${w}</div>`).join('')}${cells.join('')}</div>`;
@@ -390,7 +390,7 @@ function dpRender(){
     : `${S.clearable ? '<button class="muted-b" data-dp="clear">Quitar fecha</button>' : '<span></span>'}<button data-dp="today">Hoy</button>`;
   dpEl.innerHTML = `<div class="dp-h">${head}</div><div class="dp-body">${body}</div><div class="dp-f">${foot}</div>`;
 }
-function dpPick(v){ const S = dpS; dpClose(); S.onPick(v); }
+function dpPick(v){ const S = dpS; if(S.max && v > S.max)return; dpClose(); S.onPick(v); }
 dpEl.addEventListener('click', e => {
   const b = e.target.closest('[data-dp]'); if (!b || !dpS) return;
   const a = b.dataset.dp, S = dpS;
@@ -417,7 +417,7 @@ function dpField(input, opts = {}){
     btn.innerHTML = `${ic('calendar')}<span class="dp-l${v ? '' : ' ph'}">${v ? (() => { const [y, m, d] = v.split('-').map(Number); const s = new Date(y, m - 1, d).toLocaleDateString('es-PE', {weekday:'short', day:'numeric', month:'short', year:'numeric'}).replace(/\./g, ''); return s[0].toUpperCase() + s.slice(1); })() : (opts.placeholder || 'Elegir fecha')}</span>`; };
   const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
   Object.defineProperty(input, 'value', {get(){ return desc.get.call(this); }, set(v){ desc.set.call(this, v); label(); }, configurable:true});
-  btn.addEventListener('click', () => dpOpen(btn, {mode:'date', value:input.value, clearable:opts.clearable,
+  btn.addEventListener('click', () => dpOpen(btn, {mode:'date', value:input.value, max:input.max, clearable:opts.clearable,
     onPick: v => { input.value = v; input.dispatchEvent(new Event('change', {bubbles:true})); btn.focus(); }}));
   label();
 }

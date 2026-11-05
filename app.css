@@ -29,10 +29,8 @@
 /* Reserva siempre el espacio de la barra de desplazamiento: al pasar de una sección corta a una larga la página no se corre de lado */
 html{scrollbar-gutter:stable}
 @media (pointer:coarse){html{scrollbar-gutter:auto;scrollbar-width:none}html::-webkit-scrollbar{display:none}}
-#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:14px;background:var(--bg);color:var(--muted);font-family:var(--font-body);font-size:14px;text-align:center;padding:24px;transition:opacity .3s ease}
+#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;background:var(--boot-bg,var(--bg));color:var(--boot-text,var(--text));font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;text-align:center;padding:24px;transition:opacity 160ms ease}
 #boot.gone{opacity:0;pointer-events:none}
-#boot .bt-sp{width:34px;height:34px;border-radius:50%;border:3px solid color-mix(in srgb,var(--muted) 25%,transparent);border-top-color:var(--primary);animation:btSpin .8s linear infinite}
-@keyframes btSpin{to{transform:rotate(360deg)}}
 #boot .bt-err{max-width:340px;color:var(--text);line-height:1.5}#boot .bt-err code{display:block;margin-top:8px;font-size:12px;color:var(--expense);word-break:break-word}
 #boot button{margin-top:6px;padding:10px 18px;border-radius:12px;border:0;background:var(--primary);color:#fff;font:inherit;font-weight:700}
 #errBar{position:fixed;left:12px;right:12px;top:12px;z-index:1001;padding:10px 14px;border-radius:12px;background:var(--expense);color:#fff;font-size:13px;line-height:1.4;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
@@ -1820,12 +1818,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* 1.10.20: estado de guardado y revisión explícita de conflictos. */
 button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:var(--muted)}
 #syncReview{margin:10px 0;white-space:normal}
-#syncConflictDialog{width:min(650px,calc(100vw - 24px));max-height:85dvh;padding:22px;border:1px solid var(--border);border-radius:18px;background:var(--surface);color:var(--text);overflow:auto}
+#syncConflictDialog{width:min(650px,calc(100vw - 24px));max-height:85dvh;padding:22px;border:1px solid var(--border);border-radius:18px;background:var(--surface);color:var(--text);overflow:hidden}
+#syncConflictDialog>form{max-height:calc(85dvh - 44px)}
+#syncConflictDialog .dlg-body{display:block;padding-inline:2px}
 #syncConflictDialog p{font-size:13px;line-height:1.6;color:var(--muted)}
 .sync-conflict-list{display:grid;gap:14px}.sync-conflict-list fieldset{min-width:0;border:1px solid var(--border);border-radius:12px;padding:12px}.sync-conflict-list legend{font-size:13px;font-weight:600;overflow-wrap:anywhere}
 .sync-conflict-list label{display:flex;align-items:flex-start;gap:10px;padding:12px 4px;min-height:44px;cursor:pointer}.sync-conflict-list label>span{display:grid;gap:4px;min-width:0}.sync-conflict-list small{color:var(--muted)}.sync-conflict-list b{font-size:14px;font-weight:600;overflow-wrap:anywhere}.sync-conflict-list input{flex-shrink:0;accent-color:var(--primary);margin-top:4px}
-#syncConflictDialog .dlg-actions{position:sticky;bottom:-22px;background:var(--surface);display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:16px 0 6px;border-top:1px solid var(--border);margin-top:16px}
-@media(max-width:600px){#syncConflictDialog{padding:16px;max-height:88dvh}#syncConflictDialog .dlg-actions{bottom:-16px}}
+#syncConflictDialog .dlg-actions{background:var(--surface);display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:16px 0 6px;border-top:1px solid var(--border);margin-top:16px}
+@media(max-width:600px){#syncConflictDialog{padding:16px;max-height:88dvh}#syncConflictDialog>form{max-height:calc(88dvh - 32px)}}
 
 .sync-tab-dialog{width:min(480px,calc(100vw - 24px));padding:22px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px}.sync-tab-dialog p{font-size:13px;line-height:1.6;color:var(--muted)}.sync-tab-dialog .dlg-actions{display:flex;flex-wrap:wrap;gap:8px}
 

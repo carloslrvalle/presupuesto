@@ -242,15 +242,15 @@ for(const id of ['colorHue','colorSaturation','colorLightness'])$('#'+id).addEve
 $('#applyColor').onclick=()=>{if($('#applyColor').disabled)return;const cb=colorCb;colorDialog.close();if(cb)cb(colorDraft);};
 $('#colorHex').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#applyColor').click();}});
 
-/* ---------- Nombre e ícono de la app ---------- */
+/* ---------- Nombre de la app ---------- */
 const nameEl = $('#appName');
 function applyBrand(){
   syncMono();
   const tm = THEMES.find(x => x.id === state.settings.theme), mode = tm && tm.mode;
   if (mode) document.documentElement.dataset.mode = mode; else delete document.documentElement.dataset.mode;
-  const n = state.settings.appName || 'Presupuesto', i = state.settings.appIcon || 'svg:coins';
+  const n = state.settings.appName || 'Presupuesto';
   if (document.activeElement !== nameEl) nameEl.textContent = n;
-  $('#appIcon').innerHTML = isV(i) ? svgIcon(i.slice(4), 'currentColor') : esc(i); $('#appIcon').style.background = ''; document.title = n;
+  document.title = n;
   applyUiIcons(); applyThemeVars(); applyAccent(); applyFont(); applyBrowserChrome();cacheBootAppearance();
 }
 // Caché derivada y local por perfil; no contiene finanzas ni cambia el estado sincronizado.
@@ -315,9 +315,6 @@ function applyAccent(){
   r.setProperty('--primary-fill', fill); r.setProperty('--on-primary', contrast('#111113',fill)>contrast('#ffffff',fill)?'#111113':'#ffffff');
   r.setProperty('--accent', fill); r.setProperty('--accent-bg', bg); r.setProperty('--accent-ink', ink);
 }
-$('#appIcon').onclick = () => openIcon(ic => { state.settings.appIcon = ic; save(); applyBrand(); toast('Ícono actualizado'); },
-  {color:state.settings.appColor, soft:false, themeColor: curTheme() ? themeAccent(curTheme()) : null, onColor: col => { state.settings.appColor = col; save(); applyBrand(); }},
-  state.settings.appIcon || 'svg:coins');
 nameEl.addEventListener('keydown', e => {
   if (e.key === 'Enter'){ e.preventDefault(); nameEl.blur(); }
   if (e.key === 'Escape'){ nameEl.textContent = state.settings.appName || 'Presupuesto'; nameEl.blur(); }

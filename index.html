@@ -29,7 +29,7 @@ html[data-booting] body>:not(#boot):not(script):not(link){visibility:hidden}
 <script>
 // Solo presentación. La copia de finanzas se lee aquí únicamente si aún no existe caché visual.
 (function(){
- const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];
+ const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];window.__bootStarted=performance.now();window.__BOOT_MIN_MS=window.__BUDGET_PREVIEW?0:1000;
  try{
   const storage=window.localStorage,profile=storage.getItem('budgetPlanner.activeProfile')==='p2'?'p2':'p1',systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
   const cached=JSON.parse(storage.getItem('budgetPlanner.appearance.'+profile)||'null'),hex=v=>typeof v==='string'&&/^#[a-f\d]{6}$/i.test(v);
@@ -67,7 +67,6 @@ html[data-booting] body>:not(#boot):not(script):not(link){visibility:hidden}
 <header class="topbar">
   <div class="wrap">
     <div class="brand">
-      <button class="logo" id="appIcon" title="Cambiar ícono"></button>
       <span id="appName" contenteditable="true" spellcheck="false" title="Clic para cambiar el nombre">Presupuesto</span>
     </div>
     <div class="head-right">

@@ -74,7 +74,11 @@ else if (window.__connFromLink === 'bad') setTimeout(() => toast('⚠️ El link
 if (!_snapRec) _snapRec = snapState();
 setBadge(sync.pending?'pending':sync.lastSync?'ok':'local',sync.pending?'Pendiente de sincronizar':sync.lastSync?'Sincronizado':'Guardado en este dispositivo');updateSyncInfo();
 $('#appVer').textContent = `Versión ${window.__APP_VERSION} · ${fmtDateLong(window.__APP_DATE)}${FROM_SCRIPT ? ' · abierta desde Apps Script' : location.protocol === 'https:' ? ' · ' + location.host : ''}`;
-{ const b = document.getElementById('boot'); if (b && !window.__bootErrs.length){ delete document.documentElement.dataset.booting;b.classList.add('gone');b.setAttribute('aria-hidden','true');if(reduceMotion())b.remove();else{b.addEventListener('transitionend',()=>b.remove(),{once:true});setTimeout(()=>b.remove(),200);} } }
+{ const b = document.getElementById('boot'); if (b && !window.__bootErrs.length){
+  setTimeout(()=>delete document.documentElement.dataset.booting,0);
+  const release=()=>{if(window.__bootErrs.length||!b.isConnected)return;b.classList.add('gone');b.setAttribute('aria-hidden','true');if(reduceMotion())b.remove();else{b.addEventListener('transitionend',()=>b.remove(),{once:true});setTimeout(()=>b.remove(),200);}};
+  setTimeout(release,Math.max(0,(window.__BOOT_MIN_MS||0)-(performance.now()-(window.__bootStarted||0))));
+} }
 // Primero sincroniza (para no duplicar recurrentes ya creados en otro equipo) y luego registra los automáticos
 const startupProfile=activeProfile,startupConnection=sync.url+'|'+sync.token;
 requestAnimationFrame(()=>setTimeout(()=>{

@@ -207,7 +207,7 @@ h3{margin:0 0 12px;font-weight:700}
 .pos{color:var(--income)}.neg{color:var(--expense)}
 
 .chart-wrap{position:relative;height:270px}
-#tab-dashboard>.grid2:not(.top){align-items:start}
+#tab-dashboard>.grid2:not(.top){align-items:stretch}
 #donutWrap:has(.donut-c){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));height:auto;min-height:270px;gap:14px;align-items:center}
 .donut-c{position:relative;height:270px;min-height:0}
 .donut-l{display:grid;gap:4px;overflow:visible}
@@ -2269,10 +2269,23 @@ dialog::before{flex-shrink:0}
 @media(max-width:900px){
  #tab-budget .bud-table tbody td:nth-child(2),#tab-budget .bud-table tbody td:nth-child(3){grid-template-rows:18px 44px auto;align-self:start}
  #tab-budget .bud-table tbody td:nth-child(2)::before,#tab-budget .bud-table tbody td:nth-child(3)::before{font-size:12px;line-height:18px;font-weight:500}
- #tab-budget .bud-table .budget-input,#tab-budget .bud-table .budget-real{width:min(100%,calc(var(--budget-amount-ch) * 1ch + 2ch + 20px));max-width:100%;justify-self:end}
+ #tab-budget .bud-table .budget-input,#tab-budget .bud-table .budget-real{width:100%;max-width:100%;justify-self:stretch}
 }
-@media(max-width:400px){
- #tab-budget .bud-table tbody tr{grid-template-columns:minmax(0,2fr) minmax(0,3fr);column-gap:8px}
+@media(max-width:900px){
+ #tab-budget .bud-table tbody tr{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:0}
+ #tab-budget .bud-table tbody td:nth-child(2),#tab-budget .bud-table tbody td:nth-child(3){padding:8px 6px!important;background:var(--surface-2);border:1px solid var(--border);gap:4px}
+ #tab-budget .bud-table tbody td:nth-child(2){border-right:0;border-radius:12px 0 0 12px}
+ #tab-budget .bud-table tbody td:nth-child(3){border-radius:0 12px 12px 0;align-self:stretch}
+ #tab-budget .bud-table .budget-input{background:var(--surface);border-color:var(--border);border-radius:8px}
+ #tab-budget .bud-table .budget-real{background:transparent;border-color:transparent;border-radius:8px;padding-inline:0}
+}
+@media(max-width:380px){
+ #tab-budget .bud-table .budget-input,#tab-budget .bud-table .budget-real{font-size:14px}
+}
+@media(max-width:600px){
+ #tab-dashboard .dashboard-kpis,#anKpis{--mobile-metric-height:174px;align-items:stretch}
+ #tab-dashboard .dashboard-kpis>.metric-disclosure,#anKpis>.analysis-metric{min-height:var(--mobile-metric-height)}
+ #tab-dashboard .dashboard-kpis>.metric-disclosure>summary{min-height:calc(var(--mobile-metric-height) - 2px)}
 }
 @media(max-width:700px){
  #calDay .cal-transaction{grid-template-columns:36px minmax(0,1fr) auto;grid-template-rows:auto auto;gap:3px 10px;padding:14px 0}

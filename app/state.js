@@ -26,9 +26,28 @@ function seed(){
     settings:{methods:['Efectivo','Débito','Tarjeta de crédito','Yape / Plin','Transferencia'], appIcon:'svg:coins', uiIcons:'vector', vecDone:true, pastelDone:true}
   };
 }
-function load(){ try{ const r = localData.readText(storeKey()); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
-var localSaveFailed=false,localTabChanged=false;
-function saveLocal(){if(localTabChanged){localSaveFailed=true;return false;}try{localData.writeText(storeKey(),JSON.stringify(state));localSaveFailed=false;return true;}catch(e){localSaveFailed=true;toast('⚠️ No se pudo guardar en este dispositivo. Mantén la app abierta y libera espacio.');return false;}}
+var localRecovery=null,localSaveFailed=false,localTabChanged=false;
+function readState(){
+  let raw;
+  try{raw=localData.readText(storeKey());}catch(e){localRecovery={profile:activeProfile,raw:null};return seed();}
+  if(raw===null)return seed();
+  try{return cleanState(JSON.parse(raw));}catch(e){localRecovery={profile:activeProfile,raw};return seed();}
+}
+function showLocalRecovery(){
+  if(!localRecovery)return;
+  let dialog=document.getElementById('localRecoveryDialog');
+  if(!dialog){dialog=document.createElement('dialog');dialog.id='localRecoveryDialog';dialog.className='sync-tab-dialog';dialog.innerHTML='<h3>Datos locales por recuperar</h3><p>El perfil guardado no se pudo leer. Esta copia sigue intacta. Descárgala antes de reemplazarla.</p><div class="dlg-actions"><button type="button" class="btn" data-recovery-download>Descargar copia</button><button type="button" class="btn" data-recovery-import disabled>Importar respaldo</button><button type="button" class="btn primary" data-recovery-reset disabled>Empezar de nuevo</button><button type="button" class="btn" data-recovery-retry>Reintentar</button></div><input type="file" accept=".json,application/json" hidden>';document.body.append(dialog);dialog.oncancel=e=>e.preventDefault();}
+  const recovery=localRecovery,downloadButton=dialog.querySelector('[data-recovery-download]'),importButton=dialog.querySelector('[data-recovery-import]'),resetButton=dialog.querySelector('[data-recovery-reset]'),file=dialog.querySelector('input[type=file]');
+  dialog.querySelector('p').textContent=recovery.raw===null?'No se pudo leer el almacenamiento de este dispositivo. Reintenta cuando vuelva a estar disponible.':'El perfil guardado no se pudo leer. Esta copia sigue intacta. Descárgala antes de reemplazarla.';
+  downloadButton.hidden=importButton.hidden=resetButton.hidden=recovery.raw===null;importButton.disabled=resetButton.disabled=true;
+  downloadButton.onclick=()=>{download('presupuesto-copia-por-recuperar-'+recovery.profile+'.txt',recovery.raw,'text/plain');importButton.disabled=resetButton.disabled=false;};
+  importButton.onclick=()=>file.click();
+  file.onchange=async()=>{const selected=file.files[0];file.value='';if(!selected)return;try{const candidate=validateBackup(JSON.parse(await selected.text()));localRecovery=null;try{importBackup(candidate);}catch(e){localRecovery=recovery;throw e;}dialog.close();renderAll();if(syncOn())startupSync();toast('Respaldo importado');}catch(e){toast('⚠️ No se pudo importar: '+e.message);}};
+  resetButton.onclick=()=>{if(!confirm('¿Reemplazar este perfil por uno nuevo? Confirma que conservas la copia descargada.'))return;try{localData.writeText(storeKey(),JSON.stringify(seed()));localRecovery=null;location.reload();}catch(e){toast('⚠️ No se pudo reemplazar el perfil. Mantén la copia actual.');}};
+  dialog.querySelector('[data-recovery-retry]').onclick=()=>location.reload();
+  if(!dialog.open)dialog.showModal();
+}
+function saveLocal(){if(localRecovery||localTabChanged){localSaveFailed=true;return false;}try{localData.writeText(storeKey(),JSON.stringify(state));localSaveFailed=false;return true;}catch(e){localSaveFailed=true;toast('⚠️ No se pudo guardar en este dispositivo. Mantén la app abierta y libera espacio.');return false;}}
 const qMicro = typeof queueMicrotask === 'function' ? f => queueMicrotask(f) : f => Promise.resolve().then(f);
 let _txIdx = null;
 /* Registro de cambios para sincronizar entre dispositivos: cada registro guarda cuándo cambió (u) y los borrados quedan anotados */
@@ -47,14 +66,14 @@ function stampChanges(){
   if (!_snapRec){ _snapRec = snapState(); return; }
   const meta = state.meta = state.meta || {}; meta.del = meta.del || {}; meta.bu = meta.bu || {};
   const now = Date.now(), prev = _snapRec, cur = snapState(), seen = new Set();
-  SYNC_COLLS.forEach(n => (state[n] || []).forEach(r => { const k = n + ':' + r.id; seen.add(k); if (prev.m.get(k) !== cur.m.get(k)) r.u = now; if (meta.del[r.id]) delete meta.del[r.id]; }));
-  prev.m.forEach((v, k) => { if (!seen.has(k)) meta.del[k.slice(k.indexOf(':') + 1)] = now; });
+  SYNC_COLLS.forEach(n => (state[n] || []).forEach(r => { const k = n + ':' + r.id; seen.add(k); if (prev.m.get(k) !== cur.m.get(k)) r.u = now; if (meta.del[k]) delete meta.del[k]; }));
+  prev.m.forEach((v, k) => { if (!seen.has(k)) meta.del[k] = now; });
   new Set([...Object.keys(prev.b), ...Object.keys(cur.b)]).forEach(k => { if (prev.b[k] !== cur.b[k]) meta.bu[k] = now; });
   if (prev.s !== cur.s) meta.su = now;
   if (prev.o !== cur.o) meta.co = now;
   _snapRec = cur;
 }
-function save(){ if(localTabChanged){toast('⚠️ Hay cambios en otra pestaña. Recarga antes de seguir editando.');return false;} _txIdx = null; stampChanges(); state.updatedAt = Date.now(); saveLocal(); schedulePush(); }
+function save(){ if(localRecovery||localTabChanged){toast(localRecovery?'⚠️ Recupera el perfil antes de editar.':'⚠️ Hay cambios en otra pestaña. Recarga antes de seguir editando.');return false;} _txIdx = null; stampChanges(); state.updatedAt = Date.now(); if(!saveLocal()){setBadge('err','No se pudo guardar aquí');updateSyncInfo();return false;} schedulePush(); return true; }
 
 // Contrato común para respaldos y datos recibidos. Rechaza antes de cambiar la copia vigente.
 function validateStateData(st){
@@ -117,7 +136,8 @@ function cleanState(st){
   if (!st.budgets || typeof st.budgets !== 'object') st.budgets = {};
   validateStateData(st);return st;
 }
-let state = cleanState(load()) || seed();
+let state = readState();
+if(localRecovery)window.addEventListener('load',showLocalRecovery,{once:true});
 if (!state.categories || !state.categories.length) state.categories = seed().categories;
 state.settings = state.settings || {methods:[]}; state.recurring = state.recurring || []; state.goals = state.goals || [];
 // Paso único a íconos vectoriales: convierte los emoji conocidos (categorías, metas y logo)
@@ -132,7 +152,7 @@ function migrateVec(){
   state.settings.uiIcons = 'vector'; state.settings.vecDone = true;
   return true;
 }
-if (migrateVec()){ state.updatedAt = Date.now(); try{ localData.writeText(storeKey(), JSON.stringify(state)); }catch(e){} }
+if (!localRecovery && migrateVec()){ state.updatedAt = Date.now(); try{ localData.writeText(storeKey(), JSON.stringify(state)); }catch(e){} }
 
 
 let currentMonth=ym(new Date());

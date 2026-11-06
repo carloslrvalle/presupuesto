@@ -10,7 +10,8 @@ const recTx = (r, m, extra) => ({id:recTxId(r, m), created:Date.now(), type:r.ty
 function runAutoRecurring(silent){
   const tm = thisMonth(); let n = 0;
   state.recurring.filter(r => r.active !== false && r.auto).forEach(r => {
-    let m = r.start || tm, guard = 0;
+    // Solo se concilian los últimos diez años; una regla antigua también alcanza el mes actual.
+    let m = (r.start || tm) > shiftMonth(tm,-119) ? (r.start || tm) : shiftMonth(tm,-119), guard = 0;
     while (m <= tm && guard++ < 120){
       if (recDue(r, m) && !recDone(r, m) && !recSkipped(r, m)){ state.transactions.push(recTx(r, m)); n++; }
       m = shiftMonth(m, 1);

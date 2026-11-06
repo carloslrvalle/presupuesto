@@ -40,8 +40,8 @@ function renderGoals(){
     grid.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty" style="height:160px;gap:10px"><div class="empty-ic">${ic('piggy-bank')}</div><div>Crea tu primera meta: fondo de emergencia, viaje, laptop…</div><button class="btn primary" data-goal-new>${ic('plus')} Nueva meta</button></div></div>`;
     return;
   }
-  const tm = thisMonth();
-  grid.innerHTML = goalsSorted().map(g => {
+  const tm = thisMonth(), sorted = goalsSorted(), doneOpen = grid.querySelector('.goal-done-group')?.open;
+  const cards = sorted.map(g => {
     const saved = goalSaved(g), target = Number(g.target) || 0, pct = target ? Math.min(saved / target * 100, 100) : 0, rem = Math.max(0, target - saved);
     const gx = goalTxs(g), monthAmt = sum(gx.filter(x => x.t.date.slice(0, 7) === tm).map(x => x.t));
     // Datos clave en tres bloques, en lugar de una frase larga
@@ -78,7 +78,9 @@ function renderGoals(){
       <div class="goal-sharing">${g.shared?`<details class="goal-contributions"><summary>Ver aportes</summary>${share}</details>`:share}</div>
       <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn sm" data-goal-add="${esc(g.id)}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn sm ghost" data-goal-out="${esc(g.id)}">${ic('hand-coins')} Retirar</button>` : ''}</div>
     </div>`;
-  }).join('');
+  });
+  const activeCount = sorted.findIndex(goalDone), split = activeCount < 0 ? sorted.length : activeCount;
+  grid.innerHTML = cards.slice(0, split).join('') + (split < cards.length ? `<details class="goal-done-group"${doneOpen?' open':''}><summary>${ic('check')} Metas logradas <span>${cards.length-split}</span>${ic('chevron-down')}</summary><div class="goals-grid">${cards.slice(split).join('')}</div></details>` : '');
   animateBars(grid);
 }
 const goalDialog = $('#goalDialog'); let goalEdit = null, gIcon = 'svg:target', gColor = '#10b981', gPrio = 'norm';

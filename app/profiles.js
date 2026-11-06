@@ -32,11 +32,12 @@ profMenu.addEventListener('click', e => {
   switchProfile(id);
 });
 function loadProfileState(){
-  state = cleanState(load()) || seed();
+  localRecovery=null;state = readState();
   if (!state.categories || !state.categories.length) state.categories = seed().categories;
   state.settings = state.settings || {methods:[]}; state.recurring = state.recurring || []; state.goals = state.goals || [];
   if (!state.updatedAt) saveLocal();
   _txIdx = null; _snapRec = snapState();
+  if(localRecovery)setTimeout(showLocalRecovery,0);
 }
 let switching = false, otherPush = null;
 // Si el otro usuario dejó cambios sin subir en este dispositivo (p. ej. se cambió de usuario sin internet), se suben en segundo plano
@@ -168,6 +169,7 @@ let otherAt = 0;
 async function refreshOther(force){
   const other = otherProfile(), bp = (sync.byProf || {})[other] || {};
   if (!syncOn() || bp.pending || syncConflict(other) || (!force && Date.now() - otherAt < 60000)) return;
+  try{if(localData.readText(storeKey(other))!==null&&!profileState(other))return;}catch(e){return;}
   otherAt = Date.now();
   try {
     const j = await callSheets({action:'load', profile:other});
@@ -185,7 +187,7 @@ function renderBoth(){
   const m = currentMonth, box = $('#bothBody'); if (!box) return;
   const cycles=bothUsesCycles(),hasCycles=profiles.list.some(pr=>profileState(pr.id)?.settings?.budgetCycle?.enabled===true);
   planningHeader();
-  const opened=new Set([...box.querySelectorAll('[data-both-metric][open]')].map(d=>d.dataset.bothMetric)),colors=bothProfileColors();
+  const opened=new Set([...box.querySelectorAll('[data-both-metric][open]')].map(d=>d.dataset.bothMetric)),extraOpen=box.querySelector('#bothExtra')?.open,colors=bothProfileColors();
   const months = Array.from({length:6}, (_, i) => shiftMonth(m, i - 5));
   const rows = profiles.list.map(pr => {
     const st = profileState(pr.id);
@@ -200,7 +202,7 @@ function renderBoth(){
   const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), saved = T('saved'), bal = T('cash');
   const perProfile=(key,total,percentage=false)=>rows.map(r=>`<div class="metric-detail-row"><span>${esc(r.pr.name)}</span><b>${fmt(r[key]||0)}${percentage&&total>0?` <small>${((r[key]||0)/total*100).toFixed(1)}%</small>`:''}</b></div>`).join('');
   const kpi = (lbl, icon, val, sub, cls, style) => `<details class="card kpi metric-disclosure ${cls}" data-both-metric="${esc(lbl)}"${opened.has(lbl)?' open':''}><summary><div class="label"><span class="dot" style="${style}">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><span class="metric-chevron" aria-hidden="true">${ic('chevron-down')}</span></summary><div class="metric-expanded"><div class="metric-details">${sub}</div></div></details>`;
-  const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5);
+  const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5), shared = sharedGoalsCard();
   box.innerHTML = `<div class="both-head"><h2>Ambos · ${cycles?'cierre de ':''}${monthLong(m)}</h2><div class="small muted">Solo lectura. Para registrar o editar, elige un usuario.</div></div>
     ${hasCycles?`<div class="both-period-controls"><div class="seg" role="group" aria-label="Períodos de Ambos"><button type="button" data-both-period="profiles" aria-pressed="${bothPeriodMode==='profiles'}" class="${bothPeriodMode==='profiles'?'active':''}">Según cada usuario</button><button type="button" data-both-period="calendar" aria-pressed="${bothPeriodMode==='calendar'}" class="${bothPeriodMode==='calendar'?'active':''}">Mes calendario</button></div><p class="small muted">${cycles?'Se suman los períodos indicados debajo de cada usuario; sus fechas pueden ser distintas.':'Ambos usuarios se comparan del primer al último día del mes.'} Solo cuentan movimientos realizados.</p></div>`:''}
     <div class="kpis dashboard-kpis both-kpis">
@@ -215,8 +217,8 @@ function renderBoth(){
         <div class="small muted" style="margin-top:4px">Parte de los gastos seleccionados</div><div class="bu-share">${rows.map((r,i) => `<i style="width:${exp>0?(r.exp / exp * 100).toFixed(1):0}%;background:${colors[i]}"></i>`).join('')}</div><div class="both-share-legend">${rows.map((r,i)=>`<div><span><i style="background:${colors[i]}"></i>${esc(r.pr.name)}</span><b>${exp>0?(r.exp/exp*100).toFixed(1)+'%':'—'}</b></div>`).join('')}</div></div></div>
       <div class="card"><h3 id="bothChartTitle">Gastos de ambos · últimos 6 ${cycles?'cierres':'meses'}</h3>${cycles?'<p class="small muted">Cada serie respeta el período de su usuario.</p>':''}<div class="chart-wrap" id="bothWrap"><canvas id="chBoth"></canvas></div></div>
     </div>
-    <div class="both-bottom">${sharedGoalsCard()}
-    <div class="card both-top"><h3>Top 5 gastos ${cycles?'de los períodos':'del mes'} de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${esc(x.t.date)}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos en los períodos seleccionados.</div>'}</div></div>`;
+    <details class="both-extra" id="bothExtra"${extraOpen?' open':''}><summary>Más detalle · ${shared?'Metas compartidas y ':''}Top 5 gastos ${ic('chevron-down')}</summary><div class="both-bottom">${shared}
+    <div class="card both-top"><h3>Top 5 gastos ${cycles?'de los períodos':'del mes'} de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${esc(x.t.date)}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos en los períodos seleccionados.</div>'}</div></div></details>`;
   requestAnimationFrame(fitMetricValues);
   if (chBoth){ chBoth.destroy(); chBoth = null; }
   if (typeof Chart === 'undefined') return;

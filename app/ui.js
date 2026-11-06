@@ -225,8 +225,9 @@ const fadeOut = el => new Promise(res => { if (!el || reduceMotion()) return res
 
 const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B06}\u{2B07}\u{FE0F}\u{200D}]/gu;
 function toast(msg, opt = {}){
-  const t = $('#toast'), raw = localSaveFailed&&/registrad|actualizad|cread|guardad/i.test(String(msg))?'No se pudo guardar en este dispositivo. Mantén la app abierta y vuelve a intentar.':String(msg)+(/^Movimiento (registrado|actualizado)/.test(String(msg))?(syncOn()?(sync.pending?' · Guardado aquí; pendiente de Sheets.':' · Confirmado en Sheets.'):' · Guardado en este dispositivo.'):'') , err = /^⚠|no se pudo|no válid|inválid|^ingresa|^elige|^ponle|^primero|^la url|vacía|cancelada/i.test(raw);
+  const t = $('#toast'), failed=localSaveFailed&&!/^⚠|no se pudo|no válid|inválid|^ingresa|^elige|^ponle|^primero|^la url|vacía|cancelada/i.test(String(msg)), raw = failed?'No se pudo guardar en este dispositivo. Mantén la app abierta y vuelve a intentar.':String(msg)+(/^Movimiento (registrado|actualizado)/.test(String(msg))?(syncOn()?(sync.pending?' · Guardado aquí; pendiente de Sheets.':' · Confirmado en Sheets.'):' · Guardado en este dispositivo.'):'') , err = /^⚠|no se pudo|no válid|inválid|^ingresa|^elige|^ponle|^primero|^la url|vacía|cancelada/i.test(raw);
   const text = raw.replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
+  if(failed)opt={};
   const dur = opt.action ? 5000 : Math.min(5000, 2200 + text.length * 25);
   t.querySelector('.t-msg').textContent = text;
   t.querySelector('.t-ic').innerHTML = ic(err ? 'circle-alert' : opt.icon || 'circle-check');

@@ -37,10 +37,11 @@ function reconcile(base,local,remote,choices={}){
   const maps=[b,l,r].map(d=>new Map((d[name]||[]).map(x=>[String(x.id),x])));const records=[];
   for(const id of new Set([...maps[2].keys(),...maps[1].keys(),...maps[0].keys()])){
    const [before,here,there]=maps.map(m=>m.get(id));let value;
-   if(!known&&((!here&&l.meta?.del?.[id]&&there)||(!there&&r.meta?.del?.[id]&&here)))value=conflict(before,here,there,[name,id]);
+   const tombstone=name+':'+id;
+   if(!known&&((!here&&(l.meta?.del?.[tombstone]||l.meta?.del?.[id])&&there)||(!there&&(r.meta?.del?.[tombstone]||r.meta?.del?.[id])&&here)))value=conflict(before,here,there,[name,id]);
    else value=merge(before,here,there,[name,id]);
-   if(value!==undefined){value.u=Math.max(here?.u||0,there?.u||0,Date.now());records.push(value);delete out.meta.del[id];}
-   else out.meta.del[id]=Math.max(l.meta?.del?.[id]||0,r.meta?.del?.[id]||0,Date.now());
+   if(value!==undefined){value.u=Math.max(here?.u||0,there?.u||0,Date.now());records.push(value);delete out.meta.del[tombstone];delete out.meta.del[id];}
+   else out.meta.del[tombstone]=Math.max(l.meta?.del?.[tombstone]||0,r.meta?.del?.[tombstone]||0,l.meta?.del?.[id]||0,r.meta?.del?.[id]||0,Date.now());
   }out[name]=records;
  }
  if(known){

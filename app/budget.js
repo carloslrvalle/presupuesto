@@ -240,7 +240,7 @@ function renderCats(){
       <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}">${iconHTML(c.icon, c.color)}</button>
       <input type="text" data-act="name" aria-label="Nombre de la categoría ${esc(c.name)}" value="${esc(c.name)}">
       ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="${c.pay ? esc(payHumanCfg(payCfg(c.pay))) : 'Día de pago'}">${ic('calendar-days')}<span>${c.pay ? payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
-      <span class="row-acts"><button class="iconbtn" data-act="arch" title="Archivar: deja de aparecer, pero conserva su historial">${ic('archive')}</button><button class="iconbtn" data-act="del" title="Eliminar">${ic('trash-2')}</button></span>
+      <div class="row-acts"><details class="cat-actions"><summary class="iconbtn" aria-label="Acciones de ${esc(c.name)}" title="Acciones de categoría">⋯</summary><div class="cat-actions-menu"><button type="button" data-act="arch">${ic('archive')} Archivar</button><button type="button" data-act="del">${ic('trash-2')} Eliminar</button></div></details></div>
     </div>`).join('') || '<div class="muted small" style="padding:10px 0">Sin categorías.</div>';
     if (arch.length) $(type === 'income' ? '#catsIncome' : '#catsExpense').insertAdjacentHTML('beforeend', `<details class="arch-group"><summary>${CHEV_D}${arch.length} ${arch.length === 1 ? 'categoría archivada' : 'categorías archivadas'}</summary>${arch.map(c => `<div class="arch-row" data-id="${esc(c.id)}"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span>${esc(c.name)}<small>desde ${monthLong(c.archived).toLowerCase()}</small></span><button class="btn sm" data-unarch="${esc(c.id)}">${ic('archive-restore')} Restaurar</button></div>`).join('')}</details>`);
   });
@@ -256,7 +256,7 @@ $('#tab-cats').addEventListener('click', async e => {
   const ua = e.target.closest('[data-unarch]');
   if (ua){ const c = state.categories.find(x => x.id === ua.dataset.unarch); if (c){ delete c.archived; save(); renderAll(); toast(`«${c.name}» restaurada`, {icon:'archive-restore'}); } return; }
   const ar = e.target.closest('[data-act="arch"]');
-  if (ar){ const c = state.categories.find(x => x.id === ar.closest('.cat-row').dataset.id); if (!c) return;
+  if (ar){ ar.closest('.cat-actions').open = false; const c = state.categories.find(x => x.id === ar.closest('.cat-row').dataset.id); if (!c) return;
     const row = ar.closest('.cat-row'); await fadeOut(row);
     c.archived = currentMonth < thisMonth() ? thisMonth() : currentMonth; save(); renderAll();
     toast(`«${c.name}» archivada: ya no aparece al registrar ni en el presupuesto`, {icon:'archive', action:'Deshacer', onAction: () => { delete c.archived; save(); renderAll(); }});
@@ -276,6 +276,7 @@ $('#tab-cats').addEventListener('click', async e => {
   if (btn.dataset.act === 'icon') openIcon(icon => { c.icon = icon; save(); renderAll(); },
     {color:c.color, soft:true, themeColor: curThemeColorCat(c), onColor: col => { c.color = col; save(); }}, c.icon);
   if (btn.dataset.act === 'del'){
+    btn.closest('.cat-actions').open = false;
     const used = state.transactions.filter(t => t.catId === c.id).length;
     const msg = used ? `Tiene ${plural(used, 'movimiento')}; quedarán como "Sin categoría".` : 'También se quitará de tus presupuestos.';
     if (!(await ask({title:`¿Eliminar "${c.name}"?`, msg, icon:c.icon, iconColor:c.color}))) return;
@@ -286,6 +287,8 @@ $('#tab-cats').addEventListener('click', async e => {
     save(); renderAll(); toast('Categoría eliminada');
   }
 });
+document.addEventListener('click', e => { document.querySelectorAll('#tab-cats .cat-actions[open]').forEach(menu => { if (!menu.contains(e.target)) menu.open = false; }); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const menu = document.querySelector('#tab-cats .cat-actions[open]'); if (menu){ menu.open = false; menu.querySelector('summary').focus(); e.preventDefault(); } });
 
 /* ---------- Selector de íconos ---------- */
 // frame = {color, soft, onColor}: soft=true usa el tono suave (categorías), soft=false el color sólido (logo)

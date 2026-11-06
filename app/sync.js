@@ -20,7 +20,7 @@ else if (sync.byProf && activeProfile !== 'p1') Object.assign(sync, {rev:0, pend
   try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
 })();
 const saveSync = () => { sync.byProf = sync.byProf || {}; sync.byProf[activeProfile] = {rev:Number(sync.rev) || 0, pending:!!sync.pending, lastSync:sync.lastSync || 0}; try { localData.writeText(SYNC_KEY, JSON.stringify(sync)); } catch(e){localSaveFailed=true;return false;}return true; };
-const syncOn = () => !!(sync.url && sync.token);
+const syncOn = () => !localRecovery && !!(sync.url && sync.token);
 let pushTimer = null, pushing = false, pushTask = null, changeSeq = 0;
 const SYNC_TIMEOUT_MS = 30000;
 const SYNC_RETRY_DELAYS = [5000, 15000, 30000, 60000, 60000];

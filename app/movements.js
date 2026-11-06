@@ -259,7 +259,7 @@ function renderCalDay(){
   $('#calDay').innerHTML = `<div class="cal-day-head"><div><h3 style="margin:0">${label[0].toUpperCase() + label.slice(1)}</h3>
       <div class="small muted">${list.length ? `${plural(list.length, 'movimiento')} · <span class="xp">${fmt(exp)}</span>${inc ? ` · <span class="pos">+${fmt(inc)}</span>` : ''}` : 'Sin movimientos'}</div>
       ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}</div>
-      <button class="btn sm primary" data-cal-add="${iso}">${ic('plus')} Agregar</button></div>
+      </div>
     ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income'; return `<div class="prow cal-transaction">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
@@ -269,7 +269,7 @@ function renderCalDay(){
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name">${recLabel(r)}</div><div class="small muted">Recurrente ${r.auto ? 'automático' : 'por confirmar'}</div></div>
       <div class="amt">${fmt(r.amount)}</div></div>`; }).join('')}
-    ${!list.length && !recs.length ? emptyBox('calendar-days', 'Nada registrado este día. Toca «Agregar» para sumar algo.', null, '', false, 'es-sm') : ''}`;
+    ${!list.length && !recs.length ? emptyBox('calendar-days', 'Nada registrado este día. Toca «+» para sumar algo.', null, '', false, 'es-sm') : ''}`;
 }
 $('#calGrid').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; calSel = b.dataset.day;
   document.querySelectorAll('#calGrid .cal-d').forEach(x => {x.classList.toggle('sel', x === b);x.setAttribute('aria-pressed',String(x===b));}); renderCalDay(); $('#calDay').classList.remove('swap'); void $('#calDay').offsetWidth; $('#calDay').classList.add('swap');
@@ -281,8 +281,7 @@ $('#calGrid').addEventListener('keydown', e => {
   e.preventDefault(); const b = $(`#calGrid [data-day="${dateFor(m, d)}"]`); if (b){ b.click(); b.focus(); }
 });
 $('#calDay').addEventListener('click', async e => {
-  const add = e.target.closest('[data-cal-add]'), ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
-  if (add) openTx(null, {date:add.dataset.calAdd});
+  const ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
   if (ed) openTx(ed.dataset.edit);
   if (dl){ await fadeOut(dl.closest('.prow')); delTxUndo(dl.dataset.del); }
 });
@@ -631,7 +630,7 @@ $('#txDelete').onclick = async () => {
   }
   const id = editingId; txDialog.close(); delTxUndo(id);
 };
-$('#fab').onclick = () => activeTab()==='goals'?openGoal():(activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx()); // en Recurrentes el + crea un recurrente (en el celular no hay botón propio)
+$('#fab').onclick = () => activeTab()==='goals'?openGoal():(activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {})); // el + respeta el día seleccionado en Calendario
 $('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
 // El botón conserva su posición flotante; se aparta mientras se desplaza la página.
 let fabScrollTimer,fabTouchActive=false;

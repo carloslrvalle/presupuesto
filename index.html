@@ -20,16 +20,20 @@
 html[data-booting],html[data-booting] body{margin:0;background:var(--boot-bg)}
 html[data-booting] body>:not(#boot):not(script):not(link){visibility:hidden}
 #boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;box-sizing:border-box;padding:24px;background:var(--boot-bg);color:var(--boot-text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}
-#boot .boot-mark{width:80px;height:80px;display:block;margin-bottom:8px}
-#boot strong{font-size:21px;font-weight:650;letter-spacing:-.4px}
+#boot .boot-mark{width:clamp(176px,22vw,220px);height:auto;display:block;margin-bottom:8px;animation:boot-mark-in 600ms ease-out both}
+#boot strong{font-size:24px;font-weight:650;letter-spacing:-.4px}
 #boot .boot-caption{color:var(--boot-muted);font-size:13px}
+@keyframes boot-mark-in{from{opacity:0;transform:translateY(10px) scale(.92)}to{opacity:1;transform:none}}
+@media(prefers-color-scheme:dark){html:not([data-mode=light]) #boot .boot-mark{filter:invert(1)}}
+html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
+@media(prefers-reduced-motion:reduce){#boot .boot-mark{animation:none}}
 #boot .bt-err{max-width:340px;line-height:1.5}#boot .bt-err code{display:block;margin-top:8px;word-break:break-word}
 #boot button{padding:10px 18px;border:1px solid currentColor;border-radius:12px;background:transparent;color:inherit;font:inherit}
 </style>
 <script>
 // Solo presentación. La copia de finanzas se lee aquí únicamente si aún no existe caché visual.
 (function(){
- const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];window.__bootStarted=performance.now();window.__BOOT_MIN_MS=window.__BUDGET_PREVIEW?0:1000;
+ const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];window.__bootStarted=performance.now();window.__BOOT_MIN_MS=2200;
  try{
   const storage=window.localStorage,profile=storage.getItem('budgetPlanner.activeProfile')==='p2'?'p2':'p1',systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
   const cached=JSON.parse(storage.getItem('budgetPlanner.appearance.'+profile)||'null'),hex=v=>typeof v==='string'&&/^#[a-f\d]{6}$/i.test(v);
@@ -59,7 +63,7 @@ html[data-booting] body>:not(#boot):not(script):not(link){visibility:hidden}
 </script>
 </head>
 <body>
-<div id="boot" role="status" aria-live="polite"><img class="boot-mark" src="logo.png" alt="" width="80" height="80" fetchpriority="high"><strong>Presupuesto</strong><span class="boot-caption">Abriendo tu presupuesto</span><noscript>Activa JavaScript para abrir la aplicación.</noscript></div>
+<div id="boot" role="status" aria-live="polite"><img class="boot-mark" src="logo.png" alt="" width="220" height="220" fetchpriority="high"><strong>Presupuesto</strong><span class="boot-caption">Abriendo tu presupuesto</span><noscript>Activa JavaScript para abrir la aplicación.</noscript></div>
 <!-- Los estilos en cuerpo permiten pintar primero la entrada crítica. Scripts conservan su orden. -->
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="app.css">

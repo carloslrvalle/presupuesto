@@ -29,7 +29,7 @@
 /* Reserva siempre el espacio de la barra de desplazamiento: al pasar de una sección corta a una larga la página no se corre de lado */
 html{scrollbar-gutter:stable}
 @media (pointer:coarse){html{scrollbar-gutter:auto;scrollbar-width:none}html::-webkit-scrollbar{display:none}}
-#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;background:var(--boot-bg,var(--bg));color:var(--boot-text,var(--text));font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;text-align:center;padding:24px;transition:opacity 160ms ease}
+#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;background:var(--boot-bg,var(--bg));color:var(--boot-text,var(--text));font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;text-align:center;padding:24px;transition:opacity 320ms ease}
 #boot.gone{opacity:0;pointer-events:none}
 #boot .bt-err{max-width:340px;color:var(--text);line-height:1.5}#boot .bt-err code{display:block;margin-top:8px;font-size:12px;color:var(--expense);word-break:break-word}
 #boot button{margin-top:6px;padding:10px 18px;border-radius:12px;border:0;background:var(--primary);color:#fff;font:inherit;font-weight:700}
@@ -2103,3 +2103,87 @@ dialog[open]:has(>form){display:flex;flex-direction:column}
 dialog::before{flex-shrink:0}
 
 @media(forced-colors:active){*{scrollbar-color:auto!important}::-webkit-scrollbar-thumb{background-color:ButtonText;border-color:Canvas}}
+
+/* 1.10.42: cierre de jerarquía, segmentos, diálogos y acciones secundarias. */
+.vseg,.seg{align-items:stretch}
+.vseg button,.seg button{min-height:32px;line-height:1.25}
+.settings-method-add .btn,.conn-row .btn,.settings-footer .btn{min-height:var(--control-height)}
+.dlg-head>.iconbtn{flex:none}
+.cal-day-head{align-items:center}
+.cal-day-head>div{align-self:center}
+.rec-row{min-width:0}
+.rec-row>*{min-width:0}
+.rec-row .row-actions{align-items:center}
+.rec-row .amt{font-variant-numeric:tabular-nums}
+
+@media(max-width:700px){
+ .vseg button,.seg button{min-height:36px}
+ .dlg-head>.iconbtn{width:44px;height:44px;min-width:44px}
+ .settings-method-add .btn,.conn-row .btn,.settings-footer .btn{min-height:44px}
+ .cal-day-head{align-items:flex-start}
+ .cal-day-head .btn{flex:none}
+ .rec-row .row-actions .iconbtn{width:44px;height:44px;min-width:44px}
+ .rec-row .name,.rec-row .small{overflow-wrap:anywhere}
+}
+
+/* 1.10.41: medidas y alineación compartidas para acciones. */
+:root{
+ --control-height:40px;
+ --control-height-touch:44px;
+ --control-radius:10px;
+ --control-gap:7px;
+ --icon-action-size:36px;
+}
+.btn{
+ min-height:var(--control-height);
+ padding:8px 14px;
+ border-radius:var(--control-radius);
+ justify-content:center;
+ gap:var(--control-gap);
+ line-height:1.25;
+ text-align:center;
+ white-space:normal;
+}
+.btn .vi{flex:none}
+.btn:disabled,button:disabled{cursor:not-allowed;opacity:.55;filter:none}
+.toolbar{
+ min-height:var(--control-height-touch);
+ gap:10px;
+ align-items:center;
+}
+.toolbar>.spacer{min-width:0}
+.toolbar>.info-tip{align-self:center}
+.iconbtn{
+ width:var(--icon-action-size);
+ height:var(--icon-action-size);
+ min-width:var(--icon-action-size);
+ border-radius:10px;
+}
+.dlg-foot{align-items:center}
+.dlg-foot .btn{min-width:88px}
+.goal-btns .btn{flex:1 1 auto}
+#tab-cats .row-acts{align-items:center}
+#tab-cats .row-acts .iconbtn{width:40px;height:40px;min-width:40px}
+
+@media(max-width:700px){
+ :root{--control-height:44px;--icon-action-size:44px}
+ .btn{min-height:var(--control-height-touch);padding:9px 13px}
+ .toolbar{align-content:center}
+ .dlg-foot{gap:8px}
+ .dlg-foot .btn{flex:1 1 0;min-width:0}
+ #tab-cats .row-acts{gap:0}
+ #tab-cats .row-acts .iconbtn,
+ #movBody .mov-actions .iconbtn,
+ .history-options,
+ .cal-day-head .iconbtn{width:44px;height:44px;min-width:44px}
+ html #catsIncome .cat-row,html #catsExpense .cat-row{grid-template-columns:16px 40px minmax(0,1fr) 88px!important;column-gap:6px}
+ html .bud-table tbody tr{padding:12px;row-gap:10px}
+ html .bud-table tbody td:nth-child(2),html .bud-table tbody td:nth-child(3){align-self:end}
+ html .bud-table tbody td:nth-child(2)::before,html .bud-table tbody td:nth-child(3)::before{min-height:18px;margin-bottom:6px}
+ html .bud-table .budget-input{min-height:40px;text-align:right}
+ html .bud-table tbody td:nth-child(4){min-height:36px;padding-top:10px!important}
+}
+@media(max-width:380px){
+ #tab-cats .row-acts .iconbtn{width:40px;height:44px;min-width:40px}
+ html #catsIncome .cat-row,html #catsExpense .cat-row{grid-template-columns:14px 36px minmax(0,1fr) 80px!important;column-gap:4px}
+}

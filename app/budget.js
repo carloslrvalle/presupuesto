@@ -8,7 +8,8 @@ function budgetTable(type){
     const sav = isE && isSavingCat(c.id); // en la categoría de ahorro, pasarse del plan es bueno
     const diff = isE && !sav ? b - r : r - b, raw = b > 0 ? r / b * 100 : 0, pct = Math.min(raw, 100);
     const status=budgetStatus(r,b),alert=isE&&!sav?(status==='over'?'over':status==='near'?'warn':status==='complete'?'complete':''):'';
-    return `<tr class="${alert}">
+    const amountChars = Math.max(String(b || 0).length, fmt(r).length);
+    return `<tr class="${alert}" style="--budget-amount-ch:${amountChars}">
       <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="cname">${esc(c.name)}</span></div></td>
       <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<input type="number" inputmode="decimal" class="budget-input" min="0" step="10" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0">` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
       <td class="num${r ? '' : ' muted'}" data-mobile-label="Real"><span class="budget-real">${fmt(r)}</span>${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
@@ -82,6 +83,11 @@ $('#tab-budget').addEventListener('change', e => {
   state.budgets[m] = state.budgets[m] || {};
   state.budgets[m][cycleView()?cycleBudgetKey(inp.dataset.bud):inp.dataset.bud] = Math.max(0, parseFloat(inp.value) || 0);
   save(); keepFocus(() => { renderBudget(); renderDashboard(); });
+});
+$('#tab-budget').addEventListener('input', e => {
+  const inp = e.target.closest('.budget-input'); if (!inp) return;
+  const row = inp.closest('tr'), real = row.querySelector('.budget-real');
+  row.style.setProperty('--budget-amount-ch', Math.max((inp.value || '0').length, real?.textContent.length || 0));
 });
 $('#btnCopyPrev').onclick = () => {
   if(cycleView()){const m=currentMonth,p=shiftMonth(m,-1);state.budgets[m]=state.budgets[m]||{};state.categories.forEach(c=>state.budgets[m][cycleBudgetKey(c.id)]=cycleBudget(p,c.id));save();renderAll();return toast('Presupuesto copiado del ciclo anterior');}
@@ -231,7 +237,7 @@ function renderCats(){
       <span class="grip" role="button" tabindex="0" title="Arrastra o usa las flechas para ordenar" aria-keyshortcuts="ArrowUp ArrowDown" aria-label="Ordenar ${esc(c.name)} con flecha arriba o abajo">${GRIP}</span>
       <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}">${iconHTML(c.icon, c.color)}</button>
       <input type="text" data-act="name" aria-label="Nombre de la categoría ${esc(c.name)}" value="${esc(c.name)}">
-      ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="Día de pago">${ic('calendar-days')}<span>${c.pay ? payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
+      ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="${c.pay ? esc(payHumanCfg(payCfg(c.pay))) : 'Día de pago'}">${ic('calendar-days')}<span>${c.pay ? payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
       <span class="row-acts"><button class="iconbtn" data-act="arch" title="Archivar: deja de aparecer, pero conserva su historial">${ic('archive')}</button><button class="iconbtn" data-act="del" title="Eliminar">${ic('trash-2')}</button></span>
     </div>`).join('') || '<div class="muted small" style="padding:10px 0">Sin categorías.</div>';
     if (arch.length) $(type === 'income' ? '#catsIncome' : '#catsExpense').insertAdjacentHTML('beforeend', `<details class="arch-group"><summary>${CHEV_D}${arch.length} ${arch.length === 1 ? 'categoría archivada' : 'categorías archivadas'}</summary>${arch.map(c => `<div class="arch-row" data-id="${esc(c.id)}"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span>${esc(c.name)}<small>desde ${monthLong(c.archived).toLowerCase()}</small></span><button class="btn sm" data-unarch="${esc(c.id)}">${ic('archive-restore')} Restaurar</button></div>`).join('')}</details>`);

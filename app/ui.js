@@ -203,7 +203,11 @@ function countUp(el, to, kind = 'money', cls){
   cancelAnimationFrame(el._raf);
   el._fitTexts=[f(from),f(to)];fitMetricValue(el);
   if (reduceMotion() || from === to){ el.textContent = f(to);el._fitTexts=[f(to)];fitMetricValue(el); return; }
-  const t0 = performance.now(), dur = MOTION.data, ease = motionDataEase;
+  // Mayor recorrido numérico, más tiempo para leer la desaceleración final; los gráficos conservan su ritmo.
+  const t0 = performance.now(), dur = Math.min(1900, 1100 + Math.log10(1 + Math.abs(to - from)) * 170);
+  // Curva con velocidad y aceleración nulas en ambos extremos: evita el arranque brusco y el salto final.
+  const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
+  el.textContent = f(from);
   const step = now => { if(reduceMotion()){el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el.textContent = f(from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step);else {el._fitTexts=[f(to)];fitMetricValue(el);} };
   el._raf = requestAnimationFrame(step);
 }
@@ -277,6 +281,9 @@ function showTab(name){
   if (window.scrollY > 0) window.scrollTo({top:0, behavior:'instant'});
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
+  // Cada entrada reinicia los indicadores; las actualizaciones dentro de la vista conservan su valor anterior.
+  if (name === 'dashboard') ['kIncome','kExpense','kBalance','kSavings'].forEach(k => delete numMemo[k]);
+  if (name === 'analysis') Object.keys(numMemo).filter(k => k.startsWith('an:')).forEach(k => delete numMemo[k]);
   if (name === 'dashboard' || name === 'analysis') dirty.add(name); // se redibujan siempre para que los gráficos tomen su tamaño
   planningHeader();
   renderView(name);

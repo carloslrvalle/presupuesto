@@ -291,14 +291,20 @@ function renderCharts(){
     const centre = {id:'centre', afterDatasetsDraw(ch){
       const meta = ch.getDatasetMeta(0), arc = meta.data[0]; if (!arc) return;
       const {ctx} = ch, x = arc.x, y = arc.y, act = ch.getActiveElements()[0];
-      const fam = cssVar('--font-head') || 'system-ui, sans-serif', size = Math.max(14, Math.min(26, arc.innerRadius / 3.4));
+      const fam = cssVar('--font-head') || 'system-ui, sans-serif';
       const D = ch.$d || {data,totalD};
       let top = 'Total gastado', mid = fmt(D.totalD), bot = `${D.data.length} categoría${D.data.length > 1 ? 's' : ''}`;
       if (act && D.data[act.index]){ const d = D.data[act.index]; top = d.c.name.length > 16 ? d.c.name.slice(0, 15) + '…' : d.c.name; mid = fmt(d.v); bot = (d.v / D.totalD * 100).toFixed(1) + '% del total'; }
       ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = cssVar('--muted'); ctx.font = `600 ${Math.round(size * .5)}px ${fam}`; ctx.fillText(top, x, y - size * .95);
-      ctx.fillStyle = cssVar('--text'); ctx.font = `700 ${Math.round(size)}px ${fam}`; ctx.fillText(mid, x, y + 1);
-      ctx.fillStyle = cssVar('--muted'); ctx.font = `500 ${Math.round(size * .48)}px ${fam}`; ctx.fillText(bot, x, y + size * .95);
+      const available = arc.innerRadius * 2 - 12;
+      const fitText = (text,weight,preferred) => {
+        ctx.font = `${weight} ${preferred}px ${fam}`;
+        const size = Math.min(preferred, preferred * available / Math.max(1,ctx.measureText(text).width));
+        ctx.font = `${weight} ${size}px ${fam}`;
+      };
+      ctx.fillStyle = cssVar('--muted'); fitText(top,600,12); ctx.fillText(top, x, y - 25);
+      ctx.fillStyle = cssVar('--text'); fitText(mid,700,22); ctx.fillText(mid, x, y + 1);
+      ctx.fillStyle = cssVar('--muted'); fitText(bot,500,12); ctx.fillText(bot, x, y + 26);
       ctx.restore(); }};
     if (morphD){
       const ds = chDonut.data.datasets[0]; chDonut.$d = {data, totalD};
@@ -307,12 +313,12 @@ function renderCharts(){
     } else {
       chDonut = new Chart($('#chDonut'), {type:'doughnut', plugins:[centre],
         data:{labels:data.map(x => iconText(x.c)), datasets:[{data:data.map(x => x.v), backgroundColor:sliceCols(data, 0), hoverBackgroundColor:sliceCols(data, .06), borderColor:cssVar('--surface'), hoverBorderColor:cssVar('--surface'), borderWidth:3, hoverOffset:6}]},
-        options:{maintainAspectRatio:false, animation:reduceMotion()||innerWidth<=700?false:{duration:MOTION.data,easing:MOTION.dataEasing,animateRotate:true,animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'70%'}
+        options:{maintainAspectRatio:false, animation:reduceMotion()||innerWidth<=700?false:{duration:MOTION.data,easing:MOTION.dataEasing,animateRotate:true,animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'76%'}
       });
       chDonut.$d = {data, totalD};
     }
     const cols = sliceCols(data, 0);
-    $('#donutLegend').innerHTML = data.map((x, i) => `<button type="button" class="dl-row" data-i="${i}"${x.group ? ` title="${esc(x.group.map(g => g.c.name).join(', '))}"` : ''}><i style="background:${cols[i]}"></i><span class="dl-n">${esc(x.c.name)}</span><b>${fmt(x.v)}</b><span class="dl-p">${(x.v / totalD * 100).toFixed(0)}%</span></button>`).join('');
+    $('#donutLegend').innerHTML = data.map((x, i) => `<button type="button" class="dl-row" data-i="${i}" title="${esc(x.group ? x.group.map(g => g.c.name).join(', ') : x.c.name)}"><i style="background:${cols[i]}"></i><span class="dl-n">${esc(x.c.name)}</span><b>${fmt(x.v)}</b><span class="dl-p">${(x.v / totalD * 100).toFixed(0)}%</span></button>`).join('');
   }
 
   // Barras

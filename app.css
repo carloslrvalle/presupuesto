@@ -1862,6 +1862,8 @@ button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:v
 
 #tab-budget .bud-table tr.over td:first-child{box-shadow:none}
 #tab-budget .bud-table .cname{max-width:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.bud-table .income-unplanned{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:500;line-height:1.3}
+@media(max-width:900px){.bud-table .income-unplanned{display:none}}
 @supports (field-sizing:content){
  @media(min-width:901px){
   #tab-budget .bud-table .budget-input,#tab-budget .bud-table.wide-values .budget-input{field-sizing:content;width:auto;min-width:56px;max-width:100%;display:block;margin-left:auto}
@@ -2207,9 +2209,18 @@ dialog::before{flex-shrink:0}
  #tab-budget .bud-table .budget-input{width:100%;max-width:none;min-height:44px;height:44px;margin:0;padding:0 10px!important;text-align:right;font-size:16px;font-weight:600;line-height:1.25;font-variant-numeric:tabular-nums}
  #tab-budget .bud-table tbody td:nth-child(4){margin-top:2px}
 }
-/* Cada tarjeta de categorías conserva ancho suficiente para nombre, fecha y acciones. */
-#tab-cats>.grid2{grid-template-columns:minmax(0,1fr);max-width:760px;margin-inline:auto}
+/* En pantallas amplias, el espacio se reparte según el contenido de cada tarjeta. */
+#tab-cats>.grid2{grid-template-columns:minmax(0,1fr);max-width:760px;margin-inline:auto;align-items:start}
 #catsIncome{container-type:inline-size}
+@media(min-width:901px){
+ #tab-cats>.grid2{grid-template-columns:minmax(0,45fr) minmax(0,55fr);max-width:none}
+ #tab-cats .cat-row{column-gap:6px}
+ #tab-cats .cat-row>.ico{width:40px;height:40px}
+ #tab-cats .row-acts .iconbtn{width:36px;height:36px;min-width:36px}
+ html #tab-cats .cat-row>input[data-act=name]{padding-inline:4px}
+ html #catsExpense .cat-row{grid-template-columns:16px 40px minmax(0,1fr) 72px!important;column-gap:6px}
+ html #catsIncome .cat-row{grid-template-columns:16px 40px minmax(0,1fr) 72px!important}
+}
 @media(min-width:701px){
  html #catsIncome .cat-row{row-gap:2px;padding:10px 0}
  html #catsIncome .cat-row>.grip,html #catsIncome .cat-row>.ico,html #catsIncome .cat-row>.row-acts{grid-row:1/3;align-self:center}
@@ -2222,6 +2233,18 @@ dialog::before{flex-shrink:0}
  html #catsIncome .cat-row>.pay-btn{grid-column:4;width:100%;max-width:none;justify-content:center;white-space:nowrap}
  html #catsIncome .cat-row>.pay-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  html #catsIncome .cat-row>.row-acts{grid-column:5}
+}
+@media(min-width:901px){
+ @container (min-width:400px) and (max-width:579px){
+  html #catsIncome .cat-row{grid-template-columns:16px 40px minmax(0,1fr) 156px 72px!important;column-gap:6px;row-gap:0;min-height:64px}
+  html #catsIncome .cat-row>.grip,html #catsIncome .cat-row>.ico,html #catsIncome .cat-row>input[data-act=name],html #catsIncome .cat-row>.pay-btn,html #catsIncome .cat-row>.row-acts{grid-row:1;align-self:center}
+  html #catsIncome .cat-row>.pay-btn{grid-column:4;width:100%;max-width:none;justify-content:center;white-space:nowrap;font-size:12px;padding-inline:5px;gap:6px}
+  html #catsIncome .cat-row>.pay-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html #catsIncome .cat-row>.row-acts{grid-column:5}
+ }
+ @container (min-width:480px) and (max-width:579px){
+  html #catsIncome .cat-row{grid-template-columns:16px 40px minmax(0,1fr) 190px 72px!important}
+ }
 }
 @media(max-width:900px){
  #tab-budget .bud-table tbody td:nth-child(2),#tab-budget .bud-table tbody td:nth-child(3){grid-template-rows:18px 44px auto;align-self:start}

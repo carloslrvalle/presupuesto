@@ -36,7 +36,7 @@ function barFill(hex, alert){
   return `linear-gradient(90deg,${harmon(hex, l1)},${harmon(hex, l2)})`;
 }
 function prowMeta(real, budget, type, saving){
-  if (!(budget > 0)) return type === 'income' ? 'Sin monto esperado' : 'Sin presupuesto';
+  if (!(budget > 0)) return type === 'income' ? (real > 0 ? 'Ingreso no previsto' : 'Sin monto esperado') : 'Sin presupuesto';
   if (saving){ const d = budget - real; return d > .005 ? `Faltan ${fmt(d)} por separar` : d < -.005 ? `<span class="pos">${fmt(-d)} más de lo planeado</span>` : '<span class="pos">Completo</span>'; }
   const d = budget - real;
   if (type === 'income') return d > .005 ? `Por recibir: ${fmt(d)}` : d < -.005 ? `<span class="pos">${fmt(-d)} más de lo esperado</span>` : '<span class="pos">Ingreso completo</span>';
@@ -123,7 +123,7 @@ function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
 function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv}){
  const row=(label,value,cls='')=>`<div class="metric-detail-row"><span>${label}</span><b class="${cls}">${value}</b></div>`;
  const incomeRemaining=Math.max(0,bInc-inc),expenseRemaining=bExp-exp;
- $('#kIncomeSub').innerHTML=row('Esperado',bInc?fmt(bInc):'Sin definir')+row(inc>bInc&&bInc?'Adicional':'Por recibir',bInc?fmt(inc>bInc?inc-bInc:incomeRemaining):'—');
+ $('#kIncomeSub').innerHTML=row('Esperado',bInc?fmt(bInc):'Sin definir')+row(!bInc&&inc?'No previsto':inc>bInc&&bInc?'Adicional':'Por recibir',bInc?fmt(inc>bInc?inc-bInc:incomeRemaining):inc?fmt(inc):'—');
  const incomeFoot=$('#kIncomeFoot');
  incomeFoot.innerHTML=bInc?`${Math.round(inc/bInc*100)}% de lo esperado`:pInc?`${fmt(pInc)} programados`:'Sin expectativa de ingresos';
  incomeFoot.title=pp.length?pp.map(x=>`${x.c.name}: ${payRange(x.a,x.b,m)}`).join('\n'):pInc?`${fmt(pInc)} con fecha futura`:'';

@@ -136,6 +136,10 @@ function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
 function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv}){
  const row=(label,value,cls='')=>`<div class="metric-detail-row"><span>${label}</span><b class="${cls}">${value}</b></div>`;
  const incomeRemaining=Math.max(0,bInc-inc),expenseRemaining=bExp-exp;
+ $('#kIncomePreview').textContent=inc?'Ingresos recibidos':'Aún sin ingresos';
+ $('#kExpensePreview').textContent=!bExp?'Sin presupuesto':expenseRemaining<-.005?'Presupuesto superado':'Dentro del presupuesto';
+ $('#kBalancePreview').textContent='Al cierre del período';
+ $('#kSavingsPreview').textContent='Sobre tus ingresos';
  $('#kIncomeSub').innerHTML=row('Esperado',bInc?fmt(bInc):'Sin definir')+row(!bInc&&inc?'No previsto':inc>bInc&&bInc?'Adicional':'Por recibir',bInc?fmt(inc>bInc?inc-bInc:incomeRemaining):inc?fmt(inc):'—');
  const incomeFoot=$('#kIncomeFoot');
  incomeFoot.innerHTML=bInc?`${Math.round(inc/bInc*100)}% de lo esperado`:pInc?`${fmt(pInc)} programados`:'Sin expectativa de ingresos';

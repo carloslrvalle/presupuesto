@@ -1161,6 +1161,8 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 .dashboard-kpis .label{min-height:30px;line-height:1.4;font-size:13px;gap:9px;align-items:center}
 .dashboard-kpis .label .dot{flex-shrink:0;width:30px;height:30px}
 .dashboard-kpis .value{margin:14px 0 16px;font-size:min(28px,12.5cqi);line-height:1.2;letter-spacing:-.5px}
+.metric-preview{display:none}
+.metric-caption-mobile{display:none}
 .dashboard-kpis .metric-details{display:grid;align-content:start;gap:7px;flex:1;min-height:43px;font-size:12px;line-height:1.5}
 .dashboard-kpis .metric-detail-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
 .dashboard-kpis .metric-detail-row>span{color:var(--muted)}.dashboard-kpis .metric-detail-row>b{font-weight:600;white-space:nowrap;text-align:right}
@@ -2322,11 +2324,16 @@ dialog::before{flex-shrink:0}
  #tab-budget .bud-table .budget-real{font-size:14px}
 }
 @media(max-width:600px){
+ .metric-caption-mobile{display:inline}.metric-caption-desktop{display:none}
  #tab-dashboard .dashboard-kpis,#anKpis{align-items:stretch}
  #tab-dashboard .dashboard-kpis>.metric-disclosure,#anKpis>.analysis-metric{min-height:0}
  #tab-dashboard .dashboard-kpis>.metric-disclosure>summary{min-height:0;padding:var(--metric-padding)}
  #tab-dashboard .metric-disclosure>summary .label,#anKpis .analysis-metric .label{min-height:34px;font-size:var(--metric-title-size);line-height:1.45}
- #tab-dashboard .metric-disclosure>summary .value{margin:10px 0 0;line-height:1.45}
+ #tab-dashboard .dashboard-kpis>.metric-disclosure>summary,#anKpis>.analysis-metric{display:grid;grid-template-rows:minmax(36px,auto) 36px minmax(33px,auto);row-gap:8px;align-content:start;text-align:left}
+ #tab-dashboard .metric-disclosure>summary .label,#anKpis .analysis-metric>.label{grid-row:1;min-height:0}
+ #tab-dashboard .metric-disclosure>summary .value,#anKpis .analysis-metric>.value{grid-row:2;align-self:center;margin:0;line-height:1.45}
+ #tab-dashboard .metric-preview,#anKpis .analysis-metric>.small{display:block;grid-row:3;font-size:var(--metric-meta-size);line-height:1.5;overflow-wrap:anywhere}
+ #anKpis .metric-selection{position:absolute}
 }
 @media(max-width:700px){
  .topbar>.wrap:first-child{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center}

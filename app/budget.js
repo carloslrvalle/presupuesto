@@ -11,9 +11,9 @@ function budgetTable(type){
     const amountChars = Math.max(String(b || 0).length, fmt(r).length);
     const incomeLabel = !b ? (r ? 'No previsto' : 'Sin plan') : diff > .005 ? 'Adicional' : diff < -.005 ? 'Por recibir' : 'Completo';
     const incomeDiff = diff > .005 ? `<b class="pos">+${fmt(diff)}</b>` : diff < -.005 ? `<span class="muted">−${fmt(-diff)}</span>` : `<span class="muted">${fmt(0)}</span>`;
-    return `<tr class="${alert}" style="--budget-amount-ch:${amountChars}">
+    return `<tr class="${alert}" style="--budget-amount-ch:${amountChars};--budget-plan-ch:${String(b || 0).length}">
       <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="cname">${esc(c.name)}</span></div></td>
-      <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<input type="number" inputmode="decimal" class="budget-input" min="0" step="10" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0">` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
+      <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<span class="budget-plan-field"><span class="budget-currency" aria-hidden="true">S/</span><input type="number" inputmode="decimal" class="budget-input" min="0" step="10" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0"></span>` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
       <td class="num${r ? '' : ' muted'}" data-mobile-label="Real"><span class="budget-real">${fmt(r)}</span>${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
       <td class="num" data-mobile-label="${isE?(sav?(diff>=0?'Ahorro adicional':'Por ahorrar'):'Disponible'):incomeLabel}">${!b && !r ? '<span class="muted">—</span>' : isE ? (sav ? (diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`) : `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}`) : `${incomeDiff}${!b && r ? '<small class="income-unplanned">No previsto</small>' : ''}`}</td>
       <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}">${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
@@ -90,6 +90,7 @@ $('#tab-budget').addEventListener('input', e => {
   const inp = e.target.closest('.budget-input'); if (!inp) return;
   const row = inp.closest('tr'), real = row.querySelector('.budget-real');
   row.style.setProperty('--budget-amount-ch', Math.max((inp.value || '0').length, real?.textContent.length || 0));
+  row.style.setProperty('--budget-plan-ch',(inp.value || '0').length);
 });
 $('#btnCopyPrev').onclick = () => {
   if(cycleView()){const m=currentMonth,p=shiftMonth(m,-1);state.budgets[m]=state.budgets[m]||{};state.categories.forEach(c=>state.budgets[m][cycleBudgetKey(c.id)]=cycleBudget(p,c.id));save();renderAll();return toast('Presupuesto copiado del ciclo anterior');}

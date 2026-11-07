@@ -303,7 +303,7 @@ function renderUpcoming(){
   const up = upcoming(7), el = $('#recUpcoming');
   const start = new Date();start.setHours(0,0,0,0);const end = new Date(start);end.setDate(start.getDate()+6);
   const short = d => d.toLocaleDateString('es-PE',{day:'numeric',month:'short'}).replace('.', '');
-  $('#recUpcomingRange').textContent = '· ' + (ym(start)===ym(end)?start.getDate()+'–'+short(end):short(start)+'–'+short(end))+' '+end.getFullYear();
+  $('#recUpcomingRange').textContent = (ym(start)===ym(end)?start.getDate()+'–'+short(end):short(start)+'–'+short(end))+' '+end.getFullYear();
   if (!up.length){ el.innerHTML = emptyBox('calendar-clock', 'No hay pagos ni cobros recurrentes o programados en los próximos 7 días.', null, '', true); return; }
   const when = x => x.i === 0 ? 'Hoy' : x.i === 1 ? 'Mañana' : x.d.toLocaleDateString('es-PE', {weekday:'short', day:'numeric', month:'short'}).replace('.', '');
   const exp = up.filter(x => x.r.type === 'expense').reduce((a, x) => a + Number(x.r.amount || 0), 0), inc = up.filter(x => x.r.type === 'income').reduce((a, x) => a + Number(x.r.amount || 0), 0);

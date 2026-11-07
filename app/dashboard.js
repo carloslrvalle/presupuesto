@@ -1,6 +1,19 @@
 // Presupuesto: dashboard.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
 /* ---------- Dashboard ---------- */
 let chDonut, chBars;
+// La evolución toma la altura de la distribución cerrada, incluso al ampliar sus detalles.
+const dashboardChartObserver = new ResizeObserver(() => {
+  const left = $('#donutWrap').closest('.card'), right = $('#barsWrap').closest('.card');
+  let height = left.getBoundingClientRect().height;
+  if (!height) return;
+  const expanded = left.querySelector('.expense-distribution-more[open]');
+  if (expanded) {
+    const style=getComputedStyle(expanded),closed=expanded.querySelector('summary').getBoundingClientRect().height+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom)+parseFloat(style.borderTopWidth)+parseFloat(style.borderBottomWidth);
+    height-=expanded.getBoundingClientRect().height-closed;
+  }
+  right.style.setProperty('--evolution-card-height',Math.max(390,height)+'px');
+});
+dashboardChartObserver.observe($('#donutWrap').closest('.card'));
 function deltaTxt(cur, prev, type, prevM){
   if (!prev && !cur) return '';
   if (!prev) return `<span class="delta muted">nuevo vs ${monthAbbr(prevM)}</span>`;
@@ -272,67 +285,48 @@ function renderCharts(){
   }
   const grid = cssVar('--border'); chartTheme();
 
-  // Dona
+  // Distribución horizontal: cada categoría se lee una vez, sin repetir el total del indicador.
   const m = currentMonth;
   let data = catsOf('expense').map(c => ({c, v: planReal(m,c.id)})).filter(x => x.v > 0).sort((a,b) => b.v - a.v);
   const orphan = sum(planTx(m).filter(t => t.type === 'expense' && !state.categories.some(c => c.id === t.catId)));
   if (orphan) data.push({c:getCat(null), v:orphan});
-  { const tot = data.reduce((a, x) => a + x.v, 0), small = data.filter((x, i) => i >= 5 && x.v / tot < .04);
-    if (small.length >= 2){ data = data.filter(x => !small.includes(x)); data.push({c:{id:'_otras', name:`Otras (${small.length})`, icon:'svg:chart-pie', color:'#9aa3b5'}, v: small.reduce((a, x) => a + x.v, 0), group: small}); } }
-  const dw = $('#donutWrap');
-  // Al cambiar de mes los gráficos se transforman en vez de redibujarse desde cero
-  const morphD = chartMorph && chDonut && chDonut.canvas && chDonut.canvas.isConnected && data.length > 0;
-  if (chDonut && !morphD){ chDonut.destroy(); chDonut = null; }
-  if (!data.length){ dw.innerHTML = emptyBox('chart-pie', 'Aún no hay gastos en este período. Cuando registres uno verás aquí cómo se reparte.', 'expense', 'Registrar gasto'); }
+  data.sort((a,b)=>b.v-a.v);
+  const dw = $('#donutWrap'), totalD = data.reduce((a,x)=>a+x.v,0);
+  if(chDonut){chDonut.destroy();chDonut=null;}
+  if(!data.length){delete dw.dataset.distributionSignature;dw.innerHTML=emptyBox('chart-bar','Aún no hay gastos en este período.','expense','Registrar gasto');}
   else {
-    if (!dw.querySelector('#donutLegend')) dw.innerHTML = '<div class="donut-c"><canvas id="chDonut"></canvas></div><div class="donut-l" id="donutLegend"></div>';
-    const totalD = data.reduce((a, x) => a + x.v, 0);
-    // Total al centro; al pasar el mouse muestra la categoría y su %
-    const centre = {id:'centre', afterDatasetsDraw(ch){
-      const meta = ch.getDatasetMeta(0), arc = meta.data[0]; if (!arc) return;
-      const {ctx} = ch, x = arc.x, y = arc.y, act = ch.getActiveElements()[0];
-      const fam = cssVar('--font-head') || 'system-ui, sans-serif';
-      const D = ch.$d || {data,totalD};
-      let top = 'Total gastado', mid = fmt(D.totalD), bot = `${D.data.length} categoría${D.data.length > 1 ? 's' : ''}`;
-      if (act && D.data[act.index]){ const d = D.data[act.index]; top = d.c.name.length > 16 ? d.c.name.slice(0, 15) + '…' : d.c.name; mid = fmt(d.v); bot = (d.v / D.totalD * 100).toFixed(1) + '% del total'; }
-      ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const available = arc.innerRadius * 2 - 12;
-      const fitText = (text,weight,preferred) => {
-        ctx.font = `${weight} ${preferred}px ${fam}`;
-        const size = Math.min(preferred, preferred * available / Math.max(1,ctx.measureText(text).width));
-        ctx.font = `${weight} ${size}px ${fam}`;
-      };
-      ctx.fillStyle = cssVar('--muted'); fitText(top,600,12); ctx.fillText(top, x, y - 25);
-      ctx.fillStyle = cssVar('--text'); fitText(mid,700,22); ctx.fillText(mid, x, y + 1);
-      ctx.fillStyle = cssVar('--muted'); fitText(bot,500,12); ctx.fillText(bot, x, y + 26);
-      ctx.restore(); }};
-    if (morphD){
-      const ds = chDonut.data.datasets[0]; chDonut.$d = {data, totalD};
-      chDonut.data.labels = data.map(x => iconText(x.c)); ds.data = data.map(x => x.v); ds.backgroundColor = sliceCols(data, 0); ds.hoverBackgroundColor = sliceCols(data, .06);
-      chDonut.update();
-    } else {
-      chDonut = new Chart($('#chDonut'), {type:'doughnut', plugins:[centre],
-        data:{labels:data.map(x => iconText(x.c)), datasets:[{data:data.map(x => x.v), backgroundColor:sliceCols(data, 0), hoverBackgroundColor:sliceCols(data, .06), borderColor:cssVar('--surface'), hoverBorderColor:cssVar('--surface'), borderWidth:3, hoverOffset:6}]},
-        options:{maintainAspectRatio:false, animation:reduceMotion()||innerWidth<=700?false:{duration:MOTION.data,easing:MOTION.dataEasing,animateRotate:true,animateScale:false}, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'76%'}
-      });
-      chDonut.$d = {data, totalD};
+    const rest=data.slice(5),shown=data.slice(0,5),cols=sliceCols(data,0);
+    const row=(x,i)=>'<div class="expense-distribution-row"><div class="expense-distribution-label"><span>'+esc(x.c.name)+'</span><b>'+fmt(x.v)+'</b><small>'+(x.v/totalD*100).toFixed(0)+'%</small></div><div class="expense-distribution-track" aria-hidden="true"><span style="width:'+(x.v/totalD*100)+'%;background:'+cols[i]+'"></span></div></div>';
+    const signature=JSON.stringify(data.map((x,i)=>[x.c.id,x.c.name,x.v,cols[i]]));
+    if(dw.dataset.distributionSignature!==signature){dw.dataset.distributionSignature=signature;
+    dw.innerHTML='<div class="expense-distribution">'+shown.map(row).join('')+(rest.length?'<details class="expense-distribution-more"><summary>Otras '+rest.length+' categorías <b>'+fmt(rest.reduce((n,x)=>n+x.v,0))+'</b><span>'+Math.round(rest.reduce((n,x)=>n+x.v,0)/totalD*100)+'% '+ic('chevron-down')+'</span></summary><div>'+rest.map((x,i)=>row(x,i+5)).join('')+'</div></details>':'')+'</div>';
     }
-    const cols = sliceCols(data, 0);
-    $('#donutLegend').innerHTML = data.map((x, i) => `<button type="button" class="dl-row" data-i="${i}" title="${esc(x.group ? x.group.map(g => g.c.name).join(', ') : x.c.name)}"><i style="background:${cols[i]}"></i><span class="dl-n">${esc(x.c.name)}</span><b>${fmt(x.v)}</b><span class="dl-p">${(x.v / totalD * 100).toFixed(0)}%</span></button>`).join('');
   }
 
   // Barras
-  const months = Array.from({length:6}, (_,i) => shiftMonth(m, i-5));
+  const availableMonths = Array.from({length:6}, (_,i) => shiftMonth(m, i-5));
+  // Recortar solo el inicio sin registros; conservar huecos entre períodos con datos.
+  const first = availableMonths.findIndex(mm => planTx(mm).some(t=>t.type==='income'||t.type==='expense'));
+  const months = first<0 ? availableMonths : availableMonths.slice(first);
   const incs = months.map(x => sum(planTx(x).filter(t => t.type === 'income')));
   const exps = months.map(x => sum(planTx(x).filter(t => t.type === 'expense')));
   const bw = $('#barsWrap');
+  $('#dashboardEvolutionPeriod').textContent=months.length===1?'Este '+(cycleView()?'ciclo':'mes'):'Últimos '+months.length+' '+(cycleView()?'ciclos':'meses');
+  const labels=months.map(mm=>innerWidth<=700?monthAbbr(mm):cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm));
+  // La instancia reutilizada debe consultar el período vigente, no el cierre que la creó.
+  if(chBars?.canvas?.isConnected){
+    chBars.options.plugins.tooltip.callbacks.title=items=>items.length?(cycleView()?cycleLabel(months[items[0].dataIndex]):monthLong(months[items[0].dataIndex])):'';
+    chBars.options.scales.x.ticks.color=c=>c.index===months.length-1?cssVar('--text'):cssVar('--muted');
+    chBars.options.scales.x.ticks.font=c=>({size:11,weight:c.index===months.length-1?'700':'500'});
+  }
+  if(chBars?.canvas?.isConnected && JSON.stringify(chBars.data.labels)===JSON.stringify(labels) && JSON.stringify(chBars.data.datasets.map(d=>d.data))===JSON.stringify([incs.map((v,i)=>(incs[i]||exps[i])?v:null),exps.map((v,i)=>(incs[i]||exps[i])?v:null)])){chBars.update('none');return;}
   const morphB = chartMorph && chBars && chBars.canvas && chBars.canvas.isConnected && (incs.some(Boolean) || exps.some(Boolean));
   if (chBars && !morphB){ chBars.destroy(); chBars = null; }
   if (!incs.some(Boolean) && !exps.some(Boolean)){ bw.innerHTML = emptyBox('chart-column', 'Aún no hay movimientos en los últimos 6 meses.', 'tx', 'Nuevo movimiento'); return; }
   if (!bw.querySelector('canvas')) bw.innerHTML = '<canvas id="chBars"></canvas>';
   const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? planSavings(mm).saved : null), cur = months.length - 1, ink = cssVar('--k-violet');
   const nul = arr => arr.map((v, i) => has(i) ? v : null);
-  const barBg = v => c => vGrad(cssVar(v), c.dataIndex === cur || c.active ? 'ff' : 'b3', c.dataIndex === cur || c.active ? '66' : '3a')(c);
+  const barBg = v => c => vGrad(cssVar(v), c.dataIndex === c.chart.data.labels.length-1 || c.active ? 'ff' : 'b3', c.dataIndex === c.chart.data.labels.length-1 || c.active ? '66' : '3a')(c);
   if (morphB){ chBars.data.labels = months.map(mm=>innerWidth<=700?monthAbbr(mm):cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm)); chBars.data.datasets[0].data = nul(incs); chBars.data.datasets[1].data = nul(exps); chBars.update(); return; }
   chBars = new Chart($('#chBars'), {
     plugins:[legendGap],
@@ -340,10 +334,10 @@ function renderCharts(){
       {type:'bar', label:'Ingresos', data:nul(incs), backgroundColor:barBg('--income-chart'), hoverBackgroundColor:barBg('--income-chart'), solid:'--income-chart', borderRadius:7, borderSkipped:false, maxBarThickness:28, categoryPercentage:.78, barPercentage:.86},
       {type:'bar', label:'Gastos', data:nul(exps), backgroundColor:barBg('--expense-chart'), hoverBackgroundColor:barBg('--expense-chart'), solid:'--expense-chart', borderRadius:7, borderSkipped:false, maxBarThickness:28, categoryPercentage:.78, barPercentage:.86}
 ]},
-    options:{maintainAspectRatio:false, animation:stagger(), interaction:{mode:'index', intersect:false}, layout:{padding:{top:2, right:6, left:2}},
+    options:{maintainAspectRatio:false, animation:reduceMotion()?false:{duration:650,easing:'easeInOutCubic'}, interaction:{mode:'index', intersect:false}, layout:{padding:{top:2, right:6, left:2}},
       plugins:{legend:{...LEGEND, labels:{...LEGEND.labels, generateLabels: ch => ch.data.datasets.map((d, i) => ({text:d.label, fillStyle:cssVar(d.solid), strokeStyle:cssVar(d.solid), lineWidth:d.type === 'line'?2:0, pointStyle:d.type === 'line' ? 'line' : 'rectRounded', hidden:!ch.isDatasetVisible(i), datasetIndex:i, fontColor:cssVar('--muted')}))}},
         tooltip:{filter: i => i.raw != null, callbacks:{title:items=>items.length?(cycleView()?cycleLabel(months[items[0].dataIndex]):monthLong(months[items[0].dataIndex])):'',label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`, labelColor: ctx => ({backgroundColor:cssVar(ctx.dataset.solid), borderColor:cssVar(ctx.dataset.solid), borderRadius:5})}}},
-      scales:{x:{grid:{display:false}, border:{display:false}, ticks:{maxRotation:0,autoSkip:false,font:{size:11},color: c => c.index === cur ? cssVar('--text') : cssVar('--muted'), font: c => ({weight: c.index === cur ? '700' : '500'})}},
+      scales:{x:{grid:{display:false}, border:{display:false}, ticks:{maxRotation:0,autoSkip:false,color: c => c.index === cur ? cssVar('--text') : cssVar('--muted'), font: c => ({size:11,weight: c.index === cur ? '700' : '500'})}},
         y:{beginAtZero:true, grace:'10%', grid:{color: c => c.tick.value === 0 ? cssVar('--muted') + '55' : grid}, border:{display:false, dash:[4,4]}, ticks:{callback:compactS, maxTicksLimit:5, padding:8}}}}
   });
 }

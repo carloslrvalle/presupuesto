@@ -16,7 +16,7 @@ function planningHeader(){
  const labels=document.querySelectorAll('#tab-dashboard .kpi .label');
  [cy?'Ingresos del ciclo':'Ingresos del mes',cy?'Gastos del ciclo':'Gastos del mes','Saldo acumulado','Tasa de ahorro'].forEach((text,i)=>{if(!labels[i])return;for(const node of labels[i].childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){node.textContent=text;break;}});
  $('#topExp').closest('.card').querySelector('h3').textContent=cy?'Top 5 gastos del ciclo':'Top 5 gastos del mes';
- $('#barsWrap').closest('.card').querySelector('h3').textContent=cy?'Ingresos vs gastos · últimos 6 ciclos':'Ingresos vs gastos · últimos 6 meses';
+ $('#barsWrap').closest('.card').querySelector('h3').textContent='Evolución de ingresos y gastos';
  const copy=$('#btnCopyPrev span');if(copy)copy.textContent=cy?'Copiar ciclo anterior':'Copiar mes anterior';
 }
 function shortPeriodLabel(m){const p=cyclePeriod(m);return p.start.slice(0,4)!==p.end.slice(0,4)?cycleLabel(m):[p.start,p.end].map(d=>fmtDateLong(d).replace(/\s+\d{4}$/,'')).join(' – ');}
@@ -165,14 +165,18 @@ function motionResize(el,update){
 }
 function toggleDisclosure(details,summary,wanted,animate=true){
  const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=details.getBoundingClientRect().height;
+ const content=details.querySelector(':scope>.metric-expanded,:scope>.disclosure-body,:scope>.analysis-detail-body,:scope>.settings-disclosure-body,:scope>.goal-split,:scope.expense-distribution-more>div');
+ const previousOpacity=current&&content?getComputedStyle(content).opacity:null;
  if(current){current.animation.cancel();current.contentAnimation?.cancel();}
  details.style.overflow='hidden';details.open=true;
- const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+parseFloat(getComputedStyle(details).borderTopWidth||0)+parseFloat(getComputedStyle(details).borderBottomWidth||0);
+ const style=getComputedStyle(details);
+ const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+parseFloat(style.borderTopWidth||0)+parseFloat(style.borderBottomWidth||0)+parseFloat(style.paddingTop||0)+parseFloat(style.paddingBottom||0);
  const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
  if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
- const content=details.querySelector(':scope>.metric-expanded,:scope>.disclosure-body,:scope>.analysis-detail-body,:scope>.settings-disclosure-body,:scope>.goal-split');
- const contentAnimation=content?.animate(open?[{opacity:0,transform:'translateY(-5px)'},{opacity:1,transform:'none'}]:[{opacity:1},{opacity:0}],{duration:open?MOTION.panel:MOTION.fast,easing:MOTION.ease});
- const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});
+ const distribution=details.matches('.expense-distribution-more'),duration=distribution?360:MOTION.panel;
+ const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:open?[{opacity:previousOpacity??0,transform:'translateY(-5px)'},{opacity:1,transform:'none'}]:[{opacity:previousOpacity??1},{opacity:0}];
+ const contentAnimation=content?.animate(frames,{duration:distribution?duration:open?MOTION.panel:MOTION.fast,easing:MOTION.ease});
+ const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});
  details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
 }
 document.addEventListener('click',e=>{
@@ -197,18 +201,20 @@ function fitMetricValues(){document.querySelectorAll('.tab.active .kpi .value').
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
 function countUp(el, to, kind = 'money', cls){
-  if (!el) return; const key = el.id || el.dataset.k, from = numMemo[key] ?? 0; numMemo[key] = to;
+  if (!el) return; const key = el.id || el.dataset.k, from = key in numMemo ? (el._countValue ?? numMemo[key]) : 0; numMemo[key] = to;
   const f = v => kind === 'pct' ? v.toFixed(1) + '%' : fmt(v);
   if (cls !== undefined) el.className = cls;
+  if(el._raf && el._countTarget===to && key in numMemo && from!==0)return;
   cancelAnimationFrame(el._raf);
+  el._raf=0;el._countTarget=to;
   el._fitTexts=[f(from),f(to)];fitMetricValue(el);
-  if (reduceMotion() || from === to){ el.textContent = f(to);el._fitTexts=[f(to)];fitMetricValue(el); return; }
+  if (reduceMotion() || from === to){ el._countValue=to;el.textContent = f(to);el._fitTexts=[f(to)];fitMetricValue(el); return; }
   // Mayor recorrido numérico, más tiempo para leer la desaceleración final; los gráficos conservan su ritmo.
   const t0 = performance.now(), dur = Math.min(1900, 1100 + Math.log10(1 + Math.abs(to - from)) * 170);
   // Curva con velocidad y aceleración nulas en ambos extremos: evita el arranque brusco y el salto final.
   const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
   el.textContent = f(from);
-  const step = now => { if(reduceMotion()){el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el.textContent = f(from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step);else {el._fitTexts=[f(to)];fitMetricValue(el);} };
+  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k);el.textContent = f(el._countValue); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[f(to)];fitMetricValue(el);} };
   el._raf = requestAnimationFrame(step);
 }
 // Barras que crecen: desde cero al entrar a la pestaña o cambiar de mes; desde su valor anterior en el resto de cambios

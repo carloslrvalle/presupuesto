@@ -373,7 +373,7 @@ function tickChanges(root, selector, render){
     const {d, dy, on, t} = drag; drag = null; if (!on) return;
     d.classList.remove('sheet-dragging'); void d.offsetWidth;
     const fast = dy / Math.max(1, performance.now() - t) > .6, away = dy > Math.min(140, d.offsetHeight * .3) || (fast && dy > 40);
-    if (away && d.dispatchEvent(new Event('cancel', {cancelable:true}))){ d.style.transform = ''; d.close(); }
+    if (e.type !== 'pointercancel' && away && d.dispatchEvent(new Event('cancel', {cancelable:true}))){ d.style.transform = ''; d.close(); }
     else d.style.transform = '';
   };
   document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);

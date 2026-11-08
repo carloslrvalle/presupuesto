@@ -274,7 +274,7 @@ nameEl.addEventListener('blur', () => {
 /* ---------- Selector de mes y fecha propio ---------- */
 const DP_M = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const DP_W = ['L','M','M','J','V','S','D'];
-const dpEl = document.createElement('div'); dpEl.className = 'dp'; dpEl.setAttribute('role', 'dialog');
+const dpEl = document.createElement('div'); dpEl.className = 'dp'; dpEl.setAttribute('role', 'dialog'); dpEl.setAttribute('aria-label', 'Elegir fecha');
 if ('popover' in HTMLElement.prototype) dpEl.setAttribute('popover', 'manual');
 document.body.appendChild(dpEl);
 let dpS = null;
@@ -292,11 +292,14 @@ function dpOpen(anchor, o){
   if (dpEl.showPopover){ try{ if (dpEl.matches(':popover-open')) dpEl.hidePopover(); dpEl.showPopover(); }catch(e){} }
   dpPlace();
   requestAnimationFrame(() => dpEl.classList.add('show'));
+  (dpEl.querySelector('.dp-c.sel:not(:disabled)')||dpEl.querySelector('.dp-c.now:not(:disabled)')||dpEl.querySelector('button:not(:disabled)'))?.focus({preventScroll:true});
 }
-function dpClose(){
+function dpClose(restoreFocus=false){
   if (!dpS) return;
-  dpS.anchor.classList.remove('open'); dpS = null;
+  const anchor=dpS.anchor;
+  anchor.classList.remove('open'); dpS = null;
   dpEl.classList.remove('show');
+  if(restoreFocus&&anchor.isConnected)anchor.focus({preventScroll:true});
   setTimeout(() => { if (!dpS && dpEl.hidePopover){ try{ dpEl.hidePopover(); }catch(e){} } }, 200);
 }
 function dpPlace(){
@@ -331,7 +334,7 @@ function dpRender(){
     : `${S.clearable ? '<button class="muted-b" data-dp="clear">Quitar fecha</button>' : '<span></span>'}<button data-dp="today">Hoy</button>`;
   dpEl.innerHTML = `<div class="dp-h">${head}</div><div class="dp-body">${body}</div><div class="dp-f">${foot}</div>`;
 }
-function dpPick(v){ const S = dpS; if(S.max && v > S.max)return; dpClose(); S.onPick(v); }
+function dpPick(v){ const S = dpS; if(S.max && v > S.max)return; dpClose(true); S.onPick(v); }
 dpEl.addEventListener('click', e => {
   const b = e.target.closest('[data-dp]'); if (!b || !dpS) return;
   const a = b.dataset.dp, S = dpS;
@@ -345,9 +348,10 @@ dpEl.addEventListener('click', e => {
   else if (a === 'clear') return dpPick('');
   else return;
   dpRender(); dpPlace();
+  (dpEl.querySelector('[data-dp="'+a+'"]')||dpEl.querySelector('.dp-c.sel:not(:disabled),.dp-c:not(:disabled)'))?.focus({preventScroll:true});
 });
 document.addEventListener('pointerdown', e => { if (dpS && !dpEl.contains(e.target) && !dpS.anchor.contains(e.target)) dpClose(); }, true);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && dpS){ e.preventDefault(); e.stopPropagation(); dpClose(); } }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && dpS){ e.preventDefault(); e.stopPropagation(); dpClose(true); } }, true);
 addEventListener('resize', () => dpClose());
 document.addEventListener('scroll', e => { if (dpS && !dpEl.contains(e.target)) dpPlace(); }, true);
 // Convierte un <input type="date"> en un botón con el selector propio (el input sigue guardando el valor)

@@ -4,26 +4,8 @@ VICONS['arrow-left'] = '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>';
 VICONS['refresh-cw'] ='<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>';
 const isTouchPhone = () => innerWidth <= 600;
 // Hoja (diálogo) en el celular: se cierra deslizándola hacia abajo desde su parte superior
-let dDrag = null;
-function closeDlg(d){ const x = d.querySelector('[data-close]'); if (x) x.click(); else d.close(); }
-document.addEventListener('touchstart', e => {
-  const d = e.target.closest && e.target.closest('dialog[open]'); if (!d || !isTouchPhone() || d.scrollTop > 2) return;
-  const t = e.touches[0], r = d.getBoundingClientRect();
-  if (t.clientY - r.top > 64 && !e.target.closest('.dlg-head')) return;
-  if (e.target.closest('input,select,textarea,button:not([data-close])')) return;
-  dDrag = {d, y0:t.clientY, t0:Date.now(), dy:0};
-}, {passive:true});
-document.addEventListener('touchmove', e => {
-  if (!dDrag) return; const dy = Math.max(0, e.touches[0].clientY - dDrag.y0); dDrag.dy = dy;
-  if (dy > 4){ dDrag.d.classList.add('dragging'); dDrag.d.style.transform = `translateY(${dy}px)`; }
-}, {passive:true});
-document.addEventListener('touchend', () => {
-  if (!dDrag) return; const {d, dy, t0} = dDrag; dDrag = null; d.classList.remove('dragging');
-  if (dy > 110 || (dy > 40 && Date.now() - t0 < 250)){
-    d.style.transition = 'transform .22s cubic-bezier(.55,0,1,.45)'; d.style.transform = 'translateY(100%)';
-    setTimeout(() => { closeDlg(d); d.style.transition = ''; d.style.transform = ''; }, 210);
-  } else { d.style.transition = 'transform .32s cubic-bezier(.22,1,.36,1)'; d.style.transform = ''; setTimeout(() => { d.style.transition = ''; }, 330); }
-});
+// ui.js gestiona el arrastre con Pointer Events para ratón, lápiz y tacto;
+// un único controlador respeta cancel y evita cierres duplicados o diferidos.
 // Deslizar a los lados cambia de mes; jalar hacia abajo (arriba de todo) sincroniza con Sheets
 const ptr = document.createElement('div'); ptr.className = 'ptr'; ptr.innerHTML = ic('refresh-cw'); document.body.appendChild(ptr);
 let sw = null, ptrBusy = false;

@@ -83,7 +83,10 @@ $('#appVer').textContent = `Versión ${window.__APP_VERSION} · ${fmtDateLong(wi
 const startupProfile=activeProfile,startupConnection=sync.url+'|'+sync.token;
 requestAnimationFrame(()=>setTimeout(()=>{
 if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection)return;
-(syncOn() ? startupSync() : Promise.resolve()).then(() => { if (runAutoRecurring()) renderAll(); pushOtherPending(); setTimeout(migratePastel, 600);
+(syncOn() ? startupSync() : Promise.resolve(true)).then(confirmed => {
+  if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection||localTabChanged||syncConflict())return;
+  if(confirmed){if(runAutoRecurring())renderAll();}else dailyRecurringPending=true;
+  pushOtherPending(); setTimeout(migratePastel, 600);
   setTimeout(() => { if (document.querySelector('dialog[open]')) return;
     if (!state.settings.onboarded && state.transactions.length){ state.settings.onboarded = true; if (!state.settings.lastClose) state.settings.lastClose = thisMonth(); save(); }
     maybeMonthClose(); }, 900); });

@@ -42,10 +42,11 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
    ({bg,text,muted,mode}=cached);
   }else{
    const settings=JSON.parse(storage.getItem(profile==='p2'?'budgetPlanner.v1.p2':'budgetPlanner.v1')||'null')?.settings||{};
-   const darkThemes={mono:'#000000',dracula:'#14151b',tokyo:'#111219',midnight:'#05070d',obsidian:'#07060a',charcoal:'#0b0b0c',wine:'#0c0607',nightforest:'#050a07'};
-   mode=settings.theme==='minimal'?'light':Object.prototype.hasOwnProperty.call(darkThemes,settings.theme)?'dark':'';
+   // Oscuro OLED y los temas oscuros retirados (leídos como OLED desde 1.10.72) fuerzan el modo oscuro.
+   const darkThemes=['mono','dracula','tokyo','midnight','obsidian','charcoal','wine','nightforest'];
+   mode=darkThemes.includes(settings.theme)?'dark':'';
    const dark=mode==='dark'||!mode&&systemDark;
-   bg=mode==='dark'?darkThemes[settings.theme]:dark?'#000000':'#f5f6fa';text=dark?'#e9ebf0':'#1b2232';muted=dark?'#8f96a6':'#60697c';
+   bg=dark?'#000000':'#fcfcfc';text=dark?'#ffffff':'#000000';muted=dark?'#a4a4a4':'#525252';
   }
   if(mode)root.dataset.mode=mode;
   for(const [key,value] of Object.entries({bg,text,muted}))root.style.setProperty('--boot-'+key,value);

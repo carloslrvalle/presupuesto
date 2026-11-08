@@ -31,67 +31,24 @@ function roleOf(c){
 // R(): un color por ROL → home, food, transport, bills, health, fun, shop, edu, debt, save, other, income, bonus, pet, travel, tech
 // inc / exp / sav: colores del tema para gráficos, barras de ingresos/alertas y calendario
 const R = (...c) => c;
+// Cuatro temas desde 1.10.72. Vercel es la base: también se usa cuando no hay tema elegido.
 const THEMES = [
-  {id:'minimal', name:'Claro', desc:'Siempre en modo claro, íconos en negro puro', mode:'light', accent:'#000000', uniform:'#000000', inc:'#3f3f46', exp:'#a1a1aa', sav:'#18181b'},
-  {id:'mono', name:'Oscuro OLED', desc:'Siempre en negro puro, íconos en blanco puro', mode:'dark', accent:'#ffffff', uniform:'#ffffff', inc:'#e4e4e7', exp:'#71717a', sav:'#a1a1aa'},
   // Tema Vercel (shadcn/ui, 21st.dev): blanco y negro neutros que siguen el modo del sistema; azul ingresos, rojo gastos, ámbar ahorro.
   {id:'vercel', name:'Vercel', desc:'Blanco y negro preciso, sigue el modo del sistema', accent:'#000000',
    ui:{bg:'#000000', surface:'#090909', s2:'#1d1d1d', border:'#242424', text:'#ffffff', muted:'#a4a4a4'},
    uiLight:{bg:'#fcfcfc', surface:'#ffffff', s2:'#f5f5f5', border:'#e4e4e4', text:'#000000', muted:'#525252'},
    inc:'#2d62ef', exp:'#e54b4f', sav:'#ffae04',
    c:R('#2d62ef','#ffae04','#747474','#a4a4a4','#2d62ef','#ffae04','#747474','#525252','#e54b4f','#ffae04','#a4a4a4','#2d62ef','#ffae04','#747474','#2d62ef','#525252')},
-  {id:'sage', name:'Monocromático', desc:'Íconos en un solo color que tú eliges', custom:true, accent:'#5f7f68', uniform:'#6b8f75', inc:'#8fb39a', exp:'#c7d6cb', sav:'#4f6f58'},
-  {id:'pastel', name:'Pastel', desc:'Suave y luminoso, ideal para modo oscuro', accent:'#8b7fd6', inc:'#a6e3a1', exp:'#f38ba8', sav:'#cba6f7',
-   c:R('#89b4fa','#fab387','#74c7ec','#f9e2af','#89dceb','#cba6f7','#f5c2e7','#b4befe','#f38ba8','#94e2d5','#f2cdcd','#a6e3a1','#f9e2af','#eba0ac','#a6e3a1','#f5e0dc')},
-  {id:'vivid', name:'Vibrante', desc:'Intenso pero equilibrado', accent:'#1e66f5', inc:'#40a02b', exp:'#d20f39', sav:'#8839ef',
-   c:R('#1e66f5','#fe640b','#209fb5','#df8e1d','#40a02b','#8839ef','#ea76cb','#7287fd','#d20f39','#179299','#dd7878','#40a02b','#df8e1d','#e64553','#04a5e5','#dc8a78')},
+  {id:'mono', name:'Oscuro OLED', desc:'Siempre en negro puro, íconos en blanco puro', mode:'dark', accent:'#ffffff', uniform:'#ffffff', inc:'#e4e4e7', exp:'#71717a', sav:'#a1a1aa'},
   {id:'nordic', name:'Nórdico', desc:'Escarcha y aurora boreal', accent:'#5e81ac', inc:'#a3be8c', exp:'#bf616a', sav:'#b48ead',
    c:R('#5e81ac','#d08770','#81a1c1','#ebcb8b','#a3be8c','#b48ead','#c5727a','#88c0d0','#bf616a','#8fbcbb','#9aa5b8','#a3be8c','#ebcb8b','#c79a7a','#7fb0c7','#b0bccf')},
-  {id:'rose', name:'Rosé Pine', desc:'Rosa, oro, pino e iris', accent:'#907aa9', inc:'#56949f', exp:'#eb6f92', sav:'#c4a7e7',
-   c:R('#31748f','#f6c177','#9ccfd8','#ebbcba','#56949f','#c4a7e7','#eb6f92','#907aa9','#b4637a','#286983','#908caa','#9ccfd8','#f6c177','#d7827e','#ea9d34','#6e6a86')},
-  {id:'dracula', name:'Drácula', desc:'Neón suave sobre gris púrpura', mode:'dark', ui:{bg:'#14151b', surface:'#1d1e26', s2:'#282a36', border:'#2f3142'}, accent:'#bd93f9', inc:'#50fa7b', exp:'#ff5555', sav:'#bd93f9',
-   c:R('#8be9fd','#ffb86c','#6272a4','#f1fa8c','#50fa7b','#bd93f9','#ff79c6','#9aa5ff','#ff5555','#5af0c6','#a4abc6','#50fa7b','#f1fa8c','#ff92df','#79dafa','#c9a8ff')},
-  {id:'tokyo', name:'Tokyo Night', desc:'Azules nocturnos con luces de neón', mode:'dark', ui:{bg:'#111219', surface:'#1a1b26', s2:'#24283b', border:'#292e42'}, accent:'#7aa2f7', inc:'#9ece6a', exp:'#f7768e', sav:'#bb9af7',
-   c:R('#7aa2f7','#ff9e64','#7dcfff','#e0af68','#73daca','#bb9af7','#f7768e','#2ac3de','#db4b4b','#9ece6a','#a9b1d6','#9ece6a','#e0af68','#ff9e64','#b4f9f8','#565f89')},
-  {id:'gruvbox', name:'Gruvbox', desc:'Retro cálido: mostaza, óxido y musgo', accent:'#d65d0e', inc:'#98971a', exp:'#cc241d', sav:'#b16286',
-   c:R('#458588','#d65d0e','#83a598','#d79921','#689d6a','#b16286','#d3869b','#8ec07c','#cc241d','#98971a','#a89984','#98971a','#fabd2f','#fe8019','#83a598','#928374')},
-  {id:'solar', name:'Solarized', desc:'Clásico de alto contraste y tonos precisos', accent:'#268bd2', inc:'#859900', exp:'#dc322f', sav:'#6c71c4',
-   c:R('#268bd2','#cb4b16','#2aa198','#b58900','#859900','#6c71c4','#d33682','#3f8fc4','#dc322f','#2aa198','#93a1a1','#859900','#b58900','#cb4b16','#268bd2','#657b83')},
-  {id:'everforest', name:'Everforest', desc:'Bosque suave y cálido, descansa la vista', accent:'#7fbbb3', inc:'#a7c080', exp:'#e67e80', sav:'#d699b6',
-   c:R('#7fbbb3','#e69875','#83c092','#dbbc7f','#a7c080','#d699b6','#e67e80','#9fb6c9','#d6676b','#83c092','#9da9a0','#a7c080','#dbbc7f','#e5a07f','#8fb8ad','#859289')},
-  {id:'kanagawa', name:'Kanagawa', desc:'Inspirado en la ola: índigo, sakura y otoño', accent:'#7e9cd8', inc:'#98bb6c', exp:'#e46876', sav:'#957fb8',
-   c:R('#7e9cd8','#ffa066','#7fb4ca','#e6c384','#6a9589','#957fb8','#d27e99','#9cabca','#c34043','#76946a','#727169','#98bb6c','#dca561','#e98a6b','#7aa89f','#658594')},
-  {id:'ocean', name:'Océano', desc:'Azules, turquesas y arena', accent:'#1e6091', inc:'#34a0a4', exp:'#e76f51', sav:'#5e60ce',
-   c:R('#2a6f97','#e9c46a','#61a5c2','#89c2d9','#52b69a','#5e60ce','#f28482','#4361ee','#e76f51','#2ec4b6','#a9b4c2','#34a0a4','#76c893','#c9ada7','#00b4d8','#184e77')},
-  {id:'earth', name:'Tierra', desc:'Terracota, oliva, arena y café', accent:'#9c6644', inc:'#588157', exp:'#a44a3f', sav:'#bc6c25',
-   c:R('#9c6644','#d4a373','#6b705c','#e9c46a','#8a9a5b','#bc6c25','#c97b63','#606c38','#a44a3f','#588157','#b7b7a4','#588157','#dda15e','#b08968','#a3b18a','#7f5539')},
-  {id:'sunset', name:'Atardecer', desc:'Coral, durazno, ciruela y salvia', accent:'#e56b6f', inc:'#7fb7a4', exp:'#c44569', sav:'#6d597a',
-   c:R('#e56b6f','#f4a261','#b56576','#f6bd60','#7fb7a4','#6d597a','#f28482','#915f78','#c44569','#84a59d','#eaac8b','#7fb7a4','#f6bd60','#e0a07e','#f7b267','#6d597a')},
-  {id:'forest', name:'Bosque', desc:'Pino, musgo, salvia y ocre', accent:'#2d6a4f', inc:'#40916c', exp:'#9c4a3c', sav:'#c9a227',
-   c:R('#2d6a4f','#d4a373','#52796f','#c9a227','#74c69d','#6b9080','#b08d57','#354f52','#9c4a3c','#40916c','#a3b18a','#40916c','#c9a227','#8c6a5d','#84a98c','#1b4332')},
-  {id:'cafe', name:'Café', desc:'Espresso, caramelo, crema y canela', accent:'#7f5539', inc:'#8a9a5b', exp:'#a4473e', sav:'#c8a27c',
-   c:R('#6f4e37','#c8a27c','#a67b5b','#e0c9a6','#8a9a5b','#b5835a','#d4a373','#8b5a3c','#a4473e','#7f5539','#b9a89a','#8a9a5b','#d9b382','#c19a6b','#a98467','#5c4033')},
-  {id:'lavender', name:'Lavanda', desc:'Lilas, malvas y rosas empolvados', accent:'#8b6fc0', inc:'#7fb5a4', exp:'#d16d8a', sav:'#a78bfa',
-   c:R('#8b6fc0','#e8a7b8','#a5b4fc','#e9d5a3','#9cc9b9','#b794f4','#f0a6ca','#9f8fd8','#d16d8a','#7fb5a4','#c4b5d0','#7fb5a4','#e9c48f','#d8a7c4','#93b5e0','#7c6a9a')},
-  // Oscuros: fuerzan el modo oscuro y tiñen apenas el fondo (casi negro) con el tono del tema
-  {id:'midnight', name:'Medianoche', desc:'Azul marino profundo con luces frías', mode:'dark', ui:{bg:'#05070d', surface:'#0c111c', s2:'#151c2b', border:'#1c2537'}, accent:'#6d8dff', inc:'#4fd1a5', exp:'#ff6b81', sav:'#9b8cff',
-   c:R('#6d8dff','#ffa94d','#4cc9f0','#ffd166','#4fd1a5','#9b8cff','#ff8fab','#7aa7ff','#ff6b81','#3ddbd9','#94a3b8','#4fd1a5','#ffd166','#f4a28c','#72ddf7','#8093f1')},
-  {id:'obsidian', name:'Obsidiana', desc:'Joyas sobre negro: amatista, esmeralda y rubí', mode:'dark', ui:{bg:'#07060a', surface:'#100e16', s2:'#1a1722', border:'#241f2e'}, accent:'#a78bfa', inc:'#34d399', exp:'#f43f5e', sav:'#c084fc',
-   c:R('#818cf8','#fb923c','#38bdf8','#facc15','#34d399','#c084fc','#f472b6','#a78bfa','#f43f5e','#2dd4bf','#a1a1aa','#34d399','#fbbf24','#fda4af','#22d3ee','#e879f9')},
-  {id:'charcoal', name:'Carbón', desc:'Grafito sobrio con un toque ámbar', mode:'dark', ui:{bg:'#0b0b0c', surface:'#141416', s2:'#1e1e21', border:'#28282c'}, accent:'#f5a524', inc:'#7dc49b', exp:'#e5737d', sav:'#d9a55b',
-   c:R('#8ea4c8','#e0a46b','#7fb2bf','#d9b65b','#7dc49b','#b49bd1','#d98fa8','#9aa6c4','#e5737d','#78b8a8','#9a9aa3','#7dc49b','#e8c070','#c9a18a','#8cbcd6','#a3a3b3')},
-  {id:'wine', name:'Vino', desc:'Burdeos, ciruela y dorado de noche', mode:'dark', ui:{bg:'#0c0607', surface:'#170d10', s2:'#221418', border:'#2e1b21'}, accent:'#e0607e', inc:'#8fc79a', exp:'#ff6f7d', sav:'#c58fd6',
-   c:R('#d9748f','#e8a76b','#b48ab8','#e6c27a','#8fc79a','#c58fd6','#f29bb2','#a98bd4','#ff6f7d','#7fbfb0','#a8959b','#8fc79a','#e6c27a','#d99a86','#9fb7e0','#b06a82')},
-  {id:'nightforest', name:'Bosque nocturno', desc:'Verdes profundos y luciérnagas', mode:'dark', ui:{bg:'#050a07', surface:'#0b140f', s2:'#132019', border:'#1a2b21'}, accent:'#4ade80', inc:'#4ade80', exp:'#f87171', sav:'#facc15',
-   c:R('#5fb98a','#e3a15e','#6fa8dc','#e4c95b','#4ade80','#a3c76b','#e58f8f','#7cc6a4','#f87171','#2fbf8f','#94a39a','#4ade80','#facc15','#c9a27a','#6fc3c9','#8fae7a')}];
-// Monocromático personalizable: todo sale de un solo color elegido por el usuario
-function syncMono(){
-  const t = THEMES.find(x => x.id === 'sage'), c = /^#[0-9a-f]{6}$/i.test(state.settings.monoColor || '') ? state.settings.monoColor : '#6b8f75';
-  const L = hexLight(c), sat = hueOf(c).s;
-  t.uniform = c; t.accent = L > .7 ? toneHex(c, .42, Math.min(.6, sat)) : c;
-  t.inc = toneHex(c, Math.min(.72, L + .14), 0); t.exp = toneHex(c, Math.min(.86, L + .28), 0); t.sav = toneHex(c, Math.max(.28, L - .12), 0);
-  t.desc = `Íconos en un solo color: ${colorName(c).toLowerCase()}`;
-}
+  {id:'pastel', name:'Pastel', desc:'Suave y luminoso, ideal para modo oscuro', accent:'#8b7fd6', inc:'#a6e3a1', exp:'#f38ba8', sav:'#cba6f7',
+   c:R('#89b4fa','#fab387','#74c7ec','#f9e2af','#89dceb','#cba6f7','#f5c2e7','#b4befe','#f38ba8','#94e2d5','#f2cdcd','#a6e3a1','#f9e2af','#eba0ac','#a6e3a1','#f5e0dc')}];
+// Temas retirados en 1.10.72: cada elección guardada se lee como el tema vigente más parecido (sin reescribir datos).
+const THEME_REPLACEMENTS = {minimal:'vercel', sage:'vercel', charcoal:'mono', obsidian:'mono', midnight:'mono', dracula:'mono', tokyo:'mono', wine:'mono', nightforest:'mono',
+  ocean:'nordic', solar:'nordic', kanagawa:'nordic', everforest:'nordic', forest:'nordic',
+  rose:'pastel', lavender:'pastel', sunset:'pastel', vivid:'pastel', gruvbox:'pastel', earth:'pastel', cafe:'pastel'};
+const themeById = id => THEMES.find(x => x.id === (THEME_REPLACEMENTS[id] || id));
 const logoHue = () => state.settings.appColor && hueOf(state.settings.appColor).s > .15 ? state.settings.appColor : '#4f46e5';
 function themeColors(t){
   if (t.uniform) return ROLES.map(() => t.uniform);
@@ -109,8 +66,7 @@ function themeMap(t){
 const goalThemeColor = (t, i) => { const cols = themeColors(t); return cols[[9, 12, 14, 5, 0, 3, 7, 1][i % 8]]; }; // (en temas de un solo color todas las metas comparten el tono)
 const hexLight = hex => { const [r,g,b] = [1,3,5].map(i => parseInt(hex.substr(i,2),16) / 255); return (Math.max(r,g,b) + Math.min(r,g,b)) / 2; };
 function applyTheme(id){
-  syncMono();
-  const t = THEMES.find(x => x.id === id); if (!t) return;
+  const t = themeById(id); if (!t) return;
   const prev = {theme:state.settings.theme, app:state.settings.appColor, cats:state.categories.map(c => [c.id, c.color]), goals:state.goals.map(g => [g.id, g.color])};
   const map = themeMap(t);
   state.categories.forEach(c => c.color = map[c.id]);
@@ -126,26 +82,18 @@ function applyTheme(id){
 }
 // ---- Tipografía ----
 const SANS_FB = 'system-ui,-apple-system,"Segoe UI",sans-serif', SERIF_FB = 'Georgia,"Times New Roman",serif';
+// Seis fuentes desde 1.10.72; Geist es la predeterminada (tema Vercel). Georgia es del sistema: no descarga archivo.
 const FONTS = [
-  {id:'jakarta', name:'Plus Jakarta', desc:'La original: moderna y amable', body:`"Plus Jakarta Sans",${SANS_FB}`},
-  {id:'claude', name:'Estilo Claude', desc:'Serif editorial, como las respuestas de Claude', body:`"Source Serif 4",${SERIF_FB}`, num:'"lnum","tnum"'},
   {id:'geist', name:'Geist', desc:'Limpia y moderna, con cifras claras', body:`"Geist",${SANS_FB}`, num:'"tnum"'},
   {id:'geistmono', name:'Geist Mono', desc:'Monoespaciada, ideal para tablas y cifras', body:`"Geist Mono",ui-monospace,monospace`, num:'"tnum"'},
-  {id:'geistserif', name:'Geist Serif', desc:'Serif con detalles expresivos', body:`"Geist Serif",${SERIF_FB}`, num:'"tnum"'},
-  {id:'apple', name:'Apple · SF', desc:'SF en Apple; Inter en otros dispositivos', body:`-apple-system,BlinkMacSystemFont,"Inter",${SANS_FB}`, num:'"tnum"'},
-  {id:'googlesans', name:'Google Sans', desc:'La de Google: clara y amable', body:`"Google Sans",${SANS_FB}`, num:'"tnum"'},
-  {id:'publicsans', name:'Public Sans', desc:'Sobria y legible para cifras y presupuestos', body:`"Public Sans",${SANS_FB}`, num:'"tnum"'},
   {id:'inter', name:'Inter', desc:'Neutra y muy legible en pantalla', body:`"Inter",${SANS_FB}`, num:'"tnum"'},
-  {id:'dmsans', name:'DM Sans', desc:'Geométrica y limpia', body:`"DM Sans",${SANS_FB}`},
-  {id:'manrope', name:'Manrope', desc:'Compacta, ideal para cifras', body:`"Manrope",${SANS_FB}`},
-  {id:'spacegrotesk', name:'Space Grotesk', desc:'Moderna, con carácter tecnológico', body:`"Space Grotesk",${SANS_FB}`, num:'"tnum"'},
-  {id:'roboto', name:'Roboto', desc:'Clásica, clara y familiar', body:`Roboto,${SANS_FB}`, num:'"tnum"'},
-  {id:'plexsans', name:'IBM Plex Sans', desc:'Precisa, inspirada en diseño editorial y técnico', body:`"IBM Plex Sans",${SANS_FB}`, num:'"tnum"'},
-  {id:'plexmono', name:'IBM Plex Mono', desc:'Monoespaciada: cifras y texto con ancho uniforme', body:`"IBM Plex Mono",ui-monospace,monospace`, num:'"tnum"'},
-  {id:'nunito', name:'Nunito', desc:'Redondeada y suave', body:`"Nunito",${SANS_FB}`},
+  {id:'jakarta', name:'Plus Jakarta', desc:'Moderna y amable', body:`"Plus Jakarta Sans",${SANS_FB}`},
+  {id:'georgia', name:'Georgia', desc:'Serif clásica, incluida en el sistema', body:SERIF_FB, num:'"lnum","tnum"'},
   {id:'system', name:'Del sistema', desc:'La fuente nativa de tu celular o computadora', body:SANS_FB, num:'"tnum"'}];
-// Compatibilidad con elecciones guardadas de opciones retiradas.
-const FONT_REPLACEMENTS = {claudemix:'claude', geistserifheart:'geistserif', geistserifsquare:'geistserif', geistseriftriangle:'geistserif', geistpixelcircle:'geistmono', geistpixelgrid:'geistmono', geistpixelline:'geistmono', geistpixelsquare:'geistmono', geistpixeltriangle:'geistmono'};
+// Compatibilidad con elecciones guardadas de opciones retiradas (la última limpieza en 1.10.72).
+const FONT_REPLACEMENTS = {claude:'georgia', claudemix:'georgia', geistserif:'georgia', geistserifheart:'georgia', geistserifsquare:'georgia', geistseriftriangle:'georgia',
+  geistpixelcircle:'geistmono', geistpixelgrid:'geistmono', geistpixelline:'geistmono', geistpixelsquare:'geistmono', geistpixeltriangle:'geistmono', plexmono:'geistmono',
+  apple:'system', googlesans:'inter', publicsans:'inter', dmsans:'inter', manrope:'inter', roboto:'inter', plexsans:'inter', spacegrotesk:'geist', nunito:'jakarta'};
 const curFont = () => FONTS.find(f => f.id === (FONT_REPLACEMENTS[state.settings.font] || state.settings.font)) || FONTS[0];
 function applyFont(){
   const f = curFont(), r = document.documentElement.style;
@@ -165,7 +113,7 @@ function refreshFontLayout(){
 function loadAppFont(f){
   if (!document.fonts || appFontKey === f.id) return;
   appFontKey = f.id;
-  const family = (f.id === 'apple' ? '"Inter"' : f.body.split(',')[0]);
+  const family = f.body.split(',')[0];
   Promise.all([400,500,600,700].map(w => document.fonts.load(w+' 16px '+family,'Presupuesto Áéñ S/ 1,250.90')))
     .then(() => { if (curFont().id === f.id) requestAnimationFrame(refreshFontLayout); }).catch(() => {});
 }
@@ -176,7 +124,7 @@ function renderFonts(){
       <div class="fc-aa"><b style="font-family:${esc(f.head || f.body)}">Aa</b><span style="font-family:${esc(f.head || f.body)}">S/ 1,250.90</span></div>
       <div class="fc-name" style="font-family:${esc(f.body)}">${f.name}${f.id === cur ? `<span class="tc-on">${ic('check')}</span>` : ''}</div>
       <div class="fc-desc" style="font-family:${esc(f.body)}">${f.desc}</div></button>`).join('');
-  $('#fontNote').textContent = cur === 'apple' ? 'Usa San Francisco del sistema en iPhone, iPad y Mac; en otros dispositivos usa Inter. Funciona sin internet.' : cur === 'system' ? 'Usa la fuente nativa de tu dispositivo: San Francisco en Apple, Segoe UI en Windows o la predeterminada de Android. Su apariencia varía entre sistemas.' : cur === 'claude' ? 'Las fuentes de Claude (Anthropic Sans y Anthropic Serif) son de uso exclusivo de Anthropic; aquí usamos Source Serif 4, una serif libre muy parecida.' : 'Cambia la letra de toda la app. Funciona sin internet.';
+  $('#fontNote').textContent = cur === 'system' ? 'Usa la fuente nativa de tu dispositivo: San Francisco en Apple, Segoe UI en Windows o la predeterminada de Android. Su apariencia varía entre sistemas.' : cur === 'georgia' ? 'Georgia viene instalada en casi todos los dispositivos; si falta, se usa la serif del sistema.' : 'Cambia la letra de toda la app. Funciona sin internet.';
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-font]'); if (!b) return;
@@ -185,7 +133,7 @@ document.addEventListener('click', e => {
   toast(`Letra: ${curFont().name}`, {icon:'type', action:'Deshacer', onAction: () => { state.settings.font = prev; save(); applyFont(); renderFonts(); renderAll(); moveTabInd(); }});
 });
 function renderThemes(){
-  const el=$('#themeGrid');if(!el)return;syncMono();const cur=state.settings.theme;
+  const el=$('#themeGrid');if(!el)return;const cur=curTheme().id;
   const card=t=>{
     const dark=t.mode==='dark'||(!t.mode&&isDarkUI()), ui=dark?t.ui:t.uiLight, surface=ui?.surface||(dark?'#101114':'#ffffff');
     const bg=ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface), cols=themeColors(t);
@@ -197,28 +145,19 @@ function renderThemes(){
         <div class="theme-preview-categories">${categories.map(c=>`<i style="background:${c}"></i>`).join('')}</div>
       </div><div class="tc-row"><b>${esc(t.name)}</b>${t.id===cur?`<span class="tc-on">${ic('check')}</span>`:''}</div>
       <span class="theme-mode-label">${t.mode==='light'?'Siempre claro':t.mode==='dark'?'Siempre oscuro':'Se adapta al dispositivo'}</span></button>
-      ${t.custom?'<button type="button" class="btn sm theme-custom" data-mono-pick>Elegir color</button>':''}</div>`;
+      </div>`;
   };
-  const recommended=['pastel','nordic','ocean','forest','lavender','earth'];
-  const group=(title,list)=>'<div class="tg-title">'+title+'</div>'+list.map(card).join('');
-  const extra=THEMES.filter(t=>!t.uniform&&!recommended.includes(t.id));
-  el.innerHTML='<div class="theme-key"><span style="--key:var(--income-chart)">Ingresos</span><span style="--key:var(--expense-chart)">Gastos</span><span style="--key:var(--k-violet)">Ahorro acumulado</span></div>'+group('Neutros',THEMES.filter(t=>t.uniform))+group('Paletas esenciales',THEMES.filter(t=>recommended.includes(t.id)))+
-    '<details class="theme-more"'+(extra.some(t=>t.id===cur)?' open':'')+'><summary>Más paletas <span>'+extra.length+' opciones</span></summary><div class="theme-more-grid">'+extra.map(card).join('')+'</div></details>';
+  el.innerHTML='<div class="theme-key"><span style="--key:var(--income-chart)">Ingresos</span><span style="--key:var(--expense-chart)">Gastos</span><span style="--key:var(--k-violet)">Ahorro acumulado</span></div>'+THEMES.map(card).join('');
   const t=curTheme();
   const custom=t&&state.categories.some(c=>String(c.color).toLowerCase()!==String(themeMap(t)[c.id]).toLowerCase());
   $('#themeNote').textContent=t?'Tema '+t.name+(custom?' · categorías personalizadas.':'.')+' Las muestras muestran ingresos, gastos, ahorro y categorías.':'Elige una paleta para coordinar categorías, metas, indicadores y gráficos.';
 }
 
 $('#themeGrid').addEventListener('click', e => {
-  if (e.target.closest('[data-mono-pick]')){
-    e.stopPropagation();
-    return openColor(state.settings.monoColor || '#6b8f75', col => { state.settings.monoColor = col; applyTheme('sage'); });
-  }
   const b = e.target.closest('[data-theme]'); if (b) applyTheme(b.dataset.theme);
 });
-$('#themeGrid').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-mono-pick]')){ e.preventDefault(); e.stopPropagation(); e.target.click(); } });
 
-const curTheme = () => THEMES.find(x => x.id === state.settings.theme);
+const curTheme = () => themeById(state.settings.theme) || THEMES[0];
 const curThemeColorCat = c => { const t = curTheme(); return t ? themeMap(t)[c.id] : null; };
 const curThemeColorGoal = id => { const t = curTheme(); if (!t) return null; const i = id ? state.goals.findIndex(g => g.id === id) : state.goals.length; return goalThemeColor(t, Math.max(0, i)); };
 /* ---------- Selector de colores ---------- */
@@ -251,8 +190,7 @@ $('#colorHex').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefau
 /* ---------- Nombre de la app ---------- */
 const nameEl = $('#appName');
 function applyBrand(){
-  syncMono();
-  const tm = THEMES.find(x => x.id === state.settings.theme), mode = tm && tm.mode;
+  const mode = curTheme().mode;
   if (mode) document.documentElement.dataset.mode = mode; else delete document.documentElement.dataset.mode;
   const n = state.settings.appName || 'Presupuesto';
   if (document.activeElement !== nameEl) nameEl.textContent = n;

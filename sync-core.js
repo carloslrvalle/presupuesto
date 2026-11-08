@@ -28,7 +28,9 @@ function reconcile(base,local,remote,choices={}){
     const group=same(L,R)?L:known&&same(L,B)?R:known&&same(R,B)?L:conflict(B,L,R,path.concat('classification'));
     Object.assign(out,group);
    }
-   for(const k of new Set([...Object.keys(before||{}),...Object.keys(here),...Object.keys(there)])){if(k==='u'||classification&&['type','catId'].includes(k))continue;const value=merge(before?.[k],here[k],there[k],path.concat(k));if(value!==undefined)Object.defineProperty(out,k,{value,enumerable:true,writable:true,configurable:true});}return out;}
+   for(const k of new Set([...Object.keys(before||{}),...Object.keys(here),...Object.keys(there)])){if(k==='u'||classification&&['type','catId'].includes(k))continue;
+    // La hora de creación solo ordena listas y nadie la edita: dos dispositivos que crean el mismo registro conservan la más antigua sin pedir revisión.
+    if(k==='created'&&path.length===2){const times=[here[k],there[k]].map(Number).filter(n=>Number.isFinite(n)&&n>0);if(times.length){out[k]=Math.min(...times);continue;}}const value=merge(before?.[k],here[k],there[k],path.concat(k));if(value!==undefined)Object.defineProperty(out,k,{value,enumerable:true,writable:true,configurable:true});}return out;}
   if(!known&&before===undefined&&(here===undefined||there===undefined))return clone(here===undefined?there:here);
   return conflict(before,here,there,path);
  }

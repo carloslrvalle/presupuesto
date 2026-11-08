@@ -285,7 +285,9 @@ async function startupLoad(){
  try{
   if(syncConflict()){setBadge('err','Cambios por revisar');updateSyncInfo();return;}
   setBadge('busy','Consultando Sheets…');
-  const j=await callSheets({action:'load'});if(j.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
+  // Brillo en indicadores mientras llega la versión de Sheets; las cifras locales siguen visibles.
+  document.body.classList.add('syncing');
+  const j=await callSheets({action:'load'}).finally(()=>document.body.classList.remove('syncing'));if(j.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
   if(profile!==activeProfile||connection!==sync.url+'|'+sync.token)return;
   if(!acceptSyncRemote(j.data,profile))return;
   if(sync.pending){setBadge('pending','Guardado aquí · Pendiente de sincronizar');if(sync.auto&&!await pushNow())return false;}

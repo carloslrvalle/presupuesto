@@ -2353,3 +2353,52 @@ dialog::before{flex-shrink:0}
  #calDay .cal-transaction .row-actions .iconbtn{width:44px;height:44px;min-width:44px}
  #calDay .cal-transaction .amt{grid-column:2/4;grid-row:2;justify-self:end;text-align:right;font-variant-numeric:tabular-nums}
 }
+
+/* 1.10.68 · Fondo de diálogos difuminado: transición de desenfoque junto al oscurecido; se omite con transparencia o movimiento reducidos. */
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+ dialog::backdrop{-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0);transition:background-color var(--motion-panel) var(--motion-ease),backdrop-filter var(--motion-panel) var(--motion-ease),-webkit-backdrop-filter var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
+ dialog[open]::backdrop{-webkit-backdrop-filter:blur(6px) saturate(1.1);backdrop-filter:blur(6px) saturate(1.1)}
+ @starting-style{dialog[open]::backdrop{-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0)}}
+ @media(max-width:700px){dialog[open]::backdrop{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}}
+ @media(prefers-reduced-transparency:reduce){dialog::backdrop,dialog[open]::backdrop{-webkit-backdrop-filter:none;backdrop-filter:none}}
+}
+
+/* 1.10.68 · Superficies translúcidas en teléfono. El desenfoque de la cabecera va en ::before: en .topbar crearía el bloque contenedor de la barra inferior fija. */
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+ @media(max-width:600px) and (prefers-reduced-transparency:no-preference){
+  .tabs{background:color-mix(in srgb,var(--surface) 80%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5)}
+  .topbar.scrolled{background:transparent}
+  .topbar.scrolled::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4)}
+ }
+ @media(prefers-reduced-transparency:no-preference){
+  .toast{background:color-mix(in srgb,var(--text) 88%,transparent);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3)}
+ }
+}
+@media(forced-colors:active){.tabs,.toast{-webkit-backdrop-filter:none;backdrop-filter:none}.topbar.scrolled::before{display:none}}
+
+/* 1.10.68 · Cambio de pestaña: entra desde el lado de destino con desvanecido; mismo ritmo de navegación (240 ms). */
+@keyframes tabSlideR{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes tabSlideL{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.tab.active.from-r,.tab.active.m-next{animation:tabSlideR var(--motion-move) var(--motion-ease)}
+.tab.active.from-l,.tab.active.m-prev{animation:tabSlideL var(--motion-move) var(--motion-ease)}
+
+
+/* 1.10.68 · Respuesta de tarjetas y filas: borde y sombra, sin desplazamiento; presión visible en pantallas táctiles. */
+@media(hover:hover){
+ .kpi.link:hover{border-color:color-mix(in srgb,var(--primary) 28%,var(--border))}
+ .kpi.link:hover{box-shadow:0 1px 2px rgba(20,25,40,.05),0 8px 22px -10px color-mix(in srgb,var(--primary) 35%,transparent)}
+}
+.history-row:active,.prow.link:active,.settings-home-row:active{background:color-mix(in srgb,var(--primary) 7%,var(--surface));transition-duration:0ms}
+
+/* 1.10.68 · Cifra recalculada: aparece suave en su lugar; el texto final está desde el primer cuadro. */
+@keyframes valueTick{from{opacity:.35;transform:translateY(3px)}to{opacity:1;transform:none}}
+.value-tick{animation:valueTick var(--motion-move) var(--motion-ease)}
+td.value-tick{animation-name:valueTickCell}
+@keyframes valueTickCell{from{opacity:.35}to{opacity:1}}
+
+/* 1.10.68 · Hojas inferiores en teléfono: se cierran deslizando hacia abajo desde el asa o la cabecera. */
+@media(max-width:700px){
+ html dialog .dlg-head,html dialog .pp-h{touch-action:none}
+ html dialog.sheet-dragging{transition:none!important;user-select:none}
+}
+@media(prefers-reduced-motion:reduce){.value-tick,td.value-tick{animation:none}}

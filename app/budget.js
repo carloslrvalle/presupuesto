@@ -84,7 +84,7 @@ $('#tab-budget').addEventListener('change', e => {
   const m = currentMonth;
   state.budgets[m] = state.budgets[m] || {};
   state.budgets[m][cycleView()?cycleBudgetKey(inp.dataset.bud):inp.dataset.bud] = Math.max(0, parseFloat(inp.value) || 0);
-  save(); keepFocus(() => { renderBudget(); renderDashboard(); });
+  save(); keepFocus(() => tickChanges($('#tab-budget'), 'td.num:not([data-mobile-label="Plan"]),td.av,#budSave .sv-tip b', () => { renderBudget(); renderDashboard(); }));
 });
 $('#tab-budget').addEventListener('input', e => {
   const inp = e.target.closest('.budget-input'); if (!inp) return;

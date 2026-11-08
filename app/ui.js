@@ -300,7 +300,50 @@ function showTab(name){
 
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
+// Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
+const tabScroll = {};
+$('#tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tab]'); if (!b) return;
+  const from = activeTab(), to = b.dataset.tab;
+  if (from === to && !bothMode){ window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'}); return; }
+  tabScroll[from] = window.scrollY;
+  showTab(to);
+  const y = tabScroll[to];
+  if (y > 0) window.scrollTo({top:Math.min(y, document.documentElement.scrollHeight - innerHeight), behavior:'instant'});
+});
+// Cifras recalculadas en su sitio: el texto final se escribe de inmediato y solo cambia su aparición.
+function tickChanges(root, selector, render){
+  const key = (el, i) => (el.closest('table')?.id || '') + ':' + i;
+  const before = new Map(); if (root) root.querySelectorAll(selector).forEach((el, i) => before.set(key(el, i), el.textContent));
+  render();
+  if (!root || reduceMotion()) return;
+  root.querySelectorAll(selector).forEach((el, i) => { const b = before.get(key(el, i)); if (b !== undefined && b !== el.textContent){ el.classList.remove('value-tick'); void el.offsetWidth; el.classList.add('value-tick'); el.addEventListener('animationend', () => el.classList.remove('value-tick'), {once:true}); } });
+}
+// Hojas inferiores en teléfono: arrastrar el asa o la cabecera hacia abajo equivale a Esc (respeta diálogos que impiden cancelar).
+(() => {
+  const phone = matchMedia('(max-width:700px)'); let drag = null;
+  document.addEventListener('pointerdown', e => {
+    if (!phone.matches || e.button > 0) return;
+    const d = e.target.closest('dialog[open]'); if (!d || e.target.closest('button,input,select,textarea,a,label,[contenteditable]')) return;
+    if (!e.target.closest('.dlg-head,.pp-h') && e.clientY - d.getBoundingClientRect().top > 28) return;
+    drag = {d, id:e.pointerId, y:e.clientY, t:performance.now(), dy:0, on:false};
+  });
+  document.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dy = Math.max(0, e.clientY - drag.y);
+    if (!drag.on){ if (dy < 6) return; drag.on = true; drag.d.classList.add('sheet-dragging'); }
+    drag.dy = dy; drag.d.style.transform = `translateY(${dy}px)`;
+  });
+  const end = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const {d, dy, on, t} = drag; drag = null; if (!on) return;
+    d.classList.remove('sheet-dragging'); void d.offsetWidth;
+    const fast = dy / Math.max(1, performance.now() - t) > .6, away = dy > Math.min(140, d.offsetHeight * .3) || (fast && dy > 40);
+    if (away && d.dispatchEvent(new Event('cancel', {cancelable:true}))){ d.style.transform = ''; d.close(); }
+    else d.style.transform = '';
+  };
+  document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+})();
 $('#btnSettings').onclick = () => { showTab('settings'); openSettingsSection(null); };
 const goTab = showTab;
 function moveTabInd(){

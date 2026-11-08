@@ -201,21 +201,55 @@ function fitMetricValues(){document.querySelectorAll('.tab.active .kpi .value').
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
 function countUp(el, to, kind = 'money', cls){
-  if (!el) return; const key = el.id || el.dataset.k, from = key in numMemo ? (el._countValue ?? numMemo[key]) : 0; numMemo[key] = to;
+  if (!el) return; const key = el.id || el.dataset.k, entering = !(key in numMemo), from = entering ? 0 : (el._countValue ?? numMemo[key]); numMemo[key] = to; if (entering) el._countFresh = true;
   const f = v => kind === 'pct' ? v.toFixed(1) + '%' : fmt(v);
   if (cls !== undefined) el.className = cls;
   if(el._raf && el._countTarget===to && key in numMemo && from!==0)return;
   cancelAnimationFrame(el._raf);
   el._raf=0;el._countTarget=to;
   el._fitTexts=[f(from),f(to)];fitMetricValue(el);
-  if (reduceMotion() || from === to){ el._countValue=to;el.textContent = f(to);el._fitTexts=[f(to)];fitMetricValue(el); return; }
+  if (reduceMotion() || from === to){ el._countValue=to;rollDigits(el,f(to),0);el._fitTexts=[f(to)];fitMetricValue(el); return; }
   // Mayor recorrido numérico, más tiempo para leer la desaceleración final; los gráficos conservan su ritmo.
   const t0 = performance.now(), dur = Math.min(1900, 1100 + Math.log10(1 + Math.abs(to - from)) * 170);
   // Curva con velocidad y aceleración nulas en ambos extremos: evita el arranque brusco y el salto final.
   const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
-  el.textContent = f(from);
-  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;el.textContent=f(to);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k);el.textContent = f(el._countValue); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[f(to)];fitMetricValue(el);} };
+  // Cada dígito gira en su columna hasta el valor final; una entrada nueva parte de la cifra anterior sin transición.
+  if (!el._rollKeys || el._countFresh) rollDigits(el, f(from), 0);
+  el._countFresh = false; void el.offsetWidth; rollDigits(el, f(to), dur);
+  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;rollDigits(el,f(to),0);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[f(to)];fitMetricValue(el);} };
   el._raf = requestAnimationFrame(step);
+}
+// Cifras con columnas de dígitos (estilo odómetro). El texto del elemento es siempre la cifra final:
+// lectores de pantalla, pruebas y ajuste de tamaño leen el valor real; las columnas son decoración CSS.
+function rollKeys(text){
+  const first = text.search(/\d/), last = text.length - 1 - [...text].reverse().join('').search(/\d/);
+  if (first < 0) return [...text].map((ch, i) => ['p' + i, ch]);
+  const core = text.slice(first, last + 1), dot = core.indexOf('.'), int = dot < 0 ? core : core.slice(0, dot), out = [];
+  [...text.slice(0, first)].forEach((ch, i) => out.push(['p' + i, ch]));
+  [...int].forEach((ch, i) => out.push(['i' + (int.length - 1 - i), ch]));
+  if (dot >= 0){ out.push(['dot', '.']); [...core.slice(dot + 1)].forEach((ch, i) => out.push(['f' + i, ch])); }
+  [...text.slice(last + 1)].forEach((ch, i) => out.push(['s' + i, ch]));
+  return out;
+}
+function rollDigits(el, text, dur){
+  const keys = rollKeys(text), old = el._rollKeys && el.firstElementChild?.classList.contains('nf-c') && el.textContent === el._rollText ? el._rollMap : null, map = new Map(), frag = [];
+  el.style.setProperty('--nf-dur', (dur || 0) + 'ms');
+  for (const [key, ch] of keys){
+    const digit = /\d/.test(ch); let span = old?.get(key);
+    if (!span || span._digit !== digit || (!digit && span.textContent !== ch)){
+      const fresh = !span; span = document.createElement('span'); span.className = digit ? 'nf-c nf-d' : 'nf-c'; span._digit = digit;
+      if (digit) span.style.setProperty('--n', '0');
+      if (fresh && old && dur) span.classList.add('nf-in');
+    }
+    if (digit){ const g = document.createElement('span'); g.className = 'nf-g'; g.textContent = ch; span.replaceChildren(g); } else span.textContent = ch;
+    span._target = digit ? ch : null;
+    map.set(key, span); frag.push(span);
+  }
+  el.replaceChildren(...frag);
+  // Las columnas nuevas se pintan en 0 antes de girar hacia su dígito.
+  if (dur) void el.offsetWidth;
+  for (const span of frag) if (span._digit) span.style.setProperty('--n', span._target);
+  el._rollKeys = keys; el._rollMap = map; el._rollText = el.textContent;
 }
 // Barras que crecen: desde cero al entrar a la pestaña o cambiar de mes; desde su valor anterior en el resto de cambios
 let barMemo = {};

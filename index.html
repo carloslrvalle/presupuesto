@@ -315,7 +315,8 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       </div>
       <div class="field"><label>Método de pago</label><div class="chips" id="fMethodChips"></div></div>
       <div class="field" id="fGoalField" hidden><label>Meta de ahorro (opcional)</label><div class="chips" id="fGoalChips"></div></div>
-      <div class="row2">
+      <button type="button" class="tx-more" id="txMore" aria-expanded="false" aria-controls="txDetails"><span class="tx-more-date" id="txMoreDate">Hoy</span><span class="tx-more-hint" id="txMoreHint">Agregar detalle</span></button>
+      <div class="row2 tx-details" id="txDetails">
         <div class="field" id="fDateField"><label for="fDate">Fecha</label><input type="date" id="fDate"></div>
         <div class="field" id="fDayField" hidden>
           <label for="fDay">Fecha de cada mes</label>

@@ -395,10 +395,13 @@ $('#movFilterToggle').onclick=toggleMovementFilters;
 const txDialog = $('#txDialog');
 let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null, txMode = 'tx', txRecId = null;
 let txCategoryExpanded=false,txNewCategoryIcon='svg:tag';
+function txCategoryOrder(cats){
+ const count={};state.transactions.filter(t=>t.type===txType).forEach(t=>count[t.catId]=(count[t.catId]||0)+1);
+ return cats.slice().sort((a,b)=>(count[b.id]||0)-(count[a.id]||0));
+}
 function txCategoryMarkup(cats){
  const q=($('#txCategorySearch')?.value||'').trim().toLocaleLowerCase();
- const count={};state.transactions.filter(t=>t.type===txType).forEach(t=>count[t.catId]=(count[t.catId]||0)+1);
- let list=cats.slice().sort((a,b)=>(count[b.id]||0)-(count[a.id]||0));
+ let list=txCategoryOrder(cats);
  if(txCategoryExpanded&&q)list=list.filter(c=>c.name.toLocaleLowerCase().includes(q));
  if(!txCategoryExpanded){list=list.slice(0,4);const selected=cats.find(c=>c.id===selCat);if(selected&&!list.some(c=>c.id===selected.id)){if(list.length===4)list.pop();list.push(selected);}}
  $('#txCategorySearchBox').hidden=!txCategoryExpanded;
@@ -449,7 +452,8 @@ function renderTxChips(){
   if (!gf.hidden) $('#fGoalChips').innerHTML = `<button type="button" class="chip${!selGoal ? ' active' : ''}" data-goal="">Ninguna</button>` +
     goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" data-goal="${esc(g.id)}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
   const cats = catsOf(txType).filter(c => !c.archived || c.id === selCat);
-  if (!cats.some(c => c.id === selCat)) selCat = cats[0] ? cats[0].id : null;
+  // Sin categoría elegida se marca la más usada: la primera visible, nunca una oculta.
+  if (!cats.some(c => c.id === selCat)) selCat = txCategoryOrder(cats.filter(c => !c.archived))[0]?.id || null;
   $('#fCatChips').innerHTML = txCategoryMarkup(cats);
   if(selMethod==null)selMethod=suggestedTxMethod(selCat,txType);
   const ms=[...new Set([...(state.settings.methods||[]),...(selMethod?[selMethod]:[]),''])];
@@ -499,7 +503,7 @@ document.addEventListener('click', e => {
 function openTx(id, preset){
   if(localTabChanged)return toast('⚠️ Hay cambios en otra pestaña. Recarga antes de editar.');
   resetTxCategoryUI();
-  quickExpanded=false;txMode = 'tx'; editingId = id || null; quickOK = !id && !preset;
+  quickExpanded=false;txMode = 'tx'; editingId = id || null; quickOK = !id && (!preset || Object.keys(preset).every(k => k === 'date'));
   const t = id ? state.transactions.find(x => x.id === id) : null;
   const p = t || preset || {};
   txRecId = p.recId || null;
@@ -510,9 +514,23 @@ function openTx(id, preset){
   $('#fDate').value = p.date || (cycleView() ? (cycleMonthForDate()===currentMonth?todayISO():cyclePeriod(currentMonth).start) : currentMonth === thisMonth() ? todayISO() : currentMonth + '-01');
   $('#fDesc').value = p.desc || '';
   $('#txDelete').style.display = t ? '' : 'none'; $('#txDup').style.display = t ? '' : 'none';
+  setTxDetails(false);
   txDialog.showModal();txDialog.scrollTop=0;txDialog.querySelector('.dlg-body').scrollTop=0;
-  setTimeout(() => $('#fAmount').focus({preventScroll:true}), 50);
+  $('#fAmount').focus({preventScroll:true});
+  setTimeout(() => { if (txDialog.open && !txDialog.contains(document.activeElement)) $('#fAmount').focus({preventScroll:true}); }, 50);
 }
+// Fecha y descripción plegadas en teléfono: el resumen muestra lo que se guardará.
+function txDetailsLabel(){
+  const d = $('#fDate').value, desc = $('#fDesc').value.trim(), today = todayISO();
+  $('#txMoreDate').textContent = !d || d === today ? 'Hoy' : d === BudgetFinance.dateOffset(today, -1) ? 'Ayer' : fmtDateLong(d);
+  $('#txMoreHint').textContent = desc || 'Agregar detalle';
+  $('#txMore').classList.toggle('has-desc', !!desc);
+}
+function setTxDetails(open){
+  txDialog.classList.toggle('details-open', open); $('#txMore').setAttribute('aria-expanded', String(open)); txDetailsLabel();
+}
+$('#txMore').onclick = () => { setTxDetails(true); motionAnimate($('#txDetails'), [{opacity:0, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel'); $('#fDesc').focus({preventScroll:true}); setTimeout(keepTxFieldVisible, 60); };
+for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
 function openRec(id, preset){
   resetTxCategoryUI();
   txMode = 'rec'; editingId = id || null; txRecId = null; selGoal = null; quickOK = false; $('#txDup').style.display = 'none';
@@ -646,7 +664,8 @@ function hideFloatingNewOnScroll(){
 document.addEventListener('touchstart',()=>{fabTouchActive=true;},{passive:true});
 for(const event of ['touchend','touchcancel'])document.addEventListener(event,()=>{fabTouchActive=false;if($('#fab').classList.contains('fab-scroll-hidden')){clearTimeout(fabScrollTimer);fabScrollTimer=setTimeout(showFloatingNew,450);}},{passive:true});
 window.addEventListener('scroll',hideFloatingNewOnScroll,{passive:true});
-document.addEventListener('touchmove',e=>{if(!e.target.closest?.('dialog[open]'))hideFloatingNewOnScroll();},{passive:true});
+document.addEventListener('touchmove',e=>{if(!e.target.closest?.('dialog[open],#fab'))hideFloatingNewOnScroll();},{passive:true});
+$('#fab').addEventListener('touchstart',showFloatingNew,{passive:true});
 $('#fab').addEventListener('focus',showFloatingNew);
 matchMedia('(max-width:600px)').addEventListener('change',showFloatingNew);
 
@@ -661,11 +680,16 @@ function keepTxFieldVisible(){
  const b=body.getBoundingClientRect(),r=a.getBoundingClientRect();
  if(r.bottom>b.bottom-8)body.scrollTop+=r.bottom-b.bottom+8;else if(r.top<b.top+8)body.scrollTop-=b.top+8-r.top;
 }
+let txViewportRef={w:0,h:0};
 const resizeTxViewport=()=>{
  const vv=window.visualViewport,h=vv?.height||innerHeight;
  const keyboard=vv?Math.max(0,Math.round(document.documentElement.clientHeight-vv.height-vv.offsetTop)):0;
  txDialog.style.setProperty('--tx-viewport',Math.max(180,h-24)+'px');
  txDialog.style.setProperty('--tx-keyboard',keyboard+'px');
+ // Teclado abierto (o ventana visible muy baja): la hoja oculta lo secundario para que monto, categoría y Guardar sigan a la vista.
+ // La referencia es la mayor altura vista con el mismo ancho (un giro de pantalla la reinicia).
+ if(txViewportRef.w!==innerWidth)txViewportRef={w:innerWidth,h:0};txViewportRef.h=Math.max(txViewportRef.h,h+keyboard);
+ txDialog.classList.toggle('kb-open',keyboard>120||h<txViewportRef.h*.75);
  requestAnimationFrame(keepTxFieldVisible);
 };
 window.visualViewport?.addEventListener('resize',resizeTxViewport);window.visualViewport?.addEventListener('scroll',resizeTxViewport);resizeTxViewport();

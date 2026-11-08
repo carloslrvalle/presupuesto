@@ -34,6 +34,12 @@ const R = (...c) => c;
 const THEMES = [
   {id:'minimal', name:'Claro', desc:'Siempre en modo claro, íconos en negro puro', mode:'light', accent:'#000000', uniform:'#000000', inc:'#3f3f46', exp:'#a1a1aa', sav:'#18181b'},
   {id:'mono', name:'Oscuro OLED', desc:'Siempre en negro puro, íconos en blanco puro', mode:'dark', accent:'#ffffff', uniform:'#ffffff', inc:'#e4e4e7', exp:'#71717a', sav:'#a1a1aa'},
+  // Tema Vercel (shadcn/ui, 21st.dev): blanco y negro neutros que siguen el modo del sistema; azul ingresos, rojo gastos, ámbar ahorro.
+  {id:'vercel', name:'Vercel', desc:'Blanco y negro preciso, sigue el modo del sistema', accent:'#000000',
+   ui:{bg:'#000000', surface:'#090909', s2:'#1d1d1d', border:'#242424', text:'#ffffff', muted:'#a4a4a4'},
+   uiLight:{bg:'#fcfcfc', surface:'#ffffff', s2:'#f5f5f5', border:'#e4e4e4', text:'#000000', muted:'#525252'},
+   inc:'#2d62ef', exp:'#e54b4f', sav:'#ffae04',
+   c:R('#2d62ef','#ffae04','#747474','#a4a4a4','#2d62ef','#ffae04','#747474','#525252','#e54b4f','#ffae04','#a4a4a4','#2d62ef','#ffae04','#747474','#2d62ef','#525252')},
   {id:'sage', name:'Monocromático', desc:'Íconos en un solo color que tú eliges', custom:true, accent:'#5f7f68', uniform:'#6b8f75', inc:'#8fb39a', exp:'#c7d6cb', sav:'#4f6f58'},
   {id:'pastel', name:'Pastel', desc:'Suave y luminoso, ideal para modo oscuro', accent:'#8b7fd6', inc:'#a6e3a1', exp:'#f38ba8', sav:'#cba6f7',
    c:R('#89b4fa','#fab387','#74c7ec','#f9e2af','#89dceb','#cba6f7','#f5c2e7','#b4befe','#f38ba8','#94e2d5','#f2cdcd','#a6e3a1','#f9e2af','#eba0ac','#a6e3a1','#f5e0dc')},
@@ -181,8 +187,8 @@ document.addEventListener('click', e => {
 function renderThemes(){
   const el=$('#themeGrid');if(!el)return;syncMono();const cur=state.settings.theme;
   const card=t=>{
-    const dark=t.mode==='dark'||(!t.mode&&isDarkUI()), surface=t.ui?.surface||(dark?'#101114':'#ffffff');
-    const bg=t.ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface), cols=themeColors(t);
+    const dark=t.mode==='dark'||(!t.mode&&isDarkUI()), ui=dark?t.ui:t.uiLight, surface=ui?.surface||(dark?'#101114':'#ffffff');
+    const bg=ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface), cols=themeColors(t);
     const categories=[0,1,2,3,4].map(i=>fitThemeColor(cols[i],surface,3));
     return `<div class="theme-option"><button type="button" class="theme-card${t.id===cur?' active':''}" data-theme="${t.id}" aria-pressed="${t.id===cur}" title="${esc(t.desc)}">
       <div class="theme-preview" style="--preview-bg:${bg};--preview-surface:${surface};--preview-income:${series.income};--preview-expense:${series.expense};--preview-saving:${series.savings}">
@@ -281,9 +287,9 @@ function themeSeries(t, surface){
 }
 function applyThemeVars(){
   const r=document.documentElement.style, t=curTheme(), dark=isDarkUI();
-  const uiKeys=['--bg','--surface','--surface-2','--border'];
-  if(t?.ui && dark){r.setProperty('--bg',t.ui.bg);r.setProperty('--surface',t.ui.surface);r.setProperty('--surface-2',t.ui.s2);r.setProperty('--border',t.ui.border);}
-  else uiKeys.forEach(k=>r.removeProperty(k));
+  // Superficies propias del tema: ui en oscuro, uiLight en claro; texto y texto secundario son opcionales.
+  const ui=dark?t?.ui:t?.uiLight,uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
+  for(const [key,field] of uiMap){if(ui?.[field])r.setProperty(key,ui[field]);else r.removeProperty(key);}
   const surface=cssVar('--surface'), series=themeSeries(t,surface);
   for(const [key,role] of [['--income-chart','income'],['--expense-chart','expense'],['--k-violet','savings']])r.setProperty(key,series[role]);
   for(const role of ['income','expense']){

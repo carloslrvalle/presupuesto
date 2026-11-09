@@ -22,7 +22,9 @@
     --k-blue:#7f9fd6; --k-violet:#9688d6; --k-amber:#d3a556;
     --expense:#f07a8e; --expense-soft:#2a1118; --warn:#e8b14a; --shadow:0 0 0 1px rgba(255,255,255,.015);color-scheme:dark}
 :root[data-mode=light] :is(input,select){color-scheme:light}:root[data-mode=dark] :is(input,select){color-scheme:dark}
-*{box-sizing:border-box}
+/* Evita el destello gris nativo al tocar controles o sus contenedores en móvil.
+   El foco de teclado conserva sus indicadores :focus-visible. */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
 [hidden]{display:none!important}
 /* Reserva siempre el espacio de la barra de desplazamiento: al pasar de una sección corta a una larga la página no se corre de lado */
@@ -197,7 +199,7 @@ h3{margin:0 0 12px;font-weight:700}
 .kpi.k-exp{--t:var(--expense)}
 .kpi.k-inc .dot,.kpi.k-exp .dot{background:color-mix(in srgb,var(--t) 16%,var(--surface))!important;color:var(--t)!important}
 .kpi.link.k-inc:hover,.kpi.link.k-exp:hover{border-color:color-mix(in srgb,var(--t) 45%,var(--border))}
-.kpi:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(20,25,40,.06),0 10px 24px rgba(20,25,40,.08)}
+@media(hover:hover) and (pointer:fine){.kpi:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(20,25,40,.06),0 10px 24px rgba(20,25,40,.08)}}
 .kpi .label{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:600;font-size:13px}
 .kpi .dot{width:30px;height:30px;border-radius:6px;display:grid;place-items:center;font-size:15px}
 .kpi .dot .vi{width:16px;height:16px}
@@ -296,7 +298,7 @@ tr.over td{background:color-mix(in srgb,var(--expense) 6%,transparent)}
 .kpi.link:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--border))}
 .prow.link{cursor:pointer;border-radius:7px;transition:background-color .2s}
 .prow.link:not(.over):hover{background:var(--surface-2)}
-.prow.link.over:hover{filter:brightness(.98)}
+@media(hover:hover) and (pointer:fine){.prow.link.over:hover{filter:brightness(.98)}}
 .fsel.flash .fsel-btn{animation:flash 1s var(--ease-out)}
 @keyframes flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary) 55%,transparent);border-color:var(--primary)}100%{box-shadow:0 0 0 8px transparent}}
 /* Engranaje (Datos) */
@@ -348,7 +350,7 @@ tr.over td{background:color-mix(in srgb,var(--expense) 6%,transparent)}
 .cal-stats .cs .small:last-child{margin-top:2px}
 .cal-d{position:relative;aspect-ratio:auto;width:100%;box-sizing:border-box;min-width:0;min-height:68px;container-type:inline-size;border:1px solid var(--border);border-radius:8px;padding:6px 7px;text-align:left;cursor:pointer;color:var(--text);display:flex;flex-direction:column;gap:1px;overflow:hidden;
   background:var(--surface)}
-.cal-d:hover{box-shadow:0 6px 14px -8px rgba(20,25,40,.35);border-color:color-mix(in srgb,var(--primary) 40%,var(--border))}
+@media(hover:hover) and (pointer:fine){.cal-d:hover{box-shadow:0 6px 14px -8px rgba(20,25,40,.35);border-color:color-mix(in srgb,var(--primary) 40%,var(--border))}}
 .cal-d.future{opacity:.55}
 .cal-d.today .cd-n{background:var(--primary-fill,var(--primary));color:var(--on-primary,#fff);border-radius:99px;padding:0 6px;margin-left:-3px}
 .cal-d.sel{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary)}
@@ -389,7 +391,7 @@ h3>.vi{color:var(--primary);vertical-align:-3px;margin-right:4px}
 /* Temas */
 .font-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
 .font-card{container-type:inline-size;position:relative;border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:12px 12px 10px;text-align:left;cursor:pointer;color:var(--text);display:grid;gap:4px;min-width:0}
-.font-card:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--border));box-shadow:0 8px 20px -12px rgba(20,25,40,.35)}
+@media(hover:hover) and (pointer:fine){.font-card:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--border));box-shadow:0 8px 20px -12px rgba(20,25,40,.35)}}
 .font-card.active{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
 .fc-aa{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .fc-aa b{font-size:26px;font-weight:600;letter-spacing:-.3px;line-height:1.1}
@@ -408,7 +410,7 @@ h3>.vi{color:var(--primary);vertical-align:-3px;margin-right:4px}
 
 .theme-card{border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:6px 6px 8px;text-align:left;cursor:pointer;color:var(--text);display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
 .theme-card>*{min-width:0}
-.theme-card:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--border));box-shadow:0 8px 20px -12px rgba(20,25,40,.35)}
+@media(hover:hover) and (pointer:fine){.theme-card:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--border));box-shadow:0 8px 20px -12px rgba(20,25,40,.35)}}
 .theme-card.active{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
 
 
@@ -582,7 +584,7 @@ tr.planned td{opacity:.72}tr.planned td:first-child,tr.planned td:last-child{opa
 .btn{border:1px solid var(--border);background:var(--surface);cursor:pointer;font-weight:600;display:inline-flex;align-items:center}
 .btn:hover{background:var(--surface-2)}
 .btn.primary{background:var(--primary-fill,var(--primary));border-color:var(--primary-fill,var(--primary));color:var(--on-primary,#fff)}
-.btn.primary:hover{filter:brightness(1.07)}
+@media(hover:hover) and (pointer:fine){.btn.primary:hover{filter:brightness(1.07)}}
 .btn.danger{color:var(--expense)}
 .btn.sm{padding:6px 10px}
 .toolbar{display:flex;flex-wrap:wrap;margin-bottom:14px}
@@ -782,7 +784,7 @@ h3 .ui-ic{margin-right:8px;color:var(--primary)}
 /* FAB */
 .fab{position:fixed;right:20px;bottom:20px;border:0;background:var(--primary-fill,var(--primary));color:var(--on-primary,#fff);place-items:center;cursor:pointer;box-shadow:0 8px 24px color-mix(in srgb,var(--primary-fill,var(--primary)) 40%,transparent);z-index:20}
 .fab .vi{width:26px;height:26px}
-.fab:hover{transform:translateY(-2px);box-shadow:0 12px 28px color-mix(in srgb,var(--primary-fill,var(--primary)) 45%,transparent)}
+@media(hover:hover) and (pointer:fine){.fab:hover{transform:translateY(-2px);box-shadow:0 12px 28px color-mix(in srgb,var(--primary-fill,var(--primary)) 45%,transparent)}}
 
 /* Dialogs */
 dialog{border:0;padding:0;background:var(--surface);color:var(--text);width:min(440px,calc(100% - 32px));box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -935,7 +937,7 @@ body.syncing .kpi::before{content:"";position:absolute;inset:0;pointer-events:no
 .emoji-grid button{border:0;background:transparent;font-size:22px;padding:6px;border-radius:6px;cursor:pointer}
 
 .btn.danger-solid{background:var(--expense);border-color:var(--expense);color:#fff}
-.btn.danger-solid:hover{background:var(--expense);filter:brightness(1.07)}
+@media(hover:hover) and (pointer:fine){.btn.danger-solid:hover{background:var(--expense);filter:brightness(1.07)}}
 /* Diálogos: entran con un pequeño rebote y salen rápido */
 dialog{transition:opacity .16s var(--ease-in),transform .18s var(--ease-in),overlay .2s allow-discrete,display .2s allow-discrete}
 dialog[open]{transition:opacity .22s var(--ease-out),transform .38s var(--spring),overlay .38s allow-discrete,display .38s allow-discrete}
@@ -949,8 +951,8 @@ dialog[open] .dlg-body>*:nth-child(4){animation-delay:.09s}dialog[open] .dlg-bod
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes icoPop{from{opacity:0;transform:scale(.5) rotate(-12deg)}to{opacity:1;transform:none}}
 /* Botones: se hunden al presionar y rebotan al soltar */
-.btn.primary:hover,.btn.danger-solid:hover{transform:translateY(-1px);box-shadow:0 6px 16px -6px color-mix(in srgb,var(--primary-fill,var(--primary)) 70%,transparent)}
-.btn.danger-solid:hover{box-shadow:0 6px 16px -6px color-mix(in srgb,var(--expense) 70%,transparent)}
+@media(hover:hover) and (pointer:fine){.btn.primary:hover,.btn.danger-solid:hover{transform:translateY(-1px);box-shadow:0 6px 16px -6px color-mix(in srgb,var(--primary-fill,var(--primary)) 70%,transparent)}}
+@media(hover:hover) and (pointer:fine){.btn.danger-solid:hover{box-shadow:0 6px 16px -6px color-mix(in srgb,var(--expense) 70%,transparent)}}
 .btn.primary:active,.btn.danger-solid:active{box-shadow:none}
 /* Selector de íconos: acordeones */
 #iconDialog .dlg-body{max-height:min(78vh,720px);overflow:auto;overscroll-behavior:contain}
@@ -2471,7 +2473,7 @@ td.value-tick{animation-name:valueTickCell}
 .btn.sm{min-height:32px;padding-inline:12px;font-size:13px}
 @media(max-width:700px){.btn.sm{min-height:44px}}
 .btn.primary,.btn.danger-solid{border-color:transparent}
-.btn.primary:hover,.btn.danger-solid:hover{filter:none;opacity:.9}
+@media(hover:hover) and (pointer:fine){.btn.primary:hover,.btn.danger-solid:hover{filter:none;opacity:.9}}
 .iconbtn{border-radius:var(--radius-sm)}
 /* Cabecera: perfil, guardado, ajustes y mes con la misma altura y forma. */
 .month-nav,.prof-chip,.sync-badge,.gear-btn{height:var(--control-height);min-height:var(--control-height);border-radius:var(--radius-sm);box-shadow:var(--shadow-xs);font-weight:500}

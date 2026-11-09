@@ -428,7 +428,7 @@ function createTxCategory(){
  $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();
  toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
 }
-$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';motionResize($('#fCatChips'),renderTxChips);if(txCategoryExpanded)$('#txCategorySearch').focus();};
+$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';motionResize($('#fCatChips'),renderTxChips);if(txCategoryExpanded&&!txPhone.matches)$('#txCategorySearch').focus();};
 $('#txCategorySearch').addEventListener('input',renderTxChips);
 $('#txNewCategory').onclick=openTxCategoryEditor;
 $('#txCancelCategory').onclick=()=>{$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txNewCategory').focus();};
@@ -520,14 +520,18 @@ function openTx(id, preset){
 // Fecha y descripción plegadas en teléfono: el resumen muestra lo que se guardará.
 function txDetailsLabel(){
   const d = $('#fDate').value, desc = $('#fDesc').value.trim(), today = todayISO();
-  $('#txMoreDate').textContent = !d || d === today ? 'Hoy' : d === BudgetFinance.dateOffset(today, -1) ? 'Ayer' : fmtDateLong(d);
-  $('#txMoreHint').textContent = desc || 'Agregar detalle';
+  const dateText = !d || d === today ? 'Hoy' : d === BudgetFinance.dateOffset(today, -1) ? 'Ayer' : fmtDateLong(d);
+  const hintText = txDialog.classList.contains('details-open') ? 'Ocultar detalles' : desc || 'Fecha y descripción';
+  // WebKit puede cancelar el click si el change del campo reemplaza el texto
+  // del botón pulsado. Conserva sus nodos cuando la etiqueta no cambia.
+  if($('#txMoreDate').textContent!==dateText)$('#txMoreDate').textContent=dateText;
+  if($('#txMoreHint').textContent!==hintText)$('#txMoreHint').textContent=hintText;
   $('#txMore').classList.toggle('has-desc', !!desc);
 }
 function setTxDetails(open){
   txDialog.classList.toggle('details-open', open); $('#txMore').setAttribute('aria-expanded', String(open)); txDetailsLabel();
 }
-$('#txMore').onclick = () => { setTxDetails(true); motionAnimate($('#txDetails'), [{opacity:.85, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel'); $('#fDateField .dp-trigger').focus({preventScroll:true}); keepTxFieldVisible(); };
+$('#txMore').onclick = () => { const open=!txDialog.classList.contains('details-open');setTxDetails(open);if(!open)return; motionAnimate($('#txDetails'), [{opacity:.85, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel'); $('#fDateField .dp-trigger').focus({preventScroll:true}); keepTxFieldVisible(); };
 for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
 function openRec(id, preset){
   resetTxCategoryUI();
@@ -685,7 +689,9 @@ function scheduleTxViewport(){
 window.addEventListener('resize',scheduleTxViewport);
 window.visualViewport?.addEventListener('resize',scheduleTxViewport);
 window.visualViewport?.addEventListener('scroll',scheduleTxViewport);
-txDialog.addEventListener('focusin',()=>requestAnimationFrame(keepTxFieldVisible));
+// Solo los campos editables requieren compensar el teclado. Desplazar un botón
+// entre pointerdown y click puede cancelar el toque en WebKit.
+txDialog.addEventListener('focusin',e=>{if(e.target.matches('input,textarea,select'))requestAnimationFrame(keepTxFieldVisible);});
 resizeTxViewport();
 $('#btnNewTx').onclick = () => openTx();
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());

@@ -2514,3 +2514,24 @@ dialog{border-radius:var(--radius-lg)}
 }
 @keyframes mobileTabRight{from{opacity:.86;transform:translateX(5px)}to{opacity:1;transform:none}}
 @keyframes mobileTabLeft{from{opacity:.86;transform:translateX(-5px)}to{opacity:1;transform:none}}
+
+/* 1.10.75 · Importe y categorías antes de sugerencias; opciones sin recortes. */
+@media(max-width:700px){
+ html #txDialog .dlg-body{gap:10px}
+ #txDialog #txQuick{order:1}
+ #txDialog .field:has(>#txCategorySearchBox[hidden]) #fCatChips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;margin:0;padding:0;mask-image:none;-webkit-mask-image:none}
+ #txDialog .field:has(>#txCategorySearchBox[hidden]) #fCatChips .chip{width:100%;max-width:none;border-radius:var(--radius-sm);padding:8px;min-height:44px}
+ #txDialog .field:has(>#txCategorySearchBox[hidden]) #fCatChips .cn{white-space:normal;overflow-wrap:anywhere}
+ #txDialog .tx-field-head .tx-text-button{min-height:44px}
+ #txDialog.details-open:not(.rec-mode) .tx-more{display:flex}
+ #txDialog.details-open .tx-more::after{transform:rotate(225deg)}
+ #txDialog .tx-more{flex-wrap:wrap}
+ #txDialog .tx-more-hint{white-space:normal;overflow-wrap:anywhere}
+ #txDialog .dlg-foot .btn{min-width:0;padding-inline:10px}
+ /* El desenfoque queda estable durante la transición de entrada. */
+ dialog::backdrop{transition:background-color var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
+}
+@media(prefers-reduced-motion:reduce){
+ html #txDialog,html #txDialog[open]{transition:none;transform:none}
+ .tab.active.from-r,.tab.active.from-l,.tab.active.m-next,.tab.active.m-prev{animation:none}
+}

@@ -304,13 +304,17 @@ function dpClose(restoreFocus=false){
 }
 function dpPlace(){
   if (!dpS) return;
-  const r = dpS.anchor.getBoundingClientRect(), w = dpEl.offsetWidth, h = dpEl.offsetHeight;
+  const vv=window.visualViewport, zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
+  const x=vv?.offsetLeft||0, y=vv?.offsetTop||0, width=vv?.width||innerWidth, height=vv?.height||innerHeight;
+  dpEl.style.maxHeight=Math.max(0,(height-16)/zoom)+'px';
+  const r = dpS.anchor.getBoundingClientRect(), w = dpEl.offsetWidth*zoom, h = dpEl.offsetHeight*zoom;
   let left = dpS.align === 'center' ? r.left + r.width / 2 - w / 2 : r.left;
-  left = Math.max(12, Math.min(left, innerWidth - w - 12));
-  const up = r.bottom + 8 + h > innerHeight - 8 && r.top - 8 - h > 8;
+  left = Math.max(x+8, Math.min(left, x+width-w-8));
+  const up = r.bottom+8+h>y+height-8 && r.top-y>y+height-r.bottom;
+  const top=Math.max(y+8,Math.min(up?r.top-8-h:r.bottom+8,y+height-h-8));
   dpEl.classList.toggle('up', up);
-  dpEl.style.left = left + 'px';
-  dpEl.style.top = (up ? r.top - 8 - h : r.bottom + 8) + 'px';
+  dpEl.style.left = left/zoom + 'px';
+  dpEl.style.top = top/zoom + 'px';
 }
 function dpRender(){
   const S = dpS, now = todayISO(), cur = S.value || '';
@@ -353,6 +357,8 @@ dpEl.addEventListener('click', e => {
 document.addEventListener('pointerdown', e => { if (dpS && !dpEl.contains(e.target) && !dpS.anchor.contains(e.target)) dpClose(); }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && dpS){ e.preventDefault(); e.stopPropagation(); dpClose(true); } }, true);
 addEventListener('resize', () => dpClose());
+window.visualViewport?.addEventListener('resize',dpPlace);
+window.visualViewport?.addEventListener('scroll',dpPlace);
 document.addEventListener('scroll', e => { if (dpS && !dpEl.contains(e.target)) dpPlace(); }, true);
 // Convierte un <input type="date"> en un botón con el selector propio (el input sigue guardando el valor)
 function dpField(input, opts = {}){

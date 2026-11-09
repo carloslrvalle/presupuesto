@@ -303,7 +303,7 @@ $('#cfNo').onclick = () => cfDone(false);
 cfDialog.addEventListener('close', () => cfDone(null));
 
 /* ---------- Tabs y mes ---------- */
-function showTab(name){
+function showTab(name, scrollTop = 0){
   syncPlanningNavigation(name);
   if (typeof selMode !== 'undefined' && selMode) setSelMode(false);
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
@@ -312,13 +312,9 @@ function showTab(name){
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
   $('#btnSettings').classList.toggle('active', name === 'settings');
   document.querySelectorAll('.tab').forEach(s => { s.classList.toggle('active', s.id === 'tab-' + name); s.classList.remove('m-next', 'm-prev', 'from-r', 'from-l'); });
-  // La pestaña entra desde el lado hacia el que te mueves
-  { const ord = ['dashboard', 'movs', 'budget', 'goals', 'analysis', 'cats', 'settings', 'both'], d = ord.indexOf(name) - ord.indexOf(prevTab), te = $('#tab-' + name);
-    if (te && d && !reduceMotion()){ void te.offsetWidth; te.classList.add(d > 0 ? 'from-r' : 'from-l'); } }
   moveTabInd();
-  // solo desplaza la fila de pestañas hacia los lados (no la página), y vuelve arriba sin animación para que no salte
+  // Solo desplaza la fila de pestañas hacia los lados; la página se coloca una vez, después del render.
   const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:reduceMotion()?'instant':'smooth'}); }
-  if (window.scrollY > 0) window.scrollTo({top:0, behavior:'instant'});
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
   // Cada entrada reinicia los indicadores; las actualizaciones dentro de la vista conservan su valor anterior.
@@ -331,7 +327,10 @@ function showTab(name){
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
   if (name === 'movs') moveViewInd();
   updateCreationControls();
-
+  if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
+  // La pestaña entra desde el lado hacia el que te mueves, con su contenido ya dibujado.
+  const ord = Object.keys(VIEWS), d = ord.indexOf(name) - ord.indexOf(prevTab);
+  if(d&&!reduceMotion())$('#tab-'+name)?.classList.add(d>0?'from-r':'from-l');
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
@@ -341,9 +340,7 @@ $('#tabs').addEventListener('click', e => {
   const from = activeTab(), to = b.dataset.tab;
   if (from === to && !bothMode){ window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'}); return; }
   tabScroll[from] = window.scrollY;
-  showTab(to);
-  const y = tabScroll[to];
-  if (y > 0) window.scrollTo({top:Math.min(y, document.documentElement.scrollHeight - innerHeight), behavior:'instant'});
+  showTab(to, tabScroll[to] || 0);
 });
 // Cifras recalculadas en su sitio: el texto final se escribe de inmediato y solo cambia su aparición.
 function tickChanges(root, selector, render){
@@ -357,9 +354,9 @@ function tickChanges(root, selector, render){
 (() => {
   const phone = matchMedia('(max-width:700px)'); let drag = null;
   document.addEventListener('pointerdown', e => {
-    if (!phone.matches || e.button > 0) return;
+    if (!phone.matches || e.button > 0 || drag) return;
     const d = e.target.closest('dialog[open]'); if (!d || e.target.closest('button,input,select,textarea,a,label,[contenteditable]')) return;
-    if (!e.target.closest('.dlg-head,.pp-h') && e.clientY - d.getBoundingClientRect().top > 28) return;
+    if (e.target !== d && !e.target.closest('.dlg-head,.pp-h')) return;
     drag = {d, id:e.pointerId, y:e.clientY, t:performance.now(), dy:0, on:false};
   });
   document.addEventListener('pointermove', e => {
@@ -393,10 +390,10 @@ let compactTop = false;
 const onScroll = () => {
   const y = window.scrollY; topbar.classList.toggle('scrolled', y > 4);
   // Se achica al bajar (con margen para que no titile) solo si la página es lo bastante larga
-  const room = document.documentElement.scrollHeight - innerHeight, want = room > 180 && (compactTop ? y > 24 : y > 72);
+  const room = document.documentElement.scrollHeight - innerHeight, want = innerWidth > 600 && room > 180 && (compactTop ? y > 24 : y > 72);
   if (want !== compactTop){ compactTop = want; topbar.classList.toggle('compact', want); }
 };
-window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+window.addEventListener('scroll', onScroll, {passive:true}); window.addEventListener('resize',onScroll); onScroll();
 const monthInput = $('#month');
 monthInput.value = currentMonth;
 monthInput.addEventListener('change', () => { if (monthInput.value) { currentMonth = monthInput.value; renderAll(); } });

@@ -515,9 +515,7 @@ function openTx(id, preset){
   $('#fDesc').value = p.desc || '';
   $('#txDelete').style.display = t ? '' : 'none'; $('#txDup').style.display = t ? '' : 'none';
   setTxDetails(false);
-  txDialog.showModal();txDialog.scrollTop=0;txDialog.querySelector('.dlg-body').scrollTop=0;
-  $('#fAmount').focus({preventScroll:true});
-  setTimeout(() => { if (txDialog.open && !txDialog.contains(document.activeElement)) $('#fAmount').focus({preventScroll:true}); }, 50);
+  showTxDialog();
 }
 // Fecha y descripción plegadas en teléfono: el resumen muestra lo que se guardará.
 function txDetailsLabel(){
@@ -529,7 +527,7 @@ function txDetailsLabel(){
 function setTxDetails(open){
   txDialog.classList.toggle('details-open', open); $('#txMore').setAttribute('aria-expanded', String(open)); txDetailsLabel();
 }
-$('#txMore').onclick = () => { setTxDetails(true); motionAnimate($('#txDetails'), [{opacity:0, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel'); $('#fDesc').focus({preventScroll:true}); setTimeout(keepTxFieldVisible, 60); };
+$('#txMore').onclick = () => { setTxDetails(true); motionAnimate($('#txDetails'), [{opacity:.85, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel'); $('#fDateField .dp-trigger').focus({preventScroll:true}); keepTxFieldVisible(); };
 for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
 function openRec(id, preset){
   resetTxCategoryUI();
@@ -544,8 +542,7 @@ function openRec(id, preset){
   $('#fDesc').value = r ? r.desc : pz.desc || '';
   $('#fAuto').checked = r ? !!r.auto : true;
   $('#txDelete').style.display = r ? '' : 'none';
-  txDialog.showModal();txDialog.scrollTop=0;txDialog.querySelector('.dlg-body').scrollTop=0;
-  setTimeout(() => (preset ? $('#recFixed') : $('#fAmount')).focus({preventScroll:true}), 50);
+  showTxDialog(preset ? $('#recFixed') : null);
   if (preset) toast('Elige el día del mes en que te cobran', {icon:'calendar'});
 }
 function updateRecDate(){
@@ -653,47 +650,43 @@ $('#txDelete').onclick = async () => {
 };
 $('#fab').onclick = () => activeTab()==='goals'?openGoal():(activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {})); // el + respeta el día seleccionado en Calendario
 $('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
-// El botón conserva su posición flotante; se aparta mientras se desplaza la página.
-let fabScrollTimer,fabTouchActive=false;
-function showFloatingNew(){clearTimeout(fabScrollTimer);$('#fab').classList.remove('fab-scroll-hidden');}
-function hideFloatingNewOnScroll(){
-  const button=$('#fab');if(!matchMedia('(max-width:600px)').matches||txDialog.open||button.matches(':focus-visible'))return;
-  button.classList.add('fab-scroll-hidden');clearTimeout(fabScrollTimer);
-  if(!fabTouchActive)fabScrollTimer=setTimeout(showFloatingNew,450);
+// El botón conserva su posición flotante durante el desplazamiento y el toque.
+const txPhone=matchMedia('(max-width:700px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
+function showTxDialog(preferredFocus){
+ resizeTxViewport();
+ txDialog.showModal();
+ const focus=txPhone.matches ? txDialog.querySelector('.dlg-head [data-close]') : preferredFocus||$('#fAmount');
+ focus.focus({preventScroll:true});
+ txDialog.querySelector('.dlg-body').scrollTop=0;
 }
-document.addEventListener('touchstart',()=>{fabTouchActive=true;},{passive:true});
-for(const event of ['touchend','touchcancel'])document.addEventListener(event,()=>{fabTouchActive=false;if($('#fab').classList.contains('fab-scroll-hidden')){clearTimeout(fabScrollTimer);fabScrollTimer=setTimeout(showFloatingNew,450);}},{passive:true});
-window.addEventListener('scroll',hideFloatingNewOnScroll,{passive:true});
-document.addEventListener('touchmove',e=>{if(!e.target.closest?.('dialog[open],#fab'))hideFloatingNewOnScroll();},{passive:true});
-$('#fab').addEventListener('touchstart',showFloatingNew,{passive:true});
-$('#fab').addEventListener('focus',showFloatingNew);
-matchMedia('(max-width:600px)').addEventListener('change',showFloatingNew);
-
-$('#fab').addEventListener('click',()=>{
- const b=$('#fab');b.classList.remove('launch');void b.offsetWidth;b.classList.add('launch','is-open');
- setTimeout(()=>b.classList.remove('launch'),550);
-});
-txDialog.addEventListener('close',()=>$('#fab').classList.remove('is-open'));
 // En el celular el teclado tapa la parte baja de la pantalla: la hoja se apoya sobre él y el campo activo queda a la vista.
 function keepTxFieldVisible(){
  const a=document.activeElement,body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!a||!body.contains(a))return;
  const b=body.getBoundingClientRect(),r=a.getBoundingClientRect();
  if(r.bottom>b.bottom-8)body.scrollTop+=r.bottom-b.bottom+8;else if(r.top<b.top+8)body.scrollTop-=b.top+8-r.top;
 }
-let txViewportRef={w:0,h:0};
-const resizeTxViewport=()=>{
- const vv=window.visualViewport,h=vv?.height||innerHeight;
- const keyboard=vv?Math.max(0,Math.round(document.documentElement.clientHeight-vv.height-vv.offsetTop)):0;
- txDialog.style.setProperty('--tx-viewport',Math.max(180,h-24)+'px');
- txDialog.style.setProperty('--tx-keyboard',keyboard+'px');
+let txViewportRef={w:0,h:0},txViewportFrame=0;
+function resizeTxViewport(){
+ const root=document.documentElement,vv=window.visualViewport, useVisual=vv&&Math.abs(vv.scale-1)<.02;
+ const h=useVisual?vv.height:innerHeight;
+ const bottom=useVisual?Math.max(0,Math.ceil(innerHeight-h-vv.offsetTop)):0;
+ const zoom=Number(getComputedStyle(root).zoom)||1;
+ root.style.setProperty('--visible-bottom',bottom/zoom+'px');
+ txDialog.style.setProperty('--tx-viewport',Math.max(0,Math.floor(h)-12)/zoom+'px');
  // Teclado abierto (o ventana visible muy baja): la hoja oculta lo secundario para que monto, categoría y Guardar sigan a la vista.
  // La referencia es la mayor altura vista con el mismo ancho (un giro de pantalla la reinicia).
- if(txViewportRef.w!==innerWidth)txViewportRef={w:innerWidth,h:0};txViewportRef.h=Math.max(txViewportRef.h,h+keyboard);
- txDialog.classList.toggle('kb-open',keyboard>120||h<txViewportRef.h*.75);
- requestAnimationFrame(keepTxFieldVisible);
-};
-window.visualViewport?.addEventListener('resize',resizeTxViewport);window.visualViewport?.addEventListener('scroll',resizeTxViewport);resizeTxViewport();
-txDialog.addEventListener('focusin',()=>setTimeout(keepTxFieldVisible,350));
+ if(txViewportRef.w!==innerWidth)txViewportRef={w:innerWidth,h:0};txViewportRef.h=Math.max(txViewportRef.h,innerHeight,h);
+ txDialog.classList.toggle('kb-open',txPhone.matches&&(bottom>100||h<txViewportRef.h*.75));
+}
+function scheduleTxViewport(){
+ if(txViewportFrame)return;
+ txViewportFrame=requestAnimationFrame(()=>{txViewportFrame=0;resizeTxViewport();keepTxFieldVisible();});
+}
+window.addEventListener('resize',scheduleTxViewport);
+window.visualViewport?.addEventListener('resize',scheduleTxViewport);
+window.visualViewport?.addEventListener('scroll',scheduleTxViewport);
+txDialog.addEventListener('focusin',()=>requestAnimationFrame(keepTxFieldVisible));
+resizeTxViewport();
 $('#btnNewTx').onclick = () => openTx();
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 

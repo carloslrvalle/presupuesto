@@ -145,8 +145,24 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
   if (!_cv || k !== _cvKey){ _cv = new Map(); _cvKey = k; _cv.cs = getComputedStyle(de); qMicro(() => { _cv = null; }); }
   let v = _cv.get(n); if (v === undefined){ v = _cv.cs.getPropertyValue(n).trim(); _cv.set(n, v); } return v; };
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+// El cierre visual de Safari no retiene controles accesibles ni retrasa el cierre nativo.
+if(!CSS.supports('overlay','auto')){
+ document.addEventListener('close',e=>{if(e.target instanceof HTMLDialogElement&&!e.target.open)e.target.inert=true;},true);
+ document.addEventListener('beforetoggle',e=>{
+  const d=e.target;if(!(d instanceof HTMLDialogElement))return;
+  if(e.newState==='open'){d._exit?.cancel();d._exit=null;d.inert=false;return;}
+  const style=getComputedStyle(d),from={opacity:style.opacity,transform:style.transform,visibility:'visible'};
+  qMicro(()=>{
+   if(d.open||reduceMotion())return;
+   d._exit?.cancel();d.getAnimations().filter(a=>a instanceof CSSTransition).forEach(a=>a.cancel());
+   const end=getComputedStyle(d),to={opacity:end.opacity,transform:end.transform,visibility:'visible'};
+   const animation=d.animate([from,to],{duration:MOTION.panel,easing:MOTION.ease});d._exit=animation;
+   animation.onfinish=()=>{if(d._exit===animation)d._exit=null;};
+  });
+ },true);
+}
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
-const MOTION={fast:160,move:240,panel:280,data:420,trace:1300,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.2,.7,.2,1)',enter:'cubic-bezier(.34,1.56,.64,1)'};
+const MOTION={fast:180,move:280,panel:320,data:420,trace:1300,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.22,1,.36,1)',enter:'cubic-bezier(.22,1,.36,1)'};
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
 const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
@@ -266,7 +282,19 @@ function animateBars(root){
 }
 const resetBars = sec => Object.keys(barMemo).forEach(k => { if (!sec || k.startsWith(sec + ':')) delete barMemo[k]; });
 // Desvanece una fila antes de quitarla
-const fadeOut = el => new Promise(res => { if (!el || reduceMotion()) return res(); el.classList.add('leaving'); setTimeout(res,MOTION.move); });
+const fadeOut = el => {
+ if(!el||reduceMotion())return Promise.resolve();
+ if(el._leaving)return el._leaving;
+ const style=getComputedStyle(el),from={opacity:1,transform:'none'},to={opacity:0,transform:'translateY(-3px)'};
+ // Las filas de tabla conservan su geometría nativa; las demás cierran también el espacio ocupado.
+ if(el.tagName!=='TR'){
+  Object.assign(from,{height:el.getBoundingClientRect().height+'px',minHeight:style.minHeight,paddingTop:style.paddingTop,paddingBottom:style.paddingBottom,marginTop:style.marginTop,marginBottom:style.marginBottom,borderTopWidth:style.borderTopWidth,borderBottomWidth:style.borderBottomWidth});
+  Object.assign(to,{height:'0px',minHeight:'0px',paddingTop:'0px',paddingBottom:'0px',marginTop:'0px',marginBottom:'0px',borderTopWidth:'0px',borderBottomWidth:'0px'});
+ }
+ el.classList.add('leaving');el.style.overflow='hidden';
+ const animation=el.animate([from,to],{duration:MOTION.panel,easing:MOTION.ease,fill:'forwards'});
+ el._leaving=animation.finished.catch(()=>{});return el._leaving;
+};
 
 const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B06}\u{2B07}\u{FE0F}\u{200D}]/gu;
 function toast(msg, opt = {}){
@@ -279,7 +307,8 @@ function toast(msg, opt = {}){
   const act = t.querySelector('.t-act'); act.hidden = !opt.action; act.textContent = opt.action || '';
   act.onclick = opt.action ? () => { clearTimeout(t._h); t.classList.remove('show', 'has-action'); opt.onAction && opt.onAction(); } : null;
   t.classList.toggle('err', err); t.classList.toggle('neutral', !err && !!opt.icon); t.classList.toggle('has-action', !!opt.action); t.style.setProperty('--t-dur', dur + 'ms');
-  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); // reinicia la animación si llegan varios seguidos
+  // Reinicia el progreso si llegan varios seguidos, conservando la posición del aviso.
+  const progress=t.querySelector('.t-bar');progress.style.animation='none';void progress.offsetWidth;progress.style.animation='';t.classList.add('show');
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show', 'has-action'), dur);
 }
 

@@ -361,12 +361,17 @@ movActionMenu.innerHTML=`<button type="button" role="menuitem" data-mov-action="
 document.body.append(movActionMenu);let movAction=null;
 function closeMovActionMenu(focus=false){
  if(!movAction)return;const anchor=movAction.anchor;anchor.setAttribute('aria-expanded','false');
- if(movActionMenu.hidePopover&&movActionMenu.matches(':popover-open'))movActionMenu.hidePopover();movActionMenu.hidden=true;movAction=null;
+ movAction=null;movActionMenu.inert=true;movActionMenu.classList.add('menu-closing');
+ // WebKit retira el popover de la capa superior de inmediato: conservarlo hasta terminar la salida.
+ const finish=()=>{if(movAction)return;if(movActionMenu.hidePopover&&movActionMenu.matches(':popover-open'))movActionMenu.hidePopover();movActionMenu.hidden=true;};
+ clearTimeout(movActionMenu._hideTimer);
+ if(reduceMotion())finish();else movActionMenu._hideTimer=setTimeout(finish,MOTION.move);
  if(focus&&anchor.isConnected)anchor.focus({preventScroll:true});
 }
 function openMovActionMenu(anchor){
  if(movAction?.anchor===anchor){closeMovActionMenu(true);return;}
  closeMovActionMenu();movAction={anchor,id:anchor.dataset.rowMenu};anchor.setAttribute('aria-expanded','true');movActionMenu.hidden=false;
+ clearTimeout(movActionMenu._hideTimer);movActionMenu.inert=false;movActionMenu.classList.remove('menu-closing');
  if(movActionMenu.showPopover)movActionMenu.showPopover();
  positionMovActionMenu();
  movActionMenu.querySelector('button').focus({preventScroll:true});

@@ -282,6 +282,7 @@ const pad2 = n => String(n).padStart(2, '0');
 function dpOpen(anchor, o){
   if (dpS && dpS.anchor === anchor){ dpClose(); return; }
   dpClose();
+  clearTimeout(dpEl._hideTimer);
   const v = o.value || '';
   dpS = {anchor, ...o, view: o.mode === 'month' ? 'months' : 'days',
     y: Number((v || todayISO()).slice(0, 4)), m: Number((v || todayISO()).slice(5, 7))};
@@ -291,7 +292,8 @@ function dpOpen(anchor, o){
   dpRender();
   if (dpEl.showPopover){ try{ if (dpEl.matches(':popover-open')) dpEl.hidePopover(); dpEl.showPopover(); }catch(e){} }
   dpPlace();
-  requestAnimationFrame(() => dpEl.classList.add('show'));
+  const opened=dpS;
+  requestAnimationFrame(() => {if(dpS===opened)dpEl.classList.add('show');});
   (dpEl.querySelector('.dp-c.sel:not(:disabled)')||dpEl.querySelector('.dp-c.now:not(:disabled)')||dpEl.querySelector('button:not(:disabled)'))?.focus({preventScroll:true});
 }
 function dpClose(restoreFocus=false){
@@ -300,7 +302,7 @@ function dpClose(restoreFocus=false){
   anchor.classList.remove('open'); dpS = null;
   dpEl.classList.remove('show');
   if(restoreFocus&&anchor.isConnected)anchor.focus({preventScroll:true});
-  setTimeout(() => { if (!dpS && dpEl.hidePopover){ try{ dpEl.hidePopover(); }catch(e){} } }, 200);
+  dpEl._hideTimer=setTimeout(() => { if (!dpS && dpEl.hidePopover){ try{ dpEl.hidePopover(); }catch(e){} } }, reduceMotion()?0:MOTION.panel);
 }
 function dpPlace(){
   if (!dpS) return;

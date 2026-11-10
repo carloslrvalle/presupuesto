@@ -1116,7 +1116,7 @@ body.sel-on .toast{bottom:150px}
 .cat-row button.ico[data-act=icon]{position:relative;overflow:visible;cursor:pointer}
 
 /* Sistema de movimiento: respuesta, navegación, paneles y datos. */
-:root{--motion-fast:160ms;--motion-move:240ms;--motion-panel:280ms;--motion-data:420ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.2,.7,.2,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:cubic-bezier(.4,0,1,1)}
+:root{--motion-fast:180ms;--motion-move:280ms;--motion-panel:320ms;--motion-data:420ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.22,1,.36,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:var(--motion-ease)}
 button,.btn,.chip,.iconbtn,.seg button,.month-nav button,.year-nav button,.emoji-grid button,.fsel-btn,.swatch,.cat-row .ico,.goal-icon-btn,.settings-nav button,.settings-status,.category-personalize,.font-card,.theme-card,.cal-d,.pp-mo,.dp-trigger,.pay-btn{
  transition:background-color var(--motion-fast) var(--motion-ease),color var(--motion-fast) var(--motion-ease),border-color var(--motion-fast) var(--motion-ease),box-shadow var(--motion-fast) var(--motion-ease),transform var(--motion-fast) var(--motion-ease),filter var(--motion-fast) var(--motion-ease);
 }
@@ -1145,7 +1145,6 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 .spark.draw,.cd-col i{animation-duration:var(--motion-data);animation-timing-function:var(--motion-ease);animation-delay:0ms}
 .check input[type=checkbox],.check input[type=checkbox]::after,.color-preview,.acc-sw,.icon-preview .ico,.card{transition-duration:var(--motion-fast);transition-timing-function:var(--motion-ease)}
 .color-sliders input::-webkit-slider-thumb{transition:transform var(--motion-fast) var(--motion-ease)}
-.leaving{animation:leave var(--motion-move) var(--motion-ease) forwards}@keyframes leave{to{opacity:0;transform:translateY(-4px)}}
 .just,tr.just td{animation-duration:var(--motion-signal);animation-timing-function:var(--motion-ease)}
 .toast,.toast.show{transition:opacity var(--motion-move) var(--motion-ease),transform var(--motion-move) var(--motion-ease)}
 .settings-panel,.settings-nav{min-width:0}
@@ -2157,8 +2156,9 @@ dialog .dlg-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:
 }
 
 /* Calendario y Nuevo movimiento: indicador fino que se oculta tras 800 ms sin scroll. */
-.cal-day-scroll,#txDialog .dlg-body{--scroll-thumb:transparent;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
-.cal-day-scroll.scroll-active,#txDialog .dlg-body.scroll-active{--scroll-thumb:color-mix(in srgb,var(--muted) 55%,transparent)}
+@property --scroll-opacity{syntax:"<number>";inherits:false;initial-value:0}
+.cal-day-scroll,#txDialog .dlg-body{--scroll-opacity:0;--scroll-thumb:color-mix(in srgb,var(--muted) calc(var(--scroll-opacity) * 55%),transparent);scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent;transition:--scroll-opacity 420ms var(--motion-ease)}
+.cal-day-scroll.scroll-active,#txDialog .dlg-body.scroll-active{--scroll-opacity:1}
 @supports selector(::-webkit-scrollbar){
  .cal-day-scroll,#txDialog .dlg-body{scrollbar-width:auto;scrollbar-color:auto}
  .cal-day-scroll::-webkit-scrollbar,#txDialog .dlg-body::-webkit-scrollbar{width:8px;height:8px}
@@ -2580,4 +2580,45 @@ body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(4){animation-delay:
 @media (prefers-reduced-motion:reduce){
  .tab-ind.ready,.seg::before,.to-top,.to-top.show{transition:none!important}
  body.app-enter #tab-dashboard .dashboard-kpis>.kpi{animation:none}
+}
+
+/* Entradas y salidas continuas en móvil y escritorio, incluso al invertir una acción. */
+.prof-menu,.mov-action-menu,.sel-bar{
+ animation:none;opacity:1;translate:0 0;
+ transition:opacity var(--motion-move) var(--motion-ease),translate var(--motion-move) var(--motion-ease),display var(--motion-move) allow-discrete,overlay var(--motion-move) allow-discrete;
+}
+.prof-menu[hidden],.mov-action-menu[hidden],.sel-bar[hidden]{opacity:0;translate:0 5px;pointer-events:none}
+.mov-action-menu.menu-closing{opacity:0;translate:0 5px;pointer-events:none}
+.mov-action-menu{transition:opacity var(--motion-move) var(--motion-ease),translate var(--motion-move) var(--motion-ease)}
+@starting-style{.prof-menu:not([hidden]),.mov-action-menu:not([hidden]),.sel-bar:not([hidden]){opacity:0;translate:0 5px}}
+.info-tip::after{
+ display:none;opacity:0;transform:translateY(-3px);
+ transition:opacity var(--motion-fast) var(--motion-ease),transform var(--motion-fast) var(--motion-ease),display var(--motion-fast) allow-discrete;
+}
+.info-tip:hover::after,.info-tip.show::after,.info-tip:focus-visible::after{
+ display:block;animation:none;opacity:1;transform:none;
+}
+@starting-style{.info-tip:hover::after,.info-tip.show::after,.info-tip:focus-visible::after{opacity:0;transform:translateY(-3px)}}
+.fsel-menu{transition:opacity var(--motion-move) var(--motion-ease),transform var(--motion-move) var(--motion-ease)}
+.toast{transform:translateX(-50%) translateY(8px)}
+.history-row:active,.prow.link:active,.settings-home-row:active{transition-duration:var(--motion-fast)}
+@media(prefers-reduced-motion:reduce){
+ .prof-menu,.mov-action-menu,.sel-bar{translate:none}
+ .info-tip::after{transform:none}
+}
+
+/* Safari sin transición de overlay: la salida continúa fuera de la capa modal. */
+@supports not (overlay:auto){
+ html dialog,html dialog[open],html #txDialog,html #txDialog[open]{display:flex;flex-direction:column;position:fixed;inset:0;z-index:100;visibility:hidden;pointer-events:none;
+  transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),visibility 0s linear var(--motion-panel)}
+ html dialog[open],html #txDialog[open]{visibility:visible;pointer-events:auto;transition-delay:0s}
+ html dialog::backdrop,html dialog[open]::backdrop{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+ body::after{content:"";position:fixed;inset:0;z-index:99;background:rgba(10,12,20,.5);-webkit-backdrop-filter:blur(6px) saturate(1.1);backdrop-filter:blur(6px) saturate(1.1);opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity var(--motion-panel) var(--motion-ease),visibility 0s linear var(--motion-panel)}
+ body:has(dialog[open])::after{opacity:1;visibility:visible;transition-delay:0s}
+ @media(max-width:700px){
+  html dialog,html dialog[open],html #txDialog,html #txDialog[open]{inset:auto 0 0}
+  body::after{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+ }
+ @media(prefers-reduced-transparency:reduce),(forced-colors:active){body::after{-webkit-backdrop-filter:none;backdrop-filter:none}}
 }

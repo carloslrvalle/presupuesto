@@ -64,18 +64,21 @@ function progressRow(c, real, budget, type, prev, prevM){
   const saving = type === 'expense' && isSavingCat(c.id);
   let color = dc(c.color);
   const status=budgetStatus(real,budget);
-  color = barFill(c.color, type === 'income' || saving ? 'income' : status==='over'?'over':status==='near'?'warn':'');
+  color = barFill(c.color, type === 'income' || saving ? 'income' : status==='near'?'warn':'');
   let tag = '', alert = '';
   if (saving){ if (budget > 0 && pct >= 100) tag = `<span class="alert-pill good">${ic('check')}Cumplido</span>`; }
   else if (type === 'expense' && status==='over'){ alert = 'over'; tag = `<span class="alert-pill over">${ic('triangle-alert')}Superado</span>`; }
   else if (type === 'expense' && status==='complete'){ tag = '<span class="alert-pill complete">Completo</span>'; }
   else if (type === 'expense' && status==='near'){ alert = 'warn'; tag = ''; }
   else if(type==='income'&&budget>0&&real>=budget-.005){tag='<span class="alert-pill good">Ingreso recibido</span>';}
+  const coveredWidth = alert === 'over' ? budget / real * 100 : Math.min(pct, 100);
+  const excessWidth = 100 - coveredWidth;
+  const barDescription = alert === 'over' ? `${pct.toFixed(1)}% del presupuesto. Presupuesto: ${fmt(budget)}. Exceso: ${fmt(real-budget)}.` : '';
   return `<div class="prow ${alert} link" data-go-cat="${c.id || ''}" data-go-type="${type}" title="Ver movimientos de ${esc(c.name)}">
     <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
     <div class="pr-main">
       <div class="pr-top"><span class="name">${esc(c.name)}</span>${tag}<span class="pr-amt"><b>${fmt(real)}</b>${budget > 0 ? `<span class="muted"> de ${fmt(budget)}</span>` : ''}</span></div>
-      <div class="bar"><span data-k="dash:${type}:${esc(c.id)}" data-w="${Math.min(pct,100).toFixed(2)}" style="width:${Math.min(pct,100)}%;background:${color}"></span></div>
+      <div class="bar"${barDescription ? ` role="img" aria-label="${esc(barDescription)}" title="${esc(barDescription)}"` : ''}><span data-k="dash:${type}:${esc(c.id)}" data-w="${coveredWidth.toFixed(2)}" style="width:${coveredWidth}%;background:${color}"></span>${alert==='over'?`<i class="budget-overrun" aria-hidden="true" style="width:${excessWidth.toFixed(2)}%"></i><i class="budget-limit" aria-hidden="true" style="left:${coveredWidth.toFixed(2)}%"></i>`:''}</div>
       <div class="pr-meta"><span>${status==='complete'||(saving&&tag)?'':prowMeta(real, budget, type, saving)}</span>${prevM && prev && Math.abs(real - prev) / prev >= .01 ? deltaTxt(real, prev, type, prevM) : ''}</div>
     </div>
   </div>`;

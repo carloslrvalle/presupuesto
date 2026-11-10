@@ -2622,3 +2622,46 @@ body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(4){animation-delay:
  }
  @media(prefers-reduced-transparency:reduce),(forced-colors:active){body::after{-webkit-backdrop-filter:none;backdrop-filter:none}}
 }
+
+/* El indicador conserva su espacio al cambiar de categoría o de serie. */
+.year-chart-head{min-height:48px}
+.year-chart-head>div:first-child{min-width:0;min-height:48px}
+#yearReadout::after{content:"";display:block;min-height:36px}
+#yearReadout:has(.analysis-accumulated)::after{display:none}
+#yearReadout .analysis-accumulated{min-height:36px}
+
+/* Fecha, recuento y totales se leen antes de la lista desplazable. */
+#calDay .cal-day-head{padding-bottom:16px}
+#calDayTitle{margin:0 0 12px;font-size:15px;line-height:1.4}
+.cal-day-summary{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px 16px}
+.cal-day-totals{display:flex;flex-wrap:wrap;gap:8px 16px;min-width:0}
+.cal-day-totals>span{display:grid;gap:2px;min-width:0}
+.cal-day-totals small{font-size:10px;line-height:1.4;color:var(--muted)}
+.cal-day-totals b{font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#calDay .vs-avg{margin-top:12px;padding:4px 8px;font-size:11px;font-weight:500}
+
+/* Copia e importe alineados; las acciones mantienen su propia columna. */
+#calDay .cal-transaction{grid-template-columns:34px minmax(0,1fr) 72px;grid-template-rows:auto auto;gap:4px 10px;margin:0;padding:14px 0}
+#calDay .cal-transaction>.ico{grid-column:1;grid-row:1/3;align-self:center}
+#calDay .cal-transaction>.cal-copy{grid-column:2;grid-row:1;min-width:0}
+#calDay .cal-transaction .amt{grid-column:2;grid-row:2;justify-self:start;text-align:left;font-size:13px;white-space:nowrap}
+#calDay .cal-transaction .row-actions{grid-column:3;grid-row:1/3;align-self:center;justify-self:end;gap:0}
+#calDay .cal-transaction .row-actions .iconbtn{width:36px;height:40px;min-width:36px}
+#calDay .cal-transaction .name,#calDay .cal-transaction .small,#calDay .cal-recurring .name,#calDay .cal-recurring .small{
+ display:block;-webkit-line-clamp:unset;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;line-height:1.5;
+ -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 24px),#000b);mask-image:linear-gradient(to right,#000 calc(100% - 24px),#000b);
+}
+#calDay .cal-transaction .small{margin-top:3px;font-size:11px}
+@media(max-width:700px){
+ #calDay .cal-transaction{grid-template-columns:36px minmax(0,1fr) 88px}
+ #calDay .cal-transaction .row-actions .iconbtn{width:44px;height:44px;min-width:44px}
+}
+
+/* El exceso ocupa un segmento proporcional, con un aviso tenue y sin pulsos. */
+.prow.over{background:color-mix(in srgb,var(--expense) 3%,var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--expense) 14%,transparent);animation:budgetAlertIn var(--motion-panel) var(--motion-ease)}
+.prow.over .bar{position:relative}
+.budget-overrun{position:absolute;inset:0 0 0 auto;border-radius:0 99px 99px 0;background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--expense) 85%,var(--surface)) 0 3px,color-mix(in srgb,var(--expense) 55%,var(--surface)) 3px 6px);transform-origin:left;animation:budgetOverrunIn var(--motion-data) var(--motion-ease) both}
+.budget-limit{position:absolute;top:0;bottom:0;width:2px;background:var(--surface);transform:translateX(-1px);pointer-events:none}
+.alert-pill.over{background:color-mix(in srgb,var(--expense) 7%,var(--surface));font-weight:600}
+@keyframes budgetAlertIn{from{background-color:var(--surface);box-shadow:inset 0 0 0 1px transparent}}
+@keyframes budgetOverrunIn{from{transform:scaleX(0)}}

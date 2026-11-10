@@ -34,17 +34,52 @@ const ANALYSIS_METRICS={
   savings:{label:'Ahorro',title:'Ahorro mes a mes',color:'--k-violet',help:'Ahorro de cada mes según la forma de ahorro que elegiste.'},
   rate:{label:'Tasa de ahorro',title:'Tasa de ahorro mes a mes',color:'--primary',help:'Ahorro sobre los ingresos del mes. Sin ingresos, no hay tasa.'}
 };
+const ANALYSIS_ACCUMULATED = {
+  income:{title:'Ingresos acumulados',help:'Suma de los ingresos registrados desde enero hasta el mes seleccionado.'},
+  expense:{title:'Gastos acumulados',help:'Suma de los gastos registrados desde enero hasta el mes seleccionado.'},
+  savings:{title:'Ahorro acumulado',help:'Suma del ahorro desde enero hasta el mes seleccionado, según la forma de ahorro elegida.'},
+  rate:{title:'Tasa de ahorro acumulada',help:'Ahorro acumulado dividido entre ingresos acumulados desde enero hasta el mes seleccionado. Sin ingresos acumulados, no hay tasa.'}
+};
 const analysisPercent=value=>value==null?'—':Number(value).toLocaleString('es-PE',{maximumFractionDigits:1,minimumFractionDigits:1})+'%';
 const analysisFormat=value=>value==null?'Sin ingresos':analysisMetric==='rate'?analysisPercent(value):fmt(value);
-function analysisValues(){const d=analysisData;return analysisMetric==='income'?d.tot.map(t=>t.inc):analysisMetric==='expense'?d.tot.map(t=>t.exp):analysisMetric==='rate'?d.rates:analysisChartMode==='total'?d.cum:d.bal;}
+function analysisValues(){
+  const data = analysisData;
+  if (analysisChartMode === 'total') return data.cumulative[analysisMetric];
+  if (analysisMetric === 'income') return data.tot.map(month => month.inc);
+  if (analysisMetric === 'expense') return data.tot.map(month => month.exp);
+  return analysisMetric === 'rate' ? data.rates : data.bal;
+}
 function analysisMonthlyValue(month){
   const d=analysisData,index=d?.months.indexOf(month)??-1;
   if(index>=0)return analysisMetric==='income'?d.tot[index].inc:analysisMetric==='expense'?d.tot[index].exp:analysisMetric==='rate'?d.rates[index]:d.bal[index];
   const tx=txOfMonth(month),income=sum(tx.filter(t=>t.type==='income'));
   return analysisMetric==='income'?income:analysisMetric==='expense'?sum(tx.filter(t=>t.type==='expense')):analysisMetric==='rate'?(income?savingsOf(month).saved/income*100:null):savingsOf(month).saved;
 }
-function analysisDisplayValue(month){if(analysisMetric==='savings'&&analysisChartMode==='total'){const index=analysisData.months.indexOf(month);return index>=0?(analysisData.cum[index]??0):0;}return analysisMonthlyValue(month);}
-function analysisPreviousLabel(month){return analysisMetric==='savings'&&analysisChartMode==='total'&&month.endsWith('-01')?'Inicio de '+month.slice(0,4):monthLong(shiftMonth(month,-1));}
+function analysisDisplayValue(month){
+  if (analysisChartMode !== 'total') return analysisMonthlyValue(month);
+  const index = analysisData.months.indexOf(month);
+  if (index < 0) return analysisMetric === 'rate' ? null : 0;
+  return analysisData.cumulative[analysisMetric][index];
+}
+function analysisPreviousLabel(month){
+  if (analysisChartMode !== 'total') return monthLong(shiftMonth(month,-1));
+  return month.endsWith('-01') ? 'Inicio de '+month.slice(0,4) : 'Hasta '+monthLong(shiftMonth(month,-1));
+}
+function analysisCumulativeSeries(totals, savings, available){
+  let income = 0, expense = 0, saved = 0;
+  const series = {income:[], expense:[], savings:[], rate:[]};
+  totals.forEach((month, index) => {
+    income += month.inc;
+    expense += month.exp;
+    saved += savings[index];
+    const hasData = available[index] != null;
+    series.income.push(hasData ? income : null);
+    series.expense.push(hasData ? expense : null);
+    series.savings.push(hasData ? saved : null);
+    series.rate.push(hasData && income > 0 ? saved / income * 100 : null);
+  });
+  return series;
+}
 function analysisChange(current,previous){
   if(current==null||previous==null)return 'Sin base comparable';
   const difference=current-previous;if(Math.abs(difference)<.005)return 'Sin cambio';
@@ -56,17 +91,17 @@ function renderYearReadout(){
   const el=$('#yearReadout'),data=analysisData;if(!data||data.first<0){el.innerHTML='';return;}
   if(!data.months.includes(analysisSelectedMonth)||data.cum[data.months.indexOf(analysisSelectedMonth)]==null){const i=data.months.indexOf(currentMonth);analysisSelectedMonth=i>=0&&data.cum[i]!=null?currentMonth:data.months.findLast((_,j)=>data.cum[j]!=null);}
   const months=data.months.filter((_,j)=>data.cum[j]!=null),previousMonth=shiftMonth(analysisSelectedMonth,-1),current=analysisDisplayValue(analysisSelectedMonth),previous=analysisDisplayValue(previousMonth),change=analysisChange(current,previous),difference=current!=null&&previous!=null?current-previous:0,tone=Math.abs(difference)<.005?'neutral':((difference>0)===(analysisMetric==='expense')?'bad':'good');
-  el.innerHTML=`<div class="year-readout-month"><div class="analysis-month-caption" id="analysisMonthCaption">Mes seleccionado${analysisSelectedMonth===thisMonth()?'<span class="analysis-period-state" title="El mes no ha terminado. Se compara lo registrado hasta hoy con el mes anterior completo.">En curso</span>':''}</div><details class="analysis-month-picker"><summary id="analysisMonthTrigger" aria-labelledby="analysisMonthCaption analysisMonthName"><span class="analysis-month-icon" aria-hidden="true">${ic('calendar')}</span><span id="analysisMonthName">${esc(monthLong(analysisSelectedMonth))}</span>${CHEV}</summary><div class="analysis-month-menu"><div class="analysis-month-year">${analysisSelectedMonth.slice(0,4)}<span>Elegir mes</span></div><div class="analysis-month-options">${months.map(m=>`<button type="button" data-analysis-month="${m}" aria-pressed="${m===analysisSelectedMonth}"><span>${esc(monthLong(m).replace(/ \d{4}$/,''))}</span>${m===analysisSelectedMonth?CHECK:''}</button>`).join('')}</div></div></details><select id="yearReadoutMonth" hidden aria-hidden="true" tabindex="-1">${months.map(m=>`<option value="${m}"${m===analysisSelectedMonth?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select></div><dl><div><dt>${analysisMetric==='savings'&&analysisChartMode==='total'?'Acumulado':ANALYSIS_METRICS[analysisMetric].label}</dt><dd data-analysis-value="current">${analysisFormat(current)}</dd></div><div><dt>${analysisPreviousLabel(analysisSelectedMonth)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div></dl><span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${analysisMetric==='rate'?'Diferencia en puntos porcentuales entre ambas tasas.':'Diferencia relativa respecto al período anterior.'}">${change}${change.startsWith('+')||change.startsWith('−')?' vs. mes anterior':''}</span>${analysisMetric==='savings'&&analysisChartMode==='total'?`<span class="analysis-accumulated">Ahorro del mes: <b>${fmt(data.bal[data.months.indexOf(analysisSelectedMonth)])}</b></span>`:''}`;
+  el.innerHTML=`<div class="year-readout-month"><div class="analysis-month-caption" id="analysisMonthCaption">Mes seleccionado${analysisSelectedMonth===thisMonth()?'<span class="analysis-period-state" title="El mes no ha terminado. Se compara lo registrado hasta hoy con el mes anterior completo.">En curso</span>':''}</div><details class="analysis-month-picker"><summary id="analysisMonthTrigger" aria-labelledby="analysisMonthCaption analysisMonthName"><span class="analysis-month-icon" aria-hidden="true">${ic('calendar')}</span><span id="analysisMonthName">${esc(monthLong(analysisSelectedMonth))}</span>${CHEV}</summary><div class="analysis-month-menu"><div class="analysis-month-year">${analysisSelectedMonth.slice(0,4)}<span>Elegir mes</span></div><div class="analysis-month-options">${months.map(m=>`<button type="button" data-analysis-month="${m}" aria-pressed="${m===analysisSelectedMonth}"><span>${esc(monthLong(m).replace(/ \d{4}$/,''))}</span>${m===analysisSelectedMonth?CHECK:''}</button>`).join('')}</div></div></details><select id="yearReadoutMonth" hidden aria-hidden="true" tabindex="-1">${months.map(m=>`<option value="${m}"${m===analysisSelectedMonth?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select></div><dl><div><dt>${analysisChartMode==='total'?(analysisMetric==='rate'?'Tasa acumulada':'Acumulado'):ANALYSIS_METRICS[analysisMetric].label}</dt><dd data-analysis-value="current">${analysisFormat(current)}</dd></div><div><dt>${analysisPreviousLabel(analysisSelectedMonth)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div></dl><span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${analysisMetric==='rate'?'Diferencia en puntos porcentuales entre ambas tasas.':'Diferencia relativa respecto al período anterior.'}">${change}${change.startsWith('+')||change.startsWith('−')?(analysisChartMode==='total'?' vs. acumulado anterior':' vs. mes anterior'):''}</span>${analysisChartMode==='total'?`<span class="analysis-accumulated">${ANALYSIS_METRICS[analysisMetric].label} del mes: <b>${analysisFormat(analysisMonthlyValue(analysisSelectedMonth))}</b></span>`:''}`;
 }
 function selectAnalysisMonth(month){analysisSelectedMonth=month;if(analysisDetailPeriod!=='year')analysisDetailPeriod=month;renderYearReadout();renderAnalysisDetails();}
 function renderAnalysisChart(){
   if(chYear)chYear.destroy();chartTheme();
-  const data=analysisData,phone=mobileAnalysis(),metric=ANALYSIS_METRICS[analysisMetric],cumulative=analysisMetric==='savings'&&analysisChartMode==='total',percentage=analysisMetric==='rate',line=cumulative||percentage;
+  const data=analysisData,phone=mobileAnalysis(),metric=ANALYSIS_METRICS[analysisMetric],cumulative=analysisChartMode==='total',percentage=analysisMetric==='rate',line=cumulative||percentage;
   const last=data.months.findLastIndex((_,i)=>data.cum[i]!=null),indices=data.months.map((_,i)=>i).slice(data.first,last+1);
   const values=analysisValues(),color=cssVar(metric.color),negative=cssVar('--expense-chart');
   if(values.every(v=>v==null)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-line','Registra ingresos para calcular la tasa de ahorro.');return;}
   if(['income','expense'].includes(analysisMetric)&&values.every(v=>v===0)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-column','No hay '+metric.label.toLowerCase()+' registrados en este año.');return;}
-  const dataset={type:line?'line':'bar',label:cumulative?'Ahorro acumulado':metric.label,unit:percentage?'pct':'money',data:indices.map(i=>values[i]),yAxisID:'y',borderColor:line?color:undefined,
+  const dataset={type:line?'line':'bar',label:cumulative?ANALYSIS_ACCUMULATED[analysisMetric].title:metric.label,unit:percentage?'pct':'money',data:indices.map(i=>values[i]),yAxisID:'y',borderColor:line?color:undefined,
     backgroundColor:ctx=>{const base=!line&&ctx.raw<0?negative:color;return !line&&data.months[indices[ctx.dataIndex]]!==analysisSelectedMonth?mixHex(base,cssVar('--surface'),.40):base;},
     borderWidth:line?2:0,borderRadius:4,borderSkipped:false,maxBarThickness:phone?44:58,categoryPercentage:.64,barPercentage:.85,tension:0,fill:false,spanGaps:false,
     pointRadius:ctx=>data.months[indices[ctx.dataIndex]]===analysisSelectedMonth?5:2,pointHoverRadius:6,pointHitRadius:12,pointBackgroundColor:color,pointBorderColor:cssVar('--surface'),pointBorderWidth:1.5};
@@ -218,11 +253,12 @@ function renderAnalysis(){
   const bal = months.map(mm => savingsOf(mm).saved), balC = tot.map((t, i) => t.inc || t.exp ? bal[i] : null);
   const firstData = tot.findIndex(t => t.inc || t.exp);
   let acc = 0; const cum = months.map((m, i) => firstData >= 0 && i >= firstData && (m <= tm || tot[i].inc || tot[i].exp) ? (acc += bal[i]) : null);
-  analysisData={months,bal,balC,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData};
+  analysisData={months,bal,balC,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData,cumulative:analysisCumulativeSeries(tot,bal,cum)};
   if(!months.includes(analysisSelectedMonth))analysisSelectedMonth=currentMonth;
-  const metric=ANALYSIS_METRICS[analysisMetric];$('#analysisChartTitle').textContent=analysisMetric==='savings'&&analysisChartMode==='total'?'Ahorro acumulado':metric.title;
-  $('#yearChartHelp').dataset.tip=analysisMetric==='savings'&&analysisChartMode==='total'?'Total ahorrado desde el primer mes con registros.':metric.help;
-  $('#yearChartModes').hidden=!nData||analysisMetric!=='savings';
+  const metric=analysisChartMode==='total'?ANALYSIS_ACCUMULATED[analysisMetric]:ANALYSIS_METRICS[analysisMetric];
+  $('#analysisChartTitle').textContent=metric.title;
+  $('#yearChartHelp').dataset.tip=metric.help;
+  $('#yearChartModes').hidden=!nData;
   $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.yearMode===analysisChartMode)));
   renderYearReadout();
   if (chYear && !nData){ chYear.destroy(); chYear = null; }

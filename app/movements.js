@@ -256,14 +256,14 @@ function renderCalDay(){
   const exp = sum(list.filter(t => t.type === 'expense')), inc = sum(list.filter(t => t.type === 'income'));
   const vsAvg = calAvg && exp ? exp / calAvg : 0;
   const [y, mo, d] = iso.split('-').map(Number), label = new Date(y, mo - 1, d).toLocaleDateString('es-PE', {weekday:'long', day:'numeric', month:'long'});
-  $('#calDay').innerHTML = `<div class="cal-day-head"><div><h3 id="calDayTitle" style="margin:0">${label[0].toUpperCase() + label.slice(1)}</h3>
-      <div class="small muted">${list.length ? `${plural(list.length, 'movimiento')} · <span class="xp">${fmt(exp)}</span>${inc ? ` · <span class="pos">+${fmt(inc)}</span>` : ''}` : 'Sin movimientos'}</div>
+  $('#calDay').innerHTML = `<div class="cal-day-head"><div><h3 id="calDayTitle"><time datetime="${iso}">${label[0].toUpperCase() + label.slice(1)}</time></h3>
+      <div class="cal-day-summary"><span class="small muted">${list.length ? plural(list.length, 'movimiento') : 'Sin movimientos'}</span><div class="cal-day-totals">${list.length ? `<span><small>Gastos</small><b class="xp">${fmt(exp)}</b></span>` : ''}${inc ? `<span><small>Ingresos</small><b class="pos">+${fmt(inc)}</b></span>` : ''}</div></div>
       ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}</div>
       </div>
     <div class="cal-day-scroll" tabindex="0" role="region" aria-labelledby="calDayTitle">
     ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income'; return `<div class="prow cal-transaction">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
-      <div><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
+      <div class="cal-copy"><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
       <div class="amt"><b class="${isI ? 'pos' : 'xp'}">${isI ? '+' : '−'} ${fmt(t.amount)}</b></div>
       <div class="row-actions"><button class="iconbtn" data-edit="${esc(t.id)}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${esc(t.id)}" title="Eliminar">${ic('trash-2')}</button></div></div>`; }).join('')}
     ${recs.map(r => { const c = getCat(r.catId); return `<div class="prow cal-recurring">

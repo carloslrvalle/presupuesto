@@ -2,7 +2,7 @@
    Con internet siempre pide la versión más reciente (así las actualizaciones llegan solas);
    sin internet usa la última copia guardada. La sincronización con Google Sheets no pasa por aquí. */
 const CACHE_PREFIX = 'presupuesto:' + new URL(self.registration.scope).pathname + ':';
-const CACHE = CACHE_PREFIX + '1.10.78';
+const CACHE = CACHE_PREFIX + '1.10.80';
 const CORE = ["./","./index.html","./manifest.webmanifest","./favicon-16.png","./favicon-32.png","./logo.png","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./app.css","./sync-core.js","./app/bootstrap.js","./vendor/chart.umd.js","./app/finance.js","./app/storage.js","./app/utils.js","./app/dates.js","./app/state.js","./app/domain.js","./app/ui.js","./app/dashboard.js","./app/movements.js","./app/budget.js","./app/recurring.js","./app/goals.js","./app/analysis.js","./app/appearance.js","./app/data.js","./app/sync.js","./app/profiles.js","./app/settings.js","./app/main.js","./fonts.css","./fonts/inter-400.woff2","./fonts/geist-font/Geist/webfonts/Geist%5Bwght%5D.woff2","./fonts/geist-font/Geist/webfonts/Geist-Italic%5Bwght%5D.woff2","./fonts/geist-font/GeistMono/webfonts/GeistMono%5Bwght%5D.woff2","./fonts/geist-font/GeistMono/webfonts/GeistMono-Italic%5Bwght%5D.woff2","./fonts/plusjakarta-400.woff2","./fonts/plusjakarta-500.woff2","./fonts/plusjakarta-600.woff2","./fonts/plusjakarta-700.woff2"];
 
 self.addEventListener('install', e => {

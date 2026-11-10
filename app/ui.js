@@ -378,6 +378,18 @@ function tickChanges(root, selector, render){
 })();
 $('#btnSettings').onclick = () => { showTab('settings'); openSettingsSection(null); };
 const goTab = showTab;
+// Barras discretas en el calendario y el formulario; el espacio no cambia al ocultarlas.
+const scrollThumbTimers = new WeakMap();
+document.addEventListener('scroll', e => {
+  const el = e.target;
+  if (!(el instanceof Element) || !el.matches('.cal-day-scroll,#txDialog .dlg-body')) return;
+  el.classList.add('scroll-active');
+  clearTimeout(scrollThumbTimers.get(el));
+  scrollThumbTimers.set(el, setTimeout(() => {
+    el.classList.remove('scroll-active');
+    scrollThumbTimers.delete(el);
+  }, 800));
+}, {capture:true, passive:true});
 function moveTabInd(){
   const b = $('#tabs button.active'), ind = $('#tabInd'); ind.style.opacity = b ? 1 : 0; if (!b) return;
   // Teléfono: píldora detrás del ícono; escritorio: línea bajo el texto.

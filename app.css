@@ -343,7 +343,15 @@ tr.over td{background:color-mix(in srgb,var(--expense) 6%,transparent)}
 
 .vs-avg{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
 .vs-avg.hi{background:var(--expense-soft);color:var(--expense)}.vs-avg.lo{background:var(--income-soft);color:var(--income)}
-#calDay{position:sticky;top:150px}
+#calDay{position:static;display:flex;flex-direction:column;min-height:0;max-height:75svh;overflow:hidden}
+#calDay .cal-day-head{flex:none;margin-bottom:0;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.cal-day-scroll{min-height:0;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding-right:4px}
+.cal-day-scroll:focus-visible{outline:2px solid var(--primary);outline-offset:-2px;border-radius:var(--radius-sm)}
+#calDay .cal-day-scroll>.prow:last-child{border-bottom:0}
+@media(min-width:901px){
+  /* Solo el calendario determina la altura de la fila, incluso con muchos movimientos. */
+  #calDay{contain:size;align-self:stretch;height:100%;max-height:none}
+}
 .cal-stats .cs .small:last-child{margin-top:2px}
 .cal-d{position:relative;aspect-ratio:auto;width:100%;box-sizing:border-box;min-width:0;min-height:68px;container-type:inline-size;border:1px solid var(--border);border-radius:8px;padding:6px 7px;text-align:left;cursor:pointer;color:var(--text);display:flex;flex-direction:column;gap:1px;overflow:hidden;
   background:var(--surface)}
@@ -2148,10 +2156,20 @@ dialog .dlg-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:
  ::-webkit-scrollbar-button,::-webkit-scrollbar-button:single-button{display:none;width:0;height:0}
 }
 
+/* Calendario y Nuevo movimiento: indicador fino que se oculta tras 800 ms sin scroll. */
+.cal-day-scroll,#txDialog .dlg-body{--scroll-thumb:transparent;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
+.cal-day-scroll.scroll-active,#txDialog .dlg-body.scroll-active{--scroll-thumb:color-mix(in srgb,var(--muted) 55%,transparent)}
+@supports selector(::-webkit-scrollbar){
+ .cal-day-scroll,#txDialog .dlg-body{scrollbar-width:auto;scrollbar-color:auto}
+ .cal-day-scroll::-webkit-scrollbar,#txDialog .dlg-body::-webkit-scrollbar{width:8px;height:8px}
+ .cal-day-scroll::-webkit-scrollbar-thumb,#txDialog .dlg-body::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:999px;background-color:var(--scroll-thumb);background-clip:padding-box}
+ .cal-day-scroll::-webkit-scrollbar-button,#txDialog .dlg-body::-webkit-scrollbar-button{display:none;width:0;height:0}
+}
+
 dialog[open]:has(>form){display:flex;flex-direction:column}
 dialog::before{flex-shrink:0}
 
-@media(forced-colors:active){*{scrollbar-color:auto!important}::-webkit-scrollbar-thumb{background-color:ButtonText;border-color:Canvas}}
+@media(forced-colors:active){*{scrollbar-color:auto!important}::-webkit-scrollbar-thumb{background-color:ButtonText;border-color:Canvas}.cal-day-scroll,#txDialog .dlg-body{--scroll-thumb:ButtonText!important}}
 
 /* 1.10.42: cierre de jerarquía, segmentos, diálogos y acciones secundarias. */
 .vseg,.seg{align-items:stretch}

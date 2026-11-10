@@ -146,7 +146,7 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
   let v = _cv.get(n); if (v === undefined){ v = _cv.cs.getPropertyValue(n).trim(); _cv.set(n, v); } return v; };
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
-const MOTION={fast:160,move:240,panel:280,data:420,trace:1300,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.2,.7,.2,1)'};
+const MOTION={fast:160,move:240,panel:280,data:420,trace:1300,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.2,.7,.2,1)',enter:'cubic-bezier(.34,1.56,.64,1)'};
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
 const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
@@ -260,8 +260,9 @@ function animateBars(root){
     sp.style.transition = 'none'; sp.style.width = (from ?? 0) + '%'; barMemo[k] = to; });
   if (!spans.length) return;
   void root.offsetWidth;
-  let i = 0;
-  spans.forEach(sp => { sp.style.transition = ''; sp.style.transitionDelay = fresh.includes(sp) && !reduceMotion() ? Math.min(i++ * 20, 100) + 'ms' : '0ms'; sp.style.width = sp.dataset.w + '%'; });
+  // Primera aparición escalonada (máx. 6 pasos) con leve rebote; los cambios de valor no se escalonan.
+  const step = innerWidth <= 700 ? 60 : 120, calm = reduceMotion(); let i = 0;
+  spans.forEach(sp => { const enter = fresh.includes(sp) && !calm; sp.style.transition = ''; sp.style.transitionDelay = enter ? Math.min(i++, 6) * step + 'ms' : '0ms'; sp.style.transitionTimingFunction = enter ? MOTION.enter : ''; sp.style.width = sp.dataset.w + '%'; });
 }
 const resetBars = sec => Object.keys(barMemo).forEach(k => { if (!sec || k.startsWith(sec + ':')) delete barMemo[k]; });
 // Desvanece una fila antes de quitarla
@@ -379,7 +380,11 @@ $('#btnSettings').onclick = () => { showTab('settings'); openSettingsSection(nul
 const goTab = showTab;
 function moveTabInd(){
   const b = $('#tabs button.active'), ind = $('#tabInd'); ind.style.opacity = b ? 1 : 0; if (!b) return;
-  Object.assign(ind.style, {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px'});
+  // Teléfono: píldora detrás del ícono; escritorio: línea bajo el texto.
+  const pill = b.querySelector('.tb-i');
+  Object.assign(ind.style, pill && pill.offsetWidth
+    ? {left:b.offsetLeft + pill.offsetLeft + 'px', width:pill.offsetWidth + 'px', top:b.offsetTop + pill.offsetTop + 'px', height:pill.offsetHeight + 'px'}
+    : {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px', top:'', height:''});
 }
 moveTabInd();
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { moveTabInd(); requestAnimationFrame(() => $('#tabInd').classList.add('ready')); });
@@ -392,7 +397,11 @@ const onScroll = () => {
   // Se achica al bajar (con margen para que no titile) solo si la página es lo bastante larga
   const room = document.documentElement.scrollHeight - innerHeight, want = innerWidth > 600 && room > 180 && (compactTop ? y > 24 : y > 72);
   if (want !== compactTop){ compactTop = want; topbar.classList.toggle('compact', want); }
+  toTop.classList.toggle('show', y > 400);
 };
+// Volver arriba (solo escritorio, por CSS): devuelve el foco a la pestaña activa porque el botón se oculta.
+const toTop = $('#toTop');
+toTop.onclick = () => { ($('#tabs button.active') || $('#btnSettings')).focus({preventScroll:true}); window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'}); };
 window.addEventListener('scroll', onScroll, {passive:true}); window.addEventListener('resize',onScroll); onScroll();
 const monthInput = $('#month');
 monthInput.value = currentMonth;

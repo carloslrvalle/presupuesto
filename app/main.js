@@ -25,7 +25,6 @@ function enhanceAccessibility(){
 }
 function syncSelectionAccessibility(){
   document.querySelectorAll('.seg button,.vseg button,.font-card,.theme-card').forEach(b=>b.setAttribute('aria-pressed',String(b.classList.contains('active'))));
-  document.querySelectorAll('#tabs button[data-tab]').forEach(b=>{if(b.classList.contains('active'))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
 }
 document.addEventListener('click',()=>qMicro(syncSelectionAccessibility));
 document.addEventListener('keydown',e=>{

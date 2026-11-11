@@ -448,10 +448,13 @@ function showTab(name, scrollTop = 0){
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
   const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab();
-  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
+  for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
+    button.classList.toggle('active', button === b);
+    if (button === b) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  }
   $('#btnSettings').classList.toggle('active', name === 'settings');
   document.querySelectorAll('.tab').forEach(s => { s.classList.toggle('active', s.id === 'tab-' + name); s.classList.remove('m-next', 'm-prev', 'from-r', 'from-l'); });
-  moveTabInd();
   // Solo desplaza la fila de pestañas hacia los lados; la página se coloca una vez, después del render.
   const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:reduceMotion()?'instant':'smooth'}); }
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
@@ -462,6 +465,7 @@ function showTab(name, scrollTop = 0){
   const resumeAnalysis = name === 'analysis' && !dirty.has(name) && prevTab !== name;
   planningHeader();
   renderView(name);
+  moveTabInd();
   if (resumeAnalysis && chYear){ chYear.resize(); chYear.update('none'); }
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
@@ -475,7 +479,34 @@ function showTab(name, scrollTop = 0){
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
 const tabScroll = {};
-$('#tabs').addEventListener('click', e => {
+const tabBar = $('#tabs');
+const floatingTabs = matchMedia('(max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
+let tabPress = null;
+
+function endTabPress(event){
+  if (!tabPress || (event && event.pointerId !== tabPress.id)) return;
+  tabPress.button.classList.remove('is-pressed');
+  tabPress = null;
+}
+
+tabBar.addEventListener('pointerdown', event => {
+  const button = event.target.closest('button[data-tab]');
+  if (!floatingTabs.matches || !button || !event.isPrimary || event.button !== 0) return;
+  endTabPress();
+  tabPress = {button, id:event.pointerId, x:event.clientX, y:event.clientY};
+  button.classList.add('is-pressed');
+});
+document.addEventListener('pointermove', event => {
+  if (tabPress?.id === event.pointerId && Math.hypot(event.clientX - tabPress.x, event.clientY - tabPress.y) > 10) {
+    endTabPress(event);
+  }
+}, {passive:true});
+document.addEventListener('pointerup', endTabPress, true);
+document.addEventListener('pointercancel', endTabPress, true);
+window.addEventListener('blur', () => endTabPress());
+floatingTabs.addEventListener('change', () => endTabPress());
+
+tabBar.addEventListener('click', e => {
   const b = e.target.closest('button[data-tab]'); if (!b) return;
   const from = activeTab(), to = b.dataset.tab;
   if (from === to && !bothMode){ window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'}); return; }
@@ -652,15 +683,22 @@ function moveIndicator(indicator, geometry){
 }
 function moveTabInd(){
   const b = $('#tabs button.active'), ind = $('#tabInd'); ind.style.opacity = b ? 1 : 0; if (!b) return;
-  // Teléfono: píldora detrás del ícono; escritorio: línea bajo el texto.
-  const pill = b.querySelector('.tb-i');
-  moveIndicator(ind, pill && pill.offsetWidth
-    ? {left:b.offsetLeft + pill.offsetLeft + 'px', width:pill.offsetWidth + 'px', top:b.offsetTop + pill.offsetTop + 'px', height:pill.offsetHeight + 'px'}
-    : {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px', top:'', height:''});
+  // En el teléfono, el indicador abarca toda la pestaña, incluso al pasar a dos filas.
+  const mobile = b.querySelector('.tb-i').offsetWidth > 0;
+  const geometry = {
+    left: b.offsetLeft + 'px',
+    width: b.offsetWidth + 'px',
+    top: mobile ? b.offsetTop + 'px' : '',
+    height: mobile ? b.offsetHeight + 'px' : ''
+  };
+  if (Object.entries(geometry).some(([key, value]) => ind.style[key] !== value)) {
+    moveIndicator(ind, geometry);
+  }
 }
 moveTabInd();
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { moveTabInd(); requestAnimationFrame(() => $('#tabInd').classList.add('ready')); });
 window.addEventListener('resize', moveTabInd);
+new ResizeObserver(moveTabInd).observe($('#tabs'));
 // La línea y sombra del encabezado solo aparecen al hacer scroll
 const topbar = $('.topbar');
 let compactTop = false;

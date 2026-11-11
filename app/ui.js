@@ -455,8 +455,6 @@ function showTab(name, scrollTop = 0){
   }
   $('#btnSettings').classList.toggle('active', name === 'settings');
   document.querySelectorAll('.tab').forEach(s => { s.classList.toggle('active', s.id === 'tab-' + name); s.classList.remove('m-next', 'm-prev', 'from-r', 'from-l'); });
-  // Solo desplaza la fila de pestañas hacia los lados; la página se coloca una vez, después del render.
-  const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:reduceMotion()?'instant':'smooth'}); }
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
   // Al volver a Resumen, cada indicador conserva el último valor dibujado.
@@ -466,6 +464,10 @@ function showTab(name, scrollTop = 0){
   planningHeader();
   renderView(name);
   moveTabInd();
+  if (b && !floatingTabs.matches && tabBar.scrollWidth > tabBar.clientWidth) {
+    const left = b.offsetLeft - (tabBar.clientWidth - b.offsetWidth) / 2;
+    tabBar.scrollTo({left:Math.max(0, left), behavior:reduceMotion() ? 'instant' : 'smooth'});
+  }
   if (resumeAnalysis && chYear){ chYear.resize(); chYear.update('none'); }
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }

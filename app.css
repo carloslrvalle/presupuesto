@@ -44,7 +44,7 @@ h1,h2,h3,#appName,.kpi .value,.goal-amt b,.sv-amt b,.cal-stats b,.cs b,.cd-stats
 
 /* Header */
 .topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid transparent;transition:background .25s,border-color .25s,box-shadow .25s}
-.topbar.scrolled{background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 20px -14px rgba(20,25,40,.28)}
+.topbar.scrolled{background:var(--bg);border-bottom-color:var(--border);box-shadow:0 6px 16px -12px rgba(20,25,40,.28)}
 .topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;padding-bottom:6px;flex-wrap:wrap}
 /* Marca minimalista: título editable; logo y favicon ya cubren la identidad visual. */
 .brand{display:flex;align-items:center;font-weight:700;font-size:21px;letter-spacing:-.5px;min-height:42px}
@@ -108,11 +108,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 .tabs{position:relative;display:flex;gap:28px;overflow-x:auto;padding:6px 0 0;margin-top:4px;width:100%;flex:1 0 100%;box-shadow:inset 0 -1px 0 var(--border);scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-/* Pestañas subrayadas: el texto arranca en la misma línea que el logo y los cuadros; la activa lleva una línea de color debajo */
 .tabs button{position:relative;z-index:1;border:0;background:transparent;padding:10px 0 13px;border-radius:0;cursor:pointer;color:var(--muted);font-weight:600;white-space:nowrap;transition:color .25s}
-.tabs button:hover{color:var(--text)}
-.tabs button.active{color:var(--text)}
+.tabs button:hover,.tabs button.active{color:var(--text)}
+.tabs button:focus-visible{outline:2px solid var(--ring,var(--text));outline-offset:-2px}
 .tab-ind{position:absolute;z-index:2;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--primary-fill,var(--primary));pointer-events:none}
+.topbar.scrolled .tabs{box-shadow:none}
+@media(forced-colors:active){.tab-ind{background:Highlight;forced-color-adjust:none}}
 .tb-i{display:none}
 .tabs .tb-short{display:none}
 @media (max-width:380px){.cal-d .cd-hot{display:none}}
@@ -633,7 +634,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .bud-side{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-content:start}
 .bud-side>*{min-width:0}
 @media (max-width:1100px){.bud-grid{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:600px){.bud-table th:nth-child(3),.bud-table td:nth-child(3){display:none}.bud-table th.c-plan{width:64px!important}.bud-table th.c-diff{width:98px!important}.bud-table th.c-av{width:44px!important}.bud-table .budget-input{max-width:62px;padding:7px 7px!important}.bud-table .catcell .ico{display:none}.bud-table td.num{font-size:13px}.bud-table .av-pct{font-size:11px}.bud-table .cname{white-space:normal!important;line-height:1.25}.bud-table th,.bud-table td{padding-left:5px;padding-right:5px}}
 /* Celular */
 dialog{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
 @media (max-width:600px){
@@ -1312,13 +1312,6 @@ html .bud-table .cname{line-height:1.5}
 .grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2>.card,.chart-wrap{min-width:0}
 @media(max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
 .budget-mobile-total{display:none}
-@media(max-width:900px){
- html .bud-table tfoot{display:none}
- .budget-mobile-total{flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border);font-size:var(--type-item)}
- .budget-mobile-total>strong{flex-basis:100%}
- .budget-mobile-total>div{display:grid}
- .budget-mobile-total span{color:var(--muted)}
-}
 html .cat-row input[data-act=name]{min-width:0;width:100%}
 @media(max-width:560px){
  html .cat-row,html #catsExpense .cat-row{grid-template-columns:18px 40px minmax(0,1fr) auto!important}
@@ -1457,28 +1450,6 @@ html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:norm
 .dashboard-kpis{align-items:start}
 @media(max-width:560px){.plan-period{gap:6px 10px}.period-range{font-size:11px}.budget-actions>.plan-period{flex-basis:calc(100% - 42px)}.budget-actions>.btn-row{width:100%}.budget-actions>.btn-row .btn{flex:1;justify-content:center;font-size:11px;padding-inline:9px}.plan-period .period-trigger{padding-inline:10px}.plan-period .info-tip{margin-left:0}.pp{padding:12px}.period-day-grid{gap:5px}.period-day-grid button{height:36px}}
 
-/* 1.10.5: presupuesto legible en pantallas táctiles estrechas */
-@media(max-width:900px){
- html .bud-table,html .bud-table.wide-values{display:block;min-width:0;width:100%;table-layout:auto}
- html .bud-table thead{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
- html .bud-table tbody{display:grid}
- html .bud-table tbody tr{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--border);border-radius:8px;background:var(--surface)}
- html .bud-table tbody td{display:block;min-width:0;width:auto!important;padding:0!important;border:0;text-align:left;white-space:normal;overflow-wrap:anywhere}
- html .bud-table tbody td:first-child{grid-column:1/-1;grid-row:1}
- html .bud-table .catcell{gap:8px;align-items:center}
- html .bud-table .catcell .ico{display:grid;width:26px;height:26px;flex-shrink:0}
- html .bud-table .cname,html .bud-table.wide-values .cname{max-width:none;white-space:normal!important;overflow:visible;overflow-wrap:normal}
- html .bud-table tbody td:nth-child(2){grid-column:1;grid-row:2}
- html .bud-table tbody td:nth-child(3){display:block;grid-column:2;grid-row:2}
- html .bud-table tbody td:nth-child(2)::before,html .bud-table tbody td:nth-child(3)::before{content:attr(data-mobile-label);display:block;font-size:11px;line-height:1.5;color:var(--muted);margin-bottom:5px}
- html .bud-table .budget-input{width:100%;max-width:none;min-width:0;padding:7px 9px!important}
- html .bud-table tbody td:nth-child(4){grid-column:1/-1;grid-row:3;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px;padding-top:8px!important;border-top:1px solid var(--border)}
- html .bud-table tbody td:nth-child(4)::before{content:attr(data-mobile-label);color:var(--muted);margin-right:auto}
- html .bud-table tbody td:nth-child(4) .plan-line{flex-basis:100%;text-align:right}
- html .bud-table tbody td.av{align-self:center;border-radius:6px}
- html .bud-table .plan-line{overflow-wrap:anywhere}
- .budget-mobile-total{margin-top:14px}
-}
 @media(max-width:600px){
  html .budget-actions>.btn-row .btn{min-width:0;min-height:44px;white-space:normal;gap:6px;padding:8px;font-size:12px;line-height:1.4}
  html .budget-actions>.btn-row .btn span{min-width:0;white-space:normal}
@@ -1568,30 +1539,6 @@ html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:norm
   .both-top .prow .pn>b,.both-top .prow .pn>span{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 }
 @media(max-width:900px){
-  .budget-mobile-total{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px;margin:0 0 16px;padding:14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)}
-  .budget-mobile-total>strong{grid-column:1/-1;font-size:13px}.budget-mobile-total>div{min-width:0;gap:4px}
-  .budget-mobile-total b{font-size:14px;white-space:normal;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-  .budget-mobile-total span{font-size:12px}
-  html .bud-table tbody{gap:10px}
-  html .bud-table tbody tr{gap:10px 12px;padding:12px}
-  html .bud-table tbody td:first-child{padding-right:0!important}
-  html .bud-table .cname{font-size:14px;line-height:1.45}
-  html .bud-table .budget-input{min-height:44px;font-size:16px;text-align:left}
-  html .bud-table tbody td:nth-child(3){align-self:start;padding-top:0!important;font-size:15px;overflow-wrap:normal;white-space:nowrap}
-  html .bud-table tbody td:nth-child(3)::before{font-size:12px;margin-bottom:14px}
-  html .bud-table tbody td:nth-child(2)::before{font-size:12px;margin-bottom:6px}
-  html .bud-table tbody td:nth-child(4){font-size:14px}
-  html .bud-table tbody td:nth-child(4)::before{font-size:12px}
-  html .bud-table tbody td.av{position:static;grid-column:1/-1;grid-row:4;justify-self:stretch;padding:0!important;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;background:transparent}
-  html .bud-table tbody td.av>.av-pct{grid-column:2;grid-row:1;font-size:11px;min-width:0}
-  .budget-row-progress{display:block;height:5px;border-radius:5px;background:var(--surface-2);overflow:hidden;grid-column:1;grid-row:1}
-  .budget-row-progress i{display:block;height:100%;border-radius:inherit}
-  html .bud-table .plan-line{font-size:11px;line-height:1.5;white-space:normal}
-  html .bud-table.wide-values tbody td:nth-child(2){grid-column:1/-1;grid-row:2}
-  html .bud-table.wide-values tbody td:nth-child(3){grid-column:1/-1;grid-row:3;white-space:normal;overflow-wrap:anywhere}
-  html .bud-table.wide-values tbody td:nth-child(3)::before{margin-bottom:6px}
-  html .bud-table.wide-values tbody td:nth-child(4){grid-row:4}
-  html .bud-table.wide-values tbody td.av{grid-row:5}
   .both-bottom .both-top .prow{grid-template-columns:26px minmax(0,1fr);gap:6px 10px}.both-top .both-rank{display:none}
   .both-top .prow>.pn{grid-column:2;grid-row:1}.both-top .prow>.both-top-amount{grid-column:2;grid-row:2;justify-self:start}
   .fsel-btn,.mov-filter-toggle{min-height:44px}
@@ -1599,7 +1546,6 @@ html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:norm
 @media(max-width:380px){
   .chart-readout dl{grid-template-columns:minmax(0,1fr)}
   .mobile-year-item>b{grid-column:2/-1;grid-row:2;justify-self:start}.mobile-year-item>.ico{grid-row:1/3}
-  .budget-mobile-total.large-values{grid-template-columns:minmax(0,1fr)}
   .cmp-row{grid-template-columns:32px minmax(0,1fr);row-gap:6px}
   .cmp-row>:nth-child(1){grid-column:1;grid-row:1/4}.cmp-row>:nth-child(2){grid-column:2;grid-row:1}
   .cmp-row>:nth-child(3){grid-column:2;grid-row:2;text-align:left!important;min-width:0!important;overflow-wrap:anywhere}
@@ -1620,10 +1566,6 @@ html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:norm
   .goal-stats>.gs:last-child:nth-child(odd),.cd-stats>div:last-child:nth-child(odd){grid-column:auto}
 }
 
-@media(min-width:601px) and (max-width:900px){
-  html .bud-table tbody{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
-  html .bud-table tbody tr{align-content:start;height:100%}
-}
 @container(max-width:420px){
   .goal-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .goal-stats>.gs:last-child:nth-child(odd){grid-column:1/-1}
@@ -1845,13 +1787,13 @@ button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:v
 /* 1.10.22: las tablas de Presupuesto reciben el ancho que necesitan. */
 #tab-budget .bud-table .catcell .ico{flex-shrink:0;display:grid;place-items:center}
 #tab-budget .bud-table .catcell .ico svg,#tab-budget .bud-table .catcell .ico .vi{width:18px;height:18px;flex:none;display:block}
-@media(min-width:901px){
+@media(min-width:701px){
  #tab-budget .bud-table,#tab-budget .bud-table.wide-values{width:100%;min-width:0;table-layout:fixed}
- #tab-budget .bud-table th.c-plan{width:18%!important}
+ #tab-budget .bud-table th.c-plan{width:19%!important}
  #tab-budget .bud-table th.c-real{width:19%!important}
- #tab-budget .bud-table th.c-diff{width:21%!important}
+ #tab-budget .bud-table th.c-diff{width:20%!important}
  #tab-budget .bud-table th.c-av{width:8%!important}
- #tab-budget .bud-table th,#tab-budget .bud-table td{padding:12px 8px;vertical-align:middle}
+ #tab-budget .bud-table th,#tab-budget .bud-table td{padding:8px;vertical-align:middle}
  #tab-budget .bud-table th:first-child,#tab-budget .bud-table td:first-child{padding-left:0}
  #tab-budget .bud-table th:last-child,#tab-budget .bud-table td:last-child{padding-right:0}
  #tab-budget .bud-table .catcell{align-items:center;gap:10px}
@@ -1879,9 +1821,9 @@ button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:v
 #tab-budget .bud-table tr.over td:first-child{box-shadow:none}
 #tab-budget .bud-table .cname{max-width:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 .bud-table .income-unplanned{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:500;line-height:1.3}
-@media(max-width:900px){.bud-table .income-unplanned{display:none}}
+@media(max-width:700px){.bud-table .income-unplanned{display:none}}
 @supports (field-sizing:content){
- @media(min-width:901px){
+ @media(min-width:701px){
   #tab-budget .bud-table .budget-input,#tab-budget .bud-table.wide-values .budget-input{field-sizing:content;width:auto;min-width:56px;max-width:100%;display:block;margin-left:auto}
  }
 }
@@ -2223,11 +2165,7 @@ dialog::before{flex-shrink:0}
  #tab-cats .row-acts{gap:0}
  #tab-cats .row-acts .iconbtn,.history-options,.cal-day-head .iconbtn{width:44px;height:44px;min-width:44px}
  html #catsIncome .cat-row,html #catsExpense .cat-row{grid-template-columns:16px 40px minmax(0,1fr) 44px!important;column-gap:6px}
- html .bud-table tbody tr{padding:12px;row-gap:10px}
- html .bud-table tbody td:nth-child(2),html .bud-table tbody td:nth-child(3){align-self:end}
- html .bud-table tbody td:nth-child(2)::before,html .bud-table tbody td:nth-child(3)::before{min-height:18px;margin-bottom:6px}
- html .bud-table .budget-input{min-height:40px;text-align:right}
- html .bud-table tbody td:nth-child(4){min-height:36px;padding-top:10px!important}
+
 }
 @media(max-width:380px){
  #tab-cats .row-acts .iconbtn{width:40px;height:44px;min-width:40px}
@@ -2236,18 +2174,6 @@ dialog::before{flex-shrink:0}
 
 /* Presupuesto y calendario con una retícula y un solo punto de creación. */
 #tab-budget .bud-table tr.over td{background:transparent}
-@media(max-width:900px){
- #tab-budget .bud-table tbody tr.over{background:var(--surface);border-color:var(--border)}
- #tab-budget .bud-table tbody tr.over td{background:transparent}
- #budExpense .budget-mobile-total{display:none}
- #tab-budget .bud-table tbody td:nth-child(2),#tab-budget .bud-table tbody td:nth-child(3){display:grid;align-content:start;min-width:0;text-align:right}
- #tab-budget .bud-table tbody td:nth-child(2)::before,#tab-budget .bud-table tbody td:nth-child(3)::before{height:18px;min-height:0;margin:0;text-align:left}
- #tab-budget .bud-table tbody td:nth-child(3){white-space:normal;overflow-wrap:anywhere}
- #tab-budget .bud-table .budget-real{display:flex;align-items:center;justify-content:flex-end;min-height:44px;padding:0 10px;border:1px solid var(--border);font-size:16px;font-weight:600;line-height:1.25;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
- #tab-budget .bud-table tbody td:nth-child(3) .plan-line{grid-row:3}
- #tab-budget .bud-table .budget-input{min-height:44px;height:44px;margin:0;padding:0 10px!important;text-align:right;font-weight:600;line-height:1.25;font-variant-numeric:tabular-nums}
- #tab-budget .bud-table tbody td:nth-child(4){margin-top:2px}
-}
 /* En pantallas amplias, el espacio se reparte según el contenido de cada tarjeta. */
 #tab-cats>.grid2{grid-template-columns:minmax(0,1fr);max-width:760px;margin-inline:auto;align-items:start}
 #catsIncome{container-type:inline-size}
@@ -2285,24 +2211,65 @@ dialog::before{flex-shrink:0}
   html #catsIncome .cat-row{grid-template-columns:16px 40px minmax(0,1fr) 190px 44px!important}
  }
 }
-@media(max-width:900px){
- #tab-budget .bud-table tbody td:nth-child(2),#tab-budget .bud-table tbody td:nth-child(3){grid-template-rows:18px 44px auto;align-self:start}
- #tab-budget .bud-table tbody td:nth-child(2)::before,#tab-budget .bud-table tbody td:nth-child(3)::before{font-size:12px;line-height:18px;font-weight:500}
- #tab-budget .bud-table .budget-input,#tab-budget .bud-table .budget-real{width:100%;max-width:100%;justify-self:stretch}
-}
-@media(max-width:900px){
- #tab-budget .bud-table tbody tr{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:0}
- #tab-budget .bud-table tbody td:nth-child(2),#tab-budget .bud-table tbody td:nth-child(3){padding:4px 8px!important;background:transparent;border:0;border-radius:0;gap:2px}
- #tab-budget .bud-table tbody td:nth-child(3){border-left:1px solid var(--border);align-self:stretch}
- #tab-budget .budget-plan-field{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;height:44px;border-bottom:1px solid var(--border)}
- #tab-budget .budget-currency{display:block;flex-shrink:0;font-size:14px;color:var(--muted)}
- #tab-budget .bud-table .budget-input{flex:0 1 auto;width:calc(var(--budget-plan-ch,4) * 1ch + 10px);max-width:calc(100% - 24px);min-width:24px;background:transparent;border:0;border-radius:0;box-shadow:none;padding-inline:0!important;font-size:16px}
- #tab-budget .budget-plan-field:focus-within{background:var(--surface-2);border-bottom-color:var(--primary);outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+/* Presupuesto: filas compactas con dos columnas de importes en pantallas estrechas. */
+@media(max-width:700px){
+ #tab-budget .bud-table{display:block;min-width:0;width:100%}
+ #tab-budget .bud-table thead{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%)}
+ #tab-budget .bud-table tfoot{display:none}
+ #tab-budget .bud-table tbody{display:grid}
+ #tab-budget .bud-table tbody tr{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 14px;
+  padding:8px 0;border-bottom:1px solid var(--border);
+ }
+ #tab-budget .bud-table tbody tr:last-child{border-bottom:0}
+ #tab-budget .bud-table tbody td{display:block;min-width:0;padding:0;border:0;white-space:normal;overflow-wrap:anywhere}
+ #tab-budget .bud-table tbody td:first-child{grid-column:1/-1}
+ #tab-budget .bud-table .catcell{gap:8px}
+ #tab-budget .bud-table .catcell .ico{width:26px;height:26px}
+ #tab-budget .bud-table tbody :is(td:nth-child(2),td:nth-child(3)){
+  display:grid;grid-template-rows:auto minmax(44px,auto);align-content:start;gap:0;text-align:right;
+ }
+ #tab-budget .bud-table tbody :is(td:nth-child(2),td:nth-child(3))::before{
+  content:attr(data-mobile-label);color:var(--muted);font-size:var(--type-meta);line-height:1.3;
+ }
+ #tab-budget .budget-plan-field,#tab-budget .budget-real,#tab-budget .off-month{
+  display:flex;align-items:center;justify-content:flex-end;min-width:0;min-height:44px;
+ }
+ #tab-budget .budget-plan-field{gap:4px;box-shadow:inset 0 -1px var(--border)}
+ #tab-budget .budget-plan-field:focus-within{background:var(--surface-2);outline:2px solid var(--ring);outline-offset:-2px;border-radius:4px}
+ #tab-budget .budget-currency{display:block;flex:none;color:var(--muted);font-size:var(--type-item)}
+ #tab-budget .bud-table .budget-input,#tab-budget .budget-real{font-size:max(16px,1rem);font-weight:600;line-height:1.25;font-variant-numeric:tabular-nums}
+ #tab-budget .bud-table .budget-input{
+  width:calc(var(--budget-plan-ch,4) * 1ch + 6px);max-width:calc(100% - 2em);min-width:24px;height:44px;
+  margin:0;padding:0!important;background:transparent;border:0;border-radius:0;box-shadow:none;
+ }
  #tab-budget .bud-table .budget-input:focus{outline:none;box-shadow:none}
- #tab-budget .bud-table .budget-real{background:transparent;border-color:transparent;border-radius:0;padding-inline:0}
+ #tab-budget .off-month{white-space:normal}
+ #tab-budget .bud-table tbody td:nth-child(4){display:flex;grid-column:1/-1;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px}
+ #tab-budget .bud-table tbody td:nth-child(4)::before{content:attr(data-mobile-label);color:var(--muted);font-size:var(--type-meta);margin-right:auto}
+ #tab-budget .bud-table .plan-line{font-size:var(--type-meta);white-space:normal}
+ #tab-budget .bud-table tbody td:nth-child(4) .plan-line{flex-basis:100%;text-align:right}
+ #tab-budget .bud-table tbody td.av{display:grid;grid-column:1/-1;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+ #tab-budget .av-pct{grid-column:2;grid-row:1;font-size:var(--type-meta);line-height:1.2;min-width:0}
+ #tab-budget .budget-row-progress{display:block;grid-column:1;grid-row:1;height:4px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+ #tab-budget .budget-row-progress i{display:block;height:100%;border-radius:inherit}
+ #tab-budget .bud-table .large-amounts :is(td:nth-child(2),td:nth-child(3)),
+ html[data-large-text] #tab-budget .bud-table tbody :is(td:nth-child(2),td:nth-child(3)){grid-column:1/-1}
+ .budget-mobile-total{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin-bottom:10px;padding:10px 12px;border-radius:var(--radius);background:var(--surface-2);font-size:var(--type-item)}
+ .budget-mobile-total>strong{grid-column:1/-1}
+ .budget-mobile-total>div{display:grid;min-width:0;overflow-wrap:anywhere}
+ .budget-mobile-total span{color:var(--muted);font-size:var(--type-meta)}
+ #budExpense .budget-mobile-total{display:none}
 }
-@media(max-width:380px){
- #tab-budget .bud-table .budget-real{font-size:14px}
+@media(min-width:601px) and (max-width:700px){
+ #tab-budget .bud-table tbody{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ #tab-budget .bud-table tbody tr,#tab-budget .bud-table tbody tr:last-child{align-content:start;padding:10px;border:1px solid var(--border);border-radius:var(--radius)}
+}
+@media(min-width:701px){
+ html[data-large-text] #tab-budget .bud-table :is(th,td.num){white-space:normal;overflow-wrap:anywhere}
+ html[data-large-text] #tab-budget .bud-table th.c-av{width:max(14%,96px)!important}
+ html[data-large-text] #tab-budget .bud-table td.av{overflow-wrap:anywhere}
+ html[data-large-text] #tab-budget .bud-table .budget-input{font-size:1rem;height:auto;min-height:2.5rem;padding:6px 8px!important}
 }
 @media(max-width:600px){
  .metric-caption-mobile{display:inline}.metric-caption-desktop{display:none}
@@ -2701,7 +2668,7 @@ h1,h2,h3{letter-spacing:-.02em}
 @media(prefers-reduced-motion:reduce){.prof-menu,.mov-action-menu{scale:1!important}}
 /* Superficies sólidas y jerarquía visible según las preferencias del dispositivo. */
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more){
- .tabs{background:var(--surface)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .tabs{background:var(--tab-surface,transparent)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
  .topbar.scrolled{background:var(--bg)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
  .topbar.scrolled::before{display:none!important}
  .toast{background:var(--text)!important;color:var(--bg)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
@@ -2751,8 +2718,9 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
  main.wrap{padding-bottom:calc(var(--dock-inset) + var(--dock-height) + var(--dock-extra) + 18px)}
  .topbar>.wrap:last-child{height:0;padding:0;margin:0;overflow:visible}
  /* Un filtro en el encabezado convertiría la barra fija en un hijo posicionado del encabezado. */
- .topbar.scrolled{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}
+ .topbar.scrolled{background:var(--bg);border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
  #tabs{
+  --tab-surface:var(--surface);
   position:fixed;
   inset:auto max(10px,env(safe-area-inset-right,0px)) var(--dock-bottom) max(10px,env(safe-area-inset-left,0px));
   z-index:30;
@@ -2767,7 +2735,7 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
   overflow:visible;
   border:var(--dock-border) solid var(--border);
   border-radius:calc(var(--radius-lg) + 9px);
-  background:var(--surface);
+  background:var(--tab-surface);
   box-shadow:0 6px 20px color-mix(in srgb,var(--text) 11%,transparent);
  }
  #tabs button{

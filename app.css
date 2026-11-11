@@ -2660,11 +2660,6 @@ body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(4){animation-delay:
 @keyframes budgetAlertIn{from{background-color:var(--surface);box-shadow:inset 0 0 0 1px transparent}}
 @keyframes budgetOverrunIn{from{transform:scaleX(0)}}
 
-/* El ancho adicional se reserva para las vistas con tablas y gráficos grandes. */
-@media(min-width:1360px){
- main.wrap:has(>#tab-budget.active,>#tab-analysis.active){--content-width:1120px}
- #tab-analysis>:is(.toolbar,#anKpis,.analysis-details){max-width:960px;margin-inline:auto}
-}
 .first-movement{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px;padding:var(--metric-padding,16px)}
 .first-movement h2{margin:0;font-size:18px}
 .first-movement p{margin:4px 0 0;color:var(--muted)}

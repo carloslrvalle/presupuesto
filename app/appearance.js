@@ -213,10 +213,11 @@ function applyBrowserChrome(){
 // Variables de color del tema activo (gráficos, barras de ingresos y alertas, calendario)
 function colorContrast(a,b){ const x=hexLum(a), y=hexLum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
 function fitThemeColor(color, background, minimum=3){
-  const target=hexLum(background)<.25?'#ffffff':'#111113';
+  const surfaces=Array.isArray(background)?background:[background];
+  const target=hexLum(surfaces[0])<.25?'#ffffff':'#111113';
   for(let step=0;step<=40;step++){
     const candidate=mixHex(color,target,step/40);
-    if(colorContrast(candidate,background)>=minimum)return candidate;
+    if(surfaces.every(surface=>colorContrast(candidate,surface)>=minimum))return candidate;
   }
   return target;
 }
@@ -230,9 +231,12 @@ function applyThemeVars(){
   for(const [key,field] of uiMap){if(ui?.[field])r.setProperty(key,ui[field]);else r.removeProperty(key);}
   const surface=cssVar('--surface'), series=themeSeries(t,surface);
   for(const [key,role] of [['--income-chart','income'],['--expense-chart','expense'],['--k-violet','savings']])r.setProperty(key,series[role]);
+  const textSurfaces=[surface,cssVar('--surface-2'),cssVar('--bg')];
+  r.setProperty('--savings-ink',fitThemeColor(series.savings,textSurfaces,4.65));
   for(const role of ['income','expense']){
-    const ink=fitThemeColor(series[role],surface,4.5);
-    r.setProperty('--'+role,ink);r.setProperty('--'+role+'-soft',mixHex(series[role],surface,dark?.88:.92));
+    const soft=mixHex(series[role],surface,dark?.88:.92);
+    const ink=fitThemeColor(series[role],[...textSurfaces,soft],4.65);
+    r.setProperty('--'+role,ink);r.setProperty('--'+role+'-soft',soft);
   }
   r.setProperty('--warn-ink', dark ? '#fbbf24' : '#854d0e');
 }

@@ -128,7 +128,12 @@ function emptyBox(icon, text, act, label, row, cls){
              : `<div class="empty es ${cls || ''}"><div class="empty-ic">${ic(icon)}</div><div class="es-t">${text}</div>${b}</div>`;
 }
 document.addEventListener('click', e => {
-  const it = e.target.closest('.info-tip'); document.querySelectorAll('.info-tip.show').forEach(x => { if (x !== it) x.classList.remove('show'); }); if (it){ it.classList.toggle('show'); return; }
+  const tip = e.target.closest('.info-tip');
+  document.querySelectorAll('.info-tip.show').forEach(open => { if (open !== tip) open.classList.remove('show'); });
+  if (tip){
+    tip.classList.toggle('tip-dismissed', !tip.classList.toggle('show'));
+    return;
+  }
   const go = e.target.closest('[data-gotab]'); if (go){ e.preventDefault(); showTab(go.dataset.gotab); return; }
   const b = e.target.closest('[data-empty]'); if (!b) return;
   const a = b.dataset.empty;
@@ -136,6 +141,18 @@ document.addEventListener('click', e => {
   else if (a === 'tx') openTx();
   else if (a === 'rec') openRec();
   else if (a === 'budget') showTab('budget');
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || e.defaultPrevented) return;
+  const tips = document.querySelectorAll('.info-tip:is(.show,:hover,:focus-visible):not(.tip-dismissed)');
+  if (!tips.length) return;
+  e.preventDefault();
+  tips.forEach(tip => { tip.classList.remove('show'); tip.classList.add('tip-dismissed'); });
+});
+document.addEventListener('focusin', e => e.target.closest('.info-tip')?.classList.remove('tip-dismissed'));
+document.addEventListener('pointerover', e => {
+  const tip = e.target.closest('.info-tip');
+  if (tip && !tip.contains(e.relatedTarget)) tip.classList.remove('tip-dismissed');
 });
 const uiIc = e => ic(UI_MAP[e] || 'circle-help');
 function applyUiIcons(){ document.querySelectorAll('.ui-ic').forEach(el => el.innerHTML = uiIc(el.dataset.e)); if (typeof moveTabInd === 'function') moveTabInd(); }
@@ -162,7 +179,7 @@ if(!CSS.supports('overlay','auto')){
  },true);
 }
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
-const MOTION={fast:180,move:280,panel:320,data:420,trace:1300,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.22,1,.36,1)',enter:'cubic-bezier(.22,1,.36,1)'};
+const MOTION={fast:180,move:280,panel:320,data:420,trace:650,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.22,1,.36,1)',enter:'cubic-bezier(.22,1,.36,1)'};
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
 const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
@@ -304,12 +321,13 @@ function toast(msg, opt = {}){
   const dur = opt.action ? 5000 : Math.min(5000, 2200 + text.length * 25);
   t.querySelector('.t-msg').textContent = text;
   t.querySelector('.t-ic').innerHTML = ic(err ? 'circle-alert' : opt.icon || 'circle-check');
-  const act = t.querySelector('.t-act'); act.hidden = !opt.action; act.textContent = opt.action || '';
-  act.onclick = opt.action ? () => { clearTimeout(t._h); t.classList.remove('show', 'has-action'); opt.onAction && opt.onAction(); } : null;
+  const act = t.querySelector('.t-act'); act.hidden = !opt.action; act.inert = !opt.action; act.textContent = opt.action || '';
+  const dismiss = () => { t.classList.remove('show', 'has-action'); act.inert = true; };
+  act.onclick = opt.action ? () => { clearTimeout(t._h); dismiss(); opt.onAction?.(); } : null;
   t.classList.toggle('err', err); t.classList.toggle('neutral', !err && !!opt.icon); t.classList.toggle('has-action', !!opt.action); t.style.setProperty('--t-dur', dur + 'ms');
   // Reinicia el progreso si llegan varios seguidos, conservando la posición del aviso.
   const progress=t.querySelector('.t-bar');progress.style.animation='none';void progress.offsetWidth;progress.style.animation='';t.classList.add('show');
-  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show', 'has-action'), dur);
+  clearTimeout(t._h); t._h = setTimeout(dismiss, dur);
 }
 
 /* ---------- Confirmación con el estilo de la app ---------- */
@@ -324,7 +342,7 @@ function ask({title, msg = '', ok = 'Eliminar', cancel = 'Cancelar', danger = tr
   $('#cfIco').style.color = danger ? 'var(--expense)' : 'var(--primary)';
   const y = $('#cfYes'); y.textContent = ok; y.className = 'btn ' + (danger ? 'danger-solid' : 'primary');
   $('#cfNo').textContent = cancel;
-  cfDialog.showModal(); y.focus();
+  cfDialog.showModal(); (danger ? $('#cfNo') : y).focus();
   return new Promise(r => cfResolve = r);
 }
 function cfDone(v){ if (cfResolve){ const r = cfResolve; cfResolve = null; r(v); } if (cfDialog.open) cfDialog.close(); }
@@ -349,10 +367,12 @@ function showTab(name, scrollTop = 0){
   if (SEC) resetBars(SEC);
   // Cada entrada reinicia los indicadores; las actualizaciones dentro de la vista conservan su valor anterior.
   if (name === 'dashboard') ['kIncome','kExpense','kBalance','kSavings'].forEach(k => delete numMemo[k]);
-  if (name === 'analysis') Object.keys(numMemo).filter(k => k.startsWith('an:')).forEach(k => delete numMemo[k]);
-  if (name === 'dashboard' || name === 'analysis') dirty.add(name); // se redibujan siempre para que los gráficos tomen su tamaño
+  if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
+  if (name === 'analysis' && currentMonth !== analysisSelectedMonth) dirty.add(name);
+  const resumeAnalysis = name === 'analysis' && !dirty.has(name) && prevTab !== name;
   planningHeader();
   renderView(name);
+  if (resumeAnalysis && chYear){ chYear.resize(); chYear.update('none'); }
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
   if (name === 'movs') moveViewInd();
@@ -450,6 +470,6 @@ monthInput.addEventListener('change', () => { if (monthInput.value) { currentMon
 // Al cambiar de mes el contenido se desliza hacia el lado del mes elegido
 function slideMonth(dir){ if (reduceMotion()) return; const t = document.querySelector('.tab.active'); if (!t) return; t.classList.remove('m-next', 'm-prev'); void t.offsetWidth; t.classList.add(dir > 0 ? 'm-next' : 'm-prev'); }
 let chartMorph = false;
-function goMonth(v){ if (!v || v === currentMonth) return; const dir = v > currentMonth ? 1 : -1; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } slideMonth(dir); }
+function goMonth(v, animate = true){ if (!v || v === currentMonth) return; const dir = v > currentMonth ? 1 : -1; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } if (animate) slideMonth(dir); }
 $('#prevM').onclick = () => goMonth(shiftMonth(currentMonth, -1));
 $('#nextM').onclick = () => goMonth(shiftMonth(currentMonth, 1));

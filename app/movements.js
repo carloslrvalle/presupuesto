@@ -122,7 +122,7 @@ function openCatDetail(id){
   const avg = withData.length ? withData.reduce((a, v) => a + v, 0) / withData.length : 0, cur = vals[5];
   const txs = planTxAll(m).filter(t => t.catId === id).sort((a, z) => z.date.localeCompare(a.date));
   const col = themeInk(dc(c.color));
-  $('#cdTitle').innerHTML = `<div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><div><h3 style="margin:0">${esc(c.name)}</h3><div class="small muted">${planLabel(m)}</div></div>`;
+  $('#cdTitle').innerHTML = `<div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><div><h3 id="catDetailTitle" style="margin:0">${esc(c.name)}</h3><div class="small muted">${planLabel(m)}</div></div>`;
   $('#cdBody').innerHTML = `
     <div class="cd-stats">
       <div><span>Este período</span><b>${fmt(cur)}</b></div>
@@ -473,7 +473,15 @@ function setTxType(type){
 }
 $('#txSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.type); });
 $('#fCatChips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b){ selCat = b.dataset.cat; if(!txMethodExplicit)selMethod=null; renderTxChips(); } });
-$('#fMethodChips').addEventListener('click', e => { const b = e.target.closest('[data-method]'); if (b){ selMethod = b.dataset.method; txMethodExplicit=true; renderTxChips(); } });
+$('#fMethodChips').addEventListener('click', e => {
+  const button = e.target.closest('[data-method]');
+  if (!button) return;
+  const restoreFocus = button === document.activeElement || e.detail === 0;
+  selMethod = button.dataset.method;
+  txMethodExplicit = true;
+  renderTxChips();
+  if (restoreFocus) $('#fMethodChips .chip.active')?.focus();
+});
 $('#fGoalChips').addEventListener('click', e => { const b = e.target.closest('[data-goal]'); if (b){ selGoal = b.dataset.goal || null; renderTxChips(); } });
 function setMode(){
   const rec = txMode === 'rec';

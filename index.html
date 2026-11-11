@@ -33,7 +33,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <script>
 // Solo presentación. La copia de finanzas se lee aquí únicamente si aún no existe caché visual.
 (function(){
- const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];window.__bootStarted=performance.now();window.__BOOT_MIN_MS=2200;
+ const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];
  try{
   const storage=window.localStorage,profile=storage.getItem('budgetPlanner.activeProfile')==='p2'?'p2':'p1',systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
   const cached=JSON.parse(storage.getItem('budgetPlanner.appearance.'+profile)||'null'),hex=v=>typeof v==='string'&&/^#[a-f\d]{6}$/i.test(v);
@@ -197,7 +197,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
     <div class="kpis" id="anKpis" role="group" aria-label="Indicador de análisis"></div>
     <div class="card year-chart-card" id="yearChartCard" style="margin-top:16px">
-      <div class="year-chart-head"><div><h3 id="analysisChartTitle">Ingresos mes a mes</h3><button type="button" class="info-tip" id="yearChartHelp" aria-label="Ayuda del gráfico" data-tip="Ingresos registrados en cada mes.">ⓘ</button></div>
+      <div class="year-chart-head"><div><h3 id="analysisChartTitle">Ingresos mes a mes</h3><button type="button" class="info-tip" id="yearChartHelp" aria-label="Ayuda del gráfico" aria-describedby="yearChartDescription">ⓘ</button><span id="yearChartDescription" hidden></span></div>
         <div class="chart-modes" id="yearChartModes" role="group" aria-label="Serie del indicador"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div>
       </div>
       <div class="year-chart-body"><div class="chart-wrap" id="yearWrap"><canvas id="chYear"></canvas></div><div class="chart-readout" id="yearReadout" aria-live="polite"></div></div>
@@ -354,7 +354,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 </dialog>
 
 <!-- Dialog: meta -->
-<dialog id="catDialog" class="cat-dlg">
+<dialog id="catDialog" class="cat-dlg" aria-labelledby="catDetailTitle">
   <div class="dlg-head"><div class="cd-title" id="cdTitle"></div><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
   <div class="dlg-body" id="cdBody"></div>
 </dialog>

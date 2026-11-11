@@ -41,7 +41,7 @@ const ANALYSIS_ACCUMULATED = {
   rate:{title:'Tasa de ahorro acumulada',help:'Ahorro acumulado dividido entre ingresos acumulados desde enero hasta el mes seleccionado. Sin ingresos acumulados, no hay tasa.'}
 };
 const analysisPercent=value=>value==null?'—':Number(value).toLocaleString('es-PE',{maximumFractionDigits:1,minimumFractionDigits:1})+'%';
-const analysisFormat=value=>value==null?'Sin ingresos':analysisMetric==='rate'?analysisPercent(value):fmt(value);
+const analysisFormat=value=>value==null?(analysisMetric==='rate'?'Sin ingresos':'Sin datos'):analysisMetric==='rate'?analysisPercent(value):fmt(value);
 function analysisValues(){
   const data = analysisData;
   if (analysisChartMode === 'total') return data.cumulative[analysisMetric];
@@ -89,18 +89,27 @@ function analysisChange(current,previous){
 }
 function renderYearReadout(){
   const el=$('#yearReadout'),data=analysisData;if(!data||data.first<0){el.innerHTML='';return;}
-  if(!data.months.includes(analysisSelectedMonth)||data.cum[data.months.indexOf(analysisSelectedMonth)]==null){const i=data.months.indexOf(currentMonth);analysisSelectedMonth=i>=0&&data.cum[i]!=null?currentMonth:data.months.findLast((_,j)=>data.cum[j]!=null);}
-  const months=data.months.filter((_,j)=>data.cum[j]!=null),previousMonth=shiftMonth(analysisSelectedMonth,-1),current=analysisDisplayValue(analysisSelectedMonth),previous=analysisDisplayValue(previousMonth),change=analysisChange(current,previous),difference=current!=null&&previous!=null?current-previous:0,tone=Math.abs(difference)<.005?'neutral':((difference>0)===(analysisMetric==='expense')?'bad':'good');
+  const months=data.months.filter((month,j)=>month===analysisSelectedMonth||data.cum[j]!=null),previousMonth=shiftMonth(analysisSelectedMonth,-1),current=analysisDisplayValue(analysisSelectedMonth),previous=analysisDisplayValue(previousMonth),change=analysisChange(current,previous),difference=current!=null&&previous!=null?current-previous:0,tone=Math.abs(difference)<.005?'neutral':((difference>0)===(analysisMetric==='expense')?'bad':'good');
   el.innerHTML=`<div class="year-readout-month"><div class="analysis-month-caption" id="analysisMonthCaption">Mes seleccionado${analysisSelectedMonth===thisMonth()?'<span class="analysis-period-state" title="El mes no ha terminado. Se compara lo registrado hasta hoy con el mes anterior completo.">En curso</span>':''}</div><details class="analysis-month-picker"><summary id="analysisMonthTrigger" aria-labelledby="analysisMonthCaption analysisMonthName"><span class="analysis-month-icon" aria-hidden="true">${ic('calendar')}</span><span id="analysisMonthName">${esc(monthLong(analysisSelectedMonth))}</span>${CHEV}</summary><div class="analysis-month-menu"><div class="analysis-month-year">${analysisSelectedMonth.slice(0,4)}<span>Elegir mes</span></div><div class="analysis-month-options">${months.map(m=>`<button type="button" data-analysis-month="${m}" aria-pressed="${m===analysisSelectedMonth}"><span>${esc(monthLong(m).replace(/ \d{4}$/,''))}</span>${m===analysisSelectedMonth?CHECK:''}</button>`).join('')}</div></div></details><select id="yearReadoutMonth" hidden aria-hidden="true" tabindex="-1">${months.map(m=>`<option value="${m}"${m===analysisSelectedMonth?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select></div><dl><div><dt>${analysisChartMode==='total'?(analysisMetric==='rate'?'Tasa acumulada':'Acumulado'):ANALYSIS_METRICS[analysisMetric].label}</dt><dd data-analysis-value="current">${analysisFormat(current)}</dd></div><div><dt>${analysisPreviousLabel(analysisSelectedMonth)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div></dl><span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${analysisMetric==='rate'?'Diferencia en puntos porcentuales entre ambas tasas.':'Diferencia relativa respecto al período anterior.'}">${change}${change.startsWith('+')||change.startsWith('−')?(analysisChartMode==='total'?' vs. acumulado anterior':' vs. mes anterior'):''}</span>${analysisChartMode==='total'?`<span class="analysis-accumulated">${ANALYSIS_METRICS[analysisMetric].label} del mes: <b>${analysisFormat(analysisMonthlyValue(analysisSelectedMonth))}</b></span>`:''}`;
 }
-function selectAnalysisMonth(month){analysisSelectedMonth=month;if(analysisDetailPeriod!=='year')analysisDetailPeriod=month;renderYearReadout();renderAnalysisDetails();}
+function selectAnalysisMonth(month){
+  if (!month) return;
+  if (month !== currentMonth) goMonth(month, false);
+  else { renderYearReadout(); renderAnalysisDetails(); }
+}
 function renderAnalysisChart(){
-  if(chYear)chYear.destroy();chartTheme();
   const data=analysisData,phone=mobileAnalysis(),metric=ANALYSIS_METRICS[analysisMetric],cumulative=analysisChartMode==='total',percentage=analysisMetric==='rate',line=cumulative||percentage;
   const last=data.months.findLastIndex((_,i)=>data.cum[i]!=null),indices=data.months.map((_,i)=>i).slice(data.first,last+1);
   const values=analysisValues(),color=cssVar(metric.color),negative=cssVar('--expense-chart');
-  if(values.every(v=>v==null)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-line','Registra ingresos para calcular la tasa de ahorro.');return;}
-  if(['income','expense'].includes(analysisMetric)&&values.every(v=>v===0)){chYear=null;$('#yearWrap').innerHTML=emptyBox('chart-column','No hay '+metric.label.toLowerCase()+' registrados en este año.');return;}
+  const seriesKey=JSON.stringify([activeProfile,data.months[0],analysisMetric,analysisChartMode]);
+  const chartKey=JSON.stringify([seriesKey,phone,reduceMotion(),indices,values,color,negative,curFont().id,isDarkUI(),...['--surface','--text','--muted','--bg','--border'].map(cssVar)]);
+  if (chYear?.$analysisKey === chartKey){ chYear.resize(); chYear.update('none'); return; }
+  const animate=!reduceMotion() && chYear?.$analysisSeries !== seriesKey;
+  chYear?.destroy();
+  chYear=null;
+  if(values.every(v=>v==null)){$('#yearWrap').innerHTML=emptyBox('chart-line','Registra ingresos para calcular la tasa de ahorro.');return;}
+  if(['income','expense'].includes(analysisMetric)&&values.every(v=>v===0)){$('#yearWrap').innerHTML=emptyBox('chart-column','No hay '+metric.label.toLowerCase()+' registrados en este año.');return;}
+  chartTheme();
   const dataset={type:line?'line':'bar',label:cumulative?ANALYSIS_ACCUMULATED[analysisMetric].title:metric.label,unit:percentage?'pct':'money',data:indices.map(i=>values[i]),yAxisID:'y',borderColor:line?color:undefined,
     backgroundColor:ctx=>{const base=!line&&ctx.raw<0?negative:color;return !line&&data.months[indices[ctx.dataIndex]]!==analysisSelectedMonth?mixHex(base,cssVar('--surface'),.40):base;},
     borderWidth:line?2:0,borderRadius:4,borderSkipped:false,maxBarThickness:phone?44:58,categoryPercentage:.64,barPercentage:.85,tension:0,fill:false,spanGaps:false,
@@ -110,7 +119,7 @@ function renderAnalysisChart(){
   const domainMin=lower<0?(percentage?Math.floor((lower-span*.1)/step)*step:lower-span*.16):0,domainMax=upper>0?(percentage?Math.ceil((upper+span*.1)/step)*step:upper+span*.16):(lower<0?0:1);
   // Revela el trazo real y desplaza su punta sobre cada segmento, sin mover los datos.
   const trace={id:'analysisLineTrace',
-    afterInit(chart){if(line)chart.$analysisTrace={progress:reduceMotion()?1:0,start:null,raf:0,head:null};},
+    afterInit(chart){if(line)chart.$analysisTrace={progress:animate?0:1,start:null,raf:0,head:null};},
     beforeUpdate(chart,args){const t=chart.$analysisTrace;if(t&&args.mode==='none'){cancelAnimationFrame(t.raf);t.raf=0;t.progress=1;}},
     resize(chart){const t=chart.$analysisTrace;if(t&&t.start!=null){cancelAnimationFrame(t.raf);t.raf=0;t.progress=1;}},
     beforeDatasetDraw(chart,args){
@@ -124,7 +133,7 @@ function renderAnalysisChart(){
       t.head=head;chart.ctx.save();chart.ctx.beginPath();chart.ctx.rect(chart.chartArea.left-8,chart.chartArea.top-8,Math.max(0,head.x-chart.chartArea.left+8),chart.chartArea.height+16);chart.ctx.clip();t.clipped=true;
     },
     afterDatasetDraw(chart){const t=chart.$analysisTrace;if(!t?.clipped)return;chart.ctx.restore();t.clipped=false;const {ctx}=chart,{x,y}=t.head;ctx.save();ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=cssVar('--surface');ctx.stroke();ctx.restore();},
-    afterDraw(chart){const t=chart.$analysisTrace;if(!t||t.progress>=1||t.raf)return;if(t.start==null)t.start=performance.now();t.raf=requestAnimationFrame(now=>{t.raf=0;if(!chart.canvas)return;t.progress=reduceMotion()?1:Math.min(1,(now-t.start)/MOTION.trace);chart.draw();});},
+    afterDraw(chart){const t=chart.$analysisTrace;if(!t||t.progress>=1||t.raf)return;t.raf=requestAnimationFrame(now=>{t.raf=0;if(!chart.canvas)return;t.start??=now;t.progress=reduceMotion()?1:Math.max(0,Math.min(1,(now-t.start)/MOTION.trace));chart.draw();});},
     afterDestroy(chart){const t=chart.$analysisTrace;if(t)cancelAnimationFrame(t.raf);}
   };
   const valueLabels={id:'yearValueLabels',afterDatasetsDraw(chart){
@@ -142,15 +151,17 @@ function renderAnalysisChart(){
     type:line?'line':'bar',plugins:[trace,valueLabels],data:{labels:indices.map(i=>MONTHS_ES[i]),datasets:[dataset]},
     options:{maintainAspectRatio:false,
       // Las barras crecen desde cero; las líneas se revelan con su punto viajero.
-      animation:reduceMotion()||line?false:{duration:MOTION.data,easing:MOTION.dataEasing},
+      animation:!animate||line?false:{duration:MOTION.data,easing:MOTION.dataEasing},
       animations:line?false:{numbers:{duration:0},colors:{duration:0},y:{type:'number',properties:['y'],duration:MOTION.data,easing:MOTION.dataEasing,from:ctx=>ctx.chart.scales.y.getPixelForValue(0)}},
       transitions:{active:{animation:{duration:0}},resize:{animation:{duration:0}}},
       interaction:{mode:'index',intersect:false},layout:{padding:{top:indices.length<=3?24:8,right:12,bottom:8}},
-      onClick:(event,items)=>{const item=items[0];if(!item)return;selectAnalysisMonth(data.months[indices[item.index]]);chYear.update('none');},
+      onClick:(event,items)=>{const item=items[0];if(item)selectAnalysisMonth(data.months[indices[item.index]]);},
       plugins:{legend:{display:false},tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+dataset.label+': '+analysisFormat(ctx.parsed.y)}}},
       scales:{x:{offset:true,grid:{display:false},border:{display:false},ticks:{maxRotation:0,autoSkip:false,maxTicksLimit:12,callback:function(value){const label=this.getLabelForValue(value);return phone&&innerWidth<=440?label.slice(0,1):label;},color:ctx=>data.months[indices[ctx.index]]===analysisSelectedMonth?cssVar('--text'):cssVar('--muted'),font:ctx=>({size:phone?10:12,weight:data.months[indices[ctx.index]]===analysisSelectedMonth?700:400}),padding:10}},
         y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>mixHex(cssVar(ctx.tick.value===0?'--muted':'--border'),cssVar('--surface'),ctx.tick.value===0?.42:.38),lineWidth:ctx=>ctx.tick.value===0?1.2:1},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}}
   });
+  chYear.$analysisKey=chartKey;
+  chYear.$analysisSeries=seriesKey;
 }
 function renderMobileYearDetail(){
   const d=analysisData,{grid,tot,bal,months}=d,y=months[0].slice(0,4),el=$('#yearMobileDetail');
@@ -189,8 +200,14 @@ $('#anKpis').addEventListener('click',e=>{const button=e.target.closest('[data-a
 document.addEventListener('click',e=>{const link=e.target.closest('[data-analysis-movements]');if(link)openMovs({scope:'year',type:link.dataset.analysisMovements});});
 document.addEventListener('click',e=>{const button=e.target.closest('[data-year-mode]');if(!button)return;analysisChartMode=button.dataset.yearMode;renderAnalysis();enhanceAccessibility();});
 document.addEventListener('change',e=>{
-  if(e.target.id==='yearReadoutMonth'){const focused=document.activeElement===e.target||!!document.activeElement?.closest('.analysis-month-picker');selectAnalysisMonth(e.target.value);if(focused)$('#analysisMonthTrigger').focus({preventScroll:true});chYear?.update('none');return;}
-  if(e.target.id==='analysisDetailPeriod'){const focused=document.activeElement===e.target;analysisDetailPeriod=e.target.value;if(analysisDetailPeriod!=='year')analysisSelectedMonth=analysisDetailPeriod;renderYearReadout();renderAnalysisDetails();if(focused)$('#analysisDetailPeriod').focus({preventScroll:true});chYear?.update('none');}
+  if(e.target.id==='yearReadoutMonth'){const focused=document.activeElement===e.target||!!document.activeElement?.closest('.analysis-month-picker');selectAnalysisMonth(e.target.value);if(focused)$('#analysisMonthTrigger').focus({preventScroll:true});return;}
+  if(e.target.id==='analysisDetailPeriod'){
+    const focused=document.activeElement===e.target;
+    analysisDetailPeriod=e.target.value;
+    if(analysisDetailPeriod==='year') renderAnalysisDetails();
+    else selectAnalysisMonth(analysisDetailPeriod);
+    if(focused)$('#analysisDetailPeriod').focus({preventScroll:true});
+  }
 });
 
 // El menú se abre hacia el lado con espacio y conserva su desplazamiento interno.
@@ -223,7 +240,10 @@ document.addEventListener('keydown',e=>{
  options[i]?.focus({preventScroll:true});options[i]?.scrollIntoView({block:'nearest'});
 });
 
-matchMedia('(max-width:700px)').addEventListener('change',()=>{if(activeTab()==='analysis'){renderAnalysis();enhanceAccessibility();}});
+matchMedia('(max-width:700px)').addEventListener('change',()=>{
+  dirty.add('analysis');
+  if(activeTab()==='analysis') renderView('analysis');
+});
 
 function renderAnalysis(){
   const y = currentMonth.slice(0,4), tm = thisMonth();
@@ -240,24 +260,27 @@ function renderAnalysis(){
     inc: Object.keys(grid).filter(k => k.startsWith('income:')).reduce((a,k) => a + grid[k][i], 0),
     exp: Object.keys(grid).filter(k => k.startsWith('expense:')).reduce((a,k) => a + grid[k][i], 0)}));
   const nData = tot.filter(t => t.inc || t.exp).length, withData = nData || 1;
-  const yInc = tot.reduce((a,t) => a + t.inc, 0), yExp = tot.reduce((a,t) => a + t.exp, 0), ySav = months.reduce((a, mm) => a + savingsOf(mm).saved, 0);
+  const yInc = tot.reduce((a,t) => a + t.inc, 0), yExp = tot.reduce((a,t) => a + t.exp, 0);
 
   // KPIs del año (el ahorro se mide igual que en el Resumen: lo que separo o lo que sobra)
-  const ySv = months.reduce((a, mm) => { const v = savingsOf(mm); a.saved += v.saved; if (v.pct && v.inc && mm <= thisMonth()){ a.goalMonths++; if (v.saved >= v.target) a.hit++; } return a; }, {saved:0, goalMonths:0, hit:0});
+  const savings = months.map(savingsOf);
+  const ySv = savings.reduce((a, v, i) => { a.saved += v.saved; if (v.pct && v.inc && months[i] <= tm){ a.goalMonths++; if (v.saved >= v.target) a.hit++; } return a; }, {saved:0, goalMonths:0, hit:0});
   const kpi=(id,icon,value,sub,cls='')=>{const metric=ANALYSIS_METRICS[id],on=analysisMetric===id;return `<button type="button" class="card kpi analysis-metric${on?' selected':''}" data-analysis-metric="${id}" aria-pressed="${on}" aria-controls="yearChartCard"><div class="label"><span class="dot" style="color:var(${metric.color});background:color-mix(in srgb,var(${metric.color}) 14%,var(--surface))">${ic(icon)}</span>${metric.label}</div><span class="metric-selection" aria-hidden="true">${ic(on?'check':'chevron-down')}</span><div class="value ${cls}" data-k="an:${id}" data-num="${typeof value==='number'?value:''}" data-kind="${id==='rate'?'pct':'money'}">${typeof value==='number'?'':value}</div><div class="small muted">${sub}</div></button>`;};
   const caption=(mobile,desktop)=>'<span class="metric-caption-mobile">'+mobile+'</span><span class="metric-caption-desktop">'+desktop+'</span>';
   $('#anKpis').innerHTML=kpi('income','arrow-down',yInc,caption(`Promedio mensual<br>${fmt(yInc/withData)}`,`Promedio ${fmt(yInc/withData)} al mes`))+kpi('expense','arrow-up',yExp,caption(`Promedio mensual<br>${fmt(yExp/withData)}`,`Promedio ${fmt(yExp/withData)} al mes`))+kpi('savings','piggy-bank',ySv.saved,saveMode()==='set'?'Lo que separaste':'Lo que te sobró',ySv.saved>=0?'savings-positive':'neg')+kpi('rate','chart-pie',yInc?ySv.saved/yInc*100:'—',ySv.goalMonths?caption(`Meta: ${ySv.hit} de ${ySv.goalMonths} meses`,`Meta cumplida en ${ySv.hit} de ${ySv.goalMonths} meses`):'Sin ingresos registrados');
   $('#anKpis').querySelectorAll('[data-num]').forEach(el => { if (el.dataset.num !== '') countUp(el, Number(el.dataset.num), el.dataset.kind); });
 
   // Gráfico: ahorro mensual + acumulado
-  const bal = months.map(mm => savingsOf(mm).saved), balC = tot.map((t, i) => t.inc || t.exp ? bal[i] : null);
+  const bal = savings.map(v => v.saved), balC = tot.map((t, i) => t.inc || t.exp ? bal[i] : null);
   const firstData = tot.findIndex(t => t.inc || t.exp);
   let acc = 0; const cum = months.map((m, i) => firstData >= 0 && i >= firstData && (m <= tm || tot[i].inc || tot[i].exp) ? (acc += bal[i]) : null);
   analysisData={months,bal,balC,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData,cumulative:analysisCumulativeSeries(tot,bal,cum)};
-  if(!months.includes(analysisSelectedMonth))analysisSelectedMonth=currentMonth;
+  analysisSelectedMonth=currentMonth;
+  if(analysisDetailPeriod!=='year')analysisDetailPeriod=currentMonth;
   const metric=analysisChartMode==='total'?ANALYSIS_ACCUMULATED[analysisMetric]:ANALYSIS_METRICS[analysisMetric];
   $('#analysisChartTitle').textContent=metric.title;
   $('#yearChartHelp').dataset.tip=metric.help;
+  $('#yearChartDescription').textContent=metric.help;
   $('#yearChartModes').hidden=!nData;
   $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.yearMode===analysisChartMode)));
   renderYearReadout();

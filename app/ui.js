@@ -227,7 +227,21 @@ let _cv = null, _cvKey = '';
 const cssVar = n => { const de = document.documentElement, k = [...de.attributes].map(x => x.name + '=' + x.value).join('|') + '|' + document.body.className;
   if (!_cv || k !== _cvKey){ _cv = new Map(); _cvKey = k; _cv.cs = getComputedStyle(de); qMicro(() => { _cv = null; }); }
   let v = _cv.get(n); if (v === undefined){ v = _cv.cs.getPropertyValue(n).trim(); _cv.set(n, v); } return v; };
-const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+// El teclado responde de inmediato; el puntero conserva las transiciones del componente.
+document.addEventListener('keydown',event=>{
+ if(['Shift','Control','Alt','Meta'].includes(event.key))return;
+ document.documentElement.dataset.motionInput='keyboard';
+},true);
+document.addEventListener('pointerdown',()=>{
+ const root=document.documentElement;
+ if(root.dataset.motionInput !== 'keyboard')return;
+ delete root.dataset.motionInput;
+ // Al recuperar el puntero, las entradas ya vistas permanecen en su estado final.
+ for(const animation of document.getAnimations()){
+  if(animation instanceof CSSAnimation && animation.effect.getTiming().iterations !== Infinity)animation.finish();
+ }
+},true);
+const reduceMotion = () => document.documentElement.dataset.motionInput === 'keyboard' || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 // El cierre visual de Safari no retiene controles accesibles ni retrasa el cierre nativo.
 if(!CSS.supports('overlay','auto')){
  document.addEventListener('close',e=>{if(e.target instanceof HTMLDialogElement&&!e.target.open)e.target.inert=true;},true);
@@ -245,7 +259,7 @@ if(!CSS.supports('overlay','auto')){
  },true);
 }
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
-const MOTION={fast:180,move:280,panel:320,data:420,trace:650,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.22,1,.36,1)',enter:'cubic-bezier(.22,1,.36,1)'};
+const MOTION={fast:180,move:280,popup:200,tab:250,panel:320,data:420,trace:650,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.22,1,.36,1)',enter:'cubic-bezier(.22,1,.36,1)'};
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
 const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
@@ -266,6 +280,7 @@ function toggleDisclosure(details,summary,wanted,animate=true){
  const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=details.getBoundingClientRect().height;
  const content=details.querySelector(':scope>.metric-expanded,:scope>.disclosure-body,:scope>.analysis-detail-body,:scope>.settings-disclosure-body,:scope>.goal-split,:scope.expense-distribution-more>div');
  const previousOpacity=current&&content?getComputedStyle(content).opacity:null;
+ const previousTransform=current&&content?getComputedStyle(content).transform:null;
  if(current){current.animation.cancel();current.contentAnimation?.cancel();}
  details.style.overflow='hidden';details.open=true;
  const style=getComputedStyle(details);
@@ -273,7 +288,7 @@ function toggleDisclosure(details,summary,wanted,animate=true){
  const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
  if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
  const distribution=details.matches('.expense-distribution-more'),duration=distribution?360:MOTION.panel;
- const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:open?[{opacity:previousOpacity??0,transform:'translateY(-5px)'},{opacity:1,transform:'none'}]:[{opacity:previousOpacity??1},{opacity:0}];
+ const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:[{opacity:previousOpacity??(open?0:1),transform:previousTransform??(open?'translateY(-5px)':'none')},{opacity:open?1:0,transform:'none'}];
  const contentAnimation=content?.animate(frames,{duration:distribution?duration:open?MOTION.panel:MOTION.fast,easing:MOTION.ease});
  const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});
  details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
@@ -296,6 +311,15 @@ function fitMetricValue(el,texts=el?._fitTexts||[el?.textContent||'']){
  const spacing=parseFloat(style.letterSpacing)||0,width=Math.max(...texts.map(text=>ctx.measureText(text).width+Math.max(0,text.length-1)*spacing));
  if(width>available)el.style.fontSize=Math.max(12,size*(available-2)/width)+'px';
 }
+function updateTextScale(){
+ const root=document.documentElement, large=parseFloat(getComputedStyle(root).fontSize)>20;
+ if(root.hasAttribute('data-large-text')===large)return;
+ root.toggleAttribute('data-large-text',large);
+ requestAnimationFrame(()=>{fitMetricValues();moveTabInd();});
+}
+updateTextScale();
+window.addEventListener('resize',updateTextScale);
+new MutationObserver(updateTextScale).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
 function fitMetricValues(){document.querySelectorAll('.tab.active .kpi .value').forEach(el=>fitMetricValue(el));}
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
@@ -307,9 +331,9 @@ function countUp(el, to, kind = 'money', cls){
   cancelAnimationFrame(el._raf);
   el._raf=0;el._countTarget=to;
   el._fitTexts=[f(from),f(to)];fitMetricValue(el);
-  if (reduceMotion() || from === to){ el._countValue=to;rollDigits(el,f(to),0);el._fitTexts=[f(to)];fitMetricValue(el); return; }
-  // Mayor recorrido numérico, más tiempo para leer la desaceleración final; los gráficos conservan su ritmo.
-  const t0 = performance.now(), dur = Math.min(1900, 1100 + Math.log10(1 + Math.abs(to - from)) * 170);
+  if (reduceMotion() || entering || from === to){ el._countValue=to;rollDigits(el,f(to),0);el._fitTexts=[f(to)];fitMetricValue(el); return; }
+  // Solo los cambios de valor recorren sus dígitos, con el ritmo de los datos.
+  const t0 = performance.now(), dur = MOTION.data;
   // Curva con velocidad y aceleración nulas en ambos extremos: evita el arranque brusco y el salto final.
   const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
   // Cada dígito gira en su columna hasta el valor final; una entrada nueva parte de la cifra anterior sin transición.
@@ -432,8 +456,7 @@ function showTab(name, scrollTop = 0){
   const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:reduceMotion()?'instant':'smooth'}); }
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
-  // Cada entrada reinicia los indicadores; las actualizaciones dentro de la vista conservan su valor anterior.
-  if (name === 'dashboard') ['kIncome','kExpense','kBalance','kSavings'].forEach(k => delete numMemo[k]);
+  // Al volver a Resumen, cada indicador conserva el último valor dibujado.
   if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
   if (name === 'analysis' && currentMonth !== analysisSelectedMonth) dirty.add(name);
   const resumeAnalysis = name === 'analysis' && !dirty.has(name) && prevTab !== name;
@@ -469,28 +492,136 @@ function tickChanges(root, selector, render){
 }
 // Hojas inferiores en teléfono: arrastrar el asa o la cabecera hacia abajo equivale a Esc (respeta diálogos que impiden cancelar).
 (() => {
-  const phone = matchMedia('(max-width:700px)'); let drag = null;
-  document.addEventListener('pointerdown', e => {
-    if (!phone.matches || e.button > 0 || drag) return;
-    const d = e.target.closest('dialog[open]'); if (!d || e.target.closest('button,input,select,textarea,a,label,[contenteditable]')) return;
-    if (e.target !== d && !e.target.closest('.dlg-head,.pp-h')) return;
-    drag = {d, id:e.pointerId, y:e.clientY, t:performance.now(), dy:0, on:false};
+  const phone = matchMedia('(max-width:700px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
+  let drag = null;
+  function stopSheet(dialog, keepPosition = false){
+    const motion = dialog._sheetMotion;
+    if (motion) cancelAnimationFrame(motion.raf);
+    delete dialog._sheetMotion;
+    dialog.classList.remove('sheet-dragging','sheet-settling');
+    if (!keepPosition) dialog.style.removeProperty('transform');
+    return motion;
+  }
+  function springSheet(dialog, position, velocity, dismiss){
+    stopSheet(dialog, true);
+    if (!dialog.open) return stopSheet(dialog);
+    if (reduceMotion()){
+      stopSheet(dialog);
+      if (dismiss) dialog.close();
+      return;
+    }
+    const target = dismiss ? dialog.offsetHeight + 24 : 0;
+    const damping = dismiss && velocity > 500 ? .8 : 1;
+    const omega = 2 * Math.PI / .3;
+    const motion = {position, velocity, target, raf:0, last:performance.now(), started:performance.now()};
+    dialog._sheetMotion = motion;
+    dialog.classList.add('sheet-settling');
+    function frame(now){
+      if (dialog._sheetMotion !== motion) return;
+      if (!dialog.open){ stopSheet(dialog); return; }
+      if (reduceMotion()){ stopSheet(dialog); if (dismiss) dialog.close(); return; }
+      const dt = Math.min(.032, Math.max(0,(now-motion.last)/1000));
+      motion.last = now;
+      const x = motion.position-target, v = motion.velocity;
+      const decay = Math.exp(-damping*omega*dt);
+      if (damping === 1){
+        const step = (v+omega*x)*dt;
+        motion.position = target+(x+step)*decay;
+        motion.velocity = (v-omega*step)*decay;
+      } else {
+        const frequency = omega*Math.sqrt(1-damping*damping);
+        const sine = Math.sin(frequency*dt), cosine = Math.cos(frequency*dt);
+        motion.position = target+decay*(x*cosine+(v+damping*omega*x)/frequency*sine);
+        motion.velocity = decay*(v*cosine-(damping*omega*v+omega*omega*x)/frequency*sine);
+      }
+      dialog.style.transform = 'translateY('+motion.position+'px)';
+      if ((Math.abs(motion.position-target)<.5 && Math.abs(motion.velocity)<5) || now-motion.started>1500){
+        if (dismiss){
+          dialog.classList.add('sheet-dismissed');
+          stopSheet(dialog);
+          dialog.close();
+        } else stopSheet(dialog);
+        return;
+      }
+      motion.raf = requestAnimationFrame(frame);
+    }
+    motion.raf = requestAnimationFrame(frame);
+  }
+  function recordPosition(event, position){
+    const now = event.timeStamp;
+    drag.samples.push({time:now, position});
+    while (drag.samples.length>2 && drag.samples[1].time<now-80) drag.samples.shift();
+  }
+  document.addEventListener('pointerdown', event => {
+    if (!phone.matches || event.button>0 || drag || (event.isTrusted && !event.isPrimary)) return;
+    const dialog = event.target.closest('dialog[open]');
+    if (!dialog || event.target.closest('button,input,select,textarea,a,label,[contenteditable]')) return;
+    const handle = event.target.closest('.dlg-head,.pp-h') || (event.target === dialog ? dialog : null);
+    if (!handle) return;
+    const transform = getComputedStyle(dialog).transform;
+    const position = dialog._sheetMotion?.position ?? (transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42);
+    stopSheet(dialog, true);
+    dialog.classList.add('sheet-dragging');
+    dialog.style.transform = 'translateY('+position+'px)';
+    drag = {dialog, handle, id:event.pointerId, startY:event.clientY, startX:event.clientX, startPosition:position, position, moved:false, samples:[{time:event.timeStamp,position}]};
+    if (event.isTrusted) handle.setPointerCapture(event.pointerId);
   });
-  document.addEventListener('pointermove', e => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const dy = Math.max(0, e.clientY - drag.y);
-    if (!drag.on){ if (dy < 6) return; drag.on = true; drag.d.classList.add('sheet-dragging'); }
-    drag.dy = dy; drag.d.style.transform = `translateY(${dy}px)`;
+  document.addEventListener('pointermove', event => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const distance = event.clientY-drag.startY;
+    if (!drag.moved && (Math.abs(distance)<8 || Math.abs(distance)<Math.abs(event.clientX-drag.startX))) return;
+    drag.moved = true;
+    const height = drag.dialog.offsetHeight;
+    let position = drag.startPosition+distance;
+    if (position<0) position = position*height*.55/(height+.55*Math.abs(position));
+    else if (position>height){
+      const excess = position-height;
+      position = height+excess*height*.55/(height+.55*excess);
+    }
+    drag.position = position;
+    recordPosition(event, position);
+    drag.dialog.style.transform = 'translateY('+position+'px)';
   });
-  const end = e => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const {d, dy, on, t} = drag; drag = null; if (!on) return;
-    d.classList.remove('sheet-dragging'); void d.offsetWidth;
-    const fast = dy / Math.max(1, performance.now() - t) > .6, away = dy > Math.min(140, d.offsetHeight * .3) || (fast && dy > 40);
-    if (e.type !== 'pointercancel' && away && d.dispatchEvent(new Event('cancel', {cancelable:true}))){ d.style.transform = ''; d.close(); }
-    else d.style.transform = '';
-  };
-  document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+  function releaseSheet(event){
+    if (!drag || event.pointerId !== drag.id) return;
+    const current = drag;
+    const cancelled = event.type !== 'pointerup';
+    if (!cancelled) recordPosition(event,current.position);
+    drag = null;
+    if (current.handle.hasPointerCapture(current.id)) current.handle.releasePointerCapture(current.id);
+    const first = current.samples[0], last = current.samples.at(-1);
+    const startTime = Math.max(first.time,last.time-80);
+    const second = current.samples[1] || first;
+    const fraction = second.time>first.time ? Math.min(1,(startTime-first.time)/(second.time-first.time)) : 0;
+    const startPosition = first.position+(second.position-first.position)*fraction;
+    const elapsed = Math.max(1,last.time-startTime);
+    const velocity = cancelled ? 0 : (last.position-startPosition)*1000/elapsed;
+    const projected = current.position+(velocity/1000)*.998/(1-.998);
+    const wantsClose = !cancelled && current.moved && current.position>10 && projected>current.dialog.offsetHeight*.5;
+    const dismiss = wantsClose && current.dialog.dispatchEvent(new Event('cancel',{cancelable:true}));
+    springSheet(current.dialog,current.position,velocity,dismiss);
+  }
+  document.addEventListener('pointerup',releaseSheet);
+  document.addEventListener('pointercancel',releaseSheet);
+  document.addEventListener('lostpointercapture',releaseSheet);
+  document.addEventListener('close',event=>{
+    if (!(event.target instanceof HTMLDialogElement)) return;
+    if (drag?.dialog === event.target) drag = null;
+    stopSheet(event.target);
+  },true);
+  document.addEventListener('beforetoggle',event=>{
+    if (!(event.target instanceof HTMLDialogElement) || event.newState !== 'open') return;
+    stopSheet(event.target);
+    event.target.classList.remove('sheet-dismissed');
+  },true);
+  window.addEventListener('resize',()=>{
+    if (drag){
+      const current = drag; drag = null;
+      if (current.handle.hasPointerCapture(current.id)) current.handle.releasePointerCapture(current.id);
+      stopSheet(current.dialog);
+    }
+    document.querySelectorAll('dialog.sheet-settling').forEach(dialog=>stopSheet(dialog));
+  });
 })();
 $('#btnSettings').onclick = () => { showTab('settings'); openSettingsSection(null); };
 const goTab = showTab;
@@ -506,11 +637,24 @@ document.addEventListener('scroll', e => {
     scrollThumbTimers.delete(el);
   }, 800));
 }, {capture:true, passive:true});
+// Cambia la geometría una vez y anima únicamente su transformación visual.
+function moveIndicator(indicator, geometry){
+ const before=indicator.getBoundingClientRect();
+ indicator._motion?.cancel();indicator._motion=null;
+ Object.assign(indicator.style,geometry);
+ const after=indicator.getBoundingClientRect();
+ if(reduceMotion()||!before.width||!before.height||!after.width||!after.height)return;
+ const x=before.left-after.left,y=before.top-after.top,sx=before.width/after.width,sy=before.height/after.height;
+ if(Math.abs(x)<.5&&Math.abs(y)<.5&&Math.abs(sx-1)<.001&&Math.abs(sy-1)<.001)return;
+ const animation=indicator.animate([{transform:'translate('+x+'px,'+y+'px) scale('+sx+','+sy+')'},{transform:'none'}],{duration:MOTION.tab,easing:cssVar('--motion-tab-ease')||MOTION.ease});
+ indicator._motion=animation;
+ animation.onfinish=()=>{if(indicator._motion===animation)indicator._motion=null;};
+}
 function moveTabInd(){
   const b = $('#tabs button.active'), ind = $('#tabInd'); ind.style.opacity = b ? 1 : 0; if (!b) return;
   // Teléfono: píldora detrás del ícono; escritorio: línea bajo el texto.
   const pill = b.querySelector('.tb-i');
-  Object.assign(ind.style, pill && pill.offsetWidth
+  moveIndicator(ind, pill && pill.offsetWidth
     ? {left:b.offsetLeft + pill.offsetLeft + 'px', width:pill.offsetWidth + 'px', top:b.offsetTop + pill.offsetTop + 'px', height:pill.offsetHeight + 'px'}
     : {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px', top:'', height:''});
 }

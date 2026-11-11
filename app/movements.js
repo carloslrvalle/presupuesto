@@ -196,7 +196,7 @@ document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === 
 let movView = 'list';
 function moveViewInd(){
   const b = $('#movView button.active'), ind = $('#movView .vseg-ind'); if (!b || !b.offsetWidth) return;
-  Object.assign(ind.style, {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px'});
+  moveIndicator(ind, {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px'});
 }
 function setMovView(v){
   movView = v;
@@ -388,7 +388,7 @@ function closeMovActionMenu(focus=false){
  // WebKit retira el popover de la capa superior de inmediato: conservarlo hasta terminar la salida.
  const finish=()=>{if(movAction)return;if(movActionMenu.hidePopover&&movActionMenu.matches(':popover-open'))movActionMenu.hidePopover();movActionMenu.hidden=true;};
  clearTimeout(movActionMenu._hideTimer);
- if(reduceMotion())finish();else movActionMenu._hideTimer=setTimeout(finish,MOTION.move);
+ if(reduceMotion())finish();else movActionMenu._hideTimer=setTimeout(finish,MOTION.popup);
  if(focus&&anchor.isConnected)anchor.focus({preventScroll:true});
 }
 function openMovActionMenu(anchor){
@@ -403,7 +403,9 @@ function positionMovActionMenu(){
  if(!movAction)return;const anchor=movAction.anchor,r=anchor.getBoundingClientRect();
  if(!anchor.isConnected||r.bottom<0||r.top>innerHeight){closeMovActionMenu();return;}
  const w=movActionMenu.offsetWidth,h=movActionMenu.offsetHeight;
- movActionMenu.style.left=Math.max(12,Math.min(innerWidth-w-12,r.right-w))+'px';movActionMenu.style.top=Math.max(12,r.bottom+h+8<innerHeight?r.bottom+6:r.top-h-6)+'px';
+ const left=Math.max(12,Math.min(innerWidth-w-12,r.right-w)),below=r.bottom+h+8<innerHeight;
+ movActionMenu.style.left=left+'px';movActionMenu.style.top=Math.max(12,below?r.bottom+6:r.top-h-6)+'px';
+ movActionMenu.style.transformOrigin=Math.max(0,Math.min(w,r.left+r.width/2-left))+'px '+(below?'top':'bottom');
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-row-menu]');if(b&&!selMode)openMovActionMenu(b);});
 document.addEventListener('pointerdown',e=>{if(movAction&&!movActionMenu.contains(e.target)&&!movAction.anchor.contains(e.target))closeMovActionMenu();},true);

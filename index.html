@@ -47,6 +47,8 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
    mode=darkThemes.includes(settings.theme)?'dark':'';
    const dark=mode==='dark'||!mode&&systemDark;
    bg=dark?'#000000':'#fcfcfc';text=dark?'#ffffff':'#000000';muted=dark?'#a4a4a4':'#525252';
+   const palettes={clay:dark?['#262624','#c3c0b6','#b7b5a9']:['#faf9f5','#3d3929','#83827d'],indigo:dark?['#0f172a','#e2e8f0','#9ca3af']:['#f8fafc','#1e293b','#6b7280']};
+   if(palettes[settings.theme])[bg,text,muted]=palettes[settings.theme];
   }
   if(mode)root.dataset.mode=mode;
   for(const [key,value] of Object.entries({bg,text,muted}))root.style.setProperty('--boot-'+key,value);

@@ -34,7 +34,9 @@ function openProfMenu(last = false){
   const openAbove = below < profMenu.scrollHeight && above > below;
   profMenu.style.maxHeight = Math.max(0, openAbove ? above : below) + 'px';
   profMenu.style.top = (openAbove ? r.top - profMenu.offsetHeight - 8 : r.bottom + 8) + 'px';
-  profMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
+  const left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w));
+  profMenu.style.left = left + 'px';
+  profMenu.style.transformOrigin = Math.max(0,Math.min(w,r.left+r.width/2-left))+'px '+(openAbove?'bottom':'top');
   profileTrigger.setAttribute('aria-expanded', 'true');
   const items = profMenu.querySelectorAll('button');
   items[last ? items.length - 1 : 0]?.focus({preventScroll:true});

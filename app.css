@@ -36,7 +36,7 @@ html{scrollbar-gutter:stable}
 #boot button{margin-top:6px;padding:10px 18px;border-radius:8px;border:0;background:var(--primary);color:#fff;font:inherit;font-weight:700}
 #errBar{position:fixed;left:12px;right:12px;top:12px;z-index:1001;padding:10px 14px;border-radius:8px;background:var(--expense);color:#fff;font-size:13px;line-height:1.4;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
 :root{--font-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;--font-head:var(--font-body);--num-feat:normal}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-feature-settings:var(--num-feat);font-size:15px;line-height:1.45}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-feature-settings:var(--num-feat);font-size:.9375rem;line-height:1.45}
 button,input,select,textarea{font:inherit;color:inherit}
 /* Títulos y cifras grandes usan la fuente de títulos */
 h1,h2,h3,#appName,.kpi .value,.goal-amt b,.sv-amt b,.cal-stats b,.cs b,.cd-stats b,.dlg-head h3,.tc-row b,.pp-h b{font-family:var(--font-head)}
@@ -1113,7 +1113,7 @@ body.sel-on .toast{bottom:150px}
 .cat-row button.ico[data-act=icon]{position:relative;overflow:visible;cursor:pointer}
 
 /* Sistema de movimiento: respuesta, navegación, paneles y datos. */
-:root{--motion-fast:180ms;--motion-move:280ms;--motion-panel:320ms;--motion-data:420ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.22,1,.36,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:var(--motion-ease)}
+:root{--motion-fast:180ms;--motion-move:280ms;--motion-popup:200ms;--motion-panel:320ms;--motion-data:420ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.22,1,.36,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:var(--motion-ease)}
 button,.btn,.chip,.iconbtn,.seg button,.month-nav button,.year-nav button,.emoji-grid button,.fsel-btn,.swatch,.cat-row .ico,.goal-icon-btn,.settings-nav button,.settings-status,.category-personalize,.font-card,.theme-card,.cal-d,.pp-mo,.dp-trigger,.pay-btn{
  transition:background-color var(--motion-fast) var(--motion-ease),color var(--motion-fast) var(--motion-ease),border-color var(--motion-fast) var(--motion-ease),box-shadow var(--motion-fast) var(--motion-ease),transform var(--motion-fast) var(--motion-ease),filter var(--motion-fast) var(--motion-ease);
 }
@@ -1128,14 +1128,14 @@ button:disabled{transform:none!important}
 @keyframes motionReveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 main.wrap.prof-swap,.mview:not([hidden]),.dp-body,.pp-body.swap,.emoji-grid.swap,#calDay.swap,.insight.swap,.prof-menu{animation:motionReveal var(--motion-move) var(--motion-ease)}
 .cal-d,.arch-row{animation:none;animation-delay:0ms}
-.tab-ind.ready,.vseg-ind{transition:left var(--motion-move) var(--motion-ease),width var(--motion-move) var(--motion-ease),background-color var(--motion-fast) var(--motion-ease),opacity var(--motion-fast) var(--motion-ease)}
+.tab-ind.ready,.vseg-ind{transform-origin:top left;transition:background-color var(--motion-fast) var(--motion-ease),opacity var(--motion-fast) var(--motion-ease)}
 /* Un solo movimiento para el diálogo: sin entradas escalonadas de cada campo. */
 dialog{opacity:0;transform:translateY(8px) scale(.99);transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
 dialog[open]{opacity:1;transform:none;transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
 @starting-style{dialog[open]{opacity:0;transform:translateY(8px) scale(.99)}}
 dialog::backdrop{transition:background-color var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
 dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
-.dp,.pp{transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
+.dp,.pp{transition:opacity var(--motion-popup) var(--motion-ease),transform var(--motion-popup) var(--motion-ease),overlay var(--motion-popup) allow-discrete,display var(--motion-popup) allow-discrete}
 .acc-body{transition:grid-template-rows var(--motion-panel) var(--motion-ease)}.acc-head .chev,.ig-head .chev,.zero-group>summary .chev,.arch-group summary .vi,.sug summary>svg:last-child,.fsel-btn .chev{transition:transform var(--motion-panel) var(--motion-ease)}
 .sug[open]>*:not(summary),.zero-group[open]>div,.arch-group[open] .arch-row{animation:none}
 .bar>span,.gsp-bar i{transition:width var(--motion-data) var(--motion-ease)}.prow.warn .bar>span,tr.warn .bar>span,.pp-d.pend::after{animation:none}
@@ -1296,7 +1296,7 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 
 .settings-panel-head .settings-back{display:inline-flex}
 /* Escala compartida por función: igual contenido, igual tipografía en todas las vistas. */
-:root{--type-title:20px;--type-section:15px;--type-item:14px;--type-control:13px;--type-meta:12px}
+:root{--type-title:1.25rem;--type-section:.9375rem;--type-item:.875rem;--type-control:.8125rem;--type-meta:.75rem}
 h2,.both-head h2{font-size:var(--type-title)}
 h3,.settings-home h3{font-size:var(--type-section)}
 html .history-category,html .bud-table .cname,html .catcell,html .cat-row input[data-act=name],html .up-name,html .fc-name{
@@ -1916,7 +1916,7 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 @media(max-width:600px){#tab-budget #budSave .sv-form{grid-template-columns:minmax(0,1fr);gap:8px}}
 
 /* 1.10.24: una escala común para los indicadores de Resumen, Análisis y Ambos. */
-:root{--metric-title-size:13px;--metric-value-size:26px;--metric-meta-size:12px;--metric-padding:18px;--metric-label-height:39px;--metric-icon-size:30px}
+:root{--metric-title-size:.8125rem;--metric-value-size:1.625rem;--metric-meta-size:.75rem;--metric-padding:1.125rem;--metric-label-height:2.4375rem;--metric-icon-size:1.875rem}
 #tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
 #tab-dashboard .metric-disclosure>summary,#bothBody .metric-disclosure>summary{container-type:inline-size;padding:var(--metric-padding)}
 #anKpis .analysis-metric{padding:var(--metric-padding)}
@@ -1928,8 +1928,8 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 #tab-dashboard .metric-chevron,#bothBody .metric-chevron,#anKpis .metric-selection{right:12px;top:14px}
 #tab-dashboard .metric-disclosure.k-inc,#tab-dashboard .metric-disclosure.k-exp,#bothBody .metric-disclosure.k-inc,#bothBody .metric-disclosure.k-exp{background:var(--surface);border-color:var(--border)}
 @media(max-width:900px){#tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
-@media(max-width:600px){:root{--metric-title-size:12px;--metric-value-size:24px;--metric-meta-size:11px;--metric-padding:14px}#tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{gap:10px}}
-@media(max-width:380px){:root{--metric-padding:12px;--metric-icon-size:26px;--metric-label-height:54px}}
+@media(max-width:600px){:root{--metric-title-size:.75rem;--metric-value-size:1.5rem;--metric-meta-size:.6875rem;--metric-padding:.875rem}#tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{gap:10px}}
+@media(max-width:380px){:root{--metric-padding:.75rem;--metric-icon-size:1.625rem;--metric-label-height:3.375rem}}
 #tab-dashboard .metric-disclosure>summary .value,#bothBody .metric-disclosure>summary .value,#anKpis .analysis-metric .value{white-space:normal;overflow-wrap:anywhere}
 @media(max-width:600px){#bothBody .both-kpis{--metric-label-height:54px}}@media(max-width:380px){#bothBody .both-kpis{--metric-label-height:72px}}
 
@@ -2020,7 +2020,7 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 .rec-actions>summary{list-style:none;display:grid;place-items:center;width:44px;height:44px;border-radius:7px;cursor:pointer;font-size:24px;color:var(--muted)}
 .rec-actions>summary::-webkit-details-marker{display:none}
 .rec-actions>summary:hover{background:var(--surface-2)}
-.rec-action-list{position:absolute;right:0;top:calc(100% + 4px);z-index:50;display:grid;min-width:160px;padding:6px;border:1px solid var(--border);border-radius:8px;background:var(--surface);box-shadow:0 10px 30px #0003;animation:motionReveal var(--motion-move) var(--motion-ease)}
+.rec-action-list{position:absolute;right:0;top:calc(100% + 4px);z-index:50;display:grid;min-width:160px;padding:6px;border:1px solid var(--border);border-radius:8px;background:var(--surface);box-shadow:0 10px 30px #0003;animation:motionReveal var(--motion-popup) var(--motion-ease)}
 .rec-action-list .iconbtn{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:44px;height:auto;padding:10px;font-size:12px;white-space:nowrap}
 .rec-action-list [data-rec-del]{color:var(--expense)}
 /* Inicio de Ajustes: una sola lista de destinos, también en escritorio. */
@@ -2045,7 +2045,7 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
  #recExpense .rec-row>.row-actions,#recIncome .rec-row>.row-actions{grid-column:3;grid-row:1/3;align-self:center;justify-self:end;margin:0}
 }
 
-.analysis-month-picker[open] .analysis-month-menu{animation:motionReveal var(--motion-move) var(--motion-ease)}
+.analysis-month-picker[open] .analysis-month-menu{animation:motionReveal var(--motion-popup) var(--motion-ease)}
 @media(prefers-reduced-motion:reduce){.analysis-month-picker[open] .analysis-month-menu{animation:none}}
 
 /* 1.10.29: opciones alineadas, encabezados fuera de las opciones. */
@@ -2544,7 +2544,7 @@ dialog{border-radius:var(--radius-lg)}
 
 /* 1.10.77 · Movimiento: pestañas y segmentos con indicador deslizante, entradas escalonadas y volver arriba. */
 :root{--motion-tab:250ms;--motion-tab-ease:cubic-bezier(.65,0,.35,1)}
-.tab-ind.ready{transition:left var(--motion-tab) var(--motion-tab-ease),width var(--motion-tab) var(--motion-tab-ease),top var(--motion-tab) var(--motion-tab-ease),height var(--motion-tab) var(--motion-tab-ease),opacity var(--motion-fast) var(--motion-ease)}
+.tab-ind.ready{transform-origin:top left;transition:opacity var(--motion-fast) var(--motion-ease)}
 @media (max-width:600px){
  .tabs .tab-ind{display:block;z-index:0;bottom:auto;border-radius:99px;background:var(--accent-bg,var(--primary-soft))}
  .tabs button.active .tb-i{background:transparent}
@@ -2583,9 +2583,11 @@ body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(4){animation-delay:
 }
 .prof-menu[hidden],.mov-action-menu[hidden],.sel-bar[hidden]{opacity:0;translate:0 5px;pointer-events:none}
 .mov-action-menu.menu-closing{opacity:0;translate:0 5px;pointer-events:none}
-.mov-action-menu{transition:opacity var(--motion-move) var(--motion-ease),translate var(--motion-move) var(--motion-ease)}
+.prof-menu,.mov-action-menu{transition-duration:var(--motion-popup)}
+.mov-action-menu{transition:opacity var(--motion-popup) var(--motion-ease),translate var(--motion-popup) var(--motion-ease)}
 @starting-style{.prof-menu:not([hidden]),.mov-action-menu:not([hidden]),.sel-bar:not([hidden]){opacity:0;translate:0 5px}}
-.fsel-menu{transition:opacity var(--motion-move) var(--motion-ease),transform var(--motion-move) var(--motion-ease)}
+.dp-body,.pp-body.swap{animation-duration:var(--motion-popup)}
+.fsel-menu{transition:opacity var(--motion-popup) var(--motion-ease),transform var(--motion-popup) var(--motion-ease)}
 .toast{transform:translateX(-50%) translateY(8px)}
 @media(max-width:960px){
  body:not(.sel-on):has(.fab:not([hidden])) .toast{bottom:calc(88px + env(safe-area-inset-bottom) + var(--visible-bottom,0px))}
@@ -2697,4 +2699,67 @@ body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(4){animation-delay:
 }
 @media(min-width:601px) and (max-width:960px) and (max-height:500px) and (pointer:coarse){
  .topbar .gear-btn,.topbar .prof-chip,.topbar .sync-badge{min-height:44px}
+}
+
+/* Paletas Arcilla e Índigo: los alias color-* conservan los tokens suministrados. */
+html:is([data-theme=clay],[data-theme=indigo]) .card{color:var(--color-card-foreground)}
+html:is([data-theme=clay],[data-theme=indigo]) :is(dialog,.dp,.pp,.prof-menu,.mov-action-menu,.cat-actions-menu,.fsel-menu,.analysis-month-menu,.help-panel){background:var(--color-popover);color:var(--color-popover-foreground)}
+html:is([data-theme=clay],[data-theme=indigo]) .help-panel{border:1px solid var(--color-border)}
+html:is([data-theme=clay],[data-theme=indigo]) :is(input:not([type=checkbox]):not([type=range]):not([type=hidden]),select,textarea,.fsel-btn,.dp-trigger){border-color:var(--color-input)}
+html:is([data-theme=clay],[data-theme=indigo]) .settings-nav{background:var(--color-sidebar);color:var(--color-sidebar-foreground)}
+html:is([data-theme=clay],[data-theme=indigo]) .settings-nav button[aria-current=page]{background:var(--color-sidebar-accent);color:var(--color-sidebar-accent-foreground)}
+html:is([data-theme=clay],[data-theme=indigo]) .btn.danger-solid{background:var(--color-destructive);color:var(--destructive-ink,var(--color-destructive-foreground))}
+html:is([data-theme=clay],[data-theme=indigo]) .btn:not(.primary):not(.danger):not(.danger-solid):not(.ghost){background:var(--color-secondary);color:var(--color-secondary-foreground)}
+
+html[data-motion-input=keyboard] *,html[data-motion-input=keyboard] *::before,html[data-motion-input=keyboard] *::after,html[data-motion-input=keyboard] dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+
+/* Manipulación directa: el dedo y el resorte son los únicos dueños de la posición. */
+html dialog:is(.sheet-dragging,.sheet-settling){transition:none!important;animation:none!important;user-select:none}
+html dialog.sheet-dismissed{opacity:0!important;transition:none!important}
+html{font-optical-sizing:auto}
+h1,h2,h3{letter-spacing:-.02em}
+.field>label,.metric-preview{letter-spacing:.01em;line-height:1.5}
+/* El estado presionado aparece al tocar; al soltar vuelve en 140 ms. */
+:is(.btn,.chip,.iconbtn,.seg button,.vseg button,.month-nav button,.year-nav button,.theme-card,.font-card,.fab,.prof-chip,.gear-btn,.pay-btn,.fsel-btn,.dp-trigger,.emoji-grid button,.swatch,.cat-row .ico,.goal-icon-btn,.settings-nav button,.category-personalize,.cal-d,.kpi.link,.history-row,.prow.link,.settings-home-row){transition-duration:140ms}
+:is(.btn,.chip,.iconbtn,.seg button,.vseg button,.month-nav button,.year-nav button,.theme-card,.font-card,.fab,.prof-chip,.gear-btn,.pay-btn,.fsel-btn,.dp-trigger,.emoji-grid button,.swatch,.cat-row .ico,.goal-icon-btn,.settings-nav button,.category-personalize,.cal-d,.kpi.link,.history-row,.prow.link,.settings-home-row):active,.history-row:active,.prow.link:active,.settings-home-row:active{transition-duration:0ms!important}
+.prof-menu,.mov-action-menu{scale:1;transition:opacity var(--motion-popup) var(--motion-ease),translate var(--motion-popup) var(--motion-ease),scale var(--motion-popup) var(--motion-ease),display var(--motion-popup) allow-discrete,overlay var(--motion-popup) allow-discrete}
+.prof-menu[hidden],.mov-action-menu[hidden],.mov-action-menu.menu-closing{scale:.97}
+@starting-style{.prof-menu:not([hidden]),.mov-action-menu:not([hidden]){scale:.97}}
+@media(prefers-reduced-motion:reduce){.prof-menu,.mov-action-menu{scale:1!important}}
+/* Superficies sólidas y jerarquía visible según las preferencias del dispositivo. */
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){
+ .tabs{background:var(--surface)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .topbar.scrolled{background:var(--bg)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .topbar.scrolled::before{display:none!important}
+ .toast{background:var(--text)!important;color:var(--bg)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ dialog::backdrop,dialog[open]::backdrop,body::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ :is(dialog,.dp,.pp,.prof-menu,.mov-action-menu,.fsel-menu,.analysis-month-menu,.help-panel){background:var(--color-popover,var(--surface))!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+@media(prefers-contrast:more){
+ :root{--muted:var(--text)!important;--border:color-mix(in srgb,var(--text) 65%,var(--bg))!important;--ring:var(--text)!important}
+ .card,.tabs,.toast,.help-panel{border:2px solid var(--border)}
+ input,select,textarea,.fsel-btn,.dp-trigger{border-color:var(--text)!important}
+ input::placeholder,textarea::placeholder{color:var(--text);opacity:1}
+}
+/* Con texto ampliado, las cifras y los controles reciben espacio adicional. */
+html[data-large-text] :is(.dashboard-kpis,#anKpis,.both-kpis){grid-template-columns:minmax(0,1fr)!important}
+html[data-large-text] :is(.metric-disclosure>summary,.analysis-metric){grid-template-rows:auto!important;row-gap:.5rem!important}
+html[data-large-text] .metric-disclosure>summary :is(.label,.value,.metric-preview),html[data-large-text] .analysis-metric>:is(.label,.value,.small){grid-row:auto!important;min-height:0!important}
+html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
+html[data-large-text] :is(.btn,.chip,.seg button,.vseg button,.fsel-btn,.dp-trigger){height:auto;min-height:2.75rem;white-space:normal;overflow-wrap:anywhere;font-size:.875rem}
+html[data-large-text] :is(input,select,textarea){font-size:1rem;height:auto;min-height:2.75rem}
+html[data-large-text] :is(.field>label,.small,.metric-preview){font-size:.8125rem}
+html[data-large-text] .month-nav{height:auto}
+html[data-large-text] .month-nav .month-label{font-size:.8125rem;white-space:normal;overflow-wrap:anywhere}
+html[data-large-text] #tab-movs>.toolbar{flex-wrap:wrap}
+html[data-large-text] #movView{width:100%;flex-basis:100%}
+html[data-large-text] .plan-period{flex-wrap:wrap}
+@media(max-width:600px){
+ html[data-large-text]{--large-nav-height:calc(5rem + 12px)}
+ html[data-large-text] .tabs{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:2.5rem;padding-inline:4px}
+ html[data-large-text] .tabs button{font-size:.6875rem;padding-block:4px;gap:0}
+ html[data-large-text] .tabs .tb-t{letter-spacing:0;white-space:normal;overflow:visible;overflow-wrap:normal;line-height:1.15}
+ html[data-large-text] main.wrap{padding-bottom:calc(var(--large-nav-height) + 80px + env(safe-area-inset-bottom))!important}
+ html[data-large-text] .fab{bottom:calc(var(--large-nav-height) + 12px + env(safe-area-inset-bottom) + var(--visible-bottom,0px))!important}
+ html[data-large-text] .toast{bottom:calc(var(--large-nav-height) + 84px + env(safe-area-inset-bottom) + var(--visible-bottom,0px))!important}
 }

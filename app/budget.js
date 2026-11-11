@@ -163,6 +163,7 @@ function placePayPicker(){
   const left = Math.max(12, Math.min(r.right - w, innerWidth - w - 12));
   let top = r.bottom + 8; if (top + h > innerHeight - 8) top = r.top - h - 8 > 8 ? r.top - h - 8 : Math.max(8, innerHeight - h - 8);
   ppEl.style.left = left + 'px'; ppEl.style.top = top + 'px';
+  ppEl.style.transformOrigin = Math.max(0,Math.min(w,r.left+r.width/2-left))+'px '+(top<r.top?'bottom':'top');
 }
 function commitPayPending(S){
  if(S.pend==null)return;let x=S.pend,y=S.pend;S.pend=null;
@@ -172,7 +173,7 @@ function commitPayPending(S){
 function closePayPicker(keep = true,focusBack = true){
   if (!ppS) return;
   const S = ppS,restoreFocus=focusBack&&ppEl.contains(document.activeElement); if(keep)commitPayPending(S); ppS = null; S.btn.classList.remove('open');S.btn.setAttribute('aria-expanded','false'); ppEl.classList.remove('show'); if (typeof dpClose === 'function') dpClose();
-  setTimeout(() => { if (!ppS){ if(ppEl.hidePopover){try{ppEl.hidePopover();}catch(e){}} if(restoreFocus)[...document.querySelectorAll('#catsIncome .cat-row')].find(r=>r.dataset.id===S.id)?.querySelector('.pay-btn')?.focus({preventScroll:true}); } }, reduceMotion()?0:MOTION.panel);
+  setTimeout(() => { if (!ppS){ if(ppEl.hidePopover){try{ppEl.hidePopover();}catch(e){}} if(restoreFocus)[...document.querySelectorAll('#catsIncome .cat-row')].find(r=>r.dataset.id===S.id)?.querySelector('.pay-btn')?.focus({preventScroll:true}); } }, reduceMotion()?0:MOTION.popup);
   const val = payEncode(S);
   if (keep && val !== S.orig){ S.c.pay = val; save(); renderAll(); toast(val ? `${S.c.name}: ${payHumanCfg(payCfg(val)).toLowerCase()}` : 'Día de pago quitado', {icon:'calendar-days'}); }
 }

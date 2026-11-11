@@ -101,6 +101,10 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <main class="wrap">
   <!-- DASHBOARD -->
   <section class="tab active" id="tab-dashboard"><div class="plan-period" data-plan-controls></div>
+    <div class="card first-movement" id="firstMovement" hidden>
+      <div><h2>Empieza tu presupuesto</h2><p>Registra un ingreso o un gasto. Tus datos se guardan en este dispositivo.</p></div>
+      <div class="first-movement-actions"><button type="button" class="btn primary" data-empty="tx">Registrar primer movimiento</button><button type="button" class="btn" id="firstConnect">Conectar Sheets</button></div>
+    </div>
     <div class="insight" id="insight" hidden><span class="i-ic"></span><div id="insightText"></div></div>
     <div class="kpis dashboard-kpis">
       <details class="card kpi metric-disclosure k-inc"><summary><div class="label"><span class="dot ui-ic" data-e="⬇️" style="background:var(--income-soft);color:var(--income)"></span>Ingresos del mes</div><div class="value" id="kIncome"></div><div class="metric-preview small muted" id="kIncomePreview"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="kIncomeSub"></div><div class="metric-footer small muted" id="kIncomeFoot"></div><button type="button" class="metric-action" data-metric-go="income">Ver movimientos<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
@@ -185,7 +189,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     <div class="toolbar">
       
       <span class="spacer"></span><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Aporta con «Aportar», o elige la meta al registrar un ingreso o un gasto en tu categoría de ahorro."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
-      <button class="btn primary" id="btnNewGoal"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nueva meta</button>
+      <button class="btn primary" id="btnNewGoal" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nueva meta</button>
     </div>
     <div class="goals-grid" id="goalsGrid"></div>
   </section>
@@ -249,7 +253,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
         <p class="small muted">Tus datos se guardan automáticamente en este navegador. Descarga un respaldo cada cierto tiempo para no perder nada.</p>
         <div class="toolbar">
           <button class="btn primary" id="btnExport"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg> Exportar respaldo (.json)</button>
-          <label class="btn"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg> Importar respaldo<input type="file" id="fileImport" accept=".json,application/json" hidden></label>
+          <button type="button" class="btn" id="btnImport"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg> Importar respaldo</button><input type="file" id="fileImport" accept=".json,application/json" hidden>
           <button class="btn" id="btnCsv"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg> Exportar movimientos (.csv)</button>
         </div>
       </div>
@@ -425,7 +429,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
 <script src="./app/bootstrap.js"></script>
 <script src="./sync-core.js"></script>
-<script src="./vendor/chart.umd.js"></script>
 <script src="./app/finance.js"></script>
 <script src="./app/storage.js"></script>
 <script src="./app/utils.js"></script>

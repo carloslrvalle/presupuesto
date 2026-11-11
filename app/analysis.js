@@ -109,6 +109,7 @@ function renderAnalysisChart(){
   chYear=null;
   if(values.every(v=>v==null)){$('#yearWrap').innerHTML=emptyBox('chart-line','Registra ingresos para calcular la tasa de ahorro.');return;}
   if(['income','expense'].includes(analysisMetric)&&values.every(v=>v===0)){$('#yearWrap').innerHTML=emptyBox('chart-column','No hay '+metric.label.toLowerCase()+' registrados en este año.');return;}
+  if (!loadChartFor($('#yearWrap'))) return;
   chartTheme();
   const dataset={type:line?'line':'bar',label:cumulative?ANALYSIS_ACCUMULATED[analysisMetric].title:metric.label,unit:percentage?'pct':'money',data:indices.map(i=>values[i]),yAxisID:'y',borderColor:line?color:undefined,
     backgroundColor:ctx=>{const base=!line&&ctx.raw<0?negative:color;return !line&&data.months[indices[ctx.dataIndex]]!==analysisSelectedMonth?mixHex(base,cssVar('--surface'),.40):base;},
@@ -286,7 +287,6 @@ function renderAnalysis(){
   renderYearReadout();
   if (chYear && !nData){ chYear.destroy(); chYear = null; }
   if (!nData){ $('#yearWrap').innerHTML = emptyBox('chart-line', `Aún no hay movimientos registrados en ${y}. Los programados aparecerán aquí cuando llegue su fecha.`); }
-  else if (typeof Chart === 'undefined'){ $('#yearWrap').innerHTML = '<div class="empty">No se pudieron cargar los gráficos.</div>'; }
   else renderAnalysisChart();
 
   renderAnalysisDetails();

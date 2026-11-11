@@ -9,26 +9,61 @@ function renderProfileUI(){
   $('#profCv').innerHTML = ic('chevron-down'); chip.title = 'Usuario: ' + (bothMode ? 'Ambos' : profOf(activeProfile).name) + ' · tocar para cambiar';
   if ($('#tab-settings').classList.contains('active')) renderProfEdit();
 }
-const profMenu = document.createElement('div'); profMenu.className = 'prof-menu'; profMenu.hidden = true; profMenu.setAttribute('role', 'menu'); document.body.appendChild(profMenu);
+const profMenu = document.createElement('div'); profMenu.className = 'prof-menu'; profMenu.hidden = true; profMenu.id = 'profileMenu'; profMenu.setAttribute('role', 'menu'); profMenu.setAttribute('aria-label', 'Cambiar de usuario'); document.body.appendChild(profMenu);
 function renderProfMenu(){
   const on = id => !bothMode && id === activeProfile;
   profMenu.innerHTML = profiles.list.map(pr => `<button type="button" role="menuitem" data-prof="${esc(pr.id)}" class="${on(pr.id) ? 'on' : ''}">${avatarBox(pr)}<span>${esc(pr.name)}</span>${on(pr.id) ? ic('check') : ''}</button>`).join('')
     + `<button type="button" role="menuitem" data-prof="both" class="${bothMode ? 'on' : ''}"><span class="prof-av both">${ic('users')}</span><span>Ambos <small>· solo lectura</small></span>${bothMode ? ic('check') : ''}</button><hr>`
     + `<button type="button" role="menuitem" data-prof="edit"><span class="prof-av plain">${ic('pencil')}</span><span>Editar usuarios</span></button>`;
 }
-function closeProfMenu(){ profMenu.hidden = true; $('#profChip').setAttribute('aria-expanded', 'false'); }
-$('#profChip').onclick = e => {
-  e.stopPropagation(); if (!profMenu.hidden) return closeProfMenu();
-  renderProfMenu(); profMenu.hidden = false; const r = $('#profChip').getBoundingClientRect(), w = profMenu.offsetWidth;
-  profMenu.style.top = (r.bottom + 8) + 'px'; profMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px'; $('#profChip').setAttribute('aria-expanded', 'true');
+const profileTrigger = $('#profChip');
+profileTrigger.setAttribute('aria-haspopup', 'menu');
+profileTrigger.setAttribute('aria-controls', profMenu.id);
+function closeProfMenu(restoreFocus = false){
+  profMenu.hidden = true;
+  profMenu.inert = true;
+  profileTrigger.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) profileTrigger.focus({preventScroll:true});
+}
+function openProfMenu(last = false){
+  renderProfMenu();
+  profMenu.hidden = false;
+  profMenu.inert = false;
+  const r = profileTrigger.getBoundingClientRect(), w = profMenu.offsetWidth;
+  const below = innerHeight - r.bottom - 16, above = r.top - 16;
+  const openAbove = below < profMenu.scrollHeight && above > below;
+  profMenu.style.maxHeight = Math.max(0, openAbove ? above : below) + 'px';
+  profMenu.style.top = (openAbove ? r.top - profMenu.offsetHeight - 8 : r.bottom + 8) + 'px';
+  profMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
+  profileTrigger.setAttribute('aria-expanded', 'true');
+  const items = profMenu.querySelectorAll('button');
+  items[last ? items.length - 1 : 0]?.focus({preventScroll:true});
+}
+profileTrigger.onclick = e => {
+  e.stopPropagation();
+  if (profMenu.hidden) openProfMenu();
+  else closeProfMenu(true);
 };
+profileTrigger.addEventListener('keydown', e => {
+  if (!['ArrowDown','ArrowUp'].includes(e.key)) return;
+  e.preventDefault();
+  openProfMenu(e.key === 'ArrowUp');
+});
 document.addEventListener('click', e => { if (!profMenu.hidden && !profMenu.contains(e.target)) closeProfMenu(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !profMenu.hidden) closeProfMenu(); });
+profMenu.addEventListener('keydown', e => {
+  if (e.key === 'Tab'){ closeProfMenu(true); return; }
+  if (e.key === 'Escape'){ e.preventDefault(); closeProfMenu(true); return; }
+  if (!['ArrowDown','ArrowUp','Home','End'].includes(e.key)) return;
+  e.preventDefault();
+  const items = [...profMenu.querySelectorAll('button')], current = items.indexOf(document.activeElement);
+  const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (current + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+  items[next]?.focus();
+});
 window.addEventListener('resize', () => { if (!profMenu.hidden) closeProfMenu(); });
 profMenu.addEventListener('click', e => {
-  const b = e.target.closest('[data-prof]'); if (!b) return; closeProfMenu();
+  const b = e.target.closest('[data-prof]'); if (!b) return; closeProfMenu(true);
   const id = b.dataset.prof;
-  if (id === 'edit'){ showTab('settings'); setTimeout(() => $('#profCard').scrollIntoView({block:'start', behavior:reduceMotion()?'instant':'smooth'}), 120); return; }
+  if (id === 'edit'){ showTab('settings'); openSettingsSection('users', true); return; }
   switchProfile(id);
 });
 function loadProfileState(){
@@ -221,7 +256,7 @@ function renderBoth(){
     <div class="card both-top"><h3>Top 5 gastos ${cycles?'de los períodos':'del mes'} de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${esc(x.t.date)}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos en los períodos seleccionados.</div>'}</div></div></details>`;
   requestAnimationFrame(fitMetricValues);
   if (chBoth){ chBoth.destroy(); chBoth = null; }
-  if (typeof Chart === 'undefined') return;
+  if (!loadChartFor($('#bothWrap'))) return;
   chartTheme();
   chBoth = new Chart($('#chBoth'), {type:'bar', plugins:[legendGap],
     data:{labels:months.map(m=>innerWidth<=700?monthAbbr(m):monthShort(m)), datasets:rows.map((r,i) => ({label:r.pr.name, data:r.series, backgroundColor:colors[i], hoverBackgroundColor:colors[i], borderRadius:5, borderSkipped:'start', maxBarThickness:24, barPercentage:.85, categoryPercentage:.7, periods:r.periods}))},

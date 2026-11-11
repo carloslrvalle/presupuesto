@@ -127,13 +127,64 @@ function emptyBox(icon, text, act, label, row, cls){
   return row ? `<div class="es-row ${cls || ''}"><div class="empty-ic">${ic(icon)}</div><div class="es-t">${text}</div>${b}</div>`
              : `<div class="empty es ${cls || ''}"><div class="empty-ic">${ic(icon)}</div><div class="es-t">${text}</div>${b}</div>`;
 }
+const helpPanel = document.createElement('div');
+helpPanel.className = 'help-panel';
+helpPanel.setAttribute('aria-hidden', 'true');
+helpPanel.hidden = true;
+document.body.append(helpPanel);
+let helpAnchor = null, helpPinned = false, helpTimer = 0, helpDescriptionId = 0;
+function describeHelp(){
+  for (const button of document.querySelectorAll('.info-tip[data-tip]')){
+    let description = document.getElementById(button.getAttribute('aria-describedby'));
+    if (!description){
+      description = document.createElement('span');
+      description.id = 'help-description-' + ++helpDescriptionId;
+      description.hidden = true;
+      button.after(description);
+      button.setAttribute('aria-describedby', description.id);
+    }
+    description.textContent = button.dataset.tip;
+  }
+  if (helpAnchor) positionHelp();
+}
+function closeHelp(){
+  clearTimeout(helpTimer);
+  helpAnchor?.classList.remove('show');
+  helpAnchor = null;
+  helpPinned = false;
+  helpPanel.hidden = true;
+}
+function positionHelp(){
+  const anchor = helpAnchor.getBoundingClientRect(), viewport = window.visualViewport;
+  const left = (viewport?.offsetLeft || 0) + 8, top = (viewport?.offsetTop || 0) + 8;
+  const right = left + (viewport?.width || document.documentElement.clientWidth) - 16;
+  const bottom = top + (viewport?.height || innerHeight) - 16;
+  if (!anchor.width || anchor.bottom < top || anchor.top > bottom){ closeHelp(); return; }
+  helpPanel.style.maxWidth = Math.min(324, Math.max(0, right - left)) + 'px';
+  helpPanel.style.maxHeight = Math.max(0, bottom - top) + 'px';
+  const {width, height} = helpPanel.getBoundingClientRect();
+  const below = anchor.bottom + 8, above = anchor.top - height - 8;
+  helpPanel.style.left = Math.max(left, Math.min(anchor.left, right - width)) + 'px';
+  helpPanel.style.top = Math.max(top, Math.min(below + height <= bottom ? below : above >= top ? above : below, bottom - height)) + 'px';
+}
+function showHelp(button, pinned = false){
+  clearTimeout(helpTimer);
+  if (helpAnchor !== button) closeHelp();
+  helpAnchor = button;
+  helpPinned = pinned;
+  helpPanel.textContent = button.dataset.tip;
+  helpPanel.hidden = false;
+  button.classList.add('show');
+  positionHelp();
+}
 document.addEventListener('click', e => {
   const tip = e.target.closest('.info-tip');
-  document.querySelectorAll('.info-tip.show').forEach(open => { if (open !== tip) open.classList.remove('show'); });
   if (tip){
-    tip.classList.toggle('tip-dismissed', !tip.classList.toggle('show'));
+    if (helpAnchor === tip && helpPinned) closeHelp();
+    else showHelp(tip, true);
     return;
   }
+  if (!helpPanel.contains(e.target)) closeHelp();
   const go = e.target.closest('[data-gotab]'); if (go){ e.preventDefault(); showTab(go.dataset.gotab); return; }
   const b = e.target.closest('[data-empty]'); if (!b) return;
   const a = b.dataset.empty;
@@ -143,17 +194,32 @@ document.addEventListener('click', e => {
   else if (a === 'budget') showTab('budget');
 });
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || e.defaultPrevented) return;
-  const tips = document.querySelectorAll('.info-tip:is(.show,:hover,:focus-visible):not(.tip-dismissed)');
-  if (!tips.length) return;
+  if (e.key !== 'Escape' || e.defaultPrevented || !helpAnchor) return;
   e.preventDefault();
-  tips.forEach(tip => { tip.classList.remove('show'); tip.classList.add('tip-dismissed'); });
+  closeHelp();
 });
-document.addEventListener('focusin', e => e.target.closest('.info-tip')?.classList.remove('tip-dismissed'));
-document.addEventListener('pointerover', e => {
+document.addEventListener('focusin', e => {
   const tip = e.target.closest('.info-tip');
-  if (tip && !tip.contains(e.relatedTarget)) tip.classList.remove('tip-dismissed');
+  if (tip?.matches(':focus-visible')) showHelp(tip);
+  else if (helpAnchor && !helpAnchor.contains(e.target)) closeHelp();
 });
+document.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse') return;
+  const tip = e.target.closest('.info-tip');
+  if (tip && !tip.contains(e.relatedTarget) && !helpPinned) showHelp(tip);
+  if (helpPanel.contains(e.target)) clearTimeout(helpTimer);
+});
+document.addEventListener('pointerout', e => {
+  if (e.pointerType !== 'mouse' || !helpAnchor || helpPinned || helpAnchor.matches(':focus-visible')) return;
+  if (helpAnchor.contains(e.target) || helpPanel.contains(e.target)){
+    clearTimeout(helpTimer);
+    helpTimer = setTimeout(closeHelp, 120);
+  }
+});
+function updateHelpPosition(){ if (helpAnchor) positionHelp(); }
+document.addEventListener('scroll', updateHelpPosition, {capture:true, passive:true});
+window.addEventListener('resize', updateHelpPosition);
+window.visualViewport?.addEventListener('resize', updateHelpPosition);
 const uiIc = e => ic(UI_MAP[e] || 'circle-help');
 function applyUiIcons(){ document.querySelectorAll('.ui-ic').forEach(el => el.innerHTML = uiIc(el.dataset.e)); if (typeof moveTabInd === 'function') moveTabInd(); }
 // Lectura de variables CSS con caché: se invalida si cambia el estilo/tema o al terminar la tarea actual
@@ -352,6 +418,7 @@ cfDialog.addEventListener('close', () => cfDone(null));
 
 /* ---------- Tabs y mes ---------- */
 function showTab(name, scrollTop = 0){
+  closeHelp();
   syncPlanningNavigation(name);
   if (typeof selMode !== 'undefined' && selMode) setSelMode(false);
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)

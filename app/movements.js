@@ -70,27 +70,48 @@ function optInner(o){
 }
 function enhanceSelect(sel){
   const w = document.createElement('div'); w.className = 'fsel';
-  sel.parentNode.insertBefore(w, sel); w.appendChild(sel); sel.tabIndex = -1;
+  sel.parentNode.insertBefore(w, sel); w.appendChild(sel); sel.hidden = true;
   const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'fsel-btn';btn.setAttribute('aria-label',sel.getAttribute('aria-label')||'Filtrar movimientos');
   const menu = document.createElement('div'); menu.className = 'fsel-menu'; menu.setAttribute('role','listbox');
+  menu.id = sel.id + '-options';
+  menu.setAttribute('aria-hidden','true');
+  btn.setAttribute('role','combobox');
+  btn.setAttribute('aria-haspopup','listbox');
+  btn.setAttribute('aria-controls',menu.id);
+  btn.setAttribute('aria-expanded','false');
+  btn.setAttribute('aria-describedby',sel.id + '-value');
+  menu.setAttribute('aria-label',btn.getAttribute('aria-label'));
   w.append(btn, menu);
   let hl = -1;
   const opts = () => [...sel.options];
-  const sync = () => { const o = sel.options[sel.selectedIndex]; btn.innerHTML = `<span class="lbl">${o ? optInner(o) : ''}</span>${CHEV}`; requestAnimationFrame(() => { const l = btn.firstElementChild; if (l) l.classList.toggle('ov', l.scrollWidth > l.clientWidth + 1); }); };
+  const sync = () => { const o = sel.options[sel.selectedIndex]; btn.innerHTML = `<span class="lbl" id="${sel.id}-value">${o ? optInner(o) : ''}</span>${CHEV}`; requestAnimationFrame(() => { const l = btn.firstElementChild; if (l) l.classList.toggle('ov', l.scrollWidth > l.clientWidth + 1); }); };
   const build = () => {
     let html = '';
     [...sel.children].forEach(n => {
-      const one = o => `<div class="fsel-opt${o.selected ? ' sel' : ''}" data-i="${o.index}" role="option" aria-selected="${o.selected}">${optInner(o)}${CHECK}</div>`;
+      const one = o => `<div class="fsel-opt${o.selected ? ' sel' : ''}" id="${menu.id}-${o.index}" data-i="${o.index}" role="option" aria-selected="${o.selected}">${optInner(o)}${CHECK}</div>`;
       if (n.tagName === 'OPTGROUP') html += `<div class="fsel-grp">${esc(n.label)}</div>` + [...n.children].map(one).join('');
       else html += one(n);
     });
     menu.innerHTML = html;
   };
   const setHl = i => { hl = i; menu.querySelectorAll('.fsel-opt').forEach(el => el.classList.toggle('hl', +el.dataset.i === i));
-    const el = menu.querySelector(`.fsel-opt[data-i="${i}"]`); el && el.scrollIntoView({block:'nearest'}); };
-  const open = () => { document.querySelectorAll('.fsel.open').forEach(x => x !== w && x._close()); build(); w.classList.add('open'); setHl(sel.selectedIndex);
+    const el = menu.querySelector(`.fsel-opt[data-i="${i}"]`);
+    if (!el) return;
+    btn.setAttribute('aria-activedescendant',el.id);
+    const top = el.offsetTop, bottom = top + el.offsetHeight;
+    if (top < menu.scrollTop) menu.scrollTop = top;
+    else if (bottom > menu.scrollTop + menu.clientHeight) menu.scrollTop = bottom - menu.clientHeight;
+  };
+  const open = () => { document.querySelectorAll('.fsel.open').forEach(x => x !== w && x._close()); build(); w.classList.add('open'); menu.removeAttribute('aria-hidden'); btn.setAttribute('aria-expanded','true'); setHl(sel.selectedIndex);
     const el = menu.querySelector('.sel'); if (el) menu.scrollTop = el.offsetTop - menu.clientHeight / 2 + el.offsetHeight / 2; };
-  const close = () => w.classList.remove('open'); w._close = close;
+  const close = () => {
+    if (!w.classList.contains('open')) return;
+    w.classList.remove('open');
+    menu.setAttribute('aria-hidden','true');
+    btn.setAttribute('aria-expanded','false');
+    btn.removeAttribute('aria-activedescendant');
+  };
+  w._close = close;
   const pick = i => { close(); btn.focus(); if (i !== sel.selectedIndex){ sel.selectedIndex = i; sync(); sel.dispatchEvent(new Event('change', {bubbles:true})); } };
   btn.addEventListener('click', () => w.classList.contains('open') ? close() : open());
   menu.addEventListener('click', e => { const o = e.target.closest('.fsel-opt'); if (o) pick(+o.dataset.i); });
@@ -99,6 +120,7 @@ function enhanceSelect(sel){
     const isOpen = w.classList.contains('open'), n = opts().length;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); if (!isOpen) return open();
       setHl(Math.max(0, Math.min(n - 1, hl + (e.key === 'ArrowDown' ? 1 : -1)))); }
+    else if (isOpen && ['Home','End'].includes(e.key)){ e.preventDefault(); setHl(e.key === 'Home' ? 0 : n - 1); }
     else if ((e.key === 'Enter' || e.key === ' ') && isOpen){ e.preventDefault(); if (hl >= 0) pick(hl); }
     else if (e.key === 'Escape' && isOpen){ e.preventDefault(); close(); }
     else if (e.key === 'Tab') close();
@@ -181,8 +203,9 @@ function setMovView(v){
   document.querySelectorAll('#movView button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
   document.querySelectorAll('#tab-movs .mview').forEach(el => el.hidden = el.id !== 'view-' + v);
   $('#btnNewTx').hidden = v === 'rec'; $('#btnNewRec').hidden = v !== 'rec';
+  updateCreationControls();
+  $('#btnSelect').hidden=v!=='list';
   moveViewInd();
-  updateCreationControls();$('#btnSelect').hidden=v!=='list';
   if (v === 'cal') renderCalendar();
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
@@ -725,7 +748,7 @@ function keepFocus(render){
 // Una acción global, contextual y ausente en pantallas de configuración.
 function updateCreationControls(){
  const button=$('#fab'),tab=activeTab(),rec=tab==='movs'&&movView==='rec';
- button.hidden=bothMode||['settings','cats'].includes(tab);
+ button.hidden=bothMode||['settings','cats'].includes(tab)||(tab==='goals'&&!$('#btnNewGoal').hidden);
  button.title=tab==='goals'?'Nueva meta':rec?'Nuevo recurrente':'Nuevo movimiento';button.setAttribute('aria-label',button.title);
  button.querySelector('.fab-label').textContent=button.title;
  $('#btnNewTx').hidden=true;$('#btnNewRec').hidden=true;

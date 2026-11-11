@@ -7,6 +7,7 @@ let dirty = new Set(Object.keys(VIEWS));
 const activeTab = () => { const t = document.querySelector('.tab.active'); return t ? t.id.slice(4) : 'dashboard'; };
 function enhanceAccessibility(){
   syncSelectionAccessibility();
+  describeHelp();
   for(const [id,name] of [['budExpense','Presupuesto de gastos'],['budIncome','Presupuesto de ingresos']]){
     const region=document.getElementById(id);if(region){region.tabIndex=0;region.setAttribute('role','region');region.setAttribute('aria-label',name+'; desplaza horizontalmente si es necesario');}
   }
@@ -41,6 +42,39 @@ $('#tab-cats').addEventListener('keydown',e=>{
   const a=state.categories.indexOf(c),b=state.categories.indexOf(next);[state.categories[a],state.categories[b]]=[state.categories[b],state.categories[a]];save();renderCats();
   [...document.querySelectorAll('.cat-row')].find(r=>r.dataset.id===id)?.querySelector('.grip').focus();toast('Categoría reordenada');
 });
+let chartScript = null, chartLoadFailed = false;
+function loadChartFor(container){
+  if (typeof Chart !== 'undefined') return true;
+  if (!container.closest('.tab.active')) return false;
+  container.innerHTML = chartLoadFailed
+    ? '<div class="chart-status"><span>No se pudo cargar el gráfico.</span><button type="button" class="btn sm" data-retry-chart>Reintentar</button></div>'
+    : '<div class="chart-status" role="status">Cargando gráfico…</div>';
+  if (chartLoadFailed) return false;
+  if (!chartScript){
+    const script = document.createElement('script');
+    chartScript = script;
+    script.src = './vendor/chart.umd.js';
+    script.dataset.optionalChart = '';
+    function finish(){
+      chartLoadFailed = typeof Chart === 'undefined';
+      if (chartLoadFailed){ script.remove(); chartScript = null; }
+      const current = activeTab(), chartViews = ['dashboard','analysis','both'];
+      chartViews.forEach(view => dirty.add(view));
+      if (chartViews.includes(current)) renderView(current);
+    }
+    script.addEventListener('load', finish, {once:true});
+    script.addEventListener('error', finish, {once:true});
+    document.head.append(script);
+  }
+  return false;
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-retry-chart]')) return;
+  chartLoadFailed = false;
+  const view = activeTab();
+  dirty.add(view);
+  renderView(view);
+});
 function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n); VIEWS[n](); enhanceAccessibility(); requestAnimationFrame(fitMetricValues); }
 function renderAll(){
   if (lastRenderMonth !== currentMonth){ resetBars(); lastRenderMonth = currentMonth; }
@@ -60,6 +94,13 @@ matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>{
  renderAll();
 });
 setupSettings();
+$('#firstConnect').onclick = () => {
+  showTab('settings');
+  openSettingsSection('data', true);
+  const field = $(FROM_SCRIPT ? '#syncToken' : '#syncUrl');
+  field.focus({preventScroll:true});
+  field.scrollIntoView({block:'nearest'});
+};
 renderAll();
 updateSyncInfo();
 // App instalable (GitHub Pages u otro sitio https): funciona sin conexión y toma la versión nueva al abrir con internet
@@ -90,9 +131,6 @@ if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection)r
     if (!state.settings.onboarded && state.transactions.length){ state.settings.onboarded = true; if (!state.settings.lastClose) state.settings.lastClose = thisMonth(); save(); }
     maybeMonthClose(); }, 900); });
 },0));
-if (FROM_SCRIPT && !sync.token) setTimeout(() => { showTab('settings'); setTimeout(() => { $('#syncToken').scrollIntoView({block:'center'}); $('#syncToken').focus({preventScroll:true}); }, 350); toast('Escribe tu clave (TOKEN) y toca Conectar para traer tus datos', {icon:'cloud'}); }, 400);
-// Abierta en un sitio nuevo (p. ej. GitHub Pages) sin datos ni conexión: lleva directo a conectar la hoja
-else if (!FROM_SCRIPT && !sync.url && !state.transactions.length && location.protocol !== 'file:') setTimeout(() => { showTab('settings'); setTimeout(() => { $('#syncUrl').scrollIntoView({block:'center'}); $('#syncUrl').focus({preventScroll:true}); }, 350); toast('Pega la URL /exec de tu Apps Script y tu clave para traer tus datos', {icon:'cloud'}); }, 400);
 // Paso único a colores pastel (categorías y metas), con opción de deshacer
 function migratePastel(){
   if (state.settings.pastelDone) return;

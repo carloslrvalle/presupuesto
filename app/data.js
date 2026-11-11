@@ -27,6 +27,7 @@ function importBackup(d){
   }
   schedulePush();return true;
 }
+$('#btnImport').onclick = () => $('#fileImport').click();
 $('#fileImport').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   const r = new FileReader();

@@ -158,6 +158,8 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
 }
 
 function renderDashboard(){
+  $('#firstMovement').hidden = state.transactions.length > 0 || syncOn();
+  $('#firstConnect').hidden = syncOn();
   const cy=cycleView();ensureCyclePlan(currentMonth);renderPeriodControls();
   const m = currentMonth, txs = planTx(m);
   const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense'));
@@ -286,12 +288,6 @@ function sliceCols(data, bump){
 }
 
 function renderCharts(){
-  if (typeof Chart === 'undefined'){
-    ['#donutWrap','#barsWrap'].forEach(s => $(s).innerHTML = '<div class="empty">No se pudieron cargar los gráficos.</div>');
-    return;
-  }
-  const grid = cssVar('--border'); chartTheme();
-
   // Distribución horizontal: cada categoría se lee una vez, sin repetir el total del indicador.
   const m = currentMonth;
   let data = catsOf('expense').map(c => ({c, v: planReal(m,c.id)})).filter(x => x.v > 0).sort((a,b) => b.v - a.v);
@@ -330,11 +326,13 @@ function renderCharts(){
   const morphB = chartMorph && chBars && chBars.canvas && chBars.canvas.isConnected && (incs.some(Boolean) || exps.some(Boolean));
   if (chBars && !morphB){ chBars.destroy(); chBars = null; }
   if (!incs.some(Boolean) && !exps.some(Boolean)){ bw.innerHTML = emptyBox('chart-column', 'Aún no hay movimientos en los últimos 6 meses.', 'tx', 'Nuevo movimiento'); return; }
+  if (!loadChartFor(bw)) return;
+  const grid = cssVar('--border'); chartTheme();
   if (!bw.querySelector('canvas')) bw.innerHTML = '<canvas id="chBars"></canvas>';
   const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? planSavings(mm).saved : null), cur = months.length - 1, ink = cssVar('--k-violet');
   const nul = arr => arr.map((v, i) => has(i) ? v : null);
   const barBg = v => c => vGrad(cssVar(v), c.dataIndex === c.chart.data.labels.length-1 || c.active ? 'ff' : 'b3', c.dataIndex === c.chart.data.labels.length-1 || c.active ? '66' : '3a')(c);
-  if (morphB){ chBars.data.labels = months.map(mm=>innerWidth<=700?monthAbbr(mm):cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm)); chBars.data.datasets[0].data = nul(incs); chBars.data.datasets[1].data = nul(exps); chBars.update(); return; }
+  if (morphB){ chBars.data.labels = months.map(mm=>innerWidth<=700?monthAbbr(mm):cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm)); chBars.data.datasets[0].data = nul(incs); chBars.data.datasets[1].data = nul(exps); chBars.update(reduceMotion()?'none':undefined); return; }
   chBars = new Chart($('#chBars'), {
     plugins:[legendGap],
     data:{labels:months.map(mm=>innerWidth<=700?monthAbbr(mm):cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm)), datasets:[

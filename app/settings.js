@@ -136,7 +136,7 @@ function setupSettings(){
  new MutationObserver(()=>renderSettingsOverview()).observe($('#themeGrid'),{childList:true});
  new MutationObserver(()=>renderSettingsOverview()).observe($('#fontGrid'),{childList:true});
  // La primera conexión debe mantener visibles los campos que reciben el foco.
- if(!settingsConnectionReady()){configDetails.setExpanded(true,false);if(!state.transactions.length&&!state.goals.length)openSettingsSection('data');}
+ if(!settingsConnectionReady())configDetails.setExpanded(true,false);
 }
 let settingsVerifiedConnection=syncOn()&&sync.lastSync?sync.url+'|'+sync.token:'';
 function settingsConnectionReady(){return syncOn()&&settingsVerifiedConnection===sync.url+'|'+sync.token;}

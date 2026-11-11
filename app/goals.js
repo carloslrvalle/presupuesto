@@ -35,9 +35,11 @@ function goalDone(g){ return Number(g.target)>0&&Math.round(goalSaved(g)*100)>=M
 const monthsBetween = (a, b) => { const [y1,m1] = a.split('-').map(Number), [y2,m2] = b.split('-').map(Number); return (y2 - y1) * 12 + (m2 - m1); };
 // Categoría de gasto de ahorro (por nombre o ícono): sus gastos pueden ir a una meta
 function renderGoals(){
-  const grid = $('#goalsGrid');
+  const grid = $('#goalsGrid'), newGoal = $('#btnNewGoal');
+  newGoal.hidden = true;
   if (!myGoals().length){
     grid.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty" style="height:160px;gap:10px"><div class="empty-ic">${ic('piggy-bank')}</div><div>Crea tu primera meta: fondo de emergencia, viaje, laptop…</div><button class="btn primary" data-goal-new>${ic('plus')} Nueva meta</button></div></div>`;
+    if (activeTab() === 'goals') updateCreationControls();
     return;
   }
   const tm = thisMonth(), sorted = goalsSorted(), doneOpen = grid.querySelector('.goal-done-group')?.open;
@@ -80,6 +82,8 @@ function renderGoals(){
     </div>`;
   });
   const activeCount = sorted.findIndex(goalDone), split = activeCount < 0 ? sorted.length : activeCount;
+  newGoal.hidden = split !== 0;
+  if (activeTab() === 'goals') updateCreationControls();
   grid.innerHTML = cards.slice(0, split).join('') + (split < cards.length ? `<details class="goal-done-group"${doneOpen?' open':''}><summary>${ic('check')} Metas logradas <span>${cards.length-split}</span>${ic('chevron-down')}</summary><div class="goals-grid">${cards.slice(split).join('')}</div></details>` : '');
   animateBars(grid);
 }

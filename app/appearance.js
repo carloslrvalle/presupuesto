@@ -31,7 +31,7 @@ function roleOf(c){
 // R(): un color por ROL → home, food, transport, bills, health, fun, shop, edu, debt, save, other, income, bonus, pet, travel, tech
 // inc / exp / sav: colores del tema para gráficos, barras de ingresos/alertas y calendario
 const R = (...c) => c;
-// Cuatro temas desde 1.10.72. Vercel es la base: también se usa cuando no hay tema elegido.
+// Seis temas desde 1.10.86. Vercel es la base: también se usa cuando no hay tema elegido.
 const THEMES = [
   // Tema Vercel (shadcn/ui, 21st.dev): blanco y negro neutros que siguen el modo del sistema; azul ingresos, rojo gastos, ámbar ahorro.
   {id:'vercel', name:'Vercel', desc:'Blanco y negro preciso, sigue el modo del sistema', accent:'#000000',
@@ -43,7 +43,229 @@ const THEMES = [
   {id:'nordic', name:'Nórdico', desc:'Escarcha y aurora boreal', accent:'#5e81ac', inc:'#a3be8c', exp:'#bf616a', sav:'#b48ead',
    c:R('#5e81ac','#d08770','#81a1c1','#ebcb8b','#a3be8c','#b48ead','#c5727a','#88c0d0','#bf616a','#8fbcbb','#9aa5b8','#a3be8c','#ebcb8b','#c79a7a','#7fb0c7','#b0bccf')},
   {id:'pastel', name:'Pastel', desc:'Suave y luminoso, ideal para modo oscuro', accent:'#8b7fd6', inc:'#a6e3a1', exp:'#f38ba8', sav:'#cba6f7',
-   c:R('#89b4fa','#fab387','#74c7ec','#f9e2af','#89dceb','#cba6f7','#f5c2e7','#b4befe','#f38ba8','#94e2d5','#f2cdcd','#a6e3a1','#f9e2af','#eba0ac','#a6e3a1','#f5e0dc')}];
+   c:R('#89b4fa','#fab387','#74c7ec','#f9e2af','#89dceb','#cba6f7','#f5c2e7','#b4befe','#f38ba8','#94e2d5','#f2cdcd','#a6e3a1','#f9e2af','#eba0ac','#a6e3a1','#f5e0dc')},
+  {
+    "id": "clay",
+    "name": "Arcilla",
+    "desc": "Crema y terracota, sigue el modo del sistema",
+    "accent": "#c96442",
+    "inc": "#9c87f5",
+    "exp": "#b05730",
+    "sav": "#b4552d",
+    "palette": {
+      "light": {
+        "card": "#faf9f5",
+        "ring": "#c96442",
+        "input": "#b4b2a7",
+        "muted": "#ede9de",
+        "accent": "#e9e6dc",
+        "border": "#dad9d4",
+        "radius": "0.5rem",
+        "chart-1": "#b05730",
+        "chart-2": "#9c87f5",
+        "chart-3": "#ded8c4",
+        "chart-4": "#dbd3f0",
+        "chart-5": "#b4552d",
+        "popover": "#ffffff",
+        "primary": "#c96442",
+        "sidebar": "#f5f4ee",
+        "secondary": "#e9e6dc",
+        "background": "#faf9f5",
+        "foreground": "#3d3929",
+        "destructive": "#141413",
+        "sidebar-ring": "#b5b5b5",
+        "sidebar-accent": "#e9e6dc",
+        "sidebar-border": "#ebebeb",
+        "card-foreground": "#141413",
+        "sidebar-primary": "#c96442",
+        "muted-foreground": "#83827d",
+        "accent-foreground": "#28261b",
+        "popover-foreground": "#28261b",
+        "primary-foreground": "#ffffff",
+        "sidebar-foreground": "#3d3d3a",
+        "secondary-foreground": "#535146",
+        "destructive-foreground": "#ffffff",
+        "sidebar-accent-foreground": "#343434",
+        "sidebar-primary-foreground": "#fbfbfb"
+      },
+      "dark": {
+        "card": "#262624",
+        "ring": "#d97757",
+        "input": "#52514a",
+        "muted": "#1b1b19",
+        "accent": "#1a1915",
+        "border": "#3e3e38",
+        "radius": "0.5rem",
+        "chart-1": "#b05730",
+        "chart-2": "#9c87f5",
+        "chart-3": "#1a1915",
+        "chart-4": "#2f2b48",
+        "chart-5": "#b4552d",
+        "popover": "#30302e",
+        "primary": "#d97757",
+        "sidebar": "#1f1e1d",
+        "secondary": "#faf9f5",
+        "background": "#262624",
+        "foreground": "#c3c0b6",
+        "destructive": "#ef4444",
+        "sidebar-ring": "#b5b5b5",
+        "sidebar-accent": "#0f0f0e",
+        "sidebar-border": "#ebebeb",
+        "card-foreground": "#faf9f5",
+        "sidebar-primary": "#343434",
+        "muted-foreground": "#b7b5a9",
+        "accent-foreground": "#f5f4ee",
+        "popover-foreground": "#e5e5e2",
+        "primary-foreground": "#ffffff",
+        "sidebar-foreground": "#c3c0b6",
+        "secondary-foreground": "#30302e",
+        "destructive-foreground": "#ffffff",
+        "sidebar-accent-foreground": "#c3c0b6",
+        "sidebar-primary-foreground": "#fbfbfb"
+      }
+    },
+    "c": [
+      "#b05730",
+      "#9c87f5",
+      "#ded8c4",
+      "#dbd3f0",
+      "#b4552d",
+      "#b05730",
+      "#9c87f5",
+      "#ded8c4",
+      "#dbd3f0",
+      "#b4552d",
+      "#b05730",
+      "#9c87f5",
+      "#ded8c4",
+      "#dbd3f0",
+      "#b4552d",
+      "#b05730"
+    ]
+  },
+  {
+    "id": "indigo",
+    "name": "Índigo",
+    "desc": "Pizarra e Índigo, sigue el modo del sistema",
+    "accent": "#6366f1",
+    "inc": "#4f46e5",
+    "exp": "#6366f1",
+    "sav": "#312e81",
+    "palette": {
+      "light": {
+        "card": "#ffffff",
+        "ring": "#6366f1",
+        "input": "#d1d5db",
+        "muted": "#f3f4f6",
+        "accent": "#e0e7ff",
+        "border": "#d1d5db",
+        "radius": "0.5rem",
+        "chart-1": "#6366f1",
+        "chart-2": "#4f46e5",
+        "chart-3": "#4338ca",
+        "chart-4": "#3730a3",
+        "chart-5": "#312e81",
+        "popover": "#ffffff",
+        "primary": "#6366f1",
+        "sidebar": "#f3f4f6",
+        "font-mono": "JetBrains Mono, monospace",
+        "font-sans": "Inter, sans-serif",
+        "secondary": "#e5e7eb",
+        "background": "#f8fafc",
+        "font-serif": "Merriweather, serif",
+        "foreground": "#1e293b",
+        "destructive": "#ef4444",
+        "shadow-blur": "8px",
+        "shadow-color": "hsl(0 0% 0%)",
+        "sidebar-ring": "#6366f1",
+        "shadow-spread": "-1px",
+        "shadow-opacity": "0.1",
+        "sidebar-accent": "#e0e7ff",
+        "sidebar-border": "#d1d5db",
+        "card-foreground": "#1e293b",
+        "shadow-offset-x": "0px",
+        "shadow-offset-y": "4px",
+        "sidebar-primary": "#6366f1",
+        "muted-foreground": "#6b7280",
+        "accent-foreground": "#374151",
+        "popover-foreground": "#1e293b",
+        "primary-foreground": "#ffffff",
+        "sidebar-foreground": "#1e293b",
+        "secondary-foreground": "#374151",
+        "destructive-foreground": "#ffffff",
+        "sidebar-accent-foreground": "#374151",
+        "sidebar-primary-foreground": "#ffffff"
+      },
+      "dark": {
+        "card": "#1e293b",
+        "ring": "#818cf8",
+        "input": "#4b5563",
+        "muted": "#152032",
+        "accent": "#374151",
+        "border": "#4b5563",
+        "radius": "0.5rem",
+        "chart-1": "#818cf8",
+        "chart-2": "#6366f1",
+        "chart-3": "#4f46e5",
+        "chart-4": "#4338ca",
+        "chart-5": "#3730a3",
+        "popover": "#1e293b",
+        "primary": "#818cf8",
+        "sidebar": "#1e293b",
+        "font-mono": "JetBrains Mono, monospace",
+        "font-sans": "Inter, sans-serif",
+        "secondary": "#2d3748",
+        "background": "#0f172a",
+        "font-serif": "Merriweather, serif",
+        "foreground": "#e2e8f0",
+        "destructive": "#ef4444",
+        "shadow-blur": "8px",
+        "shadow-color": "hsl(0 0% 0%)",
+        "sidebar-ring": "#818cf8",
+        "shadow-spread": "-1px",
+        "shadow-opacity": "0.1",
+        "sidebar-accent": "#374151",
+        "sidebar-border": "#4b5563",
+        "card-foreground": "#e2e8f0",
+        "shadow-offset-x": "0px",
+        "shadow-offset-y": "4px",
+        "sidebar-primary": "#818cf8",
+        "muted-foreground": "#9ca3af",
+        "accent-foreground": "#d1d5db",
+        "popover-foreground": "#e2e8f0",
+        "primary-foreground": "#0f172a",
+        "sidebar-foreground": "#e2e8f0",
+        "secondary-foreground": "#d1d5db",
+        "destructive-foreground": "#0f172a",
+        "sidebar-accent-foreground": "#d1d5db",
+        "sidebar-primary-foreground": "#0f172a"
+      }
+    },
+    "c": [
+      "#6366f1",
+      "#4f46e5",
+      "#4338ca",
+      "#3730a3",
+      "#312e81",
+      "#6366f1",
+      "#4f46e5",
+      "#4338ca",
+      "#3730a3",
+      "#312e81",
+      "#6366f1",
+      "#4f46e5",
+      "#4338ca",
+      "#3730a3",
+      "#312e81",
+      "#6366f1"
+    ]
+  }];
+const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
+function themePalette(t, dark = isDarkUI()){ return t.palette?.[dark ? 'dark' : 'light']; }
+function themeUi(t, dark){
+  const p = themePalette(t, dark);
+  return p ? {bg:p.background, surface:p.card, s2:p.muted, border:p.border, text:p.foreground, muted:p['muted-foreground']} : dark ? t.ui : t.uiLight;
+}
 // Temas retirados en 1.10.72: cada elección guardada se lee como el tema vigente más parecido (sin reescribir datos).
 const THEME_REPLACEMENTS = {minimal:'vercel', sage:'vercel', charcoal:'mono', obsidian:'mono', midnight:'mono', dracula:'mono', tokyo:'mono', wine:'mono', nightforest:'mono',
   ocean:'nordic', solar:'nordic', kanagawa:'nordic', everforest:'nordic', forest:'nordic',
@@ -135,8 +357,8 @@ document.addEventListener('click', e => {
 function renderThemes(){
   const el=$('#themeGrid');if(!el)return;const cur=curTheme().id;
   const card=t=>{
-    const dark=t.mode==='dark'||(!t.mode&&isDarkUI()), ui=dark?t.ui:t.uiLight, surface=ui?.surface||(dark?'#101114':'#ffffff');
-    const bg=ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface), cols=themeColors(t);
+    const dark=t.mode==='dark'||(!t.mode&&matchMedia('(prefers-color-scheme: dark)').matches), ui=themeUi(t,dark), surface=ui?.surface||(dark?'#101114':'#ffffff');
+    const bg=ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface,dark), cols=themeColors(t);
     const categories=[0,1,2,3,4].map(i=>fitThemeColor(cols[i],surface,3));
     return `<div class="theme-option"><button type="button" class="theme-card${t.id===cur?' active':''}" data-theme="${t.id}" aria-pressed="${t.id===cur}" title="${esc(t.desc)}">
       <div class="theme-preview" style="--preview-bg:${bg};--preview-surface:${surface};--preview-income:${series.income};--preview-expense:${series.expense};--preview-saving:${series.savings}">
@@ -191,6 +413,7 @@ $('#colorHex').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefau
 const nameEl = $('#appName');
 function applyBrand(){
   const mode = curTheme().mode;
+  document.documentElement.dataset.theme = curTheme().id;
   if (mode) document.documentElement.dataset.mode = mode; else delete document.documentElement.dataset.mode;
   const n = state.settings.appName || 'Presupuesto';
   if (document.activeElement !== nameEl) nameEl.textContent = n;
@@ -212,6 +435,10 @@ function applyBrowserChrome(){
 // Tono de acento (pestaña activa, desplegables) tomado del color del logo
 // Variables de color del tema activo (gráficos, barras de ingresos y alertas, calendario)
 function colorContrast(a,b){ const x=hexLum(a), y=hexLum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
+function themeForeground(color, background){
+  if (colorContrast(color,background) >= 4.5) return color;
+  return colorContrast('#000000',background) > colorContrast('#ffffff',background) ? '#000000' : '#ffffff';
+}
 function fitThemeColor(color, background, minimum=3){
   const surfaces=Array.isArray(background)?background:[background];
   const target=hexLum(surfaces[0])<.25?'#ffffff':'#111113';
@@ -221,14 +448,28 @@ function fitThemeColor(color, background, minimum=3){
   }
   return target;
 }
-function themeSeries(t, surface){
-  return {income:fitThemeColor(t?.inc || '#329477',surface), expense:fitThemeColor(t?.exp || '#d7657b',surface), savings:fitThemeColor(t?.sav || '#8b7aca',surface)};
+function themeSeries(t, surface, dark = isDarkUI()){
+  const p = themePalette(t, dark);
+  return {income:fitThemeColor(p?.['chart-2'] || t?.inc || '#329477',surface), expense:fitThemeColor(p?.['chart-1'] || t?.exp || '#d7657b',surface), savings:fitThemeColor(p?.['chart-5'] || t?.sav || '#8b7aca',surface)};
 }
 function applyThemeVars(){
   const r=document.documentElement.style, t=curTheme(), dark=isDarkUI();
   // Superficies propias del tema: ui en oscuro, uiLight en claro; texto y texto secundario son opcionales.
-  const ui=dark?t?.ui:t?.uiLight,uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
+  const ui=themeUi(t,dark),uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
   for(const [key,field] of uiMap){if(ui?.[field])r.setProperty(key,ui[field]);else r.removeProperty(key);}
+  const palette = themePalette(t, dark);
+  for (const key of PALETTE_KEYS){
+    if (palette?.[key]) r.setProperty('--color-'+key, palette[key]);
+    else r.removeProperty('--color-'+key);
+  }
+  for (const key of ['--ring','--radius','--shadow-sm','--destructive-ink']) r.removeProperty(key);
+  if (palette){
+    r.setProperty('--ring', palette.ring);
+    r.setProperty('--destructive-ink',themeForeground(palette['destructive-foreground'],palette.destructive));
+    r.setProperty('--radius', palette.radius);
+    r.setProperty('--muted',fitThemeColor(palette['muted-foreground'],[palette.background,palette.card,palette.muted,palette.popover],4.65));
+    if (palette['shadow-blur']) r.setProperty('--shadow-sm', palette['shadow-offset-x']+' '+palette['shadow-offset-y']+' '+palette['shadow-blur']+' '+palette['shadow-spread']+' rgb(0 0 0 / '+palette['shadow-opacity']+')');
+  }
   const surface=cssVar('--surface'), series=themeSeries(t,surface);
   for(const [key,role] of [['--income-chart','income'],['--expense-chart','expense'],['--k-violet','savings']])r.setProperty(key,series[role]);
   const textSurfaces=[surface,cssVar('--surface-2'),cssVar('--bg')];
@@ -243,6 +484,14 @@ function applyThemeVars(){
 
 function applyAccent(){
   const r = document.documentElement.style, c = state.settings.appColor, L = hexLum(c), dark = isDarkUI();
+  const palette = themePalette(curTheme());
+  if (palette && c === curTheme().accent){
+    const fill = palette.primary, surfaces = [palette.background,palette.card,palette.muted,palette.accent];
+    const ink = fitThemeColor(fill, surfaces, 4.65);
+    const foreground = themeForeground(palette['primary-foreground'],fill);
+    for (const [key,value] of Object.entries({'--primary':ink,'--primary-fill':fill,'--primary-soft':palette.accent,'--on-primary':foreground,'--accent':fill,'--accent-bg':palette.accent,'--accent-ink':ink})) r.setProperty(key,value);
+    return;
+  }
   const keys = ['--primary','--primary-soft','--primary-fill','--on-primary','--accent','--accent-bg','--accent-ink'];
   if (!c || !/^#[0-9a-f]{6}$/i.test(c)){ keys.forEach(k => r.removeProperty(k)); return; }
   if (L > .9 || L < .03){ // blanco o negro (tema Minimalista): acento neutro que se invierte con el modo
@@ -306,7 +555,7 @@ function dpClose(restoreFocus=false){
   anchor.classList.remove('open'); dpS = null;
   dpEl.classList.remove('show');
   if(restoreFocus&&anchor.isConnected)anchor.focus({preventScroll:true});
-  dpEl._hideTimer=setTimeout(() => { if (!dpS && dpEl.hidePopover){ try{ dpEl.hidePopover(); }catch(e){} } }, reduceMotion()?0:MOTION.panel);
+  dpEl._hideTimer=setTimeout(() => { if (!dpS && dpEl.hidePopover){ try{ dpEl.hidePopover(); }catch(e){} } }, reduceMotion()?0:MOTION.popup);
 }
 function dpPlace(){
   if (!dpS) return;
@@ -321,6 +570,7 @@ function dpPlace(){
   dpEl.classList.toggle('up', up);
   dpEl.style.left = left/zoom + 'px';
   dpEl.style.top = top/zoom + 'px';
+  dpEl.style.transformOrigin = Math.max(0,Math.min(w,r.left+r.width/2-left))/zoom+'px '+(up?'bottom':'top');
 }
 function dpRender(){
   const S = dpS, now = todayISO(), cur = S.value || '';

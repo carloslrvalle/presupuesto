@@ -147,7 +147,7 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
  const incomeFoot=$('#kIncomeFoot');
  incomeFoot.innerHTML=bInc?`${Math.round(inc/bInc*100)}% de lo esperado`:pInc?`${fmt(pInc)} programados`:'Sin expectativa de ingresos';
  incomeFoot.title=pp.length?pp.map(x=>`${x.c.name}: ${payRange(x.a,x.b,m)}`).join('\n'):pInc?`${fmt(pInc)} con fecha futura`:'';
- $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso':'Disponible',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'');
+ $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso':'Disponible',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'')+(sv.sep>.005?row('Incluye ahorro',fmt(sv.sep)):'');
  const expenseFoot=$('#kExpenseFoot');expenseFoot.innerHTML=!bExp?'Define un presupuesto':budgetStatus(exp,bExp)==='complete'?'Presupuesto completo':expenseRemaining<0?'Presupuesto superado':pace||pExp?pace||`${fmt(pExp)} programados`:`${Math.round(exp/bExp*100)}% del presupuesto usado`;
  $('#balanceParts').innerHTML=row('Saldo anterior',fmt(cash.previous))+row(cycleView()?'Resultado del ciclo':'Resultado del mes',fmt(cash.result),cash.result<0?'neg':'');
  $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';

@@ -1047,8 +1047,8 @@ body.sel-on .toast{bottom:150px}
 .settings-disclosure>summary small{font-weight:400;color:var(--muted);margin-left:auto;font-size:12px;text-align:right}.settings-disclosure>summary small+span{display:none}
 .settings-disclosure-body{padding:0 19px 19px}.settings-disclosure-body>.card{border:0;box-shadow:none;padding:0;margin:0!important;background:transparent}.settings-disclosure-body>.card>h3{display:none}
 .settings-disclosure-body .theme-grid,.settings-disclosure-body .font-grid{margin-top:12px}
-.settings-methods{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.settings-method-chip{display:flex;align-items:center;gap:4px;padding:5px 7px 5px 13px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);max-width:100%}
-.settings-method-chip button{border:0;background:transparent;color:var(--text);font:inherit;cursor:pointer;min-height:34px;overflow-wrap:anywhere}.settings-method-chip button:last-child{width:34px;flex-shrink:0;color:var(--muted)}
+.settings-methods{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.settings-method-chip{display:flex;align-items:center;gap:2px;padding:0 2px 0 13px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);max-width:100%}
+.settings-method-chip button{border:0;background:transparent;color:var(--text);font:inherit;cursor:pointer;min-height:44px;overflow-wrap:anywhere}.settings-method-chip button:last-child{width:44px;flex-shrink:0;color:var(--muted)}
 .settings-method-add{display:flex;gap:8px}.settings-method-add input{width:100%;min-width:0;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font:inherit}.settings-method-help{min-height:20px;color:var(--muted);font-size:12px;margin-top:8px}
 .settings-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:26px;padding-top:18px;border-top:1px solid var(--border)}.settings-footer .app-ver{margin:0;text-align:left}
 .settings-danger>summary{color:var(--expense)}
@@ -2387,8 +2387,8 @@ td.value-tick{animation-name:valueTickCell}
  #txDialog.rec-mode .tx-more{display:none}
 }
 /* Botón flotante al desplazar: se atenúa pero siempre responde al toque. */
-@media(max-width:600px){.fab.fab-scroll-hidden{opacity:.55;transform:scale(.9);pointer-events:auto}}
-@media(max-width:600px) and (prefers-reduced-motion:reduce){.fab.fab-scroll-hidden{transform:none}}
+@media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){.fab.fab-scroll-hidden{opacity:.35;transform:none;pointer-events:auto}}
+@media(prefers-reduced-motion:reduce){.fab.fab-scroll-hidden{transform:none}}
 @media(max-width:700px){
  #txDialog.kb-open #txQuick{display:none}
  html #txDialog.kb-open .dlg-body{gap:10px;padding-top:2px}
@@ -2447,7 +2447,7 @@ dialog{border-radius:var(--radius-lg)}
 
 /* 1.10.74: controles fijos dentro de la zona visible y un solo cuerpo desplazable. */
 @media(max-width:700px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- .fab{width:56px;min-width:56px;height:56px;padding:0;bottom:calc(16px + env(safe-area-inset-bottom) + var(--visible-bottom,0px));right:max(16px,env(safe-area-inset-right));touch-action:manipulation}
+ .fab{width:56px;min-width:56px;height:56px;padding:0;bottom:calc(16px + env(safe-area-inset-bottom) + var(--visible-bottom,0px));right:max(18px,calc(env(safe-area-inset-right,0px) + 12px));touch-action:manipulation}
  .fab-label{display:none}
  .fab:hover,.fab:active{transform:none}
  .fab:active{opacity:.85}
@@ -2707,12 +2707,12 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
   --dock-rows:1;
   --dock-row-size:48px;
   --dock-row-gap:4px;
-  --dock-padding:4px;
+  --dock-padding:6px;
   --dock-border:1px;
   --dock-inset:max(24px,calc(env(safe-area-inset-bottom,0px) + 12px));
   --dock-height:calc(var(--dock-rows)*var(--dock-row-size) + (var(--dock-rows) - 1)*var(--dock-row-gap) + 2*(var(--dock-padding) + var(--dock-border)));
   --dock-bottom:calc(var(--dock-inset) + var(--visible-bottom,0px));
-  --dock-controls-bottom:calc(var(--dock-bottom) + var(--dock-height) + 10px);
+  --dock-controls-bottom:calc(var(--dock-bottom) + var(--dock-height) + 12px);
   --dock-extra:0px;
   scroll-padding-bottom:calc(var(--dock-controls-bottom) + var(--dock-extra));
  }
@@ -2728,7 +2728,7 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
   inset:auto max(18px,calc(env(safe-area-inset-right,0px) + 12px)) var(--dock-bottom) max(18px,calc(env(safe-area-inset-left,0px) + 12px));
   z-index:30;
   width:auto;
-  max-width:392px;
+  max-width:min(392px,calc(100% - 36px));
   margin:0 auto;
   padding:var(--dock-padding);
   display:grid;
@@ -2737,7 +2737,7 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
   gap:var(--dock-row-gap) 0;
   overflow:visible;
   border:var(--dock-border) solid var(--border);
-  border-radius:calc(var(--radius-lg) + 9px);
+  border-radius:calc(var(--radius-lg) + var(--dock-padding) + var(--dock-border));
   background:var(--tab-surface);
   box-shadow:0 6px 20px color-mix(in srgb,var(--text) 11%,transparent);
  }
@@ -2806,6 +2806,8 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
   #tabs button::after{border:1px solid CanvasText}
  }
  @media (max-width:319px){:root{--dock-columns:3;--dock-rows:2}}
+ /* Pantallas muy angostas: menos relleno lateral para conservar 44 px por pestaña. */
+ @media (max-width:360px){#tabs{padding-inline:4px}}
  #fab,.sel-bar{bottom:var(--dock-controls-bottom)}
  body.sel-on #fab{display:none}
  .sel-bar{width:calc(100% - 24px);max-width:440px;justify-content:space-between}
@@ -2838,3 +2840,25 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
  #txDialog #txQuick{order:1}
  #txDialog.kb-open #txQuick{display:none}
 }
+
+/* Escritorio: el botón de alta y Volver arriba se alinean con el borde derecho del contenido, no con la esquina de la ventana. */
+@media (min-width:701px){
+ :root{--float-right:max(var(--page-gutter),calc((100% - var(--content-width)) / 2))}
+ .fab{right:var(--float-right);bottom:24px}
+ .to-top{right:var(--float-right);bottom:96px}
+}
+
+/* Teléfono: el nombre del perfil activo queda visible y el estado de guardado se distingue por color (pendiente en ámbar, error en rojo). */
+@media (max-width:700px){
+ .topbar .prof-chip{gap:6px;padding-inline:4px 8px}
+ .topbar .prof-chip .prof-nm{display:block;max-width:6.5em;font-size:13px;font-weight:600;color:var(--text)}
+ .sync-badge.pending{color:var(--warn)}
+}
+/* Hasta 360 px el título necesita el espacio: el perfil se reconoce por su color. */
+@media (max-width:360px){.topbar .prof-chip .prof-nm{display:none}}
+
+/* Táctil: mínimo de 44 px en acciones de indicadores, tipo de movimiento y Frecuentes. */
+@media (max-width:700px),(pointer:coarse){
+ .metric-action,#txSeg button,.quick-toggle{min-height:44px}
+}
+

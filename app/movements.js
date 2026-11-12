@@ -531,8 +531,12 @@ function setMode(){
 function quickPicks(type){
   const from = shiftMonth(thisMonth(), -3) + '-01', seen = {};
   state.transactions.filter(t => t.type === type && t.date >= from && !t.recId && !t.goalId).forEach(t => {
-    const k = [t.catId, (t.desc || '').toLowerCase(), t.amount,t.method||''].join('|'); (seen[k] = seen[k] || {t, n:0}).n++; });
-  return Object.values(seen).filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date)).slice(0, 6).map(x => x.t);
+    // Un mismo gasto pagado con métodos distintos es una sola sugerencia; usa el método más frecuente (y el más reciente si empatan).
+    const k = [t.catId, (t.desc || '').toLowerCase(), t.amount].join('|'), g = seen[k] = seen[k] || {n:0, last:'', by:{}}, m = t.method || '';
+    g.n++; if (t.date > g.last) g.last = t.date;
+    const b = g.by[m] = g.by[m] || {t, n:0}; b.n++; if (t.date > b.t.date) b.t = t; });
+  return Object.values(seen).filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.last.localeCompare(a.last)).slice(0, 6)
+    .map(x => Object.values(x.by).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date))[0].t);
 }
 let quickOK = false, quickExpanded = false;
 function renderQuick(){
@@ -648,6 +652,11 @@ function delTx(id){
   }
   state.transactions = state.transactions.filter(x => x.id !== id);
 }
+// Mensajes de validación del monto en español, sin depender del idioma del navegador.
+$('#fAmount').addEventListener('invalid', e => { const v = e.target.validity; e.target.setCustomValidity(v.valueMissing ? 'Ingresa el monto.' : v.badInput ? 'Ingresa un número válido.' : v.rangeUnderflow ? 'El monto debe ser mayor que 0.' : v.stepMismatch ? 'Usa como máximo 2 decimales.' : ''); });
+// El mensaje propio se limpia antes de cada validación (clic o Enter sobre Guardar) para no bloquear un valor ya corregido.
+$('#fAmount').addEventListener('input', e => e.target.setCustomValidity(''));
+$('#txForm').addEventListener('click', e => { if (e.target.closest('[type=submit],button:not([type])')) $('#fAmount').setCustomValidity(''); }, true);
 $('#txForm').addEventListener('submit', async e => {
   e.preventDefault();
   if(localTabChanged)return toast('⚠️ Recarga para incorporar los cambios de otra pestaña.');
@@ -713,6 +722,19 @@ $('#txDelete').onclick = async () => {
 };
 $('#fab').onclick = () => activeTab()==='goals'?openGoal():(activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {})); // el + respeta el día seleccionado en Calendario
 $('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
+// En teléfono el botón se atenúa mientras se desplaza la página y vuelve 450 ms después; siempre recibe toques.
+const fabDock=matchMedia('(max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
+let fabScrollTimer,fabTouchActive=false;
+function showFloatingNew(){clearTimeout(fabScrollTimer);$('#fab').classList.remove('fab-scroll-hidden');}
+function fadeFloatingNewOnScroll(){
+  const button=$('#fab');if(!fabDock.matches||button.hidden||txDialog.open||button.matches(':focus-visible'))return;
+  button.classList.add('fab-scroll-hidden');clearTimeout(fabScrollTimer);
+  if(!fabTouchActive)fabScrollTimer=setTimeout(showFloatingNew,450);
+}
+document.addEventListener('touchstart',()=>{fabTouchActive=true;},{passive:true});
+for(const type of ['touchend','touchcancel'])document.addEventListener(type,()=>{fabTouchActive=false;if($('#fab').classList.contains('fab-scroll-hidden')){clearTimeout(fabScrollTimer);fabScrollTimer=setTimeout(showFloatingNew,450);}},{passive:true});
+window.addEventListener('scroll',fadeFloatingNewOnScroll,{passive:true});
+fabDock.addEventListener('change',showFloatingNew);
 const txPhone=matchMedia('(max-width:700px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
 function showTxDialog(preferredFocus){
  resizeTxViewport();

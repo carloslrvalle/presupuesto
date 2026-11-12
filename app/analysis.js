@@ -30,7 +30,7 @@ function projectionExplanation(x){
 
 const ANALYSIS_METRICS={
   income:{label:'Ingresos',title:'Ingresos mes a mes',color:'--income-chart',help:'Ingresos registrados; no incluye cobros programados.'},
-  expense:{label:'Gastos',title:'Gastos mes a mes',color:'--expense-chart',help:'Gastos registrados; no incluye pagos programados.'},
+  expense:{label:'Gastos',title:'Gastos mes a mes',color:'--expense-chart',help:'Gastos registrados, incluido lo que separas en categorías de ahorro; no incluye pagos programados.'},
   savings:{label:'Ahorro',title:'Ahorro mes a mes',color:'--k-violet',help:'Ahorro de cada mes según la forma de ahorro que elegiste.'},
   rate:{label:'Tasa de ahorro',title:'Tasa de ahorro mes a mes',color:'--primary',help:'Ahorro sobre los ingresos del mes. Sin ingresos, no hay tasa.'}
 };

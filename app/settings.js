@@ -107,7 +107,8 @@ function setupSettings(){
   editing=-1;input.value='';$('#settingsMethodSubmit').textContent='Agregar';$('#settingsMethodHelp').textContent='';commit();
  };
  $('#settingsMethods').onclick=e=>{const button=e.target.closest('button');if(!button)return;const i=Number(button.dataset.index);
-  if(button.dataset.action==='remove'){state.settings.methods.splice(i,1);editing=-1;$('#settingsMethodName').value='';$('#settingsMethodSubmit').textContent='Agregar';commit();}
+  if(button.dataset.action==='remove'){const[name]=state.settings.methods.splice(i,1);editing=-1;$('#settingsMethodName').value='';$('#settingsMethodSubmit').textContent='Agregar';commit();
+   toast(`«${name}» eliminado`,{icon:'trash-2',action:'Deshacer',onAction:()=>{const list=state.settings.methods;if(!list.some(m=>m.toLocaleLowerCase()===name.toLocaleLowerCase()))list.splice(Math.min(i,list.length),0,name);commit();}});}
   else{editing=i;$('#settingsMethodName').value=state.settings.methods[i];$('#settingsMethodSubmit').textContent='Guardar';$('#settingsMethodName').focus();$('#settingsMethodHelp').textContent='Editando método de pago.';}
  };
  panel('data').append(connection,backup,danger);

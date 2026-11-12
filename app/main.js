@@ -1,7 +1,7 @@
-// Presupuesto: main.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: main.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Render ---------- */
 let lastRenderMonth = null;
-const VIEWS = {dashboard:() => renderDashboard(), movs:() => { renderMovs(); renderRec(); if (movView === 'cal') renderCalendar(); },
+const VIEWS = {dashboard:() => renderDashboard(), movs:() => { if (movView === 'cal') renderCalendar(); else renderMovs(); },
   budget:() => renderBudget(), goals:() => renderGoals(), analysis:() => renderAnalysis(), cats:() => renderCats(), settings:() => renderProfEdit(), both:() => renderBoth()};
 let dirty = new Set(Object.keys(VIEWS));
 const activeTab = () => { const t = document.querySelector('.tab.active'); return t ? t.id.slice(4) : 'dashboard'; };
@@ -119,13 +119,12 @@ $('#appVer').textContent = `Versión ${window.__APP_VERSION} · ${fmtDateLong(wi
   const release=()=>{if(window.__bootErrs.length||!b.isConnected)return;delete document.documentElement.dataset.booting;b.classList.add('gone');b.setAttribute('aria-hidden','true');if(!reduceMotion()){document.body.classList.add('app-enter');setTimeout(()=>document.body.classList.remove('app-enter'),1200);}if(reduceMotion())b.remove();else{b.addEventListener('transitionend',()=>b.remove(),{once:true});setTimeout(()=>b.remove(),400);}};
   requestAnimationFrame(release);
 } }
-// Primero sincroniza (para no duplicar recurrentes ya creados en otro equipo) y luego registra los automáticos
+// Sincronización inicial del perfil activo
 const startupProfile=activeProfile,startupConnection=sync.url+'|'+sync.token;
 requestAnimationFrame(()=>setTimeout(()=>{
 if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection)return;
-(syncOn() ? startupSync() : Promise.resolve(true)).then(confirmed => {
+(syncOn() ? startupSync() : Promise.resolve(true)).then(() => {
   if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection||localRecovery||localTabChanged||syncConflict())return;
-  if(confirmed&&!bothMode&&!document.querySelector('dialog[open]')){if(runAutoRecurring())renderAll();}else dailyRecurringPending=true;
   pushOtherPending(); setTimeout(migratePastel, 600);
   setTimeout(() => { if (document.querySelector('dialog[open]')) return;
     if (!state.settings.onboarded && state.transactions.length){ state.settings.onboarded = true; if (!state.settings.lastClose) state.settings.lastClose = thisMonth(); save(); }

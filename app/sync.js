@@ -1,4 +1,4 @@
-// Presupuesto: sync.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: sync.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Google Sheets ---------- */
 const SYNC_KEY = 'budgetPlanner.sync';
 let sync = (() => { try { return JSON.parse(localData.readText(SYNC_KEY)) || {}; } catch(e){ return {}; } })();

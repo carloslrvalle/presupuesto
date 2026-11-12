@@ -1,4 +1,4 @@
-// Presupuesto: data.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: data.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Datos ---------- */
 function download(name, content, type){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], {type})); a.download = name; a.click();

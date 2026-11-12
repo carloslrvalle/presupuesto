@@ -1,17 +1,24 @@
-// Presupuesto: dashboard.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: dashboard.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Dashboard ---------- */
 let chDonut, chBars;
 // La evolución toma la altura de la distribución cerrada, incluso al ampliar sus detalles.
+let dashboardChartHeightFrame = 0;
 const dashboardChartObserver = new ResizeObserver(() => {
-  const left = $('#donutWrap').closest('.card'), right = $('#barsWrap').closest('.card');
-  let height = left.getBoundingClientRect().height;
-  if (!height) return;
-  const expanded = left.querySelector('.expense-distribution-more[open]');
-  if (expanded) {
-    const style=getComputedStyle(expanded),closed=expanded.querySelector('summary').getBoundingClientRect().height+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom)+parseFloat(style.borderTopWidth)+parseFloat(style.borderBottomWidth);
-    height-=expanded.getBoundingClientRect().height-closed;
-  }
-  right.style.setProperty('--evolution-card-height',Math.max(390,height)+'px');
+  if (dashboardChartHeightFrame) return;
+  dashboardChartHeightFrame = requestAnimationFrame(() => {
+    dashboardChartHeightFrame = 0;
+    const left = $('#donutWrap').closest('.card'), right = $('#barsWrap').closest('.card');
+    let height = left.offsetHeight;
+    if (!height) return;
+    const expanded = left.querySelector('.expense-distribution-more[open]');
+    if (expanded) {
+      const style = getComputedStyle(expanded);
+      const edges = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+      height -= expanded.offsetHeight - expanded.querySelector('summary').offsetHeight - edges;
+    }
+    const value = Math.max(390, height) + 'px';
+    if (right.style.getPropertyValue('--evolution-card-height') !== value) right.style.setProperty('--evolution-card-height', value);
+  });
 });
 dashboardChartObserver.observe($('#donutWrap').closest('.card'));
 function deltaTxt(cur, prev, type, prevM){
@@ -36,15 +43,14 @@ const harmon = (hex, l) => { const hx = /^#[0-9a-f]{6}$/i.test(hex || '') ? hex 
 const HARM_L = () => isDarkUI() ? [.3, .55] : [.84, .68];
 function barFill(hex, alert){
   const [l1, l2] = HARM_L(), dark = isDarkUI(), k = dark ? .7 : 1;
+  if (alert === 'warn') return 'linear-gradient(90deg,color-mix(in srgb,var(--warn-ink) 45%,var(--surface)),var(--warn-ink))';
   if (curTheme()){
     if (alert === 'over') return 'linear-gradient(90deg,color-mix(in srgb,var(--expense-chart) 75%,var(--surface)),var(--expense-chart))';
-    if (alert === 'warn') return 'linear-gradient(90deg,color-mix(in srgb,var(--expense-chart) 35%,var(--surface)),color-mix(in srgb,var(--expense-chart) 75%,var(--surface)))';
     if (alert === 'income') return 'linear-gradient(90deg,color-mix(in srgb,var(--income-chart) 45%,var(--surface)),var(--income-chart))';
     const c = themeInk(dc(hex));
     return `linear-gradient(90deg,color-mix(in srgb,${c} 45%,var(--surface)),${c})`;
   }
   if (alert === 'over') return `linear-gradient(90deg,${hslHex(352, .72 * k, dark ? .34 : .74)},${hslHex(350, .78 * k, dark ? .56 : .56)})`;
-  if (alert === 'warn') return `linear-gradient(90deg,${hslHex(6, .7 * k, l1)},${hslHex(356, .7 * k, dark ? .6 : .72)})`;
   if (alert === 'income') return `linear-gradient(90deg,${hslHex(150, .45 * k, l1)},${hslHex(152, .5 * k, l2)})`;
   return `linear-gradient(90deg,${harmon(hex, l1)},${harmon(hex, l2)})`;
 }
@@ -85,12 +91,9 @@ function progressRow(c, real, budget, type, prev, prevM){
 }
 const zeroGroup = (items, label) => items.length ? `<details class="zero-group"><summary>${CHEV_D}${items.length} ${label}</summary><div>${items.join('')}</div></details>` : '';
 // Resumen del mes en una frase
-function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
+function renderInsight(m, inc, exp, bExp){
   const box = $('#insight'), el = $('#insightText'), tm = thisMonth(), pm = shiftMonth(m, -1);
-  const recLine = pendN ? `<div class="ins-rec">${ic('repeat')}<span>${pendN === 1 ? 'Tienes 1 recurrente' : `Tienes ${pendN} recurrentes`} por confirmar</span><button class="btn sm" data-ins-rec>Revisar</button></div>` : '';
-  if (!txOfMonthAll(m).length){
-    if (!recLine){ box.hidden = true; return; }
-    el.innerHTML = recLine; box.querySelector('.i-ic').innerHTML = ic('repeat'); box.dataset.tone = 'good'; box.hidden = false; return; }
+  if (!txOfMonthAll(m).length){ box.hidden = true; return; }
   const parts = [], b = x => `<b>${x}</b>`;
   // Mes que aún no empieza: solo el plan, nada de "cerraste"
   if (m > tm){
@@ -98,7 +101,7 @@ function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
     let t = `${mesF} aún no empieza${bExp > 0 ? `: tienes ${b(fmt(bExp))} presupuestado en gastos` : ''}`;
     if (pE) t += `${bExp > 0 ? ' y' : ':'} ${b(fmt(pE))} ya programado`;
     if (pI) t += `. Ingresos programados: ${b(fmt(pI))}`;
-    el.innerHTML = t + '.' + recLine; box.querySelector('.i-ic').innerHTML = ic('calendar'); box.dataset.tone = 'good'; box.hidden = false; return;
+    el.innerHTML = t + '.'; box.querySelector('.i-ic').innerHTML = ic('calendar'); box.dataset.tone = 'good'; box.hidden = false; return;
   }
   // Presupuesto
   if (bExp > 0){
@@ -131,7 +134,6 @@ function renderInsight(m, txs, inc, exp, bExp, pendN = 0){
   box.dataset.tone = over.length || (bExp > 0 && exp > bExp) ? 'bad' : near.length ? 'warn' : full.length?'neutral':'good';
   // Una sola conclusión; el desglose permanece en los indicadores y Presupuesto.
   text=bExp>0&&exp>bExp+.005?`Exceso de <b>${fmt(exp-bExp)}</b> en el presupuesto de gastos.`:over.length?`${over.length} ${over.length===1?'categoría supera':'categorías superan'} su presupuesto.`:near.length?`${near.length} ${near.length===1?'categoría tiene':'categorías tienen'} poco margen disponible.`:parts[0]+'.';
-  text += recLine;
   if (el.innerHTML !== text){ el.innerHTML = text; box.querySelector('.i-ic').innerHTML = ic(icon); box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap'); }
   box.hidden = false;
 }
@@ -182,7 +184,7 @@ function renderDashboard(){
   const cash=planBalance(m);
   countUp($('#kBalance'),cash.total,'money','value '+(cash.total>=0?'pos':'neg'));
   // Balance: cuánto quedaría libre al cierre (después del presupuesto, que ya incluye lo que separas para ahorro)
-  // Mes cerrado: lo real. Mes en curso o futuro: la proyección (misma cifra que Análisis)
+  // Mes cerrado: lo real. Mes en curso o futuro: la estimación del cierre
   const closed = m < planCurrentMonth(), prj = closed ? null : cy ? cycleProjection(m) : projection(m);
   const incEnd = closed ? inc : prj.projInc, expEnd = closed ? exp : prj.projExp, freeEnd = incEnd - expEnd;
   const closing=cash.previous+freeEnd;
@@ -190,8 +192,6 @@ function renderDashboard(){
   if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value' + (sv.pct ? (sv.saved >= sv.target ? ' pos' : '') : '')); else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
   renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv});
 
-  // Recurrentes pendientes
-  const pendN = cy ? cyclePending(m).filter(r=>!r.auto&&r.date<=todayISO()).length : recPending(m).filter(r => !r.auto && recDue(r, m)).length;
 
   const pm = shiftMonth(m, -1);
   const rows = type => {
@@ -215,7 +215,7 @@ function renderDashboard(){
   $('#bvaExpense').innerHTML = rows('expense');
   animateBars($('#tab-dashboard'));
   if(cy)renderCycleInsight(m,inc,exp,bExp);
-  else renderInsight(m,txs,inc,exp,bExp,pendN);
+  else renderInsight(m,inc,exp,bExp);
 
   const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.amount - a.amount).slice(0,5);
   $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<div class="prow link" data-go-tx="${esc(t.id)}" title="Editar movimiento" style="grid-template-columns:34px 1fr auto">

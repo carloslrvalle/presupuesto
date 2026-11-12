@@ -1,4 +1,4 @@
-// Presupuesto: storage.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: storage.js — ver README.md del proyecto para responsabilidades y orden de carga.
 (function(root){
 'use strict';
 // El adaptador no oculta errores: la capa de estado decide cómo informar y conservar pendientes.

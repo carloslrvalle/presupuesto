@@ -1,4 +1,4 @@
-// Presupuesto: dates.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: dates.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Fechas ---------- */
 const ym = BudgetFinance.ym;
 const shiftMonth = BudgetFinance.shiftMonth;

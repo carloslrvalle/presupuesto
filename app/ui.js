@@ -1,4 +1,4 @@
-// Presupuesto: ui.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: ui.js — ver README.md del proyecto para responsabilidades y orden de carga.
 const cycleCalendarMonths={},cycleSelectedMonths={};
 if(cycleEnabled())currentMonth=cycleMonthForDate();
 function syncPlanningNavigation(name){
@@ -50,23 +50,16 @@ function setPlanningMode(enabled,day=cycleDay()){
  cycleSelectedMonths[activeProfile]=enabled?currentMonth:cycleSelectedMonths[activeProfile];monthInput.value=currentMonth;
  save();renderAll();toast(enabled?'Ciclo activo: '+cycleLabel(currentMonth):'Vista por mes calendario');
 }
-let planningToday=todayISO(),planningDateTask=null,dailyRecurringPending=false;
+let planningToday=todayISO();
 function refreshPlanningDate(){
  const today=todayISO();if(document.querySelector('dialog[open]')||localRecovery||localTabChanged)return;
  if(today!==planningToday){
   const previous=cycleView()?cycleMonthForDate(planningToday):planningToday.slice(0,7);
-  planningToday=today;_txIdx=null;dailyRecurringPending=true;
+  planningToday=today;_txIdx=null;
   if(currentMonth===previous){currentMonth=cycleView()?cycleMonthForDate(today):thisMonth();monthInput.value=currentMonth;}
   renderAll();maybeMonthClose();
  }
- if(!dailyRecurringPending||bothMode||planningDateTask)return planningDateTask;
- const profile=activeProfile,connection=sync.url+'|'+sync.token;
- planningDateTask=(async()=>{
-  const confirmed=!syncOn()||await startupSync();
-  if(!confirmed||profile!==activeProfile||connection!==sync.url+'|'+sync.token||localRecovery||localTabChanged||bothMode||document.querySelector('dialog[open]')||syncConflict())return;
-  dailyRecurringPending=false;if(runAutoRecurring())renderAll();
- })().catch(err=>{setBadge('err','No se pudo actualizar el día');updateSyncInfo(err.message);}).finally(()=>{planningDateTask=null;});
- return planningDateTask;
+
 }
 window.addEventListener('focus',refreshPlanningDate);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPlanningDate();});
@@ -191,7 +184,6 @@ document.addEventListener('click', e => {
   if (a === 'expense' || a === 'income') openTx(null, {type:a});
   else if (a === 'tx') openTx();
   else if (a === 'calendar-tx') openTx(null, {date:calSel});
-  else if (a === 'rec') openRec();
   else if (a === 'budget') showTab('budget');
 });
 document.addEventListener('keydown', e => {
@@ -329,18 +321,20 @@ function countUp(el, to, kind = 'money', cls){
   const f = v => kind === 'pct' ? v.toFixed(1) + '%' : fmt(v);
   if (cls !== undefined) el.className = cls;
   if(el._raf && el._countTarget===to && key in numMemo && from!==0)return;
+  const target = f(to);
+  if (!entering && !el._raf && el._countTarget === to && el.textContent === target) return;
   cancelAnimationFrame(el._raf);
   el._raf=0;el._countTarget=to;
-  el._fitTexts=[f(from),f(to)];fitMetricValue(el);
-  if (reduceMotion() || entering || from === to){ el._countValue=to;rollDigits(el,f(to),0);el._fitTexts=[f(to)];fitMetricValue(el); return; }
+  if (reduceMotion() || entering || from === to){ el._countValue=to;rollDigits(el,target,0);el._fitTexts=[target];fitMetricValue(el); return; }
+  el._fitTexts=[f(from),target];fitMetricValue(el);
   // Solo los cambios de valor recorren sus dígitos, con el ritmo de los datos.
   const t0 = performance.now(), dur = MOTION.data;
   // Curva con velocidad y aceleración nulas en ambos extremos: evita el arranque brusco y el salto final.
   const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
   // Cada dígito gira en su columna hasta el valor final; una entrada nueva parte de la cifra anterior sin transición.
   if (!el._rollKeys || el._countFresh) rollDigits(el, f(from), 0);
-  el._countFresh = false; void el.offsetWidth; rollDigits(el, f(to), dur);
-  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;rollDigits(el,f(to),0);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[f(to)];fitMetricValue(el);} };
+  el._countFresh = false; void el.offsetWidth; rollDigits(el, target, dur);
+  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;rollDigits(el,target,0);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[target];fitMetricValue(el);} };
   el._raf = requestAnimationFrame(step);
 }
 // Cifras con columnas de dígitos (estilo odómetro). El texto del elemento es siempre la cifra final:
@@ -701,15 +695,12 @@ function moveTabInd(){
 moveTabInd();
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { moveTabInd(); requestAnimationFrame(() => $('#tabInd').classList.add('ready')); });
 window.addEventListener('resize', moveTabInd);
-new ResizeObserver(moveTabInd).observe($('#tabs'));
+new ResizeObserver(() => requestAnimationFrame(moveTabInd)).observe($('#tabs'));
 // La línea y sombra del encabezado solo aparecen al hacer scroll
 const topbar = $('.topbar');
-let compactTop = false;
 const onScroll = () => {
-  const y = window.scrollY; topbar.classList.toggle('scrolled', y > 4);
-  // Se achica al bajar (con margen para que no titile) solo si la página es lo bastante larga
-  const room = document.documentElement.scrollHeight - innerHeight, want = innerWidth > 600 && room > 180 && (compactTop ? y > 24 : y > 72);
-  if (want !== compactTop){ compactTop = want; topbar.classList.toggle('compact', want); }
+  const y = window.scrollY;
+  topbar.classList.toggle('scrolled', y > 4);
   toTop.classList.toggle('show', y > 400);
 };
 // Volver arriba (solo escritorio, por CSS): devuelve el foco a la pestaña activa porque el botón se oculta.

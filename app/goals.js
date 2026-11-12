@@ -1,4 +1,4 @@
-// Presupuesto: goals.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: goals.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Metas de ahorro ---------- */
 const goalOut = g => (g.out || []).reduce((a, w) => a + Number(w.a || 0), 0);
 // Metas compartidas: la meta vive en los datos de quien la creó; ambos usuarios pueden aportar
@@ -43,7 +43,7 @@ function renderGoals(){
     return;
   }
   const tm = thisMonth(), sorted = goalsSorted(), doneOpen = grid.querySelector('.goal-done-group')?.open;
-  const cards = sorted.map(g => {
+  const cards = sorted.map((g, index) => {
     const saved = goalSaved(g), target = Number(g.target) || 0, pct = target ? Math.min(saved / target * 100, 100) : 0, rem = Math.max(0, target - saved);
     const gx = goalTxs(g), monthAmt = sum(gx.filter(x => x.t.date.slice(0, 7) === tm).map(x => x.t));
     // Datos clave en tres bloques, en lugar de una frase larga
@@ -68,9 +68,10 @@ function renderGoals(){
     const owner = profOf(goalOwner(g)), other = profOf(goalOwner(g) === 'p1' ? 'p2' : 'p1'), sp = goalSplit(g), spT = sp.p1 + sp.p2;
     const share = g.shared ? `<div class="goal-split"><div class="gsp-leg">${profiles.list.map(pr => `<span>${avatarBox(pr, 'xs')}${esc(pr.name)} <b>${fmt(sp[pr.id])}</b>${spT > 0 ? ` <em>${Math.round(sp[pr.id] / spT * 100)}%</em>` : ''}</span>`).join('')}</div></div>` : '';
     const shareTag = g.shared ? `<span class="share-tag">${ic('users')}${g._foreign ? 'De ' + esc(owner.name) : 'Con ' + esc(other.name)}</span>` : '';
+    const help = index === 0 && !goalDone(g) ? `<button type="button" class="info-tip" aria-label="Ayuda sobre aportes" data-tip="Aporta con «Aportar», o elige la meta al registrar un ingreso o un gasto en tu categoría de ahorro.">${ic('info')}</button>` : '';
     return `<div class="card goal-card${goalDone(g)?' completed':''}${goalDone(g) ? '' : ' p-' + prioOf(g)}${g.shared ? ' shared' : ''}">
       <div class="goal-head"><div class="ico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</div>
-        <div style="flex:1;min-width:0"><div class="name">${esc(g.name)}</div><div class="small muted g-sub">${shareTag}${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return g.deadline >= todayISO() && ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
+        <div style="flex:1;min-width:0"><div class="goal-title"><div class="name">${esc(g.name)}</div>${help}</div><div class="small muted g-sub">${shareTag}${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return g.deadline >= todayISO() && ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
         ${g._foreign ? '' : `<button class="iconbtn" data-goal-edit="${esc(g.id)}" title="Editar">${ic('pencil')}</button>`}</div>
       <div class="goal-value"><div class="goal-amt"><b>${fmt(saved)}</b><span class="muted small">de ${fmt(target)}</span>${goalDone(g)?'':`<span class="goal-pct" style="color:var(--accent-ink,var(--primary))">${pct.toFixed(0)}%</span>`}</div>
       ${goalDone(g)?'':g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span data-k="goal:${esc(g.id)}:${esc(pr.id)}" data-w="${w.toFixed(2)}" style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
@@ -157,7 +158,6 @@ function maybeMonthClose(){
   if (bothMode || document.querySelector('dialog[open]') || state.settings.lastClose === closeKey || !state.settings.onboarded && !state.transactions.length) return;
   const txs = cy?cycleTx(pm):txOfMonth(pm); if (!txs.length){ state.settings.lastClose = closeKey; return save(); }
   const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), bExp = cy?cycleTotal(pm,'expense'):totalBudget(pm, 'expense'), sv = cy?cycleSavings(pm):savingsOf(pm), cash = cy?cycleBalance(pm):balanceOfMonth(pm);
-  const pending = cy?cyclePending(pm):recPending(pm), pendingExp = sum(pending.filter(r => r.type === 'expense')), pendingInc = sum(pending.filter(r => r.type === 'income'));
   const result = cash.result, positive = result > .005;
   $('#clTitle').textContent = cy?'Cierre del ciclo':'Cierre de ' + monthLong(pm).toLowerCase();
   const k = (l,v,cls='',tone='neutral') => `<div data-tone="${tone}"><span>${l}</span><b class="${cls}">${v}</b></div>`;
@@ -168,7 +168,6 @@ function maybeMonthClose(){
     <ul class="cl-summary" aria-label="Balance del mes">
       <li><span>Presupuesto</span><b class="${bExp > 0 && exp > bExp + .005 ? 'neg' : ''}">${bExp <= 0 ? 'Sin definir' : Math.abs(exp-bExp)<.005 ? 'Completo' : exp > bExp ? fmt(exp-bExp) + ' de exceso' : fmt(bExp-exp) + ' disponibles'}</b></li>
       ${sv.pct ? `<li><span>Meta de ahorro · ${sv.pct}%</span><b>${sv.base <= 0 ? 'Sin ingresos' : sv.saved >= sv.target ? 'Cumplida' : 'Faltan ' + fmt(sv.target-sv.saved)}</b></li>` : ''}
-      ${pending.length ? `<li class="cl-pending-brief" title="Recurrentes sin confirmar, no incluidos en los totales."><span>Sin incluir · ${plural(pending.length,'recurrente')}</span><b>${pendingExp ? fmt(pendingExp) + ' gastos' : ''}${pendingExp && pendingInc ? ' · ' : ''}${pendingInc ? fmt(pendingInc) + ' ingresos' : ''}</b></li>` : ''}
     </ul>`;
   dialog.dataset.month = pm;dialog.dataset.cycle=String(cy);dialog.querySelector('[data-cl=an]').textContent=cy?'Ver presupuesto':'Ver análisis';
   dialog.showModal();

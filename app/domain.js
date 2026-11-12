@@ -1,4 +1,4 @@
-// Presupuesto: domain.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: domain.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Helpers de datos ---------- */
 const getCat = id => state.categories.find(c => c.id === id) || {id:null, name:'Sin categoría', icon:'svg:circle-help', color:'#94a3b8'};
 const catsOf = type => state.categories.filter(c => c.type === type);
@@ -56,17 +56,10 @@ function cycleTotal(m,type){return catsOf(type).filter(c=>!isArch(c,cyclePeriod(
 function cyclePlanned(m,type,id){return sum(cycleTx(m,true).filter(t=>isPlanned(t)&&(!type||t.type===type)&&(!id||t.catId===id)));}
 function cycleSavings(m){const txs=cycleTx(m);return BudgetFinance.savings(txs,{savingIds:state.categories.filter(c=>isSavingCat(c.id)).map(c=>c.id),mode:saveMode(),pct:Number((state.settings.savePctM||{})[cycleBudgetKey(m)]??state.settings.savePct)||0,incomeBudget:sum(txs.filter(t=>t.type==='income'))>0?0:cycleTotal(m,'income')});}
 function cycleBalance(m){const p=cyclePeriod(m);return BudgetFinance.balance(state.transactions,p.start,p.end,todayISO());}
-function cyclePending(m){
- const p=cyclePeriod(m),out=[];
- for(let mm=p.start.slice(0,7);mm<=p.end.slice(0,7);mm=shiftMonth(mm,1)){
-  recPending(mm).forEach(r=>{const date=dateFor(mm,r.day);if(date>=p.start&&date<=p.end)out.push({...r,month:mm,date});});
- }
- return out;
-}
 function cycleProjection(m){
- const pending=cyclePending(m),txs=cycleTx(m);
+ const txs=cycleTx(m);
  const total=type=>{
-  const known=catsOf(type).reduce((s,c)=>{const real=sum(txs.filter(t=>t.type===type&&t.catId===c.id)),plan=cyclePlanned(m,type,c.id),rec=sum(pending.filter(r=>r.type===type&&r.catId===c.id));return s+Math.max(real+plan+rec,cycleBudget(m,c.id));},0);
+  const known=catsOf(type).reduce((s,c)=>{const real=sum(txs.filter(t=>t.type===type&&t.catId===c.id)),plan=cyclePlanned(m,type,c.id);return s+Math.max(real+plan,cycleBudget(m,c.id));},0);
   return known+sum(txs.filter(t=>t.type===type&&!state.categories.some(c=>c.id===t.catId)))+sum(cycleTx(m,true).filter(t=>isPlanned(t)&&t.type===type&&!state.categories.some(c=>c.id===t.catId)));
  };
  return {projInc:total('income'),projExp:total('expense')};
@@ -149,36 +142,35 @@ const savingsCat = () => (state.categories.find(c => c.type === 'income' && /aho
 function balanceOfMonth(month,data=state,today=todayISO()){return BudgetFinance.balance(data.transactions||[],month+'-01',dateFor(month,31),today);}
 /* ---------- Proyección del mes en curso ---------- */
 // Proyección del cierre del mes en curso:
-//  ya registrado + recurrentes que faltan + gasto variable estimado.
+//  ya registrado + programado + gasto variable estimado.
 //  Solo se extrapolan categorías con 3+ gastos sueltos ya ocurridos (comida, transporte…);
 //  pagos puntuales como el alquiler o gastos con fecha futura no se multiplican.
-// Proyección del cierre de un mes en curso o futuro (la misma cifra para "Libre al cierre" y Análisis).
-// Por categoría: lo registrado + recurrentes por venir + programados + ritmo diario (si es frecuente);
+// Proyección del cierre de un mes en curso o futuro para el Resumen.
+// Por categoría: lo registrado + programado + ritmo diario (si es frecuente).
 // si el presupuesto es mayor, se asume que lo usarás completo. Ingresos: lo recibido + por cobrar, o lo esperado si es mayor.
 function projection(m){
   const tm = thisMonth(); if (m < tm) return null;
   const dim = daysIn(m), day = m === tm ? new Date().getDate() : 0, left = dim - day;
-  const txs = txOfMonth(m), pend = recPending(m);
+  const txs = txOfMonth(m);
   const cats = catsOf('expense').map(c => {
     const all = txs.filter(t => t.type === 'expense' && t.catId === c.id), reg = sum(all);
     const loose = all.filter(t => !t.recId && Number(t.date.slice(8, 10)) <= day);
     const frequent = loose.length >= 3 && day > 0, perDay = frequent ? sum(loose) / day : 0, pace = perDay * left;
-    const pendRec = pend.filter(r => r.type === 'expense' && r.catId === c.id).reduce((a, r) => a + Number(r.amount || 0), 0);
-    const plan = plannedOf(m, 'expense', c.id), budget = getBudget(m, c.id), base = reg + pendRec + plan + pace;
-    return {c, reg, pendRec, plan, pace, perDay, frequent, n: all.length, base, rest: Math.max(0, budget - base), proj: Math.max(base, budget), budget};
+    const plan = plannedOf(m, 'expense', c.id), budget = getBudget(m, c.id), base = reg + plan + pace;
+    return {c, reg, plan, pace, perDay, frequent, n: all.length, base, rest: Math.max(0, budget - base), proj: Math.max(base, budget), budget};
   });
   const orphanTxs=txOfMonthAll(m).filter(t=>!state.categories.some(c=>c.id===t.catId)),orphanExpenses=orphanTxs.filter(t=>t.type==='expense');
   if(orphanExpenses.length){
     const actual=orphanExpenses.filter(t=>!isPlanned(t)),reg=sum(actual),plan=sum(orphanExpenses.filter(isPlanned)),base=reg+plan;
-    cats.push({c:getCat(null),reg,pendRec:0,plan,pace:0,perDay:0,frequent:false,n:actual.length,base,rest:0,proj:base,budget:0});
+    cats.push({c:getCat(null),reg,plan,pace:0,perDay:0,frequent:false,n:actual.length,base,rest:0,proj:base,budget:0});
   }
   const S = k => cats.reduce((a, x) => a + x[k], 0);
-  const spent = S('reg'), recLeft = S('pendRec'), paceTot = S('pace'), planTot = S('plan'), restTot = S('rest');
-  const projExp = spent + recLeft + planTot + paceTot + restTot;
-  const incs = catsOf('income').map(c => { const real = realBy(m, c.id), plan = plannedOf(m, 'income', c.id), rec = pend.filter(r => r.type === 'income' && r.catId === c.id).reduce((a, r) => a + Number(r.amount || 0), 0), exp = getBudget(m, c.id);
-    // si la categoría tiene monto esperado, sus recurrentes ya están incluidos en él (evita contar el sueldo dos veces)
-    return {c, real, plan, rec, exp, proj: exp > 0 ? Math.max(real + plan, exp) : real + plan + rec}; });
+  const spent = S('reg'), paceTot = S('pace'), planTot = S('plan'), restTot = S('rest');
+  const projExp = spent + planTot + paceTot + restTot;
+  const incs = catsOf('income').map(c => { const real = realBy(m, c.id), plan = plannedOf(m, 'income', c.id), exp = getBudget(m, c.id);
+    // El monto esperado es un mínimo para la estimación de la categoría.
+    return {real, plan, proj:Math.max(real + plan, exp)}; });
   const incOrphan = sum(orphanTxs.filter(t => t.type === 'income'));
   const incReg = incs.reduce((a, x) => a + x.real + x.plan, 0) + incOrphan, projInc = incs.reduce((a, x) => a + x.proj, 0) + incOrphan;
-  return {day, dim, left, cats, projExp, projInc, spent, recLeft, paceTot, planTot, restTot, incReg, incRec: projInc - incReg};
+  return {day, dim, left, cats, projExp, projInc, spent, paceTot, planTot, restTot, incReg};
 }

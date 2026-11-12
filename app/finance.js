@@ -1,4 +1,4 @@
-// Presupuesto: finance.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: finance.js — ver README.md del proyecto para responsabilidades y orden de carga.
 (function(root){
 'use strict';
 const ym=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');

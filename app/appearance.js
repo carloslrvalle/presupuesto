@@ -1,4 +1,4 @@
-// Presupuesto: appearance.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: appearance.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Temas de color ---------- */
 // Cada categoría recibe un "rol" según su nombre o ícono, y cada tema define un color por rol
 const ROLES = ['home','food','transport','bills','health','fun','shop','edu','debt','save','other','income','bonus','pet','travel','tech'];

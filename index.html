@@ -129,19 +129,15 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <!-- MOVIMIENTOS -->
   <section class="tab" id="tab-movs">
     <div class="toolbar">
-      <div class="vseg" id="movView"><span class="vseg-ind"></span><button type="button" data-view="list" class="active"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Lista</button><button type="button" data-view="cal"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg>Calendario</button><button type="button" data-view="rec"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Recurrentes</button></div>
-      <span class="spacer"></span>
+      <div class="vseg" id="movView" role="group" aria-label="Vista de movimientos"><span class="vseg-ind" aria-hidden="true"></span><button type="button" data-view="list" aria-pressed="true" class="active"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Lista</button><button type="button" data-view="cal" aria-pressed="false"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg>Calendario</button></div>
       <button class="btn" id="btnSelect" title="Seleccionar varios para borrarlos"><span class="sel-ic"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="sel-t">Seleccionar</span></button>
-      <button class="btn primary" id="btnNewTx"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nuevo movimiento</button>
-      <button class="btn primary" id="btnNewRec" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nuevo recurrente</button>
     </div>
     <div class="mview" id="view-list">
       <div class="toolbar mov-filters">
-        
-        
-        <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
-        <select id="fltMethod" aria-label="Filtrar por método"></select></div><button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
         <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar descripción, categoría o monto…"></div>
+        <button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
+        <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
+        <select id="fltMethod" aria-label="Filtrar por método"></select></div>
       </div>
       <div class="card">
         <div class="small muted" id="movSummary"></div>
@@ -150,19 +146,10 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
     <div class="mview" id="view-cal" hidden>
       <div class="grid-cal">
-        <div class="card"><div class="cal" id="calGrid" role="group" aria-label="Días del mes"></div><div class="cal-currency"><span class="calendar-desktop-note">Usa las flechas para cambiar de día.</span><span class="calendar-mobile-note">Toca un día para ver sus movimientos.</span></div><div class="cal-legend small muted"><span class="lg-scale"><i></i><i></i><i></i><i></i></span><span>Gastos</span><span class="lg-scale inc"><i></i><i></i><i></i><i></i></span><span>Ingresos</span><span class="cal-key2"><b class="cd-hot">●</b> muy alto</span><span class="cal-key"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg> recurrente pendiente</span></div></div>
+        <div class="card"><div class="cal" id="calGrid" role="group" aria-label="Días del mes"></div><div class="cal-currency"><span class="calendar-desktop-note">Usa las flechas para cambiar de día.</span><span class="calendar-mobile-note">Toca un día para ver sus movimientos.</span></div><div class="cal-legend small muted"><span class="lg-scale"><i></i><i></i><i></i><i></i></span><span>Gastos</span><span class="lg-scale inc"><i></i><i></i><i></i><i></i></span><span>Ingresos</span><span class="cal-key2"><b class="cd-hot">●</b> muy alto</span></div></div>
         <div class="card" id="calDay"></div>
       </div>
       <details class="analysis-detail cal-summary" id="calSummary"><summary><span>Ver resumen</span><small id="calSummaryMonth"></small></summary><div class="analysis-detail-body"><div class="cal-stats" id="calStats"></div><h3 class="cal-week-heading">Gastos por semana</h3><dl class="cal-week-totals" id="calWeekTotals"></dl></div></details>
-    </div>
-    <div class="mview" id="view-rec" hidden>
-      <div class="card"><h3 class="rec-upcoming-heading"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v3"/><path d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338"/><path d="M3 9h5.859"/><path d="M8 2v3"/><circle cx="16" cy="16" r="6"/></svg> <span class="rec-upcoming-title">Próximos 7 días</span><span id="recUpcomingRange"></span><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Recurrentes: ingresos y gastos que se repiten cada mes. Los automáticos se registran solos en su día; los manuales esperan tu confirmación en «Por confirmar»."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button></h3><div id="recUpcoming"></div></div>
-      <div class="card sug-card" id="recSuggest" hidden style="margin-top:16px"></div>
-      <div class="card" style="margin-top:16px"><h3 id="recPendingTitle">Por confirmar</h3><div id="recPending"></div></div>
-      <div class="grid2">
-        <div class="card"><h3><span class="ui-ic" data-e="💸"></span>Gastos recurrentes</h3><div id="recExpense"></div></div>
-        <div class="card"><h3><span class="ui-ic" data-e="💰"></span>Ingresos recurrentes</h3><div id="recIncome"></div></div>
-      </div>
     </div>
   </section>
 
@@ -189,8 +176,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <!-- METAS -->
   <section class="tab" id="tab-goals">
     <div class="toolbar">
-      
-      <span class="spacer"></span><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Aporta con «Aportar», o elige la meta al registrar un ingreso o un gasto en tu categoría de ahorro."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
       <button class="btn primary" id="btnNewGoal" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nueva meta</button>
     </div>
     <div class="goals-grid" id="goalsGrid"></div>
@@ -210,7 +195,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
     <div class="analysis-details">
       <details class="analysis-detail" id="analysisCategoryDetail"><summary><span id="analysisDetailTitle">Detalle por categoría</span><small id="analysisDetailHint">Ingresos</small></summary><div class="analysis-detail-body"><div class="analysis-mobile" id="yearMobileDetail"></div><div class="table-wrap" id="yearTable" tabindex="0" role="region" aria-label="Detalle mensual del indicador"></div><div class="analysis-detail-actions" id="analysisMovementsAction"></div></div></details>
-      <details class="analysis-detail" id="analysisProjectionDetail"><summary><span>Proyección de cierre</span><small id="projContext">Escenario global del mes</small></summary><div class="analysis-detail-body" id="projDetail"></div></details>
     </div>
   </section>
 
@@ -325,16 +309,8 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <div class="field" id="fGoalField" hidden><label>Meta de ahorro (opcional)</label><div class="chips" id="fGoalChips"></div></div>
       <div class="row2 tx-details" id="txDetails">
         <div class="field" id="fDateField"><label for="fDate">Fecha</label><input type="date" id="fDate"></div>
-        <div class="field" id="fDayField" hidden>
-          <label for="fDay">Fecha de cada mes</label>
-          <div class="rec-date-modes" role="group" aria-label="Elegir fecha mensual"><button type="button" id="recFixed" class="btn sm" aria-pressed="true">Día fijo</button><button type="button" id="recMonthEnd" class="btn sm" aria-pressed="false">Fin de mes</button></div>
-          <input type="number" id="fDay" inputmode="numeric" min="1" max="31" step="1" placeholder="1–31" aria-describedby="recDateHint recDatePreview">
-          <span class="small muted" id="recDateHint"></span>
-          <span class="rec-date-preview" id="recDatePreview" role="status" aria-live="polite"></span>
-        </div>
         <div class="field"><label for="fDesc">Descripción <span class="muted">(opcional)</span></label><input type="text" id="fDesc" placeholder="Ej. Mercado"></div>
       </div>
-      <label class="check" id="fAutoField" hidden><input type="checkbox" id="fAuto" checked> Registrar automáticamente cada mes en su día</label>
     </div>
     <div class="dlg-foot">
       <button type="button" class="tx-more" id="txMore" aria-expanded="false" aria-controls="txDetails"><span class="tx-more-date" id="txMoreDate">Hoy</span><span class="tx-more-hint" id="txMoreHint">Fecha y descripción</span></button>
@@ -441,7 +417,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <script src="./app/dashboard.js"></script>
 <script src="./app/movements.js"></script>
 <script src="./app/budget.js"></script>
-<script src="./app/recurring.js"></script>
 <script src="./app/goals.js"></script>
 <script src="./app/analysis.js"></script>
 <script src="./app/appearance.js"></script>

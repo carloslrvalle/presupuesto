@@ -1,4 +1,4 @@
-// Presupuesto: profiles.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: profiles.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Usuarios: cambiar de perfil, editarlos y vista «Ambos» ---------- */
 function avatarHTML(pr){ return /^data:image\//.test(pr.photo || '') ? `<img src="${esc(pr.photo)}" alt="">` : iconHTML(pr.icon || 'svg:user', pr.color); }
 function avatarBox(pr, cls = ''){ return `<span class="prof-av ${cls}" style="background:${pr.photo ? 'transparent' : soft(pr.color)}">${avatarHTML(pr)}</span>`; }
@@ -111,12 +111,17 @@ async function switchProfile(id){
     if (document.querySelector('dialog[open]')) return;
     resetSyncRecovery(); clearTimeout(pushTimer);
     if(!saveLocal())return;saveSync();
+    const wasCycle = cycleView();
+    const calendarMonth = wasCycle ? cycleCalendarMonths[activeProfile] || thisMonth() : currentMonth;
+    if (wasCycle) cycleSelectedMonths[activeProfile] = currentMonth;
     activeProfile = id; try { localData.writeText(ACT_KEY, id); } catch(e){}
     const bp = (sync.byProf || {})[id] || {}; sync.rev = Number(bp.rev) || 0; sync.pending = !!bp.pending; sync.lastSync = bp.lastSync || 0;
     loadProfileState(); _doneSet = null; _oth = null; otherAt = 0;
     $('#settingsMethods').resetEditor();
     if (selMode) setSelMode(false);
-    currentMonth=cycleView()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;
+    cycleCalendarMonths[id] = calendarMonth;
+    currentMonth = cycleView() ? cycleSelectedMonths[id] || cycleMonthForDate() : calendarMonth;
+    monthInput.value = currentMonth;
     if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
     Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
     renderProfileUI(); if (activeTab() === 'both') showTab('dashboard'); renderAll(); updateSyncInfo();
@@ -125,13 +130,8 @@ async function switchProfile(id){
     toast(`Ahora ves: ${profOf(id).name}`, {icon:'user'});
   } finally { switching = false; }
   const connection = sync.url+'|'+sync.token;
-  dailyRecurringPending = true;
-  const confirmed = !syncOn() || await startupSync();
+  if (syncOn()) await startupSync();
   if (id !== activeProfile || connection !== sync.url+'|'+sync.token || localRecovery || localTabChanged) return;
-  if (confirmed && !bothMode && !syncConflict() && !document.querySelector('dialog[open]')){
-    dailyRecurringPending = false;
-    if (runAutoRecurring()) renderAll();
-  }
   refreshOther();
 }
 // Edición de usuarios en Ajustes

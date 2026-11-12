@@ -1,4 +1,4 @@
-// Presupuesto: budget.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: budget.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Presupuesto ---------- */
 function budgetTable(type){
   const m = currentMonth, cats = catsOf(type).filter(c => !isArch(c, cycleView()?cyclePeriod(m).start.slice(0,7):m) || planReal(m, c.id)), isE = type === 'expense';
@@ -8,6 +8,7 @@ function budgetTable(type){
     const sav = isE && isSavingCat(c.id); // en la categoría de ahorro, pasarse del plan es bueno
     const diff = isE && !sav ? b - r : r - b, raw = b > 0 ? r / b * 100 : 0, pct = Math.min(raw, 100);
     const status=budgetStatus(r,b),alert=isE&&!sav?(status==='over'?'over':status==='near'?'warn':status==='complete'?'complete':''):'';
+    const usageHint = alert === 'warn' ? ' title="Cerca del límite"' : alert === 'over' ? ' title="Presupuesto superado"' : '';
     const largeAmounts = Math.max(Math.abs(b), Math.abs(r)) >= 100000;
     const incomeLabel = !b ? (r ? 'No previsto' : 'Sin plan') : diff > .005 ? 'Adicional' : diff < -.005 ? 'Por recibir' : 'Completo';
     const incomeDiff = diff > .005 ? `<b class="pos">+${fmt(diff)}</b>` : diff < -.005 ? `<span class="muted">−${fmt(-diff)}</span>` : `<span class="muted">${fmt(0)}</span>`;
@@ -16,7 +17,7 @@ function budgetTable(type){
       <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<label class="budget-plan-field"><span class="budget-currency" aria-hidden="true">S/</span><input type="number" inputmode="decimal" class="budget-input" min="0" step="0.01" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0"></label>` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
       <td class="num${r ? '' : ' muted'}" data-mobile-label="Real"><span class="budget-real">${fmt(r)}</span>${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
       <td class="num" data-mobile-label="${isE?(sav?(diff>=0?'Ahorro adicional':'Por ahorrar'):'Disponible'):incomeLabel}">${!b && !r ? '<span class="muted">—</span>' : isE ? (sav ? (diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`) : `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}`) : `${incomeDiff}${!b && r ? '<small class="income-unplanned">No previsto</small>' : ''}`}</td>
-      <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}">${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
+      <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}"${usageHint}>${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
     </tr>`;
   }).join('');
   const td = isE ? tb - tr : tr - tb;

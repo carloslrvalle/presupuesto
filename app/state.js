@@ -1,4 +1,4 @@
-// Presupuesto: state.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: state.js — ver README.md del proyecto para responsabilidades y orden de carga.
 const localData=BudgetStorage.create(()=>window.localStorage);
 const STORE = 'budgetPlanner.v1';
 // Usuarios: cada perfil guarda sus datos aparte (mismo link y misma clave)

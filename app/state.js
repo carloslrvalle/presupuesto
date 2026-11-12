@@ -125,7 +125,9 @@ function validateStateData(st){
 }
 // Normaliza formatos locales antiguos; nunca convierte una fecha civil imposible en otra.
 function cleanState(st){
-  if (!st || typeof st !== 'object') return st;
+  if (!st || !Array.isArray(st.categories) || !Array.isArray(st.transactions)){
+    throw new Error('Datos inválidos: faltan categorías o movimientos');
+  }
   const arr = v => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
   st.categories = arr(st.categories); st.recurring = arr(st.recurring); st.goals = arr(st.goals);
   st.transactions = arr(st.transactions).map(t => {

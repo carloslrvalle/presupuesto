@@ -41,7 +41,8 @@ function scheduleSyncRecovery(err){
 function syncConflict(profile=activeProfile){return readSyncCache('conflict',profile);}
 function setBadge(kind='local',text='Guardado en este dispositivo'){
  const b=$('#syncBadge');if(!b)return;
- if(localSaveFailed){kind='err';text='No se pudo guardar aquí';}
+ if(localTabChanged){kind='err';text='Cambios en otra pestaña';}
+ else if(localSaveFailed){kind='err';text='No se pudo guardar aquí';}
  else if(syncConflict()){kind='err';text='Cambios por revisar';}
  else if(syncConflict(otherProfile())){kind='err';text='Cambios por revisar de '+profOf(otherProfile()).name;}
  else if(!syncOn()){kind='local';text='Guardado en este dispositivo';}
@@ -50,7 +51,7 @@ function setBadge(kind='local',text='Guardado en este dispositivo'){
  text=text.replace(/^(☁️|⚠️)\s*/,'');b.hidden=false;b.className='sync-badge '+kind;b.title=text;b.setAttribute('aria-label',text+'. Ver estado del guardado');b.innerHTML='<span class="sb-t">'+esc(text)+'</span>';
 }
 function updateSyncInfo(err){
- const status=localSaveFailed?'No se pudo guardar en este dispositivo. Mantén la app abierta.':syncConflict()?'Hay cambios de dos dispositivos que necesitan revisión. Tu copia local se conserva.':!syncOn()?'Guardado en este dispositivo. Sin conectar a Sheets.':sync.pending?'Guardado en este dispositivo. Pendiente de confirmación en Sheets.':sync.lastSync?'Datos confirmados con Sheets.':'Guardado en este dispositivo. Sin confirmación de Sheets.';
+ const status=localTabChanged?'Otra pestaña cambió los datos. Carga la copia más reciente para continuar.':localSaveFailed?'No se pudo guardar en este dispositivo. Mantén la app abierta.':syncConflict()?'Hay cambios de dos dispositivos que necesitan revisión. Tu copia local se conserva.':!syncOn()?'Guardado en este dispositivo. Sin conectar a Sheets.':sync.pending?'Guardado en este dispositivo. Pendiente de confirmación en Sheets.':sync.lastSync?'Datos confirmados con Sheets.':'Guardado en este dispositivo. Sin confirmación de Sheets.';
  $('#syncInfo').textContent=status+(err?' '+err:'')+(sync.lastSync?' Última confirmación: '+new Date(sync.lastSync).toLocaleString('es-PE'):'');
  const button=$('#syncReview');if(button){button.hidden=!syncConflict()&&!syncConflict(otherProfile());button.textContent=syncConflict()?'Revisar cambios entre dispositivos':'Revisar cambios de '+profOf(otherProfile()).name;}renderConnBox();
 }
@@ -120,6 +121,7 @@ function writeSyncCache(kind,value,profile=activeProfile){const key=syncCacheKey
 function rememberSyncBase(data,rev,profile=activeProfile){return writeSyncCache('base',{data:SyncCore.clone(data),rev:Number(rev)||0},profile);}
 function clearSyncConflict(profile=activeProfile){syncCacheMemory.delete(syncCacheKey('conflict',profile));localData.remove(syncCacheKey('conflict',profile));}
 function acceptSyncRemote(remote,profile=activeProfile){
+ if(localTabChanged||localRecovery)return false;
  if(!remote||!Array.isArray(remote.categories)||!Array.isArray(remote.transactions))throw new Error('Sheets devolvió datos incompletos. Se conserva la copia local.');
  validateStateData(remote);
  const base=readSyncCache('base',profile),local=SyncCore.clone(snapshot()),rev=Number(remote.rev)||0;
@@ -222,6 +224,7 @@ function mergeData(a, b) {
 /* MERGE:end */
 
 function applyRemote(d, keepSync){
+  if(localTabChanged||localRecovery)return false;
   const previousCycleEnabled=cycleEnabled(),previousCycleDay=cycleDay();
   validateStateData(d);
   d = cleanState(d);
@@ -247,7 +250,7 @@ function pushNow(){
 }
 async function performPush(){
  if(!syncOn()||localTabChanged)return false;clearTimeout(pushTimer);const profile=activeProfile,connection=sync.url+'|'+sync.token;let succeeded=false;pushing=true;
- const valid=()=>profile===activeProfile&&connection===sync.url+'|'+sync.token;
+ const valid=()=>!localTabChanged&&!localRecovery&&profile===activeProfile&&connection===sync.url+'|'+sync.token;
  try{
   if(syncConflict()){setBadge('err','Cambios por revisar');updateSyncInfo();return false;}
   if(navigator.onLine===false){const err=new Error('Se enviará al recuperar la conexión.');err.retryable=true;throw err;}
@@ -277,7 +280,7 @@ function schedulePush(){
 }
 const startupTasks=new Map();
 async function startupSync(){
- if(!syncOn())return;const key=activeProfile+'|'+sync.url+'|'+sync.token;if(startupTasks.has(key))return startupTasks.get(key);
+ if(!syncOn()||localTabChanged)return false;const key=activeProfile+'|'+sync.url+'|'+sync.token;if(startupTasks.has(key))return startupTasks.get(key);
  const task=startupLoad().finally(()=>startupTasks.delete(key));startupTasks.set(key,task);return task;
 }
 async function startupLoad(){
@@ -288,11 +291,11 @@ async function startupLoad(){
   // Brillo en indicadores mientras llega la versión de Sheets; las cifras locales siguen visibles.
   document.body.classList.add('syncing');
   const j=await callSheets({action:'load'}).finally(()=>document.body.classList.remove('syncing'));if(j.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
-  if(profile!==activeProfile||connection!==sync.url+'|'+sync.token)return;
+  if(localTabChanged||profile!==activeProfile||connection!==sync.url+'|'+sync.token)return false;
   if(!acceptSyncRemote(j.data,profile))return;
   if(sync.pending){setBadge('pending','Guardado aquí · Pendiente de sincronizar');if(sync.auto&&!await pushNow())return false;}
   else setBadge('ok','Sincronizado');updateSyncInfo();return true;
- }catch(err){if(profile!==activeProfile||connection!==sync.url+'|'+sync.token)return;setBadge('err','Sin confirmar en Sheets');updateSyncInfo(err.message);scheduleSyncRecovery(err);}
+ }catch(err){if(localTabChanged||profile!==activeProfile||connection!==sync.url+'|'+sync.token)return false;setBadge('err','Sin confirmar en Sheets');updateSyncInfo(err.message);scheduleSyncRecovery(err);}
 }
 
 $('#btnSyncConnect').onclick=async()=>{
@@ -310,7 +313,7 @@ $('#syncAuto').addEventListener('change', e => { sync.auto = e.target.checked; s
 window.addEventListener('online', () => { resetSyncRecovery(); if (syncOn() && sync.auto) startupSync().then(pushOtherPending); });
 window.addEventListener('pagehide',()=>{if(!localTabChanged){saveLocal();saveSync();}});
 window.addEventListener('storage',e=>{if(e.key!==storeKey()||!e.newValue||localTabChanged)return;localTabChanged=true;
- const dialog=document.createElement('dialog');dialog.className='sync-tab-dialog';dialog.innerHTML='<h3>Hay cambios en otra pestaña</h3><p>Esta pestaña quedó desactualizada y dejará de guardar. Puedes descargar su copia antes de cargar los datos nuevos.</p><div class="dlg-actions"><button type="button" class="btn" data-tab-copy>Descargar esta copia</button><button type="button" class="btn primary" data-tab-reload>Cargar datos nuevos</button></div>';document.body.append(dialog);dialog.oncancel=e=>e.preventDefault();dialog.querySelector('[data-tab-copy]').onclick=()=>download('presupuesto-pestana-'+todayISO()+'.json',JSON.stringify(state,null,2),'application/json');dialog.querySelector('[data-tab-reload]').onclick=()=>location.reload();dialog.showModal();setBadge('err','Cambios en otra pestaña');
+ const dialog=document.createElement('dialog');dialog.className='sync-tab-dialog';dialog.innerHTML='<h3>Hay cambios en otra pestaña</h3><p>Esta pestaña quedó desactualizada y dejará de guardar. Puedes descargar su copia antes de cargar los datos nuevos.</p><div class="dlg-actions"><button type="button" class="btn" data-tab-copy>Descargar esta copia</button><button type="button" class="btn primary" data-tab-reload>Cargar datos nuevos</button></div>';document.body.append(dialog);dialog.oncancel=e=>e.preventDefault();dialog.querySelector('[data-tab-copy]').onclick=()=>download('presupuesto-pestana-'+todayISO()+'.json',JSON.stringify(state,null,2),'application/json');dialog.querySelector('[data-tab-reload]').onclick=()=>location.reload();dialog.showModal();setBadge('err','Cambios en otra pestaña');updateSyncInfo();
 });
 window.addEventListener('offline',()=>{setBadge('pending','Sin conexión');updateSyncInfo();});
 // Abierta desde el enlace de Apps Script (celular): la URL de sincronización se completa sola

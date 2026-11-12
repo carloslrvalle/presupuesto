@@ -38,8 +38,9 @@ document.addEventListener('keydown',e=>{
 $('#tab-cats').addEventListener('keydown',e=>{
   const grip=e.target.closest('.grip');if(!grip||!['ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();
   const id=grip.closest('.cat-row').dataset.id,c=state.categories.find(c=>c.id===id),list=catsActive(c.type),index=list.findIndex(c=>c.id===id),next=list[index+(e.key==='ArrowUp'?-1:1)];if(!next)return;
-  const a=state.categories.indexOf(c),b=state.categories.indexOf(next);[state.categories[a],state.categories[b]]=[state.categories[b],state.categories[a]];save();renderCats();
-  [...document.querySelectorAll('.cat-row')].find(r=>r.dataset.id===id)?.querySelector('.grip').focus();toast('Categoría reordenada');
+  const a=state.categories.indexOf(c),b=state.categories.indexOf(next);[state.categories[a],state.categories[b]]=[state.categories[b],state.categories[a]];const saved=save();renderCats();
+  dirty=new Set(Object.keys(VIEWS));dirty.delete('cats');
+  [...document.querySelectorAll('.cat-row')].find(r=>r.dataset.id===id)?.querySelector('.grip').focus();if(saved)toast('Categoría reordenada');
 });
 let chartScript = null, chartLoadFailed = false;
 function loadChartFor(container){
@@ -123,8 +124,8 @@ const startupProfile=activeProfile,startupConnection=sync.url+'|'+sync.token;
 requestAnimationFrame(()=>setTimeout(()=>{
 if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection)return;
 (syncOn() ? startupSync() : Promise.resolve(true)).then(confirmed => {
-  if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection||localTabChanged||syncConflict())return;
-  if(confirmed){if(runAutoRecurring())renderAll();}else dailyRecurringPending=true;
+  if(activeProfile!==startupProfile||sync.url+'|'+sync.token!==startupConnection||localRecovery||localTabChanged||syncConflict())return;
+  if(confirmed&&!bothMode&&!document.querySelector('dialog[open]')){if(runAutoRecurring())renderAll();}else dailyRecurringPending=true;
   pushOtherPending(); setTimeout(migratePastel, 600);
   setTimeout(() => { if (document.querySelector('dialog[open]')) return;
     if (!state.settings.onboarded && state.transactions.length){ state.settings.onboarded = true; if (!state.settings.lastClose) state.settings.lastClose = thisMonth(); save(); }

@@ -51,7 +51,7 @@ $('#btnCsv').onclick = () => {
 const methodsInput = $('#methodsInput');
 methodsInput.addEventListener('change', () => {
   state.settings.methods = methodsInput.value.split(',').map(s => s.trim()).filter(Boolean);
-  save(); toast('Métodos de pago actualizados');
+  dirty.add('movs'); if(save())toast('Métodos de pago actualizados');
 });
 $('#btnWipe').onclick = async () => {
   if (!(await ask({title:'¿Borrar todo?', msg:'Se borrarán todos los movimientos y presupuestos (también en Sheets si está conectado). Te recomiendo exportar un respaldo antes.', ok:'Borrar todo', icon:'🧹'}))) return;

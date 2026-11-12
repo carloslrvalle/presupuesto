@@ -2703,6 +2703,9 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
 /* Navegación flotante en teléfono. Todos los controles inferiores comparten su altura y separación. */
 @media (max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse){
  :root{
+  --dock-left:max(18px,calc(env(safe-area-inset-left,0px) + 12px));
+  --dock-right:max(18px,calc(env(safe-area-inset-right,0px) + 12px));
+  --dock-max-width:392px;
   --dock-columns:6;
   --dock-rows:1;
   --dock-row-size:48px;
@@ -2725,10 +2728,9 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
  #tabs{
   --tab-surface:var(--surface);
   position:fixed;
-  inset:auto max(18px,calc(env(safe-area-inset-right,0px) + 12px)) var(--dock-bottom) max(18px,calc(env(safe-area-inset-left,0px) + 12px));
+  inset:auto var(--dock-right) var(--dock-bottom) var(--dock-left);
   z-index:30;
-  width:auto;
-  max-width:min(392px,calc(100% - 36px));
+  width:min(var(--dock-max-width),calc(100% - var(--dock-left) - var(--dock-right)));
   margin:0 auto;
   padding:var(--dock-padding);
   display:grid;
@@ -2801,6 +2803,7 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
   :root{--dock-border:2px}
   #tabs .tab-ind{box-shadow:inset 0 0 0 1px var(--text)}
  }
+ @media (pointer:coarse){html{scrollbar-width:none}}
  @media (forced-colors:active){
   #tabs .tab-ind{border:2px solid Highlight;background:Canvas}
   #tabs button::after{border:1px solid CanvasText}
@@ -2841,11 +2844,29 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
  #txDialog.kb-open #txQuick{display:none}
 }
 
-/* Escritorio: el botón de alta y Volver arriba se alinean con el borde derecho del contenido, no con la esquina de la ventana. */
-@media (min-width:701px){
- :root{--float-right:max(var(--page-gutter),calc((100% - var(--content-width)) / 2))}
- .fab{right:var(--float-right);bottom:24px}
- .to-top{right:var(--float-right);bottom:96px}
+/* Escritorio: el margen lateral reserva espacio para las acciones fijas. */
+@media (min-width:601px) and (not ((max-width:960px) and (max-height:500px) and (pointer:coarse))){
+ :root{
+  --creation-width:56px;
+  --creation-gap:16px;
+  --frame-side:max(var(--page-gutter),calc((100% - var(--content-width)) / 2));
+  --creation-right:max(var(--page-gutter),calc(var(--frame-side) - var(--creation-gap) - var(--creation-width)));
+ }
+ main.wrap,.topbar>.wrap{
+  max-width:none;
+  margin-left:calc(var(--frame-side) - var(--page-gutter));
+  margin-right:calc(var(--creation-right) + var(--creation-width) + var(--creation-gap) - var(--page-gutter));
+ }
+ #fab{width:var(--creation-width);min-width:0;height:56px;right:var(--creation-right);bottom:24px;padding:0}
+ #fab .fab-label{display:none}
+ .to-top{right:calc(var(--creation-right) + (var(--creation-width) - 40px) / 2)}
+ @media(min-width:1100px){
+  :root{--creation-width:156px}
+  #fab{gap:8px;padding-inline:12px}
+  #fab .vi{flex-shrink:0}
+  #fab .fab-label{display:block;text-align:left;line-height:1.25}
+ }
+ @media(min-width:1440px){:root{--creation-width:208px}}
 }
 
 /* Teléfono: el nombre del perfil activo queda visible y el estado de guardado se distingue por color (pendiente en ámbar, error en rojo). */
@@ -2861,4 +2882,3 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
 @media (max-width:700px),(pointer:coarse){
  .metric-action,#txSeg button,.quick-toggle{min-height:44px}
 }
-

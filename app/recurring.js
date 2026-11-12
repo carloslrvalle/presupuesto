@@ -8,6 +8,7 @@ const recPending = m => state.recurring.filter(r => r.active !== false && (!r.st
 const recTxId = (r, m) => { const id = 'rec-' + r.id + '-' + m; return state.transactions.some(t => t.id === id) ? uid() : id; };
 const recTx = (r, m, extra) => ({id:recTxId(r, m), created:Date.now(), type:r.type, amount:r.amount, catId:r.catId, date:dateFor(m, r.day), method:r.method, desc:r.desc || getCat(r.catId).name, recId:r.id, ...(extra || {})});
 function runAutoRecurring(silent){
+  if (localRecovery || localTabChanged || bothMode) return 0;
   const tm = thisMonth(); let n = 0;
   state.recurring.filter(r => r.active !== false && r.auto).forEach(r => {
     // Solo se concilian los últimos diez años; una regla antigua también alcanza el mes actual.

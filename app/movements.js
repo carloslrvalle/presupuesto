@@ -373,11 +373,12 @@ selBar.addEventListener('click', async e => {
   if (b.dataset.sel === 'all'){ const rows = [...document.querySelectorAll('#movBody [data-row]')].map(r => r.dataset.row); const all = rows.every(id => selSet.has(id)); rows.forEach(id => all ? selSet.delete(id) : selSet.add(id)); renderSelUI(); renderMovs(); return; }
   const ids = [...selSet]; if (!ids.length) return;
   if (!(await ask({title:`¿Borrar ${plural(ids.length, 'movimiento')}?`, msg:'Podrás deshacerlo desde el aviso de abajo.'}))) return;
-  const keep = state.transactions.map((t, i) => [i, t]).filter(([, t]) => selSet.has(t.id)), recs = JSON.stringify(state.recurring);
-  ids.forEach(delTx); save(); selMode = false; selSet.clear(); renderSelUI(); renderAll();
+  if(localTabChanged)return;
+  const restore = removeTransactions(ids); if (!restore) return;
+  save(); selMode = false; selSet.clear(); renderSelUI(); renderAll();
   toast(`${plural(ids.length, 'movimiento')} ${ids.length === 1 ? 'eliminado' : 'eliminados'}`, {icon:'trash-2', action:'Deshacer', onAction: () => {
-    keep.forEach(([i, t]) => { if (!state.transactions.some(x => x.id === t.id)) state.transactions.splice(Math.min(i, state.transactions.length), 0, t); });
-    state.recurring = JSON.parse(recs); save(); renderAll(); toast('Movimientos restaurados', {icon:'undo-2'}); }});
+    if (restore()){ save(); renderAll(); toast('Movimientos restaurados', {icon:'undo-2'}); }
+  }});
 });
 $('#movBody').addEventListener('click', e => {
   if (!selMode) return; const tr = e.target.closest('[data-row]'); if (!tr) return;
@@ -529,14 +530,17 @@ function setMode(){
 // preset: {type, catId, amount, method, desc, date, goalId, recId}
 // Movimientos frecuentes de los últimos 4 meses (misma descripción, categoría y monto) para registrarlos con un toque
 function quickPicks(type){
-  const from = shiftMonth(thisMonth(), -3) + '-01', seen = {};
-  state.transactions.filter(t => t.type === type && t.date >= from && !t.recId && !t.goalId).forEach(t => {
-    // Un mismo gasto pagado con métodos distintos es una sola sugerencia; usa el método más frecuente (y el más reciente si empatan).
-    const k = [t.catId, (t.desc || '').toLowerCase(), t.amount].join('|'), g = seen[k] = seen[k] || {n:0, last:'', by:{}}, m = t.method || '';
-    g.n++; if (t.date > g.last) g.last = t.date;
-    const b = g.by[m] = g.by[m] || {t, n:0}; b.n++; if (t.date > b.t.date) b.t = t; });
-  return Object.values(seen).filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.last.localeCompare(a.last)).slice(0, 6)
-    .map(x => Object.values(x.by).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date))[0].t);
+  const from = shiftMonth(thisMonth(), -3) + '-01', today = todayISO(), seen = new Map();
+  const categories = new Set(catsActive(type).map(c => c.id));
+  for (const t of state.transactions){
+    if (t.type !== type || t.date < from || t.date > today || t.recId || t.goalId || !categories.has(t.catId)) continue;
+    const key = JSON.stringify([t.catId, (t.desc || '').toLowerCase(), t.amount, t.method || '']);
+    const entry = seen.get(key) || {t, n:0};
+    if (t.date > entry.t.date) entry.t = t;
+    entry.n++;
+    seen.set(key, entry);
+  }
+  return [...seen.values()].filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date)).slice(0, 6).map(x => x.t);
 }
 let quickOK = false, quickExpanded = false;
 function renderQuick(){
@@ -626,13 +630,14 @@ $('#recMonthEnd').onclick = () => { $('#fDay').value = 31; updateRecDate(); };
 $('#recFixed').onclick = () => { if ($('#fDay').disabled) $('#fDay').value = Math.min(30, new Date().getDate()); updateRecDate(); $('#fDay').focus(); };
 // Borra con opción de deshacer (sin pedir confirmación)
 function delTxUndo(id){
-  const idx = state.transactions.findIndex(x => x.id === id); if (idx < 0) return;
-  const t = state.transactions[idx], r = t.recId && state.recurring.find(x => x.id === t.recId), prevSkip = r ? [...(r.skipped || [])] : null;
-  delTx(id); save(); renderAll();
+  if (localTabChanged) return;
+  const t = state.transactions.find(x => x.id === id);
+  const restore = removeTransactions([id]); if (!restore) return;
+  save(); renderAll();
   toast('Movimiento eliminado', {icon:'trash-2', action:'Deshacer', onAction: () => {
-    if (!state.transactions.some(x => x.id === t.id)) state.transactions.splice(Math.min(idx, state.transactions.length), 0, t);
-    if (r) r.skipped = prevSkip;
-    if (t.date.slice(0,7) !== currentMonth){ currentMonth = t.date.slice(0,7); monthInput.value = currentMonth; }
+    if (!restore()) return;
+    const month = cycleView() ? cycleMonthForDate(t.date) : t.date.slice(0,7);
+    if (month !== currentMonth){ currentMonth = month; monthInput.value = month; }
     save(); renderAll(); flashRow(t.id); toast('Movimiento restaurado', {icon:'undo-2'});
   }});
 }
@@ -644,13 +649,33 @@ function highlightSaved(id){
   if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
 }
 function flashRow(id){const tr=document.querySelector(`#movBody [data-row="${id}"]`);motionAnimate(tr,[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
-function delTx(id){
-  const t = state.transactions.find(x => x.id === id);
-  if (t && t.recId){ // evita que un recurrente automático se vuelva a crear ese mes
-    const r = state.recurring.find(x => x.id === t.recId), m = t.date.slice(0,7);
-    if (r){ r.skipped = r.skipped || []; if (!r.skipped.includes(m)) r.skipped.push(m); }
-  }
-  state.transactions = state.transactions.filter(x => x.id !== id);
+function removeTransactions(ids){
+  const profile = activeProfile, selected = new Set(ids), removed = [], addedSkips = [];
+  state.transactions = state.transactions.filter((transaction, index) => {
+    if (!selected.has(transaction.id)) return true;
+    removed.push({transaction, index});
+    if (transaction.recId){ // evita que un recurrente automático se vuelva a crear ese mes
+      const rule = state.recurring.find(r => r.id === transaction.recId), month = transaction.date.slice(0,7);
+      if (rule && !recSkipped(rule, month)){
+        (rule.skipped ??= []).push(month);
+        addedSkips.push({id:rule.id, month});
+      }
+    }
+    return false;
+  });
+  if (!removed.length) return null;
+  return () => {
+    if (profile !== activeProfile || localTabChanged || localRecovery) return false;
+    const existing = new Set(state.transactions.map(t => t.id));
+    for (const {transaction, index} of removed){
+      if (!existing.has(transaction.id)) state.transactions.splice(Math.min(index, state.transactions.length), 0, transaction);
+    }
+    for (const {id, month} of addedSkips){
+      const rule = state.recurring.find(r => r.id === id);
+      if (rule?.skipped && recDone(rule, month)) rule.skipped = rule.skipped.filter(value => value !== month);
+    }
+    return true;
+  };
 }
 // Mensajes de validación del monto en español, sin depender del idioma del navegador.
 $('#fAmount').addEventListener('invalid', e => { const v = e.target.validity; e.target.setCustomValidity(v.valueMissing ? 'Ingresa el monto.' : v.badInput ? 'Ingresa un número válido.' : v.rangeUnderflow ? 'El monto debe ser mayor que 0.' : v.stepMismatch ? 'Usa como máximo 2 decimales.' : ''); });
@@ -662,26 +687,28 @@ $('#txForm').addEventListener('submit', async e => {
   if(localTabChanged)return toast('⚠️ Recarga para incorporar los cambios de otra pestaña.');
   if(!$('#txCategoryEditor').hidden){$('#txCategoryName').focus();return toast('Crea la categoría o cancela su edición antes de guardar.');}
   const amount = Math.round(parseFloat($('#fAmount').value) * 100) / 100;
-  if (!(amount > 0)) return toast('Ingresa un monto válido');
+  if (!Number.isFinite(amount) || amount <= 0) return toast('Ingresa un monto válido');
   if (!selCat) return toast('Elige una categoría');
   const desc = $('#fDesc').value.trim();
   if (txMode === 'rec'){
     const day = Number($('#fDay').value);
     if (!Number.isInteger(day) || day < 1 || day > 31) return toast('Ingresa un día entero del 1 al 31');
     const data = {type:txType, amount, catId:selCat, method:selMethod, desc, day, auto:$('#fAuto').checked};
-    const isNew = !editingId; let r;
-    if (!isNew){ r = state.recurring.find(x => x.id === editingId); Object.assign(r, data); }
-    else { r = {id:uid(), active:true, start:thisMonth(), skipped:[], ...data}; state.recurring.push(r); }
-    txDialog.close();
+    const isNew = !editingId, month = thisMonth();
+    const r = isNew ? {id:uid(), active:true, start:month, skipped:[], ...data} : state.recurring.find(x => x.id === editingId);
+    if (!r) return toast('⚠️ El recurrente ya no está disponible. Cierra y vuelve a abrir el formulario.');
     if (isNew && r.auto && new Date().getDate() >= Math.min(day, daysIn(thisMonth()))){
-      const yes = await ask({title:'¿Registrar también el de este mes?', msg:`La fecha de este mes (${fmtDateLong(dateFor(thisMonth(), day))}) ya llegó. Si ya lo anotaste a mano, elige "No".`, ok:'Sí, registrar', cancel:'No', danger:false, icon:'🔁'});
-      if (!yes) r.skipped.push(thisMonth());
+      const yes = await ask({title:'¿Registrar también el de este mes?', msg:`La fecha de este mes (${fmtDateLong(dateFor(month, day))}) ya llegó. Si ya lo anotaste a mano, elige "No".`, ok:'Sí, registrar', cancel:'No', danger:false, icon:'🔁'});
+      if (!txDialog.open || localTabChanged) return;
+      if (!yes) r.skipped.push(month);
     }
-    save(); runAutoRecurring(true); renderAll();
-    toast(isNew ? 'Recurrente creado 🔁' : 'Recurrente actualizado');
+    if (isNew) state.recurring.push(r); else Object.assign(r, data);
+    const saved = save();
+    txDialog.close(); if (saved) runAutoRecurring(true); renderAll();
+    if (saved) toast(isNew ? 'Recurrente creado 🔁' : 'Recurrente actualizado');
     return;
   }
-  if (!$('#fDate').value) return toast('Elige una fecha');
+  if (!BudgetFinance.validDate($('#fDate').value)) return toast('Elige una fecha válida');
   const data = {type:txType, amount, catId:selCat, date:$('#fDate').value, method:selMethod, desc,
     goalId: selGoal && !$('#fGoalField').hidden ? selGoal : undefined};
   if (txRecId) data.recId = txRecId;
@@ -689,19 +716,28 @@ $('#txForm').addEventListener('submit', async e => {
   const prevTx = editingId && state.transactions.find(t => t.id === editingId);
   if (!data.recId && !(prevTx && prevTx.recId)){
     const mm = data.date.slice(0, 7);
-    const r = state.recurring.find(r => r.active !== false && r.type === data.type && r.catId === data.catId && Math.abs(Number(r.amount) - amount) <= Math.max(1, Number(r.amount) * .05) && !recDone(r, mm));
+    const r = state.recurring.find(r => r.active !== false && (!r.start || r.start <= mm) && r.type === data.type && r.catId === data.catId && Math.abs(Number(r.amount) - amount) <= Math.max(1, Number(r.amount) * .05) && !recDone(r, mm));
     if (r){
       const yes = await ask({title:`¿Es el pago de «${r.desc || getCat(r.catId).name}»?`, msg:`Lo marco como el pago de ${monthLong(mm)} de ese recurrente, así no se registra dos veces.`, ok:'Sí, vincular', cancel:'No', danger:false, icon:'🔁'});
-      if (yes){ data.recId = r.id; r.skipped = (r.skipped || []).filter(x => x !== mm); }
+      if (!txDialog.open || localTabChanged) return;
+      const rule = state.recurring.find(candidate => candidate.id === r.id);
+      if (yes && rule && !recDone(rule, mm)){
+        data.recId = rule.id;
+        rule.skipped = (rule.skipped || []).filter(month => month !== mm);
+      }
     }
   }
-  if (editingId) Object.assign(state.transactions.find(t => t.id === editingId), data);
+  if (editingId){
+    const transaction = state.transactions.find(t => t.id === editingId);
+    if (!transaction) return toast('⚠️ El movimiento ya no está disponible. Cierra y vuelve a abrir el formulario.');
+    Object.assign(transaction, data);
+  }
   else state.transactions.push({id:uid(), created:Date.now(), ...data});
   const savedId = editingId || state.transactions[state.transactions.length - 1].id;
-  save(); txDialog.close();
+  const saved = save(); txDialog.close();
   const mov = cycleView()?cycleMonthForDate(data.date):data.date.slice(0,7);
   if (mov !== currentMonth){ currentMonth = mov; monthInput.value = mov; }
-  renderAll(); toast(editingId ? 'Movimiento actualizado ✅' : 'Movimiento registrado ✅');
+  renderAll(); if (saved) toast(editingId ? 'Movimiento actualizado ✅' : 'Movimiento registrado ✅');
   requestAnimationFrame(() => highlightSaved(savedId));
 });
 // En el celular, Eliminar y Duplicar quedan como íconos para que quepan los cuatro botones

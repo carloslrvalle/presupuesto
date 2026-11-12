@@ -135,18 +135,18 @@ const GRIP = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor
 // Ordenar categorías arrastrando el asa (puntero/táctil), con animación de los vecinos
 let catDrag = null;
 document.addEventListener('pointerdown', e => {
-  const g = e.target.closest('#tab-cats .grip'); if (!g) return;
+  const g = e.target.closest('#tab-cats .grip'); if (!g || e.button !== 0 || catDrag) return;
   const row = g.closest('.cat-row'); e.preventDefault();
-  const r = row.getBoundingClientRect();
-  catDrag = {row, list:row.parentElement, offY:e.clientY - r.top, t:0, id:e.pointerId};
-  row.classList.add('dragging'); g.setPointerCapture(e.pointerId);
+  const r = row.getBoundingClientRect(), list = row.parentElement;
+  catDrag = {row, list, originalNext:row.nextElementSibling, offY:e.clientY - r.top, t:0, id:e.pointerId};
+  row.classList.add('dragging'); list.setPointerCapture(e.pointerId);
 });
 document.addEventListener('pointermove', e => {
   if (!catDrag || e.pointerId !== catDrag.id) return;
-  const {row, list} = catDrag, natural = row.getBoundingClientRect().top - catDrag.t;
+  const {row, list} = catDrag;
   const sibs = [...list.querySelectorAll('.cat-row:not(.dragging)')], y = e.clientY;
   const before = sibs.find(s => { const b = s.getBoundingClientRect(); return y < b.top + b.height / 2; });
-  const target = before || null;
+  const target = before || list.querySelector('.arch-group');
   if ((target && row.nextElementSibling !== target) || (!target && list.lastElementChild !== row)){
     const tops = new Map(sibs.map(s => [s, s.getBoundingClientRect().top]));
     list.insertBefore(row, target);
@@ -157,16 +157,27 @@ document.addEventListener('pointermove', e => {
 });
 const endCatDrag = e => {
   if (!catDrag || e.pointerId !== catDrag.id) return;
-  const {row, list} = catDrag; catDrag = null;
+  const {row, list, originalNext} = catDrag; catDrag = null;
+  if (!row.isConnected) return;
+  if(e.type!=='pointerup'||localTabChanged){
+    list.insertBefore(row, originalNext);
+    row.classList.remove('dragging');row.style.transform='';
+    return;
+  }
   row.style.transition = 'transform '+MOTION.move+'ms '+MOTION.ease; row.style.transform = '';
   setTimeout(() => { row.classList.remove('dragging'); row.style.transition = ''; }, MOTION.move);
   const ids = [...list.querySelectorAll('.cat-row')].map(r => r.dataset.id), type = list.id === 'catsIncome' ? 'income' : 'expense';
-  const before = catsOf(type).map(c => c.id).join();
+  const active = catsActive(type), before = active.map(c => c.id).join();
   if (ids.join() === before) return;
-  state.categories = [...state.categories.filter(c => c.type !== type), ...ids.map(id => state.categories.find(c => c.id === id)).filter(Boolean)];
-  save(); dirty = new Set(Object.keys(VIEWS)); dirty.delete('cats'); toast('Orden actualizado', {icon:'list'});
+  const byId = new Map(active.map(c => [c.id, c]));
+  if(ids.length!==active.length||ids.some(id=>!byId.has(id))){renderCats();return;}
+  let next = 0;
+  state.categories = state.categories.map(c => byId.has(c.id) ? byId.get(ids[next++]) : c);
+  const saved = save(); dirty = new Set(Object.keys(VIEWS)); dirty.delete('cats');
+  if(saved)toast('Orden actualizado', {icon:'list'});
 };
 document.addEventListener('pointerup', endCatDrag); document.addEventListener('pointercancel', endCatDrag);
+document.addEventListener('lostpointercapture', endCatDrag);
 // ---- Selector visual de días de pago (categorías de ingreso) ----
 const ppEl = document.createElement('div'); ppEl.id='payPicker'; ppEl.className = 'pp'; ppEl.setAttribute('role', 'dialog');ppEl.setAttribute('aria-labelledby','ppTitle');
 if ('popover' in HTMLElement.prototype) ppEl.setAttribute('popover', 'manual');

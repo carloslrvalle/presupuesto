@@ -98,19 +98,24 @@ function setupSettings(){
  methods.querySelector('h3').remove();methodsInput.hidden=true;
  methods.insertAdjacentHTML('beforeend',`<div class="settings-methods" id="settingsMethods"></div><form class="settings-method-add" id="settingsMethodForm"><input id="settingsMethodName" aria-label="Nombre del método de pago" placeholder="Ej. Transferencia" maxlength="60" required><button class="btn primary" type="submit" id="settingsMethodSubmit">Agregar</button></form><div class="settings-method-help" id="settingsMethodHelp" role="status"></div>`);
  panel('methods').append(methods);
- let editing=-1;
- const commit=()=>{methodsInput.value=state.settings.methods.join(', ');methodsInput.dispatchEvent(new Event('change'));renderSettingsOverview();};
- $('#settingsMethodForm').onsubmit=e=>{e.preventDefault();const input=$('#settingsMethodName'),name=input.value.trim(),list=state.settings.methods;
-  if(!name||name.includes(',')){ $('#settingsMethodHelp').textContent='Escribe un nombre sin comas.';return; }
-  if(list.some((m,i)=>i!==editing&&m.toLocaleLowerCase()===name.toLocaleLowerCase())){$('#settingsMethodHelp').textContent='Este método ya existe.';return;}
-  if(editing<0)list.push(name);else list[editing]=name;
-  editing=-1;input.value='';$('#settingsMethodSubmit').textContent='Agregar';$('#settingsMethodHelp').textContent='';commit();
+ let editing=null;
+ const methodInput=$('#settingsMethodName'),methodSubmit=$('#settingsMethodSubmit'),methodHelp=$('#settingsMethodHelp');
+ const resetMethodEditor=()=>{editing=null;methodInput.value='';methodSubmit.textContent='Agregar';methodHelp.textContent='';};
+ const commit=()=>{const saved=save();methodsInput.value=state.settings.methods.join(', ');dirty.add('movs');renderSettingsOverview();return saved;};
+ $('#settingsMethodForm').onsubmit=e=>{e.preventDefault();const name=methodInput.value.trim(),list=state.settings.methods||[];
+  const index=editing?.profile===activeProfile?list.indexOf(editing.name):-1;
+  if(editing&&index<0){resetMethodEditor();methodHelp.textContent='El método cambió. Vuelve a seleccionarlo.';return;}
+  if(!name||name.includes(',')){methodHelp.textContent='Escribe un nombre sin comas.';return;}
+  if(list.some((m,i)=>i!==index&&m.toLocaleLowerCase()===name.toLocaleLowerCase())){methodHelp.textContent='Este método ya existe.';return;}
+  if(index<0)list.push(name);else list[index]=name;
+  state.settings.methods=list;resetMethodEditor();if(commit())toast('Métodos de pago actualizados');
  };
- $('#settingsMethods').onclick=e=>{const button=e.target.closest('button');if(!button)return;const i=Number(button.dataset.index);
-  if(button.dataset.action==='remove'){const[name]=state.settings.methods.splice(i,1);editing=-1;$('#settingsMethodName').value='';$('#settingsMethodSubmit').textContent='Agregar';commit();
-   toast(`«${name}» eliminado`,{icon:'trash-2',action:'Deshacer',onAction:()=>{const list=state.settings.methods;if(!list.some(m=>m.toLocaleLowerCase()===name.toLocaleLowerCase()))list.splice(Math.min(i,list.length),0,name);commit();}});}
-  else{editing=i;$('#settingsMethodName').value=state.settings.methods[i];$('#settingsMethodSubmit').textContent='Guardar';$('#settingsMethodName').focus();$('#settingsMethodHelp').textContent='Editando método de pago.';}
+ $('#settingsMethods').onclick=e=>{const button=e.target.closest('button');if(!button)return;const i=Number(button.dataset.index),profile=activeProfile;
+  if(button.dataset.action==='remove'){const[name]=state.settings.methods.splice(i,1);resetMethodEditor();if(!commit())return;
+   toast(`«${name}» eliminado`,{icon:'trash-2',action:'Deshacer',onAction:()=>{if(profile!==activeProfile||localTabChanged)return;const list=state.settings.methods??=[];if(!list.some(m=>m.toLocaleLowerCase()===name.toLocaleLowerCase()))list.splice(Math.min(i,list.length),0,name);commit();}});}
+  else{editing={profile,name:state.settings.methods[i]};methodInput.value=editing.name;methodSubmit.textContent='Guardar';methodInput.focus();methodHelp.textContent='Editando método de pago.';}
  };
+ $('#settingsMethods').resetEditor=resetMethodEditor;
  panel('data').append(connection,backup,danger);
  const stack=connection.querySelector('.stack'),config=document.createElement('div');
  for(const id of ['syncUrl','syncToken'])config.append($('#'+id).closest('.field'));

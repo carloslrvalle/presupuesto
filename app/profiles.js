@@ -100,19 +100,22 @@ function pushOtherPending(){
 }
 async function switchProfile(id){
   if (switching) return;
-  if (otherPush) { try { await otherPush; } catch(e){} }
   if (id === 'both'){ if (!bothMode) enterBoth(); return; }
   if (bothMode && id === activeProfile){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); showTab('dashboard'); renderAll(); return; }
   if (id === activeProfile) return;
   switching = true;
   try {
+    if (otherPush) await otherPush;
     // Antes de cambiar, se suben los cambios pendientes del usuario actual
     if (syncOn() && (sync.pending || pushing)) { try { await pushNow(); } catch(e){} }
+    if (document.querySelector('dialog[open]')) return;
     resetSyncRecovery(); clearTimeout(pushTimer);
     if(!saveLocal())return;saveSync();
     activeProfile = id; try { localData.writeText(ACT_KEY, id); } catch(e){}
     const bp = (sync.byProf || {})[id] || {}; sync.rev = Number(bp.rev) || 0; sync.pending = !!bp.pending; sync.lastSync = bp.lastSync || 0;
-    loadProfileState(); _doneSet = null;
+    loadProfileState(); _doneSet = null; _oth = null; otherAt = 0;
+    $('#settingsMethods').resetEditor();
+    if (selMode) setSelMode(false);
     currentMonth=cycleView()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;
     if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
     Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
@@ -121,7 +124,15 @@ async function switchProfile(id){
     if (syncOn()) setBadge('busy', '☁️ Conectando…'); else {setBadge();updateSyncInfo();}
     toast(`Ahora ves: ${profOf(id).name}`, {icon:'user'});
   } finally { switching = false; }
-  if (syncOn()) startupSync().then(() => { if (runAutoRecurring()) renderAll(); otherAt = 0; refreshOther(); });
+  const connection = sync.url+'|'+sync.token;
+  dailyRecurringPending = true;
+  const confirmed = !syncOn() || await startupSync();
+  if (id !== activeProfile || connection !== sync.url+'|'+sync.token || localRecovery || localTabChanged) return;
+  if (confirmed && !bothMode && !syncConflict() && !document.querySelector('dialog[open]')){
+    dailyRecurringPending = false;
+    if (runAutoRecurring()) renderAll();
+  }
+  refreshOther();
 }
 // Edición de usuarios en Ajustes
 let photoFor = null;

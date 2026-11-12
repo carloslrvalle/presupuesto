@@ -52,7 +52,7 @@ function setPlanningMode(enabled,day=cycleDay()){
 }
 let planningToday=todayISO(),planningDateTask=null,dailyRecurringPending=false;
 function refreshPlanningDate(){
- const today=todayISO();if(document.querySelector('dialog[open]')||localTabChanged)return;
+ const today=todayISO();if(document.querySelector('dialog[open]')||localRecovery||localTabChanged)return;
  if(today!==planningToday){
   const previous=cycleView()?cycleMonthForDate(planningToday):planningToday.slice(0,7);
   planningToday=today;_txIdx=null;dailyRecurringPending=true;
@@ -63,7 +63,7 @@ function refreshPlanningDate(){
  const profile=activeProfile,connection=sync.url+'|'+sync.token;
  planningDateTask=(async()=>{
   const confirmed=!syncOn()||await startupSync();
-  if(!confirmed||profile!==activeProfile||connection!==sync.url+'|'+sync.token||localTabChanged||syncConflict()||document.querySelector('dialog[open]'))return;
+  if(!confirmed||profile!==activeProfile||connection!==sync.url+'|'+sync.token||localRecovery||localTabChanged||bothMode||document.querySelector('dialog[open]')||syncConflict())return;
   dailyRecurringPending=false;if(runAutoRecurring())renderAll();
  })().catch(err=>{setBadge('err','No se pudo actualizar el día');updateSyncInfo(err.message);}).finally(()=>{planningDateTask=null;});
  return planningDateTask;

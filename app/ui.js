@@ -190,6 +190,7 @@ document.addEventListener('click', e => {
   const a = b.dataset.empty;
   if (a === 'expense' || a === 'income') openTx(null, {type:a});
   else if (a === 'tx') openTx();
+  else if (a === 'calendar-tx') openTx(null, {date:calSel});
   else if (a === 'rec') openRec();
   else if (a === 'budget') showTab('budget');
 });

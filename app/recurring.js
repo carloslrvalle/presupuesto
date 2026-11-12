@@ -40,7 +40,7 @@ function renderRec(){
   renderUpcoming(); renderSuggestions();
   const m = currentMonth, pend = recPending(m);
   const skipped = state.recurring.filter(r => r.active !== false && recSkipped(r, m) && !recDone(r, m));
-  $('#recPendingTitle').textContent = 'Por confirmar · ' + monthLong(m);
+  $('#recPendingTitle').textContent = 'Pendientes por confirmar · ' + monthLong(m);
   const pendRow = r => {
     const c = getCat(r.catId), isI = r.type === 'income', due = recDue(r, m);
     const status = r.auto && !due ? `automático el ${Math.min(r.day, daysIn(m))}${r.day === 31 ? " (fin de mes)" : ""}` : due ? '<span class="neg">vencido</span>' : `vence el ${Math.min(r.day, daysIn(m))}${r.day === 31 ? " (fin de mes)" : ""}`;

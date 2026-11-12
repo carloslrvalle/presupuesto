@@ -1,6 +1,6 @@
 // Presupuesto: bootstrap.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
 // Metadatos y diagnóstico antes de cargar la interfaz.
-window.__bootErrs=window.__bootErrs||[];window.__bootDiagnosticsReady=true;window.__APP_VERSION='1.10.92';window.__APP_DATE='2026-11-11';
+window.__bootErrs=window.__bootErrs||[];window.__bootDiagnosticsReady=true;window.__APP_VERSION='1.10.94';window.__APP_DATE='2026-11-12';
 function reportBootError(message,record=true){
  if(record)window.__bootErrs.push(message);const boot=document.getElementById('boot');
  if(boot&&!boot.classList.contains('gone')){boot.setAttribute('role','alert');boot.innerHTML='<div class="bt-err"><b>No se pudo abrir la app.</b><code></code></div><button type="button" onclick="location.reload()">Reintentar</button>';boot.querySelector('code').textContent=window.__bootErrs.join(' · ');}

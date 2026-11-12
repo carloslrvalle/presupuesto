@@ -214,7 +214,8 @@ function renderDashboard(){
   };
   $('#bvaExpense').innerHTML = rows('expense');
   animateBars($('#tab-dashboard'));
-  if(cy)renderCycleInsight(m,inc,exp,bExp);else renderInsight(m, txs, inc, exp, bExp, pendN);
+  if(cy)renderCycleInsight(m,inc,exp,bExp);
+  else renderInsight(m,txs,inc,exp,bExp,pendN);
 
   const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.amount - a.amount).slice(0,5);
   $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<div class="prow link" data-go-tx="${esc(t.id)}" title="Editar movimiento" style="grid-template-columns:34px 1fr auto">

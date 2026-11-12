@@ -250,7 +250,7 @@ function renderCalendar(){
     const hot = o && o.exp > med * 2.5 && exps.length > 3;
     const e = lvlOf(o && o.exp, max), g = lvlOf(o && o.inc, maxInc), kind = e && g ? ' both' : e ? ' has-exp' : g ? ' has-inc' : '';
     const dayLabel=`${fmtDateLong(iso)}. Ingresos: ${fmt(o?.inc||0)}. Gastos: ${fmt(o?.exp||0)}${recs.length?'. Recurrentes pendientes: '+recs.length:''}`;
-    html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${esc(dayLabel)}" title="${esc(dayLabel)}" aria-pressed="${iso===calSel}">
+    html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${esc(dayLabel)}" title="${esc(dayLabel)}" aria-pressed="${iso===calSel}" tabindex="${iso===calSel?0:-1}">
       <span class="cd-n">${d}</span>${recs.length ? `<span class="cd-r" title="${recs.length} recurrente(s) pendiente(s)">${ic('repeat')}</span>` : ''}${hot ? '<span class="cd-hot" title="Gasto alto">●</span>' : ''}
       </button>`;
     if (++col === 7) closeWeek(d);
@@ -293,16 +293,28 @@ function renderCalDay(){
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div><div class="name">${recLabel(r)}</div><div class="small muted">Recurrente ${r.auto ? 'automático' : 'por confirmar'}</div></div>
       <div class="amt">${fmt(r.amount)}</div></div>`; }).join('')}
-    ${!list.length && !recs.length ? emptyBox('calendar-days', 'Nada registrado este día. Toca «+» para sumar algo.', null, '', false, 'es-sm') : ''}</div>`;
+    ${!list.length && !recs.length ? emptyBox('calendar-days', 'Nada registrado este día.', 'calendar-tx', 'Registrar movimiento', false, 'es-sm') : ''}</div>`;
 }
 $('#calGrid').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; calSel = b.dataset.day;
-  document.querySelectorAll('#calGrid .cal-d').forEach(x => {x.classList.toggle('sel', x === b);x.setAttribute('aria-pressed',String(x===b));}); renderCalDay(); $('#calDay').classList.remove('swap'); void $('#calDay').offsetWidth; $('#calDay').classList.add('swap');
+  document.querySelectorAll('#calGrid .cal-d').forEach(x => {
+    const selected=x===b;
+    x.classList.toggle('sel',selected);
+    x.setAttribute('aria-pressed',String(selected));
+    x.tabIndex=selected?0:-1;
+  });
+  renderCalDay(); $('#calDay').classList.remove('swap'); void $('#calDay').offsetWidth; $('#calDay').classList.add('swap');
   if(innerWidth<=700&&e.detail)requestAnimationFrame(()=>{const el=$('#calDay'),header=document.querySelector('.topbar'),gap=getComputedStyle(header).position==='sticky'?header.getBoundingClientRect().height:0;window.scrollTo({top:scrollY+el.getBoundingClientRect().top-gap-12,behavior:reduceMotion()?'instant':'smooth'});});
 });
 $('#calGrid').addEventListener('keydown', e => {
-  const k = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-7, ArrowDown:7}[e.key]; if (!k || !calSel) return;
-  const m = currentMonth, d = Number(calSel.slice(8, 10)) + k; if (d < 1 || d > daysIn(m)) return;
-  e.preventDefault(); const b = $(`#calGrid [data-day="${dateFor(m, d)}"]`); if (b){ b.click(); b.focus(); }
+  const day=e.target.closest('[data-day]'), offset={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
+  if(!day || (!offset && e.key!=='Home' && e.key!=='End'))return;
+  e.preventDefault();
+  const m=currentMonth, last=daysIn(m);
+  const d=e.key==='Home'?1:e.key==='End'?last:Number(day.dataset.day.slice(8))+offset;
+  if(d<1 || d>last)return;
+  const next=$(`#calGrid [data-day="${dateFor(m,d)}"]`);
+  next?.click();
+  next?.focus();
 });
 $('#calDay').addEventListener('click', async e => {
   const ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
@@ -395,7 +407,7 @@ function openMovActionMenu(anchor){
  if(movAction?.anchor===anchor){closeMovActionMenu(true);return;}
  closeMovActionMenu();movAction={anchor,id:anchor.dataset.rowMenu};anchor.setAttribute('aria-expanded','true');movActionMenu.hidden=false;
  clearTimeout(movActionMenu._hideTimer);movActionMenu.inert=false;movActionMenu.classList.remove('menu-closing');
- if(movActionMenu.showPopover)movActionMenu.showPopover();
+ if(movActionMenu.showPopover&&!movActionMenu.matches(':popover-open'))movActionMenu.showPopover();
  positionMovActionMenu();
  movActionMenu.querySelector('button').focus({preventScroll:true});
 }
@@ -550,7 +562,7 @@ function openTx(id, preset){
   txType = p.type || txType; setMode(); setTxType(txType);
   $('#txTitle').textContent = t ? 'Editar movimiento' : (preset && preset.recId) ? 'Registrar recurrente' : (preset && preset.goalId) ? 'Aporte a meta' : 'Nuevo movimiento';
   $('#fAmount').value = p.amount || '';
-  $('#fDate').value = p.date || (cycleView() ? (cycleMonthForDate()===currentMonth?todayISO():cyclePeriod(currentMonth).start) : currentMonth === thisMonth() ? todayISO() : currentMonth + '-01');
+  $('#fDate').value = p.date || todayISO();
   $('#fDesc').value = p.desc || '';
   $('#txDelete').style.display = t ? '' : 'none'; $('#txDup').style.display = t ? '' : 'none';
   setTxDetails(false);
@@ -570,7 +582,15 @@ function txDetailsLabel(){
 function setTxDetails(open){
   txDialog.classList.toggle('details-open', open); $('#txMore').setAttribute('aria-expanded', String(open)); txDetailsLabel();
 }
-$('#txMore').onclick = () => { const open=!txDialog.classList.contains('details-open');setTxDetails(open);if(!open)return; motionAnimate($('#txDetails'), [{opacity:.85, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel'); $('#fDateField .dp-trigger').focus({preventScroll:true}); keepTxFieldVisible(); };
+$('#txMore').onclick = () => {
+  const open=!txDialog.classList.contains('details-open');
+  setTxDetails(open);
+  if(!open)return;
+  const details=$('#txDetails'), body=txDialog.querySelector('.dlg-body');
+  motionAnimate(details, [{opacity:.85, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel');
+  $('#fDateField .dp-trigger').focus({preventScroll:true});
+  keepTxFieldVisible(details.offsetHeight + 16 <= body.clientHeight ? details : document.activeElement);
+};
 for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
 function openRec(id, preset){
   resetTxCategoryUI();
@@ -693,7 +713,6 @@ $('#txDelete').onclick = async () => {
 };
 $('#fab').onclick = () => activeTab()==='goals'?openGoal():(activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {})); // el + respeta el día seleccionado en Calendario
 $('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
-// El botón conserva su posición flotante durante el desplazamiento y el toque.
 const txPhone=matchMedia('(max-width:700px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
 function showTxDialog(preferredFocus){
  resizeTxViewport();
@@ -703,9 +722,9 @@ function showTxDialog(preferredFocus){
  txDialog.querySelector('.dlg-body').scrollTop=0;
 }
 // En el celular el teclado tapa la parte baja de la pantalla: la hoja se apoya sobre él y el campo activo queda a la vista.
-function keepTxFieldVisible(){
- const a=document.activeElement,body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!a||!body.contains(a))return;
- const b=body.getBoundingClientRect(),r=a.getBoundingClientRect();
+function keepTxFieldVisible(field=document.activeElement){
+ const body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!field||!body.contains(field))return;
+ const b=body.getBoundingClientRect(),r=field.getBoundingClientRect();
  if(r.bottom>b.bottom-8)body.scrollTop+=r.bottom-b.bottom+8;else if(r.top<b.top+8)body.scrollTop-=b.top+8-r.top;
 }
 let txViewportRef={w:0,h:0},txViewportFrame=0;
@@ -730,7 +749,7 @@ window.visualViewport?.addEventListener('resize',scheduleTxViewport);
 window.visualViewport?.addEventListener('scroll',scheduleTxViewport);
 // Solo los campos editables requieren compensar el teclado. Desplazar un botón
 // entre pointerdown y click puede cancelar el toque en WebKit.
-txDialog.addEventListener('focusin',e=>{if(e.target.matches('input,textarea,select'))requestAnimationFrame(keepTxFieldVisible);});
+txDialog.addEventListener('focusin',e=>{if(e.target.matches('input,textarea,select'))requestAnimationFrame(()=>keepTxFieldVisible());});
 resizeTxViewport();
 $('#btnNewTx').onclick = () => openTx();
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());

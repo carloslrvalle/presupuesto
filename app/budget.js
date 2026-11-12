@@ -13,7 +13,7 @@ function budgetTable(type){
     const incomeDiff = diff > .005 ? `<b class="pos">+${fmt(diff)}</b>` : diff < -.005 ? `<span class="muted">−${fmt(-diff)}</span>` : `<span class="muted">${fmt(0)}</span>`;
     return `<tr class="${alert}${largeAmounts ? ' large-amounts' : ''}" style="--budget-plan-ch:${String(b || 0).length}">
       <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="cname">${esc(c.name)}</span></div></td>
-      <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<label class="budget-plan-field"><span class="budget-currency" aria-hidden="true">S/</span><input type="number" inputmode="decimal" class="budget-input" min="0" step="10" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0"></label>` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
+      <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<label class="budget-plan-field"><span class="budget-currency" aria-hidden="true">S/</span><input type="number" inputmode="decimal" class="budget-input" min="0" step="0.01" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0"></label>` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
       <td class="num${r ? '' : ' muted'}" data-mobile-label="Real"><span class="budget-real">${fmt(r)}</span>${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
       <td class="num" data-mobile-label="${isE?(sav?(diff>=0?'Ahorro adicional':'Por ahorrar'):'Disponible'):incomeLabel}">${!b && !r ? '<span class="muted">—</span>' : isE ? (sav ? (diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`) : `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}`) : `${incomeDiff}${!b && r ? '<small class="income-unplanned">No previsto</small>' : ''}`}</td>
       <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}">${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
@@ -90,12 +90,39 @@ $('#tab-budget').addEventListener('input', e => {
   const inp = e.target.closest('.budget-input'); if (!inp) return;
   inp.closest('tr').style.setProperty('--budget-plan-ch',(inp.value || '0').length);
 });
-$('#btnCopyPrev').onclick = () => {
-  if(cycleView()){const m=currentMonth,p=shiftMonth(m,-1);state.budgets[m]=state.budgets[m]||{};state.categories.forEach(c=>state.budgets[m][cycleBudgetKey(c.id)]=cycleBudget(p,c.id));save();renderAll();return toast('Presupuesto copiado del ciclo anterior');}
-  const prev = shiftMonth(currentMonth,-1), obj = {};
+$('#btnCopyPrev').onclick = async () => {
+  const m = currentMonth, prev = shiftMonth(m,-1), cycle = cycleView(), profile = activeProfile;
+  const day = cycle ? cycleDay() : null, copy = {};
+  let changed = 0;
   // Un ingreso que no llega en uno de los dos meses (p. ej. gratificación) conserva su monto esperado.
-  state.categories.forEach(c => { if (payActive(c, prev) && payActive(c, currentMonth) && !isArch(c, prev)) obj[c.id] = getBudget(prev, c.id); });
-  state.budgets[currentMonth] = {...(state.budgets[currentMonth]||{}),...obj}; save(); renderAll(); toast('Presupuesto copiado de ' + monthLong(prev));
+  for(const c of state.categories){
+    if(!cycle && (!payActive(c,prev) || !payActive(c,m) || isArch(c,prev)))continue;
+    const key = cycle?cycleBudgetKey(c.id):c.id, value = planBudget(prev,c.id);
+    copy[key] = value;
+    if(planBudget(m,c.id)!==value)changed++;
+  }
+  if(changed && !await ask({
+    title:cycle?'¿Copiar el ciclo anterior?':'¿Copiar el mes anterior?',
+    msg:changed===1?'Cambiará el importe de 1 categoría.':`Cambiarán los importes de ${changed} categorías.`,
+    ok:'Copiar', danger:false, icon:'copy'
+  }))return;
+  if(activeProfile!==profile || currentMonth!==m || cycleView()!==cycle || (cycle && cycleDay()!==day) || localRecovery || localTabChanged)return;
+  const before = {...state.budgets[m]};
+  state.budgets[m] = {...before,...copy};
+  if(!save())return;
+  renderAll();
+  toast(cycle?'Presupuesto copiado del ciclo anterior':'Presupuesto copiado de '+monthLong(prev), {action:'Deshacer',onAction:()=>{
+    if(activeProfile!==profile || localRecovery || localTabChanged)return;
+    const budget = state.budgets[m];
+    if(!budget)return;
+    for(const [key,value] of Object.entries(copy)){
+      if(budget[key]!==value)continue;
+      if(Object.hasOwn(before,key))budget[key]=before[key];
+      else delete budget[key];
+    }
+    if(!Object.keys(budget).length)delete state.budgets[m];
+    if(save()){renderAll();toast('Presupuesto anterior restaurado');}
+  }});
 };
 $('#btnSetDefault').onclick = () => {
   if(cycleView()){const config=cycleConfig(),defaults={...(config.defaults||{})};defaults[cycleDay()]=Object.fromEntries(state.categories.map(c=>[c.id,cycleBudget(currentMonth,c.id)]));state.settings.budgetCycle={...config,defaults};save();renderAll();return toast('Base guardada para los próximos ciclos');}

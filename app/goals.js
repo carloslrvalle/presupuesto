@@ -84,7 +84,7 @@ function renderGoals(){
   const activeCount = sorted.findIndex(goalDone), split = activeCount < 0 ? sorted.length : activeCount;
   newGoal.hidden = split !== 0;
   if (activeTab() === 'goals') updateCreationControls();
-  grid.innerHTML = cards.slice(0, split).join('') + (split < cards.length ? `<details class="goal-done-group"${doneOpen?' open':''}><summary>${ic('check')} Metas logradas <span>${cards.length-split}</span>${ic('chevron-down')}</summary><div class="goals-grid">${cards.slice(split).join('')}</div></details>` : '');
+  grid.innerHTML = cards.slice(0, split).join('') + (split < cards.length ? `<details class="goal-done-group"${doneOpen?' open':''}><summary>${ic('check')} ${split===0?'Todas tus metas están logradas':'Metas logradas'} <span>${cards.length-split}</span>${ic('chevron-down')}</summary><div class="goals-grid">${cards.slice(split).join('')}</div></details>` : '');
   animateBars(grid);
 }
 const goalDialog = $('#goalDialog'); let goalEdit = null, gIcon = 'svg:target', gColor = '#10b981', gPrio = 'norm';

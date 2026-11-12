@@ -155,8 +155,9 @@ function renderSettingsStatus(){
  if(!$('#settingsStatusTitle'))return;
  const config=$('#settingsConnectionConfig');
  if(config){const summary=config.querySelector('summary');summary.setAttribute('aria-disabled',String(!settingsConnectionReady()));summary.textContent=settingsConnectionReady()?'Configurar conexión':'Vincular hoja de cálculo';}
- $('#settingsStatusTitle').textContent=!settingsConnectionReady()?'Conecta tu hoja de cálculo':$('#syncBadge').classList.contains('err')?'Revisa la sincronización':sync.pending?'Cambios pendientes de sincronizar':'Google Sheets conectado';
- $('#settingsStatusInfo').textContent=$('#syncInfo').textContent;renderSettingsHome();
+ const local=!settingsConnectionReady()&&!$('#syncBadge').classList.contains('err');
+ $('#settingsStatusTitle').textContent=$('#syncBadge').classList.contains('err')?'Revisa el guardado':local?'Guardado en este dispositivo':sync.pending?'Cambios pendientes de sincronizar':'Google Sheets conectado';
+ $('#settingsStatusInfo').textContent=local?'Vincular Google Sheets o gestionar respaldos':$('#syncInfo').textContent;renderSettingsHome();
 }
 function renderSettingsHome(){
  if(!$('#settingsHomeUsers'))return;

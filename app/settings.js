@@ -58,7 +58,7 @@ function checkGoalCelebration(){
 /* Reorganiza los controles existentes conservando sus eventos y datos. */
 function setupSettings(){
  const root=$('#tab-settings'), cards=[...root.querySelectorAll('.card')];
- const [users,themes,fonts,backup,connection,methods,danger]=cards;
+ const [users,themes,backup,connection,methods,danger]=cards;
  root.querySelector('.toolbar').remove(); root.querySelector('.grid2').remove();
  const version=$('#appVer'),install=$('#btnInstall');
  root.replaceChildren();
@@ -90,10 +90,22 @@ function setupSettings(){
  }
  users.querySelector('p').textContent='Cada usuario conserva sus propios datos y preferencias. Toca su nombre, avatar o foto para editarlo.';
  users.querySelector('h3').remove();panel('users').append(users);
- const themeDetails=disclosure('Tema de colores',themes),fontDetails=disclosure('Tipografía',fonts);
+ const themeDetails=disclosure('Tema de colores',themes);
  themeDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsThemeName"></small>');
+ const fontField = document.createElement('div');
+ fontField.className = 'field settings-font-field';
+ const options = availableFonts().map(font => `<option value="${font.id}">${esc(font.name)}</option>`).join('');
+ fontField.innerHTML = `<label for="settingsFont">Fuente de la interfaz</label>
+   <select id="settingsFont">${options}</select>
+   <div class="settings-font-sample"><strong>Resumen de noviembre</strong><span>Alimentación · S/ 1,250.90</span></div>`;
+ const fontSelect = fontField.querySelector('select');
+ fontSelect.addEventListener('change', () => {
+   if (saveChange(() => { state.settings.font = fontSelect.value; })) renderAll();
+   else fontSelect.value = currentFont().id;
+ });
+ const fontDetails = disclosure('Tipografía', fontField);
  fontDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsFontName"></small>');
- panel('appearance').append(themeDetails,fontDetails);
+ panel('appearance').append(fontDetails, themeDetails);
  methods.querySelector('p').textContent='Agrega tus métodos de pago. Toca un nombre para editarlo.';
  methods.querySelector('h3').remove();methodsInput.hidden=true;
  methods.insertAdjacentHTML('beforeend',`<div class="settings-methods" id="settingsMethods"></div><form class="settings-method-add" id="settingsMethodForm"><input id="settingsMethodName" aria-label="Nombre del método de pago" placeholder="Ej. Transferencia" maxlength="60" required><button class="btn primary" type="submit" id="settingsMethodSubmit">Agregar</button></form><div class="settings-method-help" id="settingsMethodHelp" role="status"></div>`);
@@ -140,7 +152,6 @@ function setupSettings(){
  };
  new MutationObserver(()=>renderSettingsStatus()).observe($('#syncInfo'),{childList:true,characterData:true,subtree:true});
  new MutationObserver(()=>renderSettingsOverview()).observe($('#themeGrid'),{childList:true});
- new MutationObserver(()=>renderSettingsOverview()).observe($('#fontGrid'),{childList:true});
  // La primera conexión debe mantener visibles los campos que reciben el foco.
  if(!settingsConnectionReady())configDetails.setExpanded(true,false);
 }
@@ -168,15 +179,16 @@ function renderSettingsStatus(){
 function renderSettingsHome(){
  if(!$('#settingsHomeUsers'))return;
  $('#settingsHomeUsers').textContent=profiles.list.map(p=>p.name).join(' · ');
- $('#settingsHomeAppearance').textContent=(curTheme()?.name||'Personalizado')+' · '+curFont().name;
+ $('#settingsHomeAppearance').textContent=curTheme()?.name||'Personalizado';
  const methods=state.settings.methods||[];
  $('#settingsHomeMethods').textContent=methods.length?methods.slice(0,3).join(' · ')+(methods.length>3?' · +'+(methods.length-3):''):'Sin métodos definidos';
  $('#settingsHomeData').textContent=!syncOn()?'Datos en este dispositivo · Sin conectar a Sheets':$('#syncBadge').classList.contains('err')?'Revisar conexión con Google Sheets':sync.pending?'Google Sheets · Cambios pendientes':sync.lastSync?'Google Sheets · Última sincronización '+new Date(sync.lastSync).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Google Sheets · Esperando sincronización';
 }
 function renderSettingsOverview(){
  if(!$('#settingsThemeName'))return;
- const theme=curTheme()?.name||'Personalizado',font=curFont().name;
- $('#settingsThemeName').textContent=theme;$('#settingsFontName').textContent=font;
+ $('#settingsThemeName').textContent=curTheme()?.name||'Personalizado';
+ $('#settingsFont').value=currentFont().id;
+ $('#settingsFontName').textContent=currentFont().name;
  renderSettingsHome();
  $('#settingsMethods').innerHTML=(state.settings.methods||[]).map((m,i)=>`<span class="settings-method-chip"><button type="button" data-index="${i}" data-action="edit" aria-label="Editar ${esc(m)}">${esc(m)}</button><button type="button" data-index="${i}" data-action="remove" aria-label="Eliminar ${esc(m)}">${ic('x')}</button></span>`).join('')||'<p class="small muted">Aún no agregaste métodos de pago.</p>';
  renderSettingsStatus();

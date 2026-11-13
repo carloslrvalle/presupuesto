@@ -24,7 +24,7 @@ function enhanceAccessibility(){
   }});
 }
 function syncSelectionAccessibility(){
-  document.querySelectorAll('.seg button,.vseg button,.font-card,.theme-card').forEach(b=>b.setAttribute('aria-pressed',String(b.classList.contains('active'))));
+  document.querySelectorAll('.seg button,.vseg button,.theme-card').forEach(b=>b.setAttribute('aria-pressed',String(b.classList.contains('active'))));
 }
 document.addEventListener('click',()=>qMicro(syncSelectionAccessibility));
 document.addEventListener('keydown',e=>{
@@ -79,7 +79,7 @@ function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n);
 function renderAll(){
   if (lastRenderMonth !== currentMonth){ resetBars(); lastRenderMonth = currentMonth; }
   planningHeader();
-  applyBrand(); renderThemes(); renderFonts();
+  applyBrand(); renderThemes();
   methodsInput.value = (state.settings.methods||[]).join(', '); renderSettingsOverview();
   // Solo se dibuja la pestaña visible; las demás quedan marcadas y se dibujan al abrirlas
   dirty = new Set(Object.keys(VIEWS));

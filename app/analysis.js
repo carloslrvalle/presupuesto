@@ -96,7 +96,7 @@ function renderAnalysisChart(){
   const values=analysisValues(),color=cssVar(metric.color),negative=cssVar('--expense-chart');
   const surface=cssVar('--surface'), textColor=cssVar('--text');
   const seriesKey=JSON.stringify([activeProfile,data.months[0],analysisMetric,analysisChartMode]);
-  const chartKey=JSON.stringify([seriesKey,phone,reduceMotion(),indices,values,color,negative,curFont().id,isDarkUI(),...['--surface','--text','--muted','--bg','--border'].map(cssVar)]);
+  const chartKey=JSON.stringify([seriesKey,phone,reduceMotion(),indices,values,color,negative,isDarkUI(),...['--surface','--text','--muted','--bg','--border'].map(cssVar)]);
   if (chYear?.$analysisKey === chartKey){ chYear.resize(); chYear.update('none'); return; }
   const animate=!reduceMotion() && chYear?.$analysisSeries !== seriesKey;
   chYear?.destroy();
@@ -133,7 +133,7 @@ function renderAnalysisChart(){
   };
   const valueLabels={id:'yearValueLabels',afterDatasetsDraw(chart){
     if(indices.length>3)return;
-    const {ctx,chartArea:area}=chart,meta=chart.getDatasetMeta(0);ctx.save();ctx.font='600 12px '+curFont().body;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=textColor;
+    const {ctx,chartArea:area}=chart,meta=chart.getDatasetMeta(0);ctx.save();ctx.font='600 12px '+cssVar('--font-body');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=textColor;
     meta.data.forEach((point,i)=>{const value=dataset.data[i];if(value==null||point.skip||(chart.$analysisTrace?.progress<1&&point.x>chart.$analysisTrace.head?.x))return;
       let text=analysisFormat(value),width=ctx.measureText(text).width;
       if(width>(area.width/indices.length)*.8){text=percentage?analysisPercent(value):compactS(value);width=ctx.measureText(text).width;}

@@ -168,11 +168,8 @@ const THEMES = [
         "popover": "#ffffff",
         "primary": "#6366f1",
         "sidebar": "#f3f4f6",
-        "font-mono": "JetBrains Mono, monospace",
-        "font-sans": "Inter, sans-serif",
         "secondary": "#e5e7eb",
         "background": "#f8fafc",
-        "font-serif": "Merriweather, serif",
         "foreground": "#1e293b",
         "destructive": "#ef4444",
         "shadow-blur": "8px",
@@ -212,11 +209,8 @@ const THEMES = [
         "popover": "#1e293b",
         "primary": "#818cf8",
         "sidebar": "#1e293b",
-        "font-mono": "JetBrains Mono, monospace",
-        "font-sans": "Inter, sans-serif",
         "secondary": "#2d3748",
         "background": "#0f172a",
-        "font-serif": "Merriweather, serif",
         "foreground": "#e2e8f0",
         "destructive": "#ef4444",
         "shadow-blur": "8px",
@@ -303,57 +297,75 @@ function applyTheme(id){
   }});
 }
 // ---- Tipografía ----
-const SANS_FB = 'system-ui,-apple-system,"Segoe UI",sans-serif', SERIF_FB = 'Georgia,"Times New Roman",serif';
-// Seis fuentes desde 1.10.72; Geist es la predeterminada (tema Vercel). Georgia es del sistema: no descarga archivo.
-const FONTS = [
-  {id:'geist', name:'Geist', desc:'Limpia y moderna, con cifras claras', body:`"Geist",${SANS_FB}`, num:'"tnum"'},
-  {id:'geistmono', name:'Geist Mono', desc:'Monoespaciada, ideal para tablas y cifras', body:`"Geist Mono",ui-monospace,monospace`, num:'"tnum"'},
-  {id:'inter', name:'Inter', desc:'Neutra y muy legible en pantalla', body:`"Inter",${SANS_FB}`, num:'"tnum"'},
-  {id:'jakarta', name:'Plus Jakarta', desc:'Moderna y amable', body:`"Plus Jakarta Sans",${SANS_FB}`},
-  {id:'georgia', name:'Georgia', desc:'Serif clásica, incluida en el sistema', body:SERIF_FB, num:'"lnum","tnum"'},
-  {id:'system', name:'Del sistema', desc:'La fuente nativa de tu celular o computadora', body:SANS_FB, num:'"tnum"'}];
-// Compatibilidad con elecciones guardadas de opciones retiradas (la última limpieza en 1.10.72).
-const FONT_REPLACEMENTS = {claude:'georgia', claudemix:'georgia', geistserif:'georgia', geistserifheart:'georgia', geistserifsquare:'georgia', geistseriftriangle:'georgia',
-  geistpixelcircle:'geistmono', geistpixelgrid:'geistmono', geistpixelline:'geistmono', geistpixelsquare:'geistmono', geistpixeltriangle:'geistmono', plexmono:'geistmono',
-  apple:'system', googlesans:'inter', publicsans:'inter', dmsans:'inter', manrope:'inter', roboto:'inter', plexsans:'inter', spacegrotesk:'geist', nunito:'jakarta'};
-const curFont = () => FONTS.find(f => f.id === (FONT_REPLACEMENTS[state.settings.font] || state.settings.font)) || FONTS[0];
-function applyFont(){
-  const f = curFont(), r = document.documentElement.style;
-  r.setProperty('--font-body', f.body); r.setProperty('--font-head', f.head || f.body); r.setProperty('--num-feat', f.num || 'normal');
-  if (typeof Chart !== 'undefined') Chart.defaults.font.family = f.body;
-  loadAppFont(f);
+const SYSTEM_FONT = {id:'system', name:'Del sistema', body:'system-ui'};
+const WEB_FONTS = [
+  {id:'inter', name:'Inter', body:'"Inter"', google:'Inter'},
+  {id:'jakarta', name:'Plus Jakarta Sans', body:'"Plus Jakarta Sans"', google:'Plus+Jakarta+Sans'},
+  {id:'jetbrains-mono', name:'JetBrains Mono', body:'"JetBrains Mono"', google:'JetBrains+Mono', mono:true}
+];
+const PREVIEW_FONTS = [
+  {id:'anthropic-sans', name:'Anthropic Sans', body:'"Anthropic Sans Text"', head:'"Anthropic Sans Display"'},
+  {id:'anthropic-serif', name:'Anthropic Serif', body:'"Anthropic Serif Text"', head:'"Anthropic Serif Display"', serif:true},
+  {id:'anthropic-mono', name:'Anthropic Mono', body:'"Anthropic Mono Web"', mono:true}
+];
+function availableFonts(){
+  const preview = document.getElementById('preview-fonts');
+  const onlineFonts = document.documentElement.hasAttribute('data-offline-demo') ? [] : WEB_FONTS;
+  return [SYSTEM_FONT, ...onlineFonts, ...(preview ? PREVIEW_FONTS : [])];
 }
-let appFontKey = '';
-function refreshFontLayout(){
-  fitMetricValues(); moveTabInd();
-  if (typeof Chart !== 'undefined') Object.values(Chart.instances).forEach(chart => {
-    if (!chart.canvas?.isConnected || !chart.canvas.getBoundingClientRect().width) return;
-    chart.options.font = {...chart.options.font, family:curFont().body};
-    chart.resize(); chart.update('none');
+function currentFont(){
+  return availableFonts().find(font => font.id === state.settings.font) || SYSTEM_FONT;
+}
+const fontStylesheets = new Map();
+function loadFontStylesheet(family){
+  if (fontStylesheets.has(family)) return fontStylesheets.get(family);
+  const stylesheet = document.createElement('link');
+  stylesheet.rel = 'stylesheet';
+  stylesheet.href = 'https://fonts.googleapis.com/css2?family=' + family + ':wght@400..700&display=swap';
+  const ready = new Promise((resolve, reject) => {
+    stylesheet.onload = resolve;
+    stylesheet.onerror = () => { stylesheet.remove(); fontStylesheets.delete(family); reject(new Error('Fuente no disponible')); };
   });
+  fontStylesheets.set(family, ready);
+  document.head.append(stylesheet);
+  return ready;
 }
-function loadAppFont(f){
-  if (!document.fonts || appFontKey === f.id) return;
-  appFontKey = f.id;
-  const family = f.body.split(',')[0];
-  Promise.all([400,500,600,700].map(w => document.fonts.load(w+' 16px '+family,'Presupuesto Áéñ S/ 1,250.90')))
-    .then(() => { if (curFont().id === f.id) requestAnimationFrame(refreshFontLayout); }).catch(() => {});
+let activeFontId;
+function refreshFontLayout(){
+  fitMetricValues();
+  moveTabInd();
+  if (typeof Chart === 'undefined') return;
+  const family = cssVar('--font-body');
+  Chart.defaults.font.family = family;
+  for (const chart of Object.values(Chart.instances)){
+    chart.options.font = {...chart.options.font, family};
+    if (chart.canvas.getBoundingClientRect().width){ chart.resize(); chart.update('none'); }
+  }
 }
-function renderFonts(){
-  const el = $('#fontGrid'); if (!el) return;
-  const cur = curFont().id;
-  el.innerHTML = FONTS.map(f => `<button type="button" class="font-card${f.id === cur ? ' active' : ''}" data-font="${f.id}" title="${esc(f.desc)}">
-      <div class="fc-aa"><b style="font-family:${esc(f.head || f.body)}">Aa</b><span style="font-family:${esc(f.head || f.body)}">S/ 1,250.90</span></div>
-      <div class="fc-name" style="font-family:${esc(f.body)}">${f.name}${f.id === cur ? `<span class="tc-on">${ic('check')}</span>` : ''}</div>
-      <div class="fc-desc" style="font-family:${esc(f.body)}">${f.desc}</div></button>`).join('');
-  $('#fontNote').textContent = cur === 'system' ? 'Usa la fuente nativa de tu dispositivo: San Francisco en Apple, Segoe UI en Windows o la predeterminada de Android. Su apariencia varía entre sistemas.' : cur === 'georgia' ? 'Georgia viene instalada en casi todos los dispositivos; si falta, se usa la serif del sistema.' : 'Cambia la letra de toda la app. Funciona sin internet.';
+function applyAppFont(){
+  const font = currentFont(), root = document.documentElement;
+  if (activeFontId === font.id) return;
+  activeFontId = font.id;
+  const fallback = font.mono ? 'ui-monospace, monospace' : font.serif ? 'Georgia, serif' : 'system-ui, sans-serif';
+  root.style.setProperty('--font-body', font === SYSTEM_FONT ? fallback : font.body + ', ' + fallback);
+  root.style.setProperty('--font-head', font.head ? font.head + ', ' + fallback : 'var(--font-body)');
+  requestAnimationFrame(refreshFontLayout);
+  if (font === SYSTEM_FONT || !document.fonts) return;
+  const ready = font.google ? loadFontStylesheet(font.google) : Promise.resolve();
+  ready.then(() => Promise.all([
+    document.fonts.load('400 16px ' + font.body, 'Presupuesto Áéñ S/ 1,250.90'),
+    document.fonts.load('700 24px ' + (font.head || font.body), 'Presupuesto Áéñ S/ 1,250.90')
+  ])).then(() => {
+    if (currentFont().id === font.id) requestAnimationFrame(refreshFontLayout);
+  }).catch(() => {});
 }
-document.addEventListener('click', e => {
-  const b = e.target.closest('[data-font]'); if (!b) return;
-  const prev = state.settings.font; state.settings.font = b.dataset.font; save();
-  (document.fonts ? document.fonts.load(`16px ${curFont().body.split(',')[0]}`) : Promise.resolve()).catch(() => {}).then(() => { applyFont(); renderFonts(); renderAll(); moveTabInd(); });
-  toast(`Letra: ${curFont().name}`, {icon:'type', action:'Deshacer', onAction: () => { state.settings.font = prev; save(); applyFont(); renderFonts(); renderAll(); moveTabInd(); }});
+window.addEventListener('online', () => {
+  if (!currentFont().google || fontStylesheets.has(currentFont().google)) return;
+  activeFontId = undefined;
+  applyAppFont();
 });
+
+// ---- Temas ----
 function renderThemes(){
   const el=$('#themeGrid');if(!el)return;const cur=curTheme().id;
   const card=t=>{
@@ -418,7 +430,7 @@ function applyBrand(){
   const n = state.settings.appName || 'Presupuesto';
   if (document.activeElement !== nameEl) nameEl.textContent = n;
   document.title = n;
-  applyUiIcons(); applyThemeVars(); applyAccent(); applyFont(); applyBrowserChrome();cacheBootAppearance();
+  applyUiIcons(); applyThemeVars(); applyAccent(); applyAppFont(); applyBrowserChrome();cacheBootAppearance();
 }
 // Caché derivada y local por perfil; no contiene finanzas ni cambia el estado sincronizado.
 function cacheBootAppearance(){

@@ -92,16 +92,31 @@ function setupSettings(){
  users.querySelector('h3').remove();panel('users').append(users);
  const themeDetails=disclosure('Tema de colores',themes);
  themeDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsThemeName"></small>');
- const fontField = document.createElement('div');
- fontField.className = 'field settings-font-field';
- const options = availableFonts().map(font => `<option value="${font.id}">${esc(font.name)}</option>`).join('');
- fontField.innerHTML = `<label for="settingsFont">Fuente de la interfaz</label>
-   <select id="settingsFont">${options}</select>
-   <div class="settings-font-sample"><strong>Resumen de noviembre</strong><span>Alimentación · S/ 1,250.90</span></div>`;
- const fontSelect = fontField.querySelector('select');
- fontSelect.addEventListener('change', () => {
-   if (saveChange(() => { state.settings.font = fontSelect.value; })) renderAll();
-   else fontSelect.value = currentFont().id;
+ const fontField = document.createElement('fieldset');
+ fontField.id = 'settingsFont';
+ fontField.className = 'settings-font-field';
+ const options = availableFonts().map(font => `<label class="settings-font-option">
+   <input type="radio" name="interface-font" value="${font.id}">
+   <span class="settings-font-radio" aria-hidden="true"></span>
+   <span>${esc(font.name)}</span>
+ </label>`).join('');
+ fontField.innerHTML = `<legend>Fuente de la interfaz</legend>
+   <div class="settings-font-sample"><strong>Resumen de noviembre</strong><span>Alimentación · S/ 1,250.90</span></div>
+   <div class="settings-font-options">${options}</div>`;
+ fontField.addEventListener('change', event => {
+   if (saveChange(() => { state.settings.font = event.target.value; })) renderAll();
+   else renderSettingsFont();
+ });
+ fontField.addEventListener('keydown', event => {
+   const radio = event.target;
+   if (!radio.matches('input[type="radio"]')) return;
+   const step = {ArrowUp:-1, ArrowLeft:-1, ArrowDown:1, ArrowRight:1}[event.key];
+   if (!step) return;
+   event.preventDefault();
+   const radios = [...fontField.querySelectorAll('input')];
+   const next = radios[(radios.indexOf(radio) + step + radios.length) % radios.length];
+   next.focus();
+   next.click();
  });
  const fontDetails = disclosure('Tipografía', fontField);
  fontDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsFontName"></small>');
@@ -187,9 +202,13 @@ function renderSettingsHome(){
 function renderSettingsOverview(){
  if(!$('#settingsThemeName'))return;
  $('#settingsThemeName').textContent=curTheme()?.name||'Personalizado';
- $('#settingsFont').value=currentFont().id;
- $('#settingsFontName').textContent=currentFont().name;
+ renderSettingsFont();
  renderSettingsHome();
  $('#settingsMethods').innerHTML=(state.settings.methods||[]).map((m,i)=>`<span class="settings-method-chip"><button type="button" data-index="${i}" data-action="edit" aria-label="Editar ${esc(m)}">${esc(m)}</button><button type="button" data-index="${i}" data-action="remove" aria-label="Eliminar ${esc(m)}">${ic('x')}</button></span>`).join('')||'<p class="small muted">Aún no agregaste métodos de pago.</p>';
  renderSettingsStatus();
+}
+function renderSettingsFont(){
+ const font = currentFont();
+ for (const radio of $('#settingsFont').querySelectorAll('input')) radio.checked = radio.value === font.id;
+ $('#settingsFontName').textContent = font.name;
 }

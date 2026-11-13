@@ -1017,11 +1017,21 @@ body.sel-on .toast{bottom:150px}
 .settings-disclosure>summary small{font-weight:400;color:var(--muted);margin-left:auto;font-size:12px;text-align:right}.settings-disclosure>summary small+span{display:none}
 .settings-disclosure-body{padding:0 19px 19px}.settings-disclosure-body>.card{border:0;box-shadow:none;padding:0;margin:0!important;background:transparent}.settings-disclosure-body>.card>h3{display:none}
 .settings-disclosure-body .theme-grid{margin-top:12px}
-.settings-font-field{margin:0}
-.settings-font-field select{width:100%;min-height:44px;font-size:1rem}
-.settings-font-sample{display:grid;gap:4px;margin-top:12px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--surface-2);overflow-wrap:anywhere}
+.settings-font-field{margin:0;padding:0;border:0;min-width:0}
+.settings-font-field legend{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.settings-font-sample{display:grid;gap:4px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);overflow-wrap:anywhere}
 .settings-font-sample strong{font-size:1.125rem}
-.settings-font-sample span{font-variant-numeric:tabular-nums}
+.settings-font-sample span{color:var(--muted);font-variant-numeric:tabular-nums}
+.settings-font-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.settings-font-option{position:relative;display:flex;align-items:center;gap:10px;min-height:44px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);cursor:pointer;overflow-wrap:anywhere}
+.settings-font-option input{position:absolute;inline-size:1px;block-size:1px;opacity:0}
+.settings-font-radio{inline-size:16px;block-size:16px;flex:none;border:1px solid var(--muted);border-radius:50%;display:grid;place-items:center}
+.settings-font-option:has(input:checked){border-color:var(--primary);background:var(--primary-soft)}
+.settings-font-option input:checked+.settings-font-radio{border-color:var(--primary)}
+.settings-font-option input:checked+.settings-font-radio::after{content:'';inline-size:8px;block-size:8px;border-radius:50%;background:var(--primary)}
+.settings-font-option:has(input:focus-visible){outline:2px solid var(--ring,var(--primary));outline-offset:2px}
+@media(hover:hover){.settings-font-option:hover{border-color:var(--primary)}}
+@media(max-width:520px){.settings-font-options{grid-template-columns:minmax(0,1fr)}}
 .settings-methods{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.settings-method-chip{display:flex;align-items:center;gap:2px;padding:0 2px 0 13px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);max-width:100%}
 .settings-method-chip button{border:0;background:transparent;color:var(--text);font:inherit;cursor:pointer;min-height:44px;overflow-wrap:anywhere}.settings-method-chip button:last-child{width:44px;flex-shrink:0;color:var(--muted)}
 .settings-method-add{display:flex;gap:8px}.settings-method-add input{width:100%;min-width:0;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font:inherit}.settings-method-help{min-height:20px;color:var(--muted);font-size:12px;margin-top:8px}

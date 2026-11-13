@@ -303,15 +303,14 @@ const WEB_FONTS = [
   {id:'jakarta', name:'Plus Jakarta Sans', body:'"Plus Jakarta Sans"', google:'Plus+Jakarta+Sans'},
   {id:'jetbrains-mono', name:'JetBrains Mono', body:'"JetBrains Mono"', google:'JetBrains+Mono', mono:true}
 ];
-const PREVIEW_FONTS = [
+const ANTHROPIC_FONTS = [
   {id:'anthropic-sans', name:'Anthropic Sans', body:'"Anthropic Sans Text"', head:'"Anthropic Sans Display"'},
   {id:'anthropic-serif', name:'Anthropic Serif', body:'"Anthropic Serif Text"', head:'"Anthropic Serif Display"', serif:true},
   {id:'anthropic-mono', name:'Anthropic Mono', body:'"Anthropic Mono Web"', mono:true}
 ];
 function availableFonts(){
-  const preview = document.getElementById('preview-fonts');
   const onlineFonts = document.documentElement.hasAttribute('data-offline-demo') ? [] : WEB_FONTS;
-  return [SYSTEM_FONT, ...onlineFonts, ...(preview ? PREVIEW_FONTS : [])];
+  return [SYSTEM_FONT, ...onlineFonts, ...ANTHROPIC_FONTS];
 }
 function currentFont(){
   return availableFonts().find(font => font.id === state.settings.font) || SYSTEM_FONT;

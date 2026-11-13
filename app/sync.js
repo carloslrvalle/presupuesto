@@ -158,8 +158,11 @@ syncCheck.onclick = async () => {
   syncCheck.disabled = true;
   result.textContent = 'Comprobando la lectura de Sheets…';
   try {
-    await callSheets({action:'load', profiles:undefined}, {verifyOnly:true});
-    if (scope === syncScope()) result.textContent = 'La hoja respondió y los datos son válidos. La comprobación solo hizo una lectura.';
+    const checked = await callSheets({action:'load', profiles:undefined}, {verifyOnly:true});
+    if (scope === syncScope()) {
+      const writeError = checked.writeStatus?.serviceEnabled === false ? checked.writeStatus.error : currentSyncIssue()?.phase === 'save' ? currentSyncIssue().message : '';
+      result.textContent = 'La hoja respondió y los datos son válidos. La comprobación solo hizo una lectura; no confirma que se pueda guardar.' + (writeError ? ' El guardado requiere atención: ' + writeError : '');
+    }
   } catch (err) {
     if (scope === syncScope()) result.textContent = err.message;
   } finally {

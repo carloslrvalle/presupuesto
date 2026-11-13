@@ -30,7 +30,7 @@ document.addEventListener('touchend', e => {
 });
 async function pullRefresh(){
   ptrBusy = true; ptr.classList.add('spin', 'back'); ptr.style.opacity = 1; ptr.style.transform = 'translateY(44px)';
-  try { if (sync.pending) await pushNow(); await startupLoad(); otherAt = 0; await refreshOther(true); renderAll(); toast('Actualizado con Sheets', {icon:'cloud'}); }
+  try { if (sync.pending && !await pushNow()) return toast('Los cambios siguen pendientes de confirmación'); if (!await startupLoad()) return toast('No se pudo confirmar la actualización con Sheets'); otherAt = 0; await refreshOther(true); renderAll(); toast('Actualizado con Sheets', {icon:'cloud'}); }
   catch(e){ toast('⚠️ No se pudo actualizar'); }
   finally { ptrBusy = false; ptr.classList.remove('spin'); ptr.style.opacity = 0; ptr.style.transform = 'translateY(-60px)'; }
 }

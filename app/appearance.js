@@ -543,7 +543,8 @@ function dpOpen(anchor, o){
   // dentro de un diálogo modal el selector debe vivir en él (lo de afuera queda inactivo)
   const host = anchor.closest('dialog') || document.body; if (dpEl.parentNode !== host) host.appendChild(dpEl);
   dpRender();
-  if (dpEl.showPopover){ try{ if (dpEl.matches(':popover-open')) dpEl.hidePopover(); dpEl.showPopover(); }catch(e){} }
+  dpEl.inert=false;
+  if (dpEl.showPopover){ try{ if (!dpEl.matches(':popover-open')) dpEl.showPopover(); }catch(e){} }
   dpPlace();
   const opened=dpS;
   requestAnimationFrame(() => {if(dpS===opened)dpEl.classList.add('show');});
@@ -555,6 +556,7 @@ function dpClose(restoreFocus=false){
   anchor.classList.remove('open'); dpS = null;
   dpEl.classList.remove('show');
   if(restoreFocus&&anchor.isConnected)anchor.focus({preventScroll:true});
+  dpEl.inert=true;
   dpEl._hideTimer=setTimeout(() => { if (!dpS && dpEl.hidePopover){ try{ dpEl.hidePopover(); }catch(e){} } }, reduceMotion()?0:MOTION.popup);
 }
 function dpPlace(){

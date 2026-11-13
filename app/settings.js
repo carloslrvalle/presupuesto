@@ -154,7 +154,7 @@ function openSettingsSection(id,focus=false){
  root.querySelector('.settings-home').hidden=!!id;
  root.querySelectorAll('[data-settings-target]').forEach(b=>{if(b.dataset.settingsTarget===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  const target=id?$('#settings-panel-'+id):root.querySelector('.settings-home');
- if(changed)motionAnimate(target,[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}]);
+ if(changed)revealContent(target);
  if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else root.querySelector('.settings-home [data-settings-target]').focus({preventScroll:true});}
 }
 function renderSettingsStatus(){

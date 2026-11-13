@@ -187,12 +187,15 @@ let ppS = null;
 function openPayPicker(btn, id){
   if (ppS && ppS.id === id) return closePayPicker();
   closePayPicker();
+  clearTimeout(ppEl._hideTimer);
   const c = state.categories.find(x => x.id === id); if (!c) return;
   ppS = {id, btn, c, ...payCfg(c.pay), pend: null, orig: c.pay || ''};
   btn.classList.add('open');btn.setAttribute('aria-expanded','true'); renderPayPicker();
-  if (ppEl.showPopover){ try{ if (ppEl.matches(':popover-open')) ppEl.hidePopover(); ppEl.showPopover(); }catch(e){} }
+  ppEl.inert=false;
+  if (ppEl.showPopover){ try{ if (!ppEl.matches(':popover-open')) ppEl.showPopover(); }catch(e){} }
   placePayPicker();
-  requestAnimationFrame(() => {ppEl.classList.add('show');placePayPicker();ppEl.querySelector('.pp-d.in,.pp-seg button.active')?.focus({preventScroll:true});});
+  const opened=ppS;
+  requestAnimationFrame(() => {if(ppS!==opened)return;ppEl.classList.add('show');placePayPicker();ppEl.querySelector('.pp-d.in,.pp-seg button.active')?.focus({preventScroll:true});});
 }
 function placePayPicker(){
   if (!ppS) return;
@@ -210,7 +213,8 @@ function commitPayPending(S){
 function closePayPicker(keep = true,focusBack = true){
   if (!ppS) return;
   const S = ppS,restoreFocus=focusBack&&ppEl.contains(document.activeElement); if(keep)commitPayPending(S); ppS = null; S.btn.classList.remove('open');S.btn.setAttribute('aria-expanded','false'); ppEl.classList.remove('show'); if (typeof dpClose === 'function') dpClose();
-  setTimeout(() => { if (!ppS){ if(ppEl.hidePopover){try{ppEl.hidePopover();}catch(e){}} if(restoreFocus)[...document.querySelectorAll('#catsIncome .cat-row')].find(r=>r.dataset.id===S.id)?.querySelector('.pay-btn')?.focus({preventScroll:true}); } }, reduceMotion()?0:MOTION.popup);
+  ppEl.inert=true;
+  ppEl._hideTimer=setTimeout(() => { if (!ppS){ if(ppEl.hidePopover){try{ppEl.hidePopover();}catch(e){}} if(restoreFocus)[...document.querySelectorAll('#catsIncome .cat-row')].find(r=>r.dataset.id===S.id)?.querySelector('.pay-btn')?.focus({preventScroll:true}); } }, reduceMotion()?0:MOTION.popup);
   const val = payEncode(S);
   if (keep && val !== S.orig){ S.c.pay = val; save(); renderAll(); toast(val ? `${S.c.name}: ${payHumanCfg(payCfg(val)).toLowerCase()}` : 'Día de pago quitado', {icon:'calendar-days'}); }
 }
@@ -295,7 +299,7 @@ $('#tab-cats').addEventListener('click', async e => {
   const ua = e.target.closest('[data-unarch]');
   if (ua){ const c = state.categories.find(x => x.id === ua.dataset.unarch); if (c){ delete c.archived; save(); renderAll(); toast(`«${c.name}» restaurada`, {icon:'archive-restore'}); } return; }
   const ar = e.target.closest('[data-act="arch"]');
-  if (ar){ ar.closest('.cat-actions').open = false; const c = state.categories.find(x => x.id === ar.closest('.cat-row').dataset.id); if (!c) return;
+  if (ar){ setMenuDisclosure(ar.closest('.cat-actions'),false); const c = state.categories.find(x => x.id === ar.closest('.cat-row').dataset.id); if (!c) return;
     const row = ar.closest('.cat-row'); await fadeOut(row);
     c.archived = currentMonth < thisMonth() ? thisMonth() : currentMonth; save(); renderAll();
     toast(`«${c.name}» archivada: ya no aparece al registrar ni en el presupuesto`, {icon:'archive', action:'Deshacer', onAction: () => { delete c.archived; save(); renderAll(); }});
@@ -315,7 +319,7 @@ $('#tab-cats').addEventListener('click', async e => {
   if (btn.dataset.act === 'icon') openIcon(icon => { c.icon = icon; save(); renderAll(); },
     {color:c.color, soft:true, themeColor: curThemeColorCat(c), onColor: col => { c.color = col; save(); }}, c.icon);
   if (btn.dataset.act === 'del'){
-    btn.closest('.cat-actions').open = false;
+    setMenuDisclosure(btn.closest('.cat-actions'),false);
     const used = state.transactions.filter(t => t.catId === c.id).length;
     const msg = used ? `Tiene ${plural(used, 'movimiento')}; quedarán como "Sin categoría".` : 'También se quitará de tus presupuestos.';
     if (!(await ask({title:`¿Eliminar "${c.name}"?`, msg, icon:c.icon, iconColor:c.color}))) return;
@@ -326,8 +330,8 @@ $('#tab-cats').addEventListener('click', async e => {
     save(); renderAll(); toast('Categoría eliminada');
   }
 });
-document.addEventListener('click', e => { document.querySelectorAll('#tab-cats .cat-actions[open]').forEach(menu => { if (!menu.contains(e.target)) menu.open = false; }); });
-document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const menu = document.querySelector('#tab-cats .cat-actions[open]'); if (menu){ menu.open = false; menu.querySelector('summary').focus(); e.preventDefault(); } });
+document.addEventListener('click', e => { document.querySelectorAll('#tab-cats .cat-actions[open]').forEach(menu => { if (!menu.contains(e.target)) setMenuDisclosure(menu,false); }); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const menu = document.querySelector('#tab-cats .cat-actions[open]:not([data-menu-closing])'); if (menu){ setMenuDisclosure(menu,false); menu.querySelector('summary').focus(); e.preventDefault(); } });
 
 /* ---------- Selector de íconos ---------- */
 // frame = {color, soft, onColor}: soft=true usa el tono suave (categorías), soft=false el color sólido (logo)

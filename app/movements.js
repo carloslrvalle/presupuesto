@@ -25,12 +25,14 @@ function movementHistory(list,dayLbl,filtered){
  }).join('');
 }
 function toggleMovementFilters(){
- const el=$('#movExtraFilters'),old=el._filterState,open=old?!old.open:!el.classList.contains('expanded'),from=el.getBoundingClientRect().height;
+ const el=$('#movExtraFilters'),old=el._filterState,open=old?!old.open:!el.classList.contains('expanded'),from=motionHeight(el);
+ const style=getComputedStyle(el),margin=from?style.marginTop:'0px',opacity=old?style.opacity:from?1:0;
  if(old)old.animation.cancel();el.classList.add('expanded');el.style.overflow='hidden';
  $('#movFilterToggle').setAttribute('aria-expanded',String(open));
- const to=open?el.getBoundingClientRect().height:0,finish=()=>{el.classList.toggle('expanded',open);el.style.overflow='';el._filterState=null;};
+ el.inert=!open;
+ const to=open?motionHeight(el):0,finish=()=>{el.classList.toggle('expanded',open);el.style.overflow='';el._filterState=null;};
  if(reduceMotion()){finish();return;}
- const animation=el.animate([{height:from+'px',marginTop:from?'12px':'0px',opacity:from?1:0},{height:to+'px',marginTop:open?'12px':'0px',opacity:open?1:0}],{duration:MOTION.panel,easing:MOTION.ease});
+ const animation=el.animate([{height:from+'px',marginTop:margin,opacity},{height:to+'px',marginTop:open?'12px':'0px',opacity:open?1:0}],{duration:MOTION.panel,easing:MOTION.ease});
  el._filterState={animation,open};animation.onfinish=finish;
 }
 
@@ -38,6 +40,9 @@ function renderMovs(refreshFilters = true){
   closeMovActionMenu(false);
   if (refreshFilters){ fillCatFilter(); fillMethodFilter(); }
   const ft = $('#fltType').value, fc = $('#fltCat').value, fm = $('#fltMethod').value, scope = $('#fltScope').value, q = $('#fltText').value.trim().toLowerCase();
+  const extraCount = Number(!!fc) + Number(!!fm) + Number(!!ft) + Number(scope !== 'month');
+  $('#movFilterToggle').textContent = extraCount ? `Filtros (${extraCount})` : 'Filtros';
+  $('#movFilterClear').hidden = !$('#fltText').value && !extraCount;
   const y = currentMonth.slice(0, 4);
   const base = scope === 'cycle' ? cycleTx(currentMonth,true) : scope === 'all' ? state.transactions : scope === 'year' ? state.transactions.filter(t => t.date.slice(0, 4) === y) : txOfMonthAll(currentMonth);
   const match = t => !q || [t.desc || '', getCat(t.catId).name, t.method || '', String(t.amount)]
@@ -48,7 +53,6 @@ function renderMovs(refreshFilters = true){
   const real = list.filter(t => !isPlanned(t)); // los programados se cuentan aparte, igual que en el Resumen
   const inc = sum(real.filter(t => t.type === 'income')), exp = sum(real.filter(t => t.type === 'expense'));
   $('#movSummary').innerHTML='<span class="mov-count">'+plural(list.length,'movimiento')+' '+(scope==='all'?'en total':'en '+(scope==='year'?y:scope==='cycle'?cycleLabel(currentMonth):monthLong(currentMonth)))+'</span><span class="mov-total"><span>Ingresos</span><b class="pos">'+fmt(inc)+'</b></span><span class="mov-total"><span>Gastos</span><b class="xp">'+fmt(exp)+'</b></span>'+(pl.length?'<span class="mov-planned-total">'+plural(pl.length,'programado')+' · '+fmt(sum(pl))+'</span>':'');
-  const extraCount=Number(!!fc)+Number(!!fm)+Number(!!ft)+Number(scope!=='month');$('#movFilterToggle').textContent=(extraCount?'Filtros ('+extraCount+')':'Filtros');
 
   // Agrupados por día, con el total del día en el encabezado
   const t0 = new Date(); t0.setHours(0, 0, 0, 0);
@@ -216,6 +220,7 @@ function setMovView(v){
   moveViewInd();
   if (movView === 'cal') renderCalendar();
   else if (previous !== movView) renderMovs();
+  if(previous!==movView)revealContent($('#view-'+movView));
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
 window.addEventListener('resize', moveViewInd);
@@ -286,17 +291,24 @@ function renderCalDay(){
   const exp = sum(list.filter(t => t.type === 'expense')), inc = sum(list.filter(t => t.type === 'income'));
   const vsAvg = calAvg && exp ? exp / calAvg : 0;
   const [y, mo, d] = iso.split('-').map(Number), label = new Date(y, mo - 1, d).toLocaleDateString('es-PE', {weekday:'long', day:'numeric', month:'long'});
-  $('#calDay').innerHTML = `<div class="cal-day-head"><div><h3 id="calDayTitle"><time datetime="${iso}">${label[0].toUpperCase() + label.slice(1)}</time></h3>
-      <div class="cal-day-summary"><span class="small muted">${list.length ? plural(list.length, 'movimiento') : 'Sin movimientos'}</span><div class="cal-day-totals">${list.length ? `<span><small>Gastos</small><b class="xp">${fmt(exp)}</b></span>` : ''}${inc ? `<span><small>Ingresos</small><b class="pos">+${fmt(inc)}</b></span>` : ''}</div></div>
-      ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}</div>
+  $('#calDay').innerHTML = `<header class="cal-day-head">
+      <div class="cal-day-summary">
+        <h3 id="calDayTitle"><time datetime="${iso}">${label[0].toUpperCase() + label.slice(1)}</time></h3>
+        ${list.length ? `<span class="small muted">${plural(list.length, 'movimiento')}</span>` : ''}
       </div>
+      ${list.length ? `<dl class="cal-day-totals">
+        <div><dt>Gastos</dt><dd class="xp">${fmt(exp)}</dd></div>
+        <div><dt>Ingresos</dt><dd class="pos">${inc ? '+' : ''}${fmt(inc)}</dd></div>
+      </dl>` : ''}
+      ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}
+    </header>
     <div class="cal-day-scroll" tabindex="0" role="region" aria-labelledby="calDayTitle">
     ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income'; return `<div class="prow cal-transaction">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div class="cal-copy"><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
       <div class="amt"><b class="${isI ? 'pos' : 'xp'}">${isI ? '+' : '−'} ${fmt(t.amount)}</b></div>
       <div class="row-actions"><button class="iconbtn" data-edit="${esc(t.id)}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${esc(t.id)}" title="Eliminar">${ic('trash-2')}</button></div></div>`; }).join('')}
-    ${!list.length ? emptyBox('calendar-days', 'Nada registrado este día.', 'calendar-tx', 'Registrar movimiento', false, 'es-sm') : ''}</div>`;
+    ${!list.length ? emptyBox('calendar-days', 'Sin movimientos este día.', 'calendar-tx', 'Registrar movimiento', false, 'es-sm') : ''}</div>`;
 }
 $('#calGrid').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; calSel = b.dataset.day;
   document.querySelectorAll('#calGrid .cal-d').forEach(x => {
@@ -305,7 +317,8 @@ $('#calGrid').addEventListener('click', e => { const b = e.target.closest('[data
     x.setAttribute('aria-pressed',String(selected));
     x.tabIndex=selected?0:-1;
   });
-  renderCalDay(); $('#calDay').classList.remove('swap'); void $('#calDay').offsetWidth; $('#calDay').classList.add('swap');
+  motionResize($('#calDay'),renderCalDay);
+  revealContent($('#calDay .cal-day-scroll'));
   if(innerWidth<=700&&e.detail)requestAnimationFrame(()=>{const el=$('#calDay'),header=document.querySelector('.topbar'),gap=getComputedStyle(header).position==='sticky'?header.getBoundingClientRect().height:0;window.scrollTo({top:scrollY+el.getBoundingClientRect().top-gap-12,behavior:reduceMotion()?'instant':'smooth'});});
 });
 $('#calGrid').addEventListener('keydown', e => {
@@ -409,6 +422,13 @@ movActionMenu.addEventListener('click',async e=>{
  if(b.dataset.movAction==='edit')openTx(id);else{await fadeOut(document.querySelector(`#movBody [data-row="${id}"]`));delTxUndo(id);}
 });
 $('#movFilterToggle').onclick=toggleMovementFilters;
+$('#movFilterClear').onclick = () => {
+  $('#fltText').value = '';
+  $('#fltScope').value = 'month';
+  for (const id of ['#fltType', '#fltCat', '#fltMethod']) $(id).value = '';
+  renderMovs(false);
+  $('#movFilterToggle').focus({preventScroll:true});
+};
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');
 let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null;
@@ -555,16 +575,39 @@ function txDetailsLabel(){
   $('#txMore').classList.toggle('has-desc', !!desc);
 }
 function setTxDetails(open){
-  txDialog.classList.toggle('details-open', open); $('#txMore').setAttribute('aria-expanded', String(open)); txDetailsLabel();
+  const details=$('#txDetails');
+  details._motion?.cancel();
+  details._motion=null;
+  details.style.overflow='';
+  txDialog.classList.remove('details-closing');
+  details.inert=false;
+  txDialog.classList.toggle('details-open', open);
+  $('#txMore').setAttribute('aria-expanded', String(open));
+  txDetailsLabel();
 }
 $('#txMore').onclick = () => {
-  const open=!txDialog.classList.contains('details-open');
+  const details=$('#txDetails'),body=txDialog.querySelector('.dlg-body'),open=$('#txMore').getAttribute('aria-expanded')!=='true';
+  const from=motionHeight(details);
+  const style=getComputedStyle(details),opacity=from?style.opacity:0;
+  const gap=parseFloat(getComputedStyle(body).rowGap)||0;
+  const margin=from?style.marginTop:-gap+'px';
   setTxDetails(open);
-  if(!open)return;
-  const details=$('#txDetails'), body=txDialog.querySelector('.dlg-body');
-  motionAnimate(details, [{opacity:.85, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel');
-  $('#fDateField .dp-trigger').focus({preventScroll:true});
-  keepTxFieldVisible(details.offsetHeight + 16 <= body.clientHeight ? details : document.activeElement);
+  if(!open)dpClose();
+  if(!reduceMotion()){
+    txDialog.classList.toggle('details-closing',!open);
+    details.inert=!open;
+    const to=open?motionHeight(details):0;
+    details.style.overflow='hidden';
+    const animation=motionAnimate(details,[{height:from+'px',opacity,marginTop:margin},{height:to+'px',opacity:open?1:0,marginTop:open?'0px':-gap+'px'}],'panel');
+    animation.onfinish=()=>{
+      setTxDetails(open);
+      if(open)keepTxFieldVisible(details.offsetHeight+16<=body.clientHeight?details:document.activeElement);
+    };
+  }
+  if(open){
+    $('#fDateField .dp-trigger').focus({preventScroll:true});
+    if(reduceMotion())keepTxFieldVisible(details.offsetHeight+16<=body.clientHeight?details:document.activeElement);
+  }
 };
 for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
 // Borra con opción de deshacer (sin pedir confirmación)
@@ -646,19 +689,23 @@ $('#txDelete').onclick = () => {
   const id = editingId; txDialog.close(); delTxUndo(id);
 };
 $('#fab').onclick = () => activeTab()==='goals'?openGoal():openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {}); // el + respeta el día seleccionado en Calendario
-// En teléfono el botón se atenúa mientras se desplaza la página y vuelve 450 ms después; siempre recibe toques.
+// En la barra táctil, el botón se desvanece al desplazar y vuelve de inmediato al enfocarlo con el teclado.
 const fabDock=matchMedia('(max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
-let fabScrollTimer,fabTouchActive=false;
-function showFloatingNew(){clearTimeout(fabScrollTimer);$('#fab').classList.remove('fab-scroll-hidden');}
+const fabTouch=matchMedia('(pointer:coarse)');
+const creationButton=$('#fab');
+let fabScrollTimer;
+function showFloatingNew(){clearTimeout(fabScrollTimer);creationButton.classList.remove('fab-scroll-hidden');}
 function fadeFloatingNewOnScroll(){
-  const button=$('#fab');if(!fabDock.matches||button.classList.contains('calendar-create')||button.hidden||txDialog.open||button.matches(':focus-visible'))return;
-  button.classList.add('fab-scroll-hidden');clearTimeout(fabScrollTimer);
-  if(!fabTouchActive)fabScrollTimer=setTimeout(showFloatingNew,450);
+  if(!fabDock.matches||!fabTouch.matches)return;
+  if(creationButton.hidden||document.querySelector('dialog[open]')||creationButton.matches(':focus-visible'))return;
+  creationButton.classList.add('fab-scroll-hidden');
+  clearTimeout(fabScrollTimer);
+  fabScrollTimer=setTimeout(showFloatingNew,360);
 }
-document.addEventListener('touchstart',()=>{fabTouchActive=true;},{passive:true});
-for(const type of ['touchend','touchcancel'])document.addEventListener(type,()=>{fabTouchActive=false;if($('#fab').classList.contains('fab-scroll-hidden')){clearTimeout(fabScrollTimer);fabScrollTimer=setTimeout(showFloatingNew,450);}},{passive:true});
-window.addEventListener('scroll',fadeFloatingNewOnScroll,{passive:true});
-fabDock.addEventListener('change',()=>{updateCreationControls();moveViewInd();});
+window.addEventListener('scroll',fadeFloatingNewOnScroll,{capture:true,passive:true});
+creationButton.addEventListener('focus',showFloatingNew);
+fabTouch.addEventListener('change',showFloatingNew);
+fabDock.addEventListener('change',()=>{showFloatingNew();updateCreationControls();moveViewInd();});
 const txPhone=matchMedia('(max-width:700px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
 function showTxDialog(){
  resizeTxViewport();

@@ -136,6 +136,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <div class="toolbar mov-filters">
         <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar descripción, categoría o monto…"></div>
         <button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
+        <button type="button" class="btn mov-filter-clear" id="movFilterClear" aria-label="Borrar filtros" title="Borrar filtros" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Borrar filtros</span></button>
         <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
         <select id="fltMethod" aria-label="Filtrar por método"></select></div>
       </div>
@@ -183,11 +184,12 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
   <!-- ANÁLISIS -->
   <section class="tab" id="tab-analysis">
-    <div class="toolbar">
+    <div class="toolbar analysis-toolbar">
       <div class="year-nav"><button id="yearPrev" title="Año anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="yearLabel"></span><button id="yearNext" title="Año siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="analysis-available small muted">Saldo disponible del año <b id="analysisAvailable"></b></p>
     </div>
     <div class="kpis" id="anKpis" role="group" aria-label="Indicador de análisis"></div>
-    <div class="card year-chart-card" id="yearChartCard" style="margin-top:16px">
+    <div class="card year-chart-card" id="yearChartCard">
       <div class="year-chart-head"><div><h3 id="analysisChartTitle">Ingresos mes a mes</h3><button type="button" class="info-tip" id="yearChartHelp" aria-label="Ayuda del gráfico" aria-describedby="yearChartDescription">ⓘ</button><span id="yearChartDescription" hidden></span></div>
         <div class="chart-modes" id="yearChartModes" role="group" aria-label="Serie del indicador"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div>
       </div>

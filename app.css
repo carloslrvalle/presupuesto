@@ -362,7 +362,6 @@ tr.over td{background:color-mix(in srgb,var(--expense) 6%,transparent)}
 #calDay .cal-transaction .name,#calDay .cal-transaction .small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #calDay .amt{white-space:nowrap;font-variant-numeric:tabular-nums}
 #calDay .row-actions{display:flex}
-#calDay.swap{animation:rise .35s var(--ease-out)}
 @media (max-width:600px){.cd-e,.cal-d .cd-r{display:none}.cal-d .cd-hot,.cal-d .cd-r+.cd-hot{right:5px;top:4px}.cal{grid-template-columns:repeat(7,minmax(0,1fr))}#calDay{position:static}.cal-d{min-height:44px}}
 /* Próximos 7 días */
 h3>.vi{color:var(--primary);vertical-align:-3px;margin-right:4px}
@@ -469,8 +468,6 @@ body.both-on #tabs,body.both-on #fab{display:none!important}
 .both-goals .gsp-leg{margin-top:8px}
 @media(max-width:600px){.both-goals .bg-top{flex-direction:column;gap:4px}.both-goals .bg-top span{white-space:normal}}
 /* Cambio de usuario: el contenido entra suave */
-main.wrap.prof-swap{animation:profSwap .38s var(--ease-out)}
-@keyframes profSwap{from{opacity:.25;transform:translateY(8px)}to{opacity:1;transform:none}}
 #bothBody{display:grid;gap:16px;min-width:0}
 #bothBody>.both-head,#bothBody>.grid2,#bothBody>.both-goals{margin:0}
 #bothBody>.grid2{align-items:stretch}
@@ -757,9 +754,8 @@ h3 .ui-ic{margin-right:8px;color:var(--primary)}
 .cat-row.dragging .grip{cursor:grabbing;opacity:1;color:var(--primary)}
 
 /* FAB */
-.fab{position:fixed;right:20px;bottom:20px;border:0;background:var(--primary-fill,var(--primary));color:var(--on-primary,#fff);place-items:center;cursor:pointer;box-shadow:0 8px 24px color-mix(in srgb,var(--primary-fill,var(--primary)) 40%,transparent);z-index:20}
-.fab .vi{width:26px;height:26px}
-@media(hover:hover) and (pointer:fine){.fab:hover{transform:translateY(-2px);box-shadow:0 12px 28px color-mix(in srgb,var(--primary-fill,var(--primary)) 45%,transparent)}}
+.fab{position:fixed;right:20px;bottom:20px;background:var(--primary-fill,var(--primary));color:var(--on-primary,#fff);cursor:pointer;z-index:20}
+.fab .vi{width:24px;height:24px}
 
 /* Dialogs */
 dialog{border:0;padding:0;background:var(--surface);color:var(--text);width:min(440px,calc(100% - 32px));box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -1053,11 +1049,11 @@ body.sel-on .toast{bottom:150px}
 .tx-field-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.tx-field-head label{margin:0}.tx-text-button{border:0;background:transparent;color:var(--primary);font:inherit;font-size:12px;font-weight:650;cursor:pointer;padding:8px;border-radius:6px;min-height:36px}.tx-text-button:hover{background:var(--primary-soft)}#txDialog #fCatChips .chip{max-width:100%}.tx-category-tools{display:flex;justify-content:space-between;align-items:center;margin-top:5px;gap:8px}.tx-category-search{margin-bottom:10px}.tx-category-search input{width:100%}
 .tx-category-editor{padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);margin-top:10px}.tx-category-editor[hidden],.tx-category-search[hidden]{display:none!important}.tx-category-editor h4{margin:0 0 12px;font-size:14px}.tx-category-editor .field{margin-bottom:10px}.tx-category-editor input[type=text]{width:100%}.tx-category-style{display:flex;gap:12px;align-items:center;margin:12px 0}.tx-category-style input[type=color]{width:44px;height:40px;border:1px solid var(--border);border-radius:7px;background:var(--surface);padding:4px}.tx-category-style label{margin:0!important}.tx-category-error{font-size:12px;color:var(--expense);margin:6px 0;min-height:18px}
 .tx-category-editor .toolbar{justify-content:flex-end;margin:0}.tx-inline-note{font-size:11px;color:var(--muted);margin:6px 0 0}#txDialog .row2{gap:14px}#txDialog .dlg-foot{border-top:1px solid var(--border);background:var(--surface)}
-.fab{width:56px;min-width:56px;height:56px;padding:0;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--on-primary,#fff) 20%,transparent);box-shadow:0 8px 22px color-mix(in srgb,var(--primary) 27%,transparent),inset 0 1px 0 rgba(255,255,255,.2);isolation:isolate}
-.fab::after{content:'';position:absolute;inset:-5px;border:2px solid var(--primary);border-radius:17px;opacity:0;pointer-events:none}.fab:focus-visible{outline:3px solid var(--primary);outline-offset:5px}@keyframes fabRipple{from{opacity:.45;transform:scale(.9)}to{opacity:0;transform:scale(1.35)}}
+.fab{width:var(--creation-size);min-width:var(--creation-size);height:var(--creation-size);padding:0;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--on-primary,#fff) 20%,transparent);box-shadow:0 4px 12px color-mix(in srgb,var(--text) 20%,transparent)}
+.fab:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
 
 
-@media(max-width:700px){html #txDialog .dlg-foot{position:relative;padding-left:18px;padding-right:18px}.fab{width:56px;min-width:56px;height:56px;padding:0;border-radius:12px;right:18px}}
+@media(max-width:700px){html #txDialog .dlg-foot{position:relative;padding-left:18px;padding-right:18px}}
 
 /* Controles de desplazamiento integrados con cada tema */
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 48%,var(--surface)) var(--surface)}
@@ -1094,7 +1090,7 @@ button:disabled{transform:none!important}
 .emoji-grid button,.ig.open .emoji-grid button{animation:none}.emoji-grid button:hover{transform:none}.emoji-grid button:active{transform:scale(.97)}
 .icon-preview .ico.pop,.goal-icon-btn.pop,.tc-on,.pp-date,.es .empty-ic,.es-row .empty-ic,.cl-hero>.vi,#confirmDialog[open] .confirm-ico,.toast.show .t-ic{animation:motionReveal var(--motion-move) var(--motion-ease) both;animation-delay:0ms}
 @keyframes motionReveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-main.wrap.prof-swap,.mview:not([hidden]),.dp-body,.pp-body.swap,.emoji-grid.swap,#calDay.swap,.insight.swap,.prof-menu{animation:motionReveal var(--motion-move) var(--motion-ease)}
+.dp-body,.pp-body.swap,.emoji-grid.swap,.insight.swap,.prof-menu{animation:motionReveal var(--motion-move) var(--motion-ease)}
 .cal-d,.arch-row{animation:none;animation-delay:0ms}
 .tab-ind.ready,.vseg-ind{transform-origin:top left;transition:background-color var(--motion-fast) var(--motion-ease),opacity var(--motion-fast) var(--motion-ease)}
 /* Un solo movimiento para el diálogo: sin entradas escalonadas de cada campo. */
@@ -1367,13 +1363,6 @@ html #tab-cats .pay-btn span{min-width:0;overflow-wrap:anywhere;white-space:norm
 #tab-cats .toolbar h3{min-width:0;overflow-wrap:anywhere}
 @media(max-width:560px){html #catsIncome .cat-row,html #catsExpense .cat-row{grid-template-columns:16px 36px minmax(0,1fr) auto!important;column-gap:5px}html #tab-cats .cat-row>.ico{width:36px;height:36px}html #tab-cats .row-acts .iconbtn{width:30px;height:36px}html #tab-cats .cat-row>input[data-act=name]{padding-inline:4px}}
 @media(max-width:380px){#closeDialog .cl-balances{grid-template-columns:minmax(0,1fr)}}
-.fab::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.14) 48%,transparent 76%);opacity:0;animation:fabGlow 5s ease-in-out 2;animation-delay:1s}
-.fab .vi{transition:transform 320ms var(--motion-ease)}
-@media(hover:hover) and (pointer:fine){.fab:hover{transform:translateY(-3px);box-shadow:0 12px 28px color-mix(in srgb,var(--primary) 32%,transparent),inset 0 1px 0 rgba(255,255,255,.2)}.fab:hover .vi{transform:rotate(12deg)}}
-.fab:active{transform:translateY(0) scale(.97)}
-.fab.launch::after{animation:fabRipple 550ms var(--motion-ease)}
-@keyframes fabGlow{0%,65%,100%{opacity:0}30%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.fab,.fab::before,.fab.launch::after{animation:none!important;transition:none!important}.fab:hover,.fab:active,.fab:hover .vi,.fab.is-open .vi{transform:none}}
 
 /* 1.9.7: cierre breve */
 #closeDialog .cl-summary{list-style:none;display:grid;gap:0;padding:0;margin:0;font-size:12px;line-height:1.6}
@@ -1616,11 +1605,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
  #yearReadout dd{font-size:16px}
 }
 @media(max-width:600px){
- .fab{transition:opacity 240ms var(--motion-ease),transform 260ms var(--motion-ease),box-shadow 320ms var(--motion-ease),background-color 240ms var(--motion-ease)}
  #yearChartModes button,#yearReadoutMonth{min-height:44px}
 }
-@media(prefers-reduced-motion:reduce){.fab.fab-scroll-hidden{transform:none}}
-@media(max-width:600px){.fab{animation:none}}
 /* 1.10.13: Análisis se explora desde sus cuatro indicadores. */
 
 .analysis-metric{position:relative;min-width:0;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;transition:border-color 180ms var(--motion-ease),background-color 180ms var(--motion-ease),box-shadow 180ms var(--motion-ease)}
@@ -1632,7 +1618,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #yearChartModes[hidden]{display:none}
 .analysis-change{font-weight:600;color:var(--text);padding:8px 10px;border-radius:6px;background:var(--surface-2)}
 .analysis-accumulated{font-size:12px;color:var(--muted);line-height:1.6}.analysis-accumulated b{color:var(--text);font-variant-numeric:tabular-nums}
-.analysis-details{display:grid;gap:10px;margin-top:16px}
+.analysis-details{display:grid;gap:10px;margin-top:var(--report-gap)}
 .analysis-detail{border:1px solid var(--border);border-radius:8px;background:var(--surface);min-width:0}
 .analysis-detail>summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto 16px;align-items:center;gap:10px;padding:17px 18px;cursor:pointer;min-height:62px}
 .analysis-detail>summary::-webkit-details-marker{display:none}.analysis-detail>summary::after{content:'+';font-size:19px;color:var(--muted);text-align:center}.analysis-detail[open]>summary::after{content:'−'}
@@ -1802,7 +1788,7 @@ button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:v
 #tab-budget #budSave .seg button.active{background:var(--surface);color:var(--primary);box-shadow:var(--shadow)}
 
 /* 1.10.23: un marco de contenido común al cambiar de sección. */
-:root{--content-width:960px;--page-gutter:16px;--section-gap:16px}
+:root{--content-width:960px;--page-gutter:16px;--section-gap:16px;--report-gap:clamp(16px,2.5vw,24px);--creation-size:56px}
 main.wrap,.topbar>.wrap{max-width:calc(var(--content-width) + 2 * var(--page-gutter));padding-inline:var(--page-gutter)}
 main.wrap>.tab{width:100%;max-width:var(--content-width);margin-inline:auto;min-width:0}
 #tab-movs>.toolbar,#tab-movs>.mview,#view-list{max-width:var(--content-width)}
@@ -1819,8 +1805,12 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 /* 1.10.24: una escala común para los indicadores de Resumen, Análisis y Ambos. */
 :root{--metric-title-size:.8125rem;--metric-value-size:1.625rem;--metric-meta-size:.75rem;--metric-padding:1.125rem;--metric-label-height:2.4375rem;--metric-icon-size:1.875rem}
 #tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
+#anKpis,#tab-dashboard .dashboard-kpis:not(:has(>details[open])),#bothBody .both-kpis:not(:has(>details[open])){align-items:stretch;grid-auto-rows:1fr}
 #tab-dashboard .metric-disclosure>summary,#bothBody .metric-disclosure>summary{container-type:inline-size;padding:var(--metric-padding)}
-#anKpis .analysis-metric{padding:var(--metric-padding)}
+#anKpis .analysis-metric{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:var(--metric-padding)}
+.analysis-toolbar{align-items:center;justify-content:space-between;gap:8px 16px}
+.analysis-available{display:flex;align-items:baseline;gap:2px 8px;flex-wrap:wrap;margin:0}
+.analysis-available b{color:var(--text);overflow-wrap:anywhere}
 #tab-dashboard .metric-disclosure>summary .label,#bothBody .metric-disclosure>summary .label,#anKpis .analysis-metric .label{font-size:var(--metric-title-size);font-weight:600;line-height:1.45;min-height:var(--metric-label-height);gap:8px;padding-right:18px;align-items:center;overflow-wrap:anywhere}
 #tab-dashboard .metric-disclosure .dot,#bothBody .metric-disclosure .dot,#anKpis .analysis-metric .dot{width:var(--metric-icon-size);height:var(--metric-icon-size);flex-shrink:0}
 #tab-dashboard .metric-disclosure>summary .value,#bothBody .metric-disclosure>summary .value,#anKpis .analysis-metric .value{font-family:var(--font-head);font-size:min(var(--metric-value-size),12.5cqi);font-weight:700;line-height:1.45;letter-spacing:-.5px;margin:12px 0 7px}
@@ -1842,12 +1832,12 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 .analysis-month-picker>summary{list-style:none;display:flex;align-items:center;gap:9px;min-height:46px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);font-size:13px;font-weight:550;cursor:pointer;transition:background .18s,border-color .18s}
 .analysis-month-picker>summary::-webkit-details-marker{display:none}
 .analysis-month-picker>summary:hover{border-color:var(--muted)}
-.analysis-month-picker[open]>summary{border-color:var(--primary)}
+.analysis-month-picker[open]:not([data-menu-closing])>summary{border-color:var(--primary)}
 .analysis-month-icon{display:flex;flex:none;color:var(--muted)}
 .analysis-month-icon .vi{width:17px;height:17px}
 #analysisMonthName{flex:1;min-width:0;overflow-wrap:anywhere}
 .analysis-month-picker .chev{width:15px;height:15px;flex:none;color:var(--muted);transition:transform .18s}
-.analysis-month-picker[open] .chev{transform:rotate(180deg)}
+.analysis-month-picker[open]:not([data-menu-closing]) .chev{transform:rotate(180deg)}
 .analysis-month-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:40;width:max(100%,250px);max-width:calc(100vw - 56px);padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);box-shadow:0 14px 36px #0003}
 .analysis-month-year{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 12px;font-size:13px;font-weight:650}
 .analysis-month-year>span{font-size:11px;font-weight:400;color:var(--muted)}
@@ -1881,8 +1871,8 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 
 /* 1.10.27: calendario despejado; estadísticas y semanas bajo demanda. */
 #calGrid{grid-template-columns:repeat(7,minmax(0,1fr))}
-.cal-summary{margin-top:16px}
-.cal-summary .cal-stats{margin:0 0 20px;min-width:0}
+.cal-summary{margin-top:var(--report-gap)}
+.cal-summary .cal-stats{margin:0 0 var(--report-gap);min-width:0}
 .cal-summary .cal-stats .cs{border:0;background:var(--surface-2);box-shadow:none}
 .cal-week-heading{font-size:13px;margin:0 0 10px}
 .cal-week-totals{margin:0;display:grid;gap:0}
@@ -1921,20 +1911,16 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 #tab-settings:not([data-settings-view]) .settings-nav{display:none}
 #tab-settings:not([data-settings-view]) .settings-content{display:block}
 /* La navegación entra igual en todas las secciones; los paneles comparten 280 ms. */
-.tab.active,.tab.active.from-r,.tab.active.from-l,.tab.active.m-next,.tab.active.m-prev{animation:motionReveal var(--motion-move) var(--motion-ease)}
 .tab.active>.mview:not([hidden]){animation:none}
 .analysis-metric,.analysis-month-picker>summary,.analysis-month-picker .chev{transition-duration:var(--motion-fast);transition-timing-function:var(--motion-ease)}
-.fab{animation:none;transition:opacity var(--motion-move) var(--motion-ease),transform var(--motion-move) var(--motion-ease),background-color var(--motion-fast) var(--motion-ease)}
-.fab::before,.fab.launch::after{display:none;animation:none}
-.fab:hover .vi,.fab.is-open .vi{transform:none}
-.fab.fab-scroll-hidden{transform:translateY(6px)}
 @media(prefers-reduced-motion:reduce){.tab.active{animation:none!important}.fab,.analysis-metric,.analysis-month-picker>summary,.analysis-month-picker .chev{transition:none!important}}
 
 @media(max-width:700px){
 }
 
-.analysis-month-picker[open] .analysis-month-menu{animation:motionReveal var(--motion-popup) var(--motion-ease)}
-@media(prefers-reduced-motion:reduce){.analysis-month-picker[open] .analysis-month-menu{animation:none}}
+.analysis-month-menu,.cat-actions-menu{transform-origin:top right}
+.analysis-month-picker.opens-up .analysis-month-menu{transform-origin:bottom right}
+details[data-menu-closing]>:not(summary){pointer-events:none}
 
 /* 1.10.29: opciones alineadas, encabezados fuera de las opciones. */
 #txQuick{display:block;container-type:inline-size;min-width:0}
@@ -1978,7 +1964,7 @@ main.wrap>.tab>.toolbar,#tab-movs>.toolbar{margin-bottom:var(--section-gap)}
 .goal-done-group>summary>.vi:last-child,.both-extra>summary>.vi:last-child{margin-left:auto;color:var(--muted);transition:transform .2s}
 .goal-done-group[open]>summary>.vi:last-child,.both-extra[open]>summary>.vi:last-child{transform:rotate(180deg)}
 .goal-done-group>.goals-grid,.both-extra>.both-bottom{margin-top:12px}
-.both-extra{min-width:0}
+.both-extra{min-width:0;margin-top:var(--report-gap)}
 .cat-row:has(.cat-actions[open]){z-index:6}
 .cat-actions{position:relative}
 #tab-cats .cat-actions>summary.iconbtn{display:grid;place-items:center;width:44px;height:44px;min-width:44px;font-size:23px;font-weight:700;line-height:1;cursor:pointer;list-style:none}
@@ -2279,11 +2265,7 @@ dialog::before{flex-shrink:0}
 }
 @media(forced-colors:active){.tabs,.toast{-webkit-backdrop-filter:none;backdrop-filter:none}.topbar.scrolled::before{display:none}}
 
-/* 1.10.68 · Cambio de pestaña: entra desde el lado de destino con desvanecido; mismo ritmo de navegación (240 ms). */
-@keyframes tabSlideR{from{opacity:.75;transform:translateX(8px)}to{opacity:1;transform:none}}
-@keyframes tabSlideL{from{opacity:.75;transform:translateX(-8px)}to{opacity:1;transform:none}}
-.tab.active.from-r,.tab.active.m-next{animation:tabSlideR var(--motion-fast) var(--motion-ease)}
-.tab.active.from-l,.tab.active.m-prev{animation:tabSlideL var(--motion-fast) var(--motion-ease)}
+/* La navegación revela el contenido ya dibujado desde ui.js. */
 
 
 /* 1.10.68 · Respuesta de tarjetas y filas: borde y sombra, sin desplazamiento; presión visible en pantallas táctiles. */
@@ -2341,11 +2323,10 @@ td.value-tick{animation-name:valueTickCell}
  .tx-more-hint::before{content:"· "}
  .tx-more::after{content:"";flex:none;margin-left:auto;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px)}
  .tx-more.has-desc .tx-more-hint{color:var(--text)}
- #txDialog:not(.details-open) .tx-details{display:none}
+ #txDialog:not(.details-open,.details-closing) .tx-details{display:none}
+ #txDialog .tx-details:has(:focus-visible){scroll-margin-bottom:12px}
+ #txDialog.details-closing .tx-details{overflow:hidden}
 }
-/* Botón flotante al desplazar: se atenúa pero siempre responde al toque. */
-@media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){.fab.fab-scroll-hidden{opacity:.35;transform:none;pointer-events:auto}}
-@media(prefers-reduced-motion:reduce){.fab.fab-scroll-hidden{transform:none}}
 @media(max-width:700px){
  #txDialog.kb-open #txQuick{display:none}
  html #txDialog.kb-open .dlg-body{gap:10px;padding-top:2px}
@@ -2399,15 +2380,10 @@ input:is([type=text],[type=search],[type=date],[type=url],[type=password]),selec
 /* Superficies */
 .card{border-radius:var(--radius);box-shadow:var(--shadow-sm)}
 dialog{border-radius:var(--radius-lg)}
-.fab{border-radius:var(--radius-lg)}
 :where(button,.btn,[contenteditable],input,select,textarea,summary):focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 
 /* 1.10.74: controles fijos dentro de la zona visible y un solo cuerpo desplazable. */
 @media(max-width:700px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- .fab{width:56px;min-width:56px;height:56px;padding:0;bottom:calc(16px + env(safe-area-inset-bottom) + var(--visible-bottom,0px));right:max(18px,calc(env(safe-area-inset-right,0px) + 12px));touch-action:manipulation}
-
- .fab:hover,.fab:active{transform:none}
- .fab:active{opacity:.85}
  html #txDialog{position:fixed;inset:auto 0 var(--visible-bottom,0px);width:100%;max-width:100%;margin:0!important;
   max-height:min(72svh,32rem,var(--tx-viewport,calc(100dvh - 12px)));padding-bottom:0;border-radius:12px 12px 0 0;
   opacity:0;transform:translateY(14px);transition:opacity var(--motion-panel) var(--motion-ease),transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete}
@@ -2419,13 +2395,6 @@ dialog{border-radius:var(--radius-lg)}
  html #txDialog .dlg-foot{flex-wrap:wrap;padding-bottom:max(10px,env(safe-area-inset-bottom))}
  #txDialog .dlg-foot .btn{flex:1 0 auto;white-space:nowrap}
 }
-@media(max-width:600px){
- .tab.active{animation:none}
- .tab.active.from-r,.tab.active.m-next{animation:mobileTabRight var(--motion-fast) var(--motion-ease)}
- .tab.active.from-l,.tab.active.m-prev{animation:mobileTabLeft var(--motion-fast) var(--motion-ease)}
-}
-@keyframes mobileTabRight{from{opacity:.86;transform:translateX(5px)}to{opacity:1;transform:none}}
-@keyframes mobileTabLeft{from{opacity:.86;transform:translateX(-5px)}to{opacity:1;transform:none}}
 
 /* 1.10.75 · Importe y categorías antes de sugerencias; opciones sin recortes. */
 @media(max-width:700px){
@@ -2445,7 +2414,6 @@ dialog{border-radius:var(--radius-lg)}
 }
 @media(prefers-reduced-motion:reduce){
  html #txDialog,html #txDialog[open]{transition:none;transform:none}
- .tab.active.from-r,.tab.active.from-l,.tab.active.m-next,.tab.active.m-prev{animation:none}
 }
 
 /* 1.10.77 · Movimiento: pestañas y segmentos con indicador deslizante, entradas escalonadas y volver arriba. */
@@ -2526,14 +2494,15 @@ body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(4){animation-delay:
 #yearReadout .analysis-accumulated{min-height:36px}
 
 /* Fecha, recuento y totales se leen antes de la lista desplazable. */
-#calDay .cal-day-head{padding-bottom:16px}
-#calDayTitle{margin:0 0 12px;font-size:15px;line-height:1.4}
-.cal-day-summary{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px 16px}
-.cal-day-totals{display:flex;flex-wrap:wrap;gap:8px 16px;min-width:0}
-.cal-day-totals>span{display:grid;gap:2px;min-width:0}
-.cal-day-totals small{font-size:10px;line-height:1.4;color:var(--muted)}
-.cal-day-totals b{font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-#calDay .vs-avg{margin-top:12px;padding:4px 8px;font-size:11px;font-weight:500}
+#calDay .cal-day-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding-bottom:14px}
+#calDayTitle{margin:0;font-size:var(--type-control);line-height:1.4;overflow-wrap:anywhere}
+.cal-day-summary{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;min-width:0}
+.cal-day-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.cal-day-totals>div{display:grid;align-content:start;gap:2px;min-width:0;padding:7px 10px;border-radius:var(--radius-sm);background:var(--surface-2)}
+.cal-day-totals dt{font-size:var(--type-meta);line-height:1.4;color:var(--muted)}
+.cal-day-totals dd{margin:0;font-size:var(--type-control);line-height:1.4;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#calDay .vs-avg{justify-self:start;max-width:100%;margin:0;padding:4px 8px;font-size:var(--type-meta);font-weight:500;overflow-wrap:anywhere}
+@container (max-width:230px){.cal-day-totals{grid-template-columns:minmax(0,1fr)}}
 
 /* Copia e importe alineados; las acciones mantienen su propia columna. */
 #calDay .cal-transaction{grid-template-columns:34px minmax(0,1fr) 72px;grid-template-rows:auto auto;gap:4px 10px;margin:0;padding:14px 0}
@@ -2676,7 +2645,7 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
   --dock-extra:0px;
   scroll-padding-bottom:calc(var(--dock-controls-bottom) + var(--dock-extra));
  }
- :root:has(:where(#fab:not([hidden]))){--dock-extra:66px}
+ :root:has(:where(#fab:not([hidden],.calendar-create))){--dock-extra:calc(var(--creation-size) + 10px)}
  :root:has(body.sel-on){--dock-extra:calc(max(44px,2.75rem) + 40px)}
  main.wrap{padding-bottom:calc(var(--dock-inset) + var(--dock-height) + var(--dock-extra) + 18px)}
  .topbar>.wrap:last-child{height:0;padding:0;margin:0;overflow:visible}
@@ -2769,6 +2738,7 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
  /* Pantallas muy angostas: menos relleno lateral para conservar 44 px por pestaña. */
  @media (max-width:360px){#tabs{padding-inline:4px}}
  #fab,.sel-bar{bottom:var(--dock-controls-bottom)}
+ #fab{right:max(var(--dock-right),calc((100% - var(--dock-max-width) + var(--dock-right) - var(--dock-left)) / 2));touch-action:manipulation}
  body.sel-on #fab{display:none}
  .sel-bar{width:calc(100% - 24px);max-width:440px;justify-content:space-between}
  .sel-bar>span{min-width:0;white-space:normal;overflow-wrap:anywhere}
@@ -2807,9 +2777,21 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
 #tab-movs #movView button{min-height:var(--movement-control);justify-content:center;min-width:0;text-align:center}
 #movView .vseg-ind{inset-block:3px}
 #tab-movs #btnSelect{min-height:calc(var(--movement-control) + 6px);justify-content:center}
-#tab-movs #fab.calendar-create{position:static;flex:0 0 50px;width:50px;min-width:50px;height:50px;z-index:auto;box-shadow:none}
-body:has(#fab.calendar-create) #toast{bottom:var(--dock-controls-bottom)}
+#tab-movs #fab.calendar-create{--creation-size:calc(var(--movement-control) + 6px);position:static;flex:0 0 var(--creation-size);z-index:auto;box-shadow:none}
 #view-list .mov-filter-toggle,#view-list .search-box input{height:auto;min-height:44px}
+#fltText::-webkit-search-cancel-button{display:none}
+#view-list .mov-filters:has(.mov-filter-clear:not([hidden])){grid-template-columns:minmax(0,1fr) auto auto}
+#view-list .mov-filter-clear{grid-column:3;grid-row:1;justify-content:center;min-height:44px}
+#view-list .mov-filter-clear[hidden]{display:none}
+@media(max-width:700px){
+ #view-list .mov-filter-clear{width:44px;padding:0}
+ #view-list .mov-filter-clear span{display:none}
+}
+html[data-large-text] #view-list .mov-filters:has(.mov-filter-clear:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr));row-gap:8px}
+html[data-large-text] #view-list .mov-filters:has(.mov-filter-clear:not([hidden])) .search-box{grid-column:1/-1}
+html[data-large-text] #view-list .mov-filters:has(.mov-filter-clear:not([hidden])) .mov-filter-toggle{grid-column:1;grid-row:2}
+html[data-large-text] #view-list .mov-filter-clear{grid-column:2;grid-row:2;width:auto;padding-inline:8px}
+html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
 @media(max-width:700px){
  #tab-movs #movView{flex:1;max-width:none}
  #tab-movs #btnSelect{min-width:44px}
@@ -2818,19 +2800,27 @@ body:has(#fab.calendar-create) #toast{bottom:var(--dock-controls-bottom)}
 /* Escritorio: el margen lateral reserva espacio para las acciones fijas. */
 @media (min-width:601px) and (not ((max-width:960px) and (max-height:500px) and (pointer:coarse))){
  :root{
-  --creation-width:56px;
   --creation-gap:16px;
   --frame-side:max(var(--page-gutter),calc((100% - var(--content-width)) / 2));
-  --creation-right:max(var(--page-gutter),calc(var(--frame-side) - var(--creation-gap) - var(--creation-width)));
+  --creation-right:max(var(--page-gutter),calc(var(--frame-side) - var(--creation-gap) - var(--creation-size)));
  }
  main.wrap,.topbar>.wrap{
   max-width:none;
   margin-left:calc(var(--frame-side) - var(--page-gutter));
-  margin-right:calc(var(--creation-right) + var(--creation-width) + var(--creation-gap) - var(--page-gutter));
+  margin-right:calc(var(--creation-right) + var(--creation-size) + var(--creation-gap) - var(--page-gutter));
  }
- #fab{width:var(--creation-width);min-width:0;height:56px;right:var(--creation-right);bottom:24px;padding:0}
- .to-top{right:calc(var(--creation-right) + (var(--creation-width) - 40px) / 2)}
+ #fab{right:var(--creation-right);bottom:24px}
+ .to-top{right:calc(var(--creation-right) + (var(--creation-size) - 40px) / 2)}
 }
+
+/* El botón conserva su espacio al desvanecerse, incluso junto a Lista y Calendario. */
+#fab{border-radius:var(--radius-lg);transition:opacity var(--motion-panel) var(--motion-ease),background-color var(--motion-fast) var(--motion-ease)}
+#fab.fab-scroll-hidden:not(:focus-visible){opacity:0;pointer-events:none;transition-duration:var(--motion-tab),var(--motion-fast)}
+#fab:focus-visible{transition:none}
+@media(hover:hover) and (pointer:fine){#fab:hover{background:color-mix(in srgb,var(--primary-fill,var(--primary)) 90%,var(--on-primary,#fff))}}
+
+#tab-dashboard>.dashboard-charts+.grid2.top{margin-top:var(--report-gap)}
+#yearChartCard{margin-top:var(--section-gap)}
 
 /* Teléfono: el nombre del perfil activo queda visible y el estado de guardado se distingue por color (pendiente en ámbar, error en rojo). */
 @media (max-width:700px){

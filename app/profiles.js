@@ -125,7 +125,7 @@ async function switchProfile(id){
     if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
     Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
     renderProfileUI(); if (activeTab() === 'both') showTab('dashboard'); renderAll(); updateSyncInfo();
-    { const mw = document.querySelector('main.wrap'); if (mw){ mw.classList.remove('prof-swap'); void mw.offsetWidth; mw.classList.add('prof-swap'); } }
+    revealContent(document.querySelector('.tab.active'));
     if (syncOn()) setBadge('busy', '☁️ Conectando…'); else {setBadge();updateSyncInfo();}
     toast(`Ahora ves: ${profOf(id).name}`, {icon:'user'});
   } finally { switching = false; }
@@ -205,7 +205,6 @@ function sharedGoalsCard(){
 async function enterBoth(){
   if(cycleView())cycleSelectedMonths[activeProfile]=currentMonth;
   bothMode = true; document.body.classList.add('both-on'); renderProfileUI(); showTab('both');
-  { const mw = document.querySelector('main.wrap'); if (mw){ mw.classList.remove('prof-swap'); void mw.offsetWidth; mw.classList.add('prof-swap'); } }
   refreshOther(true);
 }
 // Sheets guarda los métodos fuera de settings: se rearma la copia local igual que applyRemote, sin perder métodos ni ajustes locales.

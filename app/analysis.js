@@ -203,10 +203,11 @@ $('#yearChartModes').addEventListener('click', e => {
   if (!button || button.dataset.yearMode === analysisChartMode) return;
   analysisChartMode = button.dataset.yearMode;
   renderAnalysisSelection();
+  revealContent($('#yearReadout'));
   enhanceAccessibility();
 });
 document.addEventListener('change',e=>{
-  if(e.target.id==='yearReadoutMonth'){const focused=document.activeElement===e.target||!!document.activeElement?.closest('.analysis-month-picker');selectAnalysisMonth(e.target.value);if(focused)$('#analysisMonthTrigger').focus({preventScroll:true});return;}
+  if(e.target.id==='yearReadoutMonth'){const focused=document.activeElement===e.target||!!document.activeElement?.closest('.analysis-month-picker');selectAnalysisMonth(e.target.value);if(focused)$('#analysisMonthTrigger').focus({preventScroll:true});revealContent($('#yearReadout'));return;}
   if(e.target.id==='analysisDetailPeriod'){
     const focused=document.activeElement===e.target;
     analysisDetailPeriod=e.target.value;
@@ -231,13 +232,13 @@ document.addEventListener('toggle',e=>{
 document.addEventListener('click',e=>{
  const option=e.target.closest('[data-analysis-month]');
  if(option){const select=$('#yearReadoutMonth');select.value=option.dataset.analysisMonth;select.dispatchEvent(new Event('change',{bubbles:true}));return;}
- const picker=$('.analysis-month-picker');if(picker?.open&&!picker.contains(e.target))picker.open=false;
+ const picker=$('.analysis-month-picker');if(picker?.open&&!picker.contains(e.target))setMenuDisclosure(picker,false);
 });
 document.addEventListener('keydown',e=>{
  const picker=e.target.closest('.analysis-month-picker');if(!picker)return;
- if(e.key==='Escape'&&picker.open){e.preventDefault();picker.open=false;$('#analysisMonthTrigger').focus();return;}
+ if(e.key==='Escape'&&menuDisclosureOpen(picker)){e.preventDefault();setMenuDisclosure(picker,false);$('#analysisMonthTrigger').focus();return;}
  if(!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
- e.preventDefault();picker.open=true;
+ e.preventDefault();setMenuDisclosure(picker,true);
  const options=[...picker.querySelectorAll('[data-analysis-month]')];
  let i=options.indexOf(document.activeElement);
  if(i<0)i=options.findIndex(b=>b.getAttribute('aria-pressed')==='true');
@@ -267,18 +268,18 @@ function renderAnalysis(){
     exp: Object.keys(grid).filter(k => k.startsWith('expense:')).reduce((a,k) => a + grid[k][i], 0)}));
   const nData = tot.filter(t => t.inc || t.exp).length, withData = nData || 1;
   const yInc = tot.reduce((a,t) => a + t.inc, 0), yExp = tot.reduce((a,t) => a + t.exp, 0);
+  $('#analysisAvailable').textContent = fmt(yInc - yExp);
 
   // KPIs del año (el ahorro se mide igual que en el Resumen: lo que separo o lo que sobra)
   const savings = months.map(savingsOf);
   const ySv = savings.reduce((a, v, i) => { a.saved += v.saved; if (v.pct && v.inc && months[i] <= tm){ a.goalMonths++; if (v.saved >= v.target) a.hit++; } return a; }, {saved:0, goalMonths:0, hit:0});
   const kpi=(id,icon,value,sub,cls='')=>{const metric=ANALYSIS_METRICS[id],on=analysisMetric===id;return `<button type="button" class="card kpi analysis-metric${on?' selected':''}" data-analysis-metric="${id}" aria-pressed="${on}" aria-controls="yearChartCard"><div class="label"><span class="dot" style="color:var(${metric.color});background:color-mix(in srgb,var(${metric.color}) 14%,var(--surface))">${ic(icon)}</span>${metric.label}</div><span class="metric-selection" aria-hidden="true">${ic(on?'check':'chevron-down')}</span><div class="value ${cls}" data-k="an:${id}" data-num="${typeof value==='number'?value:''}" data-kind="${id==='rate'?'pct':'money'}">${typeof value==='number'?'':value}</div><div class="small muted">${sub}</div></button>`;};
   const caption=(mobile,desktop)=>'<span class="metric-caption-mobile">'+mobile+'</span><span class="metric-caption-desktop">'+desktop+'</span>';
-  const savingsCaption = saveMode() === 'set' ? 'Dinero apartado' : 'Incluye el dinero apartado';
-  const availableCaption = `Saldo disponible del año: ${fmt(yInc - yExp)}`;
+  const savingsCaption = saveMode() === 'set' ? 'Dinero apartado' : 'Incluye aportes';
   $('#anKpis').innerHTML =
     kpi('income','arrow-down',yInc,caption(`Promedio mensual<br>${fmt(yInc/withData)}`,`Promedio ${fmt(yInc/withData)} al mes`)) +
     kpi('expense','arrow-up',yExp,caption(`Promedio mensual<br>${fmt(yExp/withData)}`,`Promedio ${fmt(yExp/withData)} al mes`)) +
-    kpi('savings','piggy-bank',ySv.saved,`${savingsCaption}<br>${availableCaption}`,ySv.saved>=0?'savings-positive':'neg') +
+    kpi('savings','piggy-bank',ySv.saved,savingsCaption,ySv.saved>=0?'savings-positive':'neg') +
     kpi('rate','chart-pie',yInc?ySv.saved/yInc*100:'—',ySv.goalMonths?caption(`Meta: ${ySv.hit} de ${ySv.goalMonths} meses`,`Meta cumplida en ${ySv.hit} de ${ySv.goalMonths} meses`):'Sin ingresos registrados');
   $('#anKpis').querySelectorAll('[data-num]').forEach(el => { if (el.dataset.num !== '') countUp(el, Number(el.dataset.num), el.dataset.kind); });
 

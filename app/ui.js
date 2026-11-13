@@ -263,33 +263,71 @@ function motionAnimate(el,frames,kind='move'){
  const animation=el.animate(frames,{duration:MOTION[kind],easing:MOTION.ease});el._motion=animation;
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
+function revealContent(el,kind='fast'){
+ return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
+}
+function motionHeight(el){
+ return el.getBoundingClientRect().height/(Number(getComputedStyle(document.documentElement).zoom)||1);
+}
 function motionResize(el,update){
- const from=el.getBoundingClientRect().height;el._resize?.cancel();el._resize=null;el.style.overflow='';update();const to=el.getBoundingClientRect().height;
+ const from=motionHeight(el);el._resize?.cancel();el._resize=null;el.style.overflow='';update();const to=motionHeight(el);
  if(reduceMotion()||Math.abs(from-to)<1)return;
  el.style.overflow='hidden';const animation=el.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});el._resize=animation;
  animation.onfinish=()=>{el.style.overflow='';el._resize=null;};
 }
 function toggleDisclosure(details,summary,wanted,animate=true){
- const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=details.getBoundingClientRect().height;
- const content=details.querySelector(':scope>.metric-expanded,:scope>.disclosure-body,:scope>.analysis-detail-body,:scope>.settings-disclosure-body,:scope>.goal-split,:scope.expense-distribution-more>div');
+ const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=motionHeight(details);
+ const content=summary.nextElementSibling;
  const previousOpacity=current&&content?getComputedStyle(content).opacity:null;
  const previousTransform=current&&content?getComputedStyle(content).transform:null;
  if(current){current.animation.cancel();current.contentAnimation?.cancel();}
- details.style.overflow='hidden';details.open=true;
- const style=getComputedStyle(details);
- const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+parseFloat(style.borderTopWidth||0)+parseFloat(style.borderBottomWidth||0)+parseFloat(style.paddingTop||0)+parseFloat(style.paddingBottom||0);
+ if(!open&&content?.contains(document.activeElement))summary.focus({preventScroll:true});
+ if(content)content.inert=!open;
+ details.style.overflow='hidden';
+ details.open=open;
+ const to=motionHeight(details);
  const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
  if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
+ details.open=true;
  const distribution=details.matches('.expense-distribution-more'),duration=distribution?360:MOTION.panel;
  const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:[{opacity:previousOpacity??(open?0:1),transform:previousTransform??(open?'translateY(-5px)':'none')},{opacity:open?1:0,transform:'none'}];
- const contentAnimation=content?.animate(frames,{duration:distribution?duration:open?MOTION.panel:MOTION.fast,easing:MOTION.ease});
+ const contentAnimation=content?.animate(frames,{duration,easing:MOTION.ease});
  const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});
  details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
+}
+function menuDisclosureOpen(details){
+ return details.open && !details.hasAttribute('data-menu-closing');
+}
+function setMenuDisclosure(details,open){
+ if(!details||menuDisclosureOpen(details)===open)return;
+ const summary=details.querySelector('summary'),menu=summary.nextElementSibling;
+ const opacity=details.open?getComputedStyle(menu).opacity:0;
+ const transform=details.open?getComputedStyle(menu).transform:'translateY(3px) scale(.98)';
+ details._menuMotion?.cancel();
+ details._menuMotion=null;
+ summary.setAttribute('aria-expanded',String(open));
+ if(!open&&menu.contains(document.activeElement))summary.focus({preventScroll:true});
+ menu.inert=!open;
+ details.toggleAttribute('data-menu-closing',!open);
+ if(open)details.open=true;
+ if(reduceMotion()){details.open=open;details.removeAttribute('data-menu-closing');return;}
+ const animation=menu.animate([{opacity,transform},{opacity:open?1:0,transform:open?'none':'translateY(3px) scale(.98)'}],{duration:MOTION.popup,easing:MOTION.ease,fill:'both'});
+ details._menuMotion=animation;
+ animation.onfinish=()=>{
+  if(details._menuMotion!==animation)return;
+  details.open=open;
+  details.removeAttribute('data-menu-closing');
+  details._menuMotion=null;
+  animation.cancel();
+ };
 }
 document.addEventListener('click',e=>{
  const summary=e.target.closest('summary');if(!summary)return;
  const details=summary.parentElement;
- if(details.tagName!=='DETAILS'||details.matches('.settings-disclosure,.analysis-month-picker,.rec-actions'))return;
+ if(details.tagName!=='DETAILS'||details.matches('.settings-disclosure'))return;
+ if(details.matches('.analysis-month-picker,.cat-actions')){
+  e.preventDefault();setMenuDisclosure(details,!menuDisclosureOpen(details));return;
+ }
  e.preventDefault();toggleDisclosure(details,summary);
 });
 
@@ -449,7 +487,10 @@ function showTab(name, scrollTop = 0){
     else button.removeAttribute('aria-current');
   }
   $('#btnSettings').classList.toggle('active', name === 'settings');
-  document.querySelectorAll('.tab').forEach(s => { s.classList.toggle('active', s.id === 'tab-' + name); s.classList.remove('m-next', 'm-prev', 'from-r', 'from-l'); });
+  document.querySelectorAll('.tab').forEach(s => {
+    s.classList.toggle('active', s.id === 'tab-' + name);
+    if(!s.classList.contains('active')&&s._motion){s._motion.cancel();s._motion=null;}
+  });
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
   // Al volver a Resumen, cada indicador conserva el último valor dibujado.
@@ -469,9 +510,8 @@ function showTab(name, scrollTop = 0){
   if (name === 'movs') moveViewInd();
   updateCreationControls();
   if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
-  // La pestaña entra desde el lado hacia el que te mueves, con su contenido ya dibujado.
-  const ord = Object.keys(VIEWS), d = ord.indexOf(name) - ord.indexOf(prevTab);
-  if(d&&!reduceMotion())$('#tab-'+name)?.classList.add(d>0?'from-r':'from-l');
+  // La vista entra después del render y de restaurar su posición.
+  if(prevTab!==name)revealContent($('#tab-'+name));
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
@@ -709,10 +749,9 @@ toTop.onclick = () => { ($('#tabs button.active') || $('#btnSettings')).focus({p
 window.addEventListener('scroll', onScroll, {passive:true}); window.addEventListener('resize',onScroll); onScroll();
 const monthInput = $('#month');
 monthInput.value = currentMonth;
-monthInput.addEventListener('change', () => { if (monthInput.value) { currentMonth = monthInput.value; renderAll(); } });
-// Al cambiar de mes el contenido se desliza hacia el lado del mes elegido
-function slideMonth(dir){ if (reduceMotion()) return; const t = document.querySelector('.tab.active'); if (!t) return; t.classList.remove('m-next', 'm-prev'); void t.offsetWidth; t.classList.add(dir > 0 ? 'm-next' : 'm-prev'); }
+monthInput.addEventListener('change', () => goMonth(monthInput.value));
+// El período cambia en el sitio, sin mover horizontalmente toda la vista.
 let chartMorph = false;
-function goMonth(v, animate = true){ if (!v || v === currentMonth) return; const dir = v > currentMonth ? 1 : -1; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } if (animate) slideMonth(dir); }
+function goMonth(v, animate = true){ if (!v || v === currentMonth) return; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } if (animate) revealContent(document.querySelector('.tab.active')); }
 $('#prevM').onclick = () => goMonth(shiftMonth(currentMonth, -1));
 $('#nextM').onclick = () => goMonth(shiftMonth(currentMonth, 1));

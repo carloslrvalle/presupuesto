@@ -131,8 +131,8 @@ function acceptSyncRemote(remote,profile=activeProfile){
  const fresh=!base&&!local.transactions.length&&!local.goals.length&&!local.recurring.length&&!Object.keys(local.budgets||{}).length&&local.categories.length===seedCats.length&&local.categories.every(c=>!c.defaultBudget&&!c.archived&&!c.pay&&seedCats.some(s=>s.type===c.type&&s.name===c.name));
  const result=empty?{data:local,conflicts:[]}:fresh?{data:remote,conflicts:[]}:SyncCore.reconcile(base?.data||null,local,remote);
  if(result.conflicts.length){writeSyncCache('conflict',{remote:SyncCore.clone(remote),rev},profile);sync.pending=true;saveSync();setBadge('err','Cambios por revisar');updateSyncInfo();return false;}
- sync.rev=rev;sync.pending=!SyncCore.same(result.data,remote);result.data.rev=rev;
- if(!applyRemote(result.data,sync.pending)){sync.pending=true;saveSync();setBadge('err','No se pudo guardar aquí');return false;}
+ const pending=!SyncCore.same(result.data,remote);result.data.rev=rev;
+ if(!applyRemote(result.data,pending)){setBadge('err','No se pudo guardar aquí');return false;}
  rememberSyncBase(remote,rev,profile);return true;
 }
 const syncReview=document.createElement('button');syncReview.id='syncReview';syncReview.type='button';syncReview.className='btn';syncReview.textContent='Revisar cambios entre dispositivos';syncReview.hidden=true;$('#syncInfo').insertAdjacentElement('afterend',syncReview);
@@ -163,7 +163,7 @@ function openSyncConflicts(){
  syncConflictDialog.querySelector('form').onsubmit=e=>{e.preventDefault();if(profile!==activeProfile||url!==sync.url){syncConflictDialog.close();return;}
   const form=new FormData(e.target),choices={};result.conflicts.forEach((item,i)=>choices[item.key]=form.get('choice'+i));
   const latest=SyncCore.reconcile(readSyncCache('base')?.data||null,snapshot(),saved.remote,choices);if(latest.conflicts.length){openSyncConflicts();return;}
-  sync.rev=saved.rev;sync.pending=true;latest.data.rev=saved.rev;if(!applyRemote(latest.data,true))return;rememberSyncBase(saved.remote,saved.rev);clearSyncConflict();syncConflictDialog.close();changeSeq++;saveSync();setBadge('pending','Selección guardada aquí · Pendiente');updateSyncInfo();if(sync.auto)pushNow();
+  latest.data.rev=saved.rev;if(!applyRemote(latest.data,true))return;rememberSyncBase(saved.remote,saved.rev);clearSyncConflict();syncConflictDialog.close();changeSeq++;saveSync();setBadge('pending','Selección guardada aquí · Pendiente');updateSyncInfo();if(sync.auto)pushNow();
  };
  if(!syncConflictDialog.open)syncConflictDialog.showModal();
 }
@@ -228,20 +228,32 @@ function applyRemote(d, keepSync){
   const previousCycleEnabled=cycleEnabled(),previousCycleDay=cycleDay();
   validateStateData(d);
   d = cleanState(d);
+  const previous = state;
+  state = {...previous, settings:{...previous.settings}};
   state.meta = d.meta && typeof d.meta === 'object' ? d.meta : (state.meta || {});
   state.categories = d.categories; state.transactions = d.transactions || []; state.budgets = d.budgets || {};
   if (Array.isArray(d.methods)) state.settings.methods = d.methods;
   if (Array.isArray(d.recurring)) state.recurring = d.recurring;
   if (Array.isArray(d.goals)) state.goals = d.goals;
   if(d.settings&&typeof d.settings==='object')SYNC_SETTINGS.forEach(k=>{if(Object.prototype.hasOwnProperty.call(d.settings,k))state.settings[k]=d.settings[k];else delete state.settings[k];});
-  if(['dashboard','budget'].includes(activeTab())&&(previousCycleEnabled!==cycleEnabled()||previousCycleDay!==cycleDay())){currentMonth=cycleEnabled()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;}
   state.updatedAt = d.updatedAt || Date.now();
+  const snapshotBeforeMigration = snapState();
+  const migrated = migrateVec();
+  if (!saveLocal()){
+    state = previous;
+    _txIdx = null;
+    setBadge('err','No se pudo guardar aquí');
+    updateSyncInfo();
+    return false;
+  }
+  if(['dashboard','budget'].includes(activeTab())&&(previousCycleEnabled!==cycleEnabled()||previousCycleDay!==cycleDay())){currentMonth=cycleEnabled()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;}
   if (d.rev != null) sync.rev = Number(d.rev) || 0;
-  if (!keepSync){sync.pending=false;sync.lastSync=Date.now();}
+  sync.pending=!!keepSync;
+  if (!keepSync) sync.lastSync=Date.now();
   saveSync();
-  _snapRec = snapState(); _txIdx = null;
-  if (migrateVec()) setTimeout(save, 0);
-  const persisted=saveLocal();renderAll();updateSyncInfo();return persisted;
+  _snapRec = snapshotBeforeMigration; _txIdx = null;
+  if (migrated) setTimeout(save, 0);
+  renderAll();updateSyncInfo();return true;
 }
 function pushNow(){
   if (pushTask) return pushTask;

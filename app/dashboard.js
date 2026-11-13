@@ -80,14 +80,15 @@ function progressRow(c, real, budget, type, prev, prevM){
   const coveredWidth = alert === 'over' ? budget / real * 100 : Math.min(pct, 100);
   const excessWidth = 100 - coveredWidth;
   const barDescription = alert === 'over' ? `${pct.toFixed(1)}% del presupuesto. Presupuesto: ${fmt(budget)}. Exceso: ${fmt(real-budget)}.` : '';
-  return `<div class="prow ${alert} link" data-go-cat="${c.id || ''}" data-go-type="${type}" title="Ver movimientos de ${esc(c.name)}">
-    <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
-    <div class="pr-main">
-      <div class="pr-top"><span class="name">${esc(c.name)}</span>${tag}<span class="pr-amt"><b>${fmt(real)}</b>${budget > 0 ? `<span class="muted"> de ${fmt(budget)}</span>` : ''}</span></div>
-      <div class="bar"${barDescription ? ` role="img" aria-label="${esc(barDescription)}" title="${esc(barDescription)}"` : ''}><span data-k="dash:${type}:${esc(c.id)}" data-w="${coveredWidth.toFixed(2)}" style="width:${coveredWidth}%;background:${color}"></span>${alert==='over'?`<i class="budget-overrun" aria-hidden="true" style="width:${excessWidth.toFixed(2)}%"></i><i class="budget-limit" aria-hidden="true" style="left:${coveredWidth.toFixed(2)}%"></i>`:''}</div>
-      <div class="pr-meta"><span>${status==='complete'||(saving&&tag)?'':prowMeta(real, budget, type, saving)}</span>${prevM && prev && Math.abs(real - prev) / prev >= .01 ? deltaTxt(real, prev, type, prevM) : ''}</div>
-    </div>
-  </div>`;
+  const tagName = c.id ? 'button' : 'div';
+  return `<${tagName} class="prow ${alert}${c.id ? ' link' : ''}"${c.id ? ` type="button" data-go-cat="${esc(c.id)}" data-go-type="${type}" title="Ver movimientos de ${esc(c.name)}"` : ''}>
+    <span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span>
+    <span class="pr-main">
+      <span class="pr-top"><span class="name">${esc(c.name)}</span>${tag}<span class="pr-amt"><b>${fmt(real)}</b>${budget > 0 ? `<span class="muted"> de ${fmt(budget)}</span>` : ''}</span></span>
+      <span class="bar"${barDescription ? ` role="img" aria-label="${esc(barDescription)}" title="${esc(barDescription)}"` : ''}><span data-k="dash:${type}:${esc(c.id)}" data-w="${coveredWidth.toFixed(2)}" style="width:${coveredWidth}%;background:${color}"></span>${alert==='over'?`<i class="budget-overrun" aria-hidden="true" style="width:${excessWidth.toFixed(2)}%"></i><i class="budget-limit" aria-hidden="true" style="left:${coveredWidth.toFixed(2)}%"></i>`:''}</span>
+      <span class="pr-meta"><span>${status==='complete'||(saving&&tag)?'':prowMeta(real, budget, type, saving)}</span>${prevM && prev && Math.abs(real - prev) / prev >= .01 ? deltaTxt(real, prev, type, prevM) : ''}</span>
+    </span>
+  </${tagName}>`;
 }
 const zeroGroup = (items, label) => items.length ? `<details class="zero-group"><summary>${CHEV_D}${items.length} ${label}</summary><div>${items.join('')}</div></details>` : '';
 // Resumen del mes en una frase
@@ -218,10 +219,10 @@ function renderDashboard(){
   else renderInsight(m,inc,exp,bExp);
 
   const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.amount - a.amount).slice(0,5);
-  $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<div class="prow link" data-go-tx="${esc(t.id)}" title="Editar movimiento" style="grid-template-columns:34px 1fr auto">
-    <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
-    <div><div class="name">${esc(t.desc || c.name)}</div><div class="small muted">${t.desc ? esc(c.name) + ' · ' : ''}${t.method ? esc(t.method) + ' · ' : ''}${fmtDate(t.date)}</div></div>
-    <div class="amt"><b class="xp">${fmt(t.amount)}</b></div></div>`; }).join('') : emptyBox('receipt', 'Aquí verás tus 5 gastos más grandes del período.', null, '', true);
+  $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<button type="button" class="prow link" data-go-tx="${esc(t.id)}" title="Editar movimiento">
+    <span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span>
+    <span class="top-exp-copy"><span class="name">${esc(t.desc || c.name)}</span><span class="small muted">${t.desc ? esc(c.name) + ' · ' : ''}${t.method ? esc(t.method) + ' · ' : ''}${fmtDate(t.date)}</span></span>
+    <span class="amt"><b class="xp">${fmt(t.amount)}</b></span></button>`; }).join('') : emptyBox('receipt', 'Aquí verás tus 5 gastos más grandes del período.', null, '', true);
 
   renderCharts();
 }

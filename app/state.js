@@ -75,6 +75,28 @@ function stampChanges(){
 }
 function save(){ if(localRecovery||localTabChanged){toast(localRecovery?'⚠️ Recupera el perfil antes de editar.':'⚠️ Hay cambios en otra pestaña. Recarga antes de seguir editando.');return false;} _txIdx = null; stampChanges(); state.updatedAt = Date.now(); if(!saveLocal()){setBadge('err','No se pudo guardar aquí');updateSyncInfo();return false;} schedulePush(); return true; }
 
+function saveChange(change, dialog){
+  if (localRecovery || localTabChanged) return save();
+  const previous = SyncCore.clone(state), previousSnapshot = _snapRec;
+  if (change() === false) return false;
+  if (save()) return true;
+  state = previous;
+  _snapRec = previousSnapshot;
+  _txIdx = null;
+  if (dialog?.open){
+    let message = dialog.querySelector('.dialog-save-error');
+    if (!message){
+      message = document.createElement('p');
+      message.className = 'dialog-save-error';
+      message.setAttribute('role', 'alert');
+      dialog.querySelector('.dlg-foot').prepend(message);
+      dialog.addEventListener('close', () => message.remove(), {once:true});
+    }
+    message.textContent = 'No se pudo guardar. Libera espacio y vuelve a intentar.';
+  }
+  return false;
+}
+
 // Contrato común para respaldos y datos recibidos. Rechaza antes de cambiar la copia vigente.
 function validateStateData(st){
   const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);

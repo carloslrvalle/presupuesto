@@ -282,6 +282,11 @@ tr.over td{background:color-mix(in srgb,var(--expense) 6%,transparent)}
 .kpi.link:hover::after,.kpi.link:focus-visible::after{opacity:1;transform:none}
 .kpi.link:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--border))}
 .prow.link{cursor:pointer;border-radius:7px;transition:background-color .2s}
+button.prow.link{width:calc(100% + 20px);border:0;border-bottom:1px dashed var(--border);color:inherit;font:inherit;text-align:start}
+button.prow.link:last-child{border-bottom:0}
+button.prow.link:not(.over):not(:hover){background:transparent}
+button.prow.link:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:-2px}
+.top-exp-copy>span{display:block}
 .prow.link:not(.over):hover{background:var(--surface-2)}
 @media(hover:hover) and (pointer:fine){.prow.link.over:hover{filter:brightness(.98)}}
 .fsel.flash .fsel-btn{animation:flash 1s var(--ease-out)}
@@ -765,6 +770,9 @@ dialog::backdrop{background:rgba(10,12,20,.45)}
 .dlg-body>*{min-width:0}
 dialog{overflow-x:hidden}
 .dlg-foot{padding:0 20px 18px;display:flex;justify-content:flex-end;gap:8px}
+.dlg-foot:has(.dialog-save-error){flex-wrap:wrap}
+.dialog-save-error{flex:0 0 100%;margin:0;padding:6px 8px;color:var(--expense);background:var(--expense-soft);font-size:.875rem}
+#txContributionGoal{margin:0 0 12px}
 .field{display:grid;gap:5px;grid-template-columns:minmax(0,1fr)}
 .field label{font-size:13px;font-weight:600;color:var(--muted)}
 .seg{display:grid;grid-template-columns:1fr 1fr}
@@ -2219,7 +2227,7 @@ dialog::before{flex-shrink:0}
  #tab-dashboard .dashboard-kpis>.metric-disclosure,#anKpis>.analysis-metric{min-height:0}
  #tab-dashboard .dashboard-kpis>.metric-disclosure>summary{min-height:0;padding:var(--metric-padding)}
  #tab-dashboard .metric-disclosure>summary .label,#anKpis .analysis-metric .label{font-size:var(--metric-title-size);line-height:1.45}
- #tab-dashboard .dashboard-kpis>.metric-disclosure>summary,#anKpis>.analysis-metric{display:grid;grid-template-rows:minmax(calc(2.9 * var(--metric-title-size)),auto) minmax(30px,auto) minmax(calc(3 * var(--metric-meta-size)),auto);row-gap:6px;align-content:start;text-align:left}
+ #tab-dashboard .dashboard-kpis>.metric-disclosure>summary,#anKpis>.analysis-metric{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(calc(2.9 * var(--metric-title-size)),auto) minmax(30px,auto) minmax(calc(3 * var(--metric-meta-size)),auto);row-gap:6px;align-content:start;text-align:left}
  #tab-dashboard .metric-disclosure>summary .label,#anKpis .analysis-metric>.label{grid-row:1;min-height:0}
  #tab-dashboard .metric-disclosure>summary .value,#anKpis .analysis-metric>.value{grid-row:2;align-self:center;margin:0;line-height:1.45}
  #tab-dashboard .metric-preview,#anKpis .analysis-metric>.small{display:block;grid-row:3;font-size:var(--metric-meta-size);line-height:1.5;overflow-wrap:anywhere}
@@ -2309,7 +2317,7 @@ td.value-tick{animation-name:valueTickCell}
  #txDialog #fCatChips::-webkit-scrollbar,#txDialog .quick-items::-webkit-scrollbar{display:none}
  #txDialog .field:has(>#txCategorySearchBox[hidden]) #fCatChips .chip{flex:none;width:auto;min-height:44px;padding:8px 14px 8px 8px;border-radius:99px;white-space:nowrap;scroll-snap-align:start}
  #txDialog .field:has(>#txCategorySearchBox[hidden]) #fCatChips .cn{white-space:nowrap;overflow-wrap:normal}
- #txDialog .field:has(>#txCategorySearchBox[hidden]) .tx-category-tools{display:none}
+ #txDialog:not(.needs-saving-category) .field:has(>#txCategorySearchBox[hidden]) .tx-category-tools{display:none}
  /* Frecuentes: una fila de botones; un toque rellena el formulario. */
  #txDialog .quick-head{margin-bottom:2px;min-height:28px}
  #txDialog #txQuick .q-chip{display:inline-flex;flex:none;align-items:center;gap:8px;width:auto;max-width:none;padding:6px 14px 6px 6px;border-radius:99px;scroll-snap-align:start}

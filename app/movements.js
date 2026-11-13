@@ -358,13 +358,14 @@ $('#btnSelect').onclick = () => setSelMode(!selMode);
 selBar.addEventListener('click', async e => {
   const b = e.target.closest('[data-sel]'); if (!b) return;
   if (b.dataset.sel === 'all'){ const rows = [...document.querySelectorAll('#movBody [data-row]')].map(r => r.dataset.row); const all = rows.every(id => selSet.has(id)); rows.forEach(id => all ? selSet.delete(id) : selSet.add(id)); renderSelUI(); renderMovs(); return; }
-  const ids = [...selSet]; if (!ids.length) return;
+  const ids = [...selSet], profile = activeProfile; if (!ids.length) return;
   if (!(await ask({title:`¿Borrar ${plural(ids.length, 'movimiento')}?`, msg:'Podrás deshacerlo desde el aviso de abajo.'}))) return;
-  if(localTabChanged)return;
-  const restore = removeTransactions(ids); if (!restore) return;
-  save(); selMode = false; selSet.clear(); renderSelUI(); renderAll();
+  if(activeProfile !== profile)return;
+  let restore;
+  if (!saveChange(() => { restore = removeTransactions(ids); return !!restore; })) return;
+  selMode = false; selSet.clear(); renderSelUI(); renderAll();
   toast(`${plural(ids.length, 'movimiento')} ${ids.length === 1 ? 'eliminado' : 'eliminados'}`, {icon:'trash-2', action:'Deshacer', onAction: () => {
-    if (restore()){ save(); renderAll(); toast('Movimientos restaurados', {icon:'undo-2'}); }
+    if (activeProfile === profile && saveChange(restore)){ renderAll(); toast('Movimientos restaurados', {icon:'undo-2'}); }
   }});
 });
 $('#movBody').addEventListener('click', e => {
@@ -431,7 +432,7 @@ $('#movFilterClear').onclick = () => {
 };
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');
-let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null;
+let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null, contributionGoal = null;
 let txCategoryExpanded=false,txNewCategoryIcon='svg:tag';
 function txCategoryOrder(cats){
  const count={};state.transactions.filter(t=>t.type===txType).forEach(t=>count[t.catId]=(count[t.catId]||0)+1);
@@ -452,7 +453,10 @@ function resetTxCategoryUI(){
 }
 function openTxCategoryEditor(){
  const box=$('#txCategoryEditor');box.hidden=false;$('#txNewCategory').setAttribute('aria-expanded','true');$('#txCategoryError').textContent='';
- $('#txCategoryName').value='';txNewCategoryIcon='svg:tag';$('#txCategoryColor').value=PALETTE[state.categories.length%PALETTE.length];paintTxCategoryIcon();
+ const hasAhorro = catsOf('expense').some(c => c.name.toLocaleLowerCase() === 'ahorro');
+ $('#txCategoryName').value=contributionGoal ? (hasAhorro ? 'Aportes a metas' : 'Ahorro') : '';
+ txNewCategoryIcon=contributionGoal ? 'svg:piggy-bank' : 'svg:tag';
+ $('#txCategoryColor').value=PALETTE[state.categories.length%PALETTE.length];paintTxCategoryIcon();
  motionAnimate(box,[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}]);
  $('#txCategoryName').focus();
 }
@@ -462,7 +466,13 @@ function createTxCategory(){
  if(!name){error.textContent='Escribe un nombre para la categoría.';$('#txCategoryName').focus();return;}
  if(catsOf(txType).some(c=>c.name.toLocaleLowerCase()===name.toLocaleLowerCase())){error.textContent='Ya existe una categoría con ese nombre, incluso si está archivada.';return;}
  const c={id:uid(),name,icon:txNewCategoryIcon,type:txType,color:$('#txCategoryColor').value,defaultBudget:0};
- state.categories.push(c);selCat=c.id;save();dirty=new Set(Object.keys(VIEWS));
+ if(contributionGoal && roleOf(c)!=='save'){
+   error.textContent='Usa un nombre o un ícono de ahorro para esta categoría.';
+   return;
+ }
+ if(!saveChange(() => state.categories.push(c), txDialog))return;
+ txDialog.querySelector('.dialog-save-error')?.remove();
+ selCat=c.id;dirty=new Set(Object.keys(VIEWS));
  $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();
  toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
 }
@@ -485,14 +495,19 @@ function suggestedTxMethod(catId,type){
   return previous?(previous.method||''):(methods[0]||'');
 }
 function renderTxChips(){
-  const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
-  gf.hidden = !((txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
-  if (!gf.hidden) $('#fGoalChips').innerHTML = `<button type="button" class="chip${!selGoal ? ' active' : ''}" data-goal="">Ninguna</button>` +
-    goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" data-goal="${esc(g.id)}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
-  const cats = catsOf(txType).filter(c => !c.archived || c.id === selCat);
+  const cats = contributionGoal ? activeSavingCats() : catsOf(txType).filter(c => !c.archived || c.id === selCat);
   // Sin categoría elegida se marca la más usada: la primera visible, nunca una oculta.
   if (!cats.some(c => c.id === selCat)) selCat = txCategoryOrder(cats.filter(c => !c.archived))[0]?.id || null;
-  $('#fCatChips').innerHTML = txCategoryMarkup(cats);
+  const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
+  gf.hidden = !!contributionGoal || !((txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
+  if (!gf.hidden) $('#fGoalChips').innerHTML = `<button type="button" class="chip${!selGoal ? ' active' : ''}" aria-pressed="${!selGoal}" data-goal="">Ninguna</button>` +
+    goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" aria-pressed="${g.id === selGoal}" data-goal="${esc(g.id)}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
+  const categoryMarkup = txCategoryMarkup(cats);
+  const needsSavingCategory = contributionGoal && !cats.length;
+  txDialog.classList.toggle('needs-saving-category', !!needsSavingCategory);
+  $('#fCatChips').innerHTML = needsSavingCategory ? '' : categoryMarkup;
+  $('#txAllCategories').hidden = !!needsSavingCategory;
+  $('#txCategoryNote').textContent = needsSavingCategory ? 'Crea una categoría de ahorro para aportar.' : contributionGoal ? 'Categorías de ahorro activas' : 'Tus categorías más usadas';
   if(selMethod==null)selMethod=suggestedTxMethod(selCat,txType);
   const ms=[...new Set([...(state.settings.methods||[]),...(selMethod?[selMethod]:[]),''])];
   $('#fMethodChips').innerHTML=ms.map(m=>`<button type="button" class="chip${m===selMethod?' active':''}" aria-pressed="${m===selMethod}" data-method="${esc(m)}">${esc(m||'Sin especificar')}</button>`).join('');
@@ -504,7 +519,15 @@ function setTxType(type){
   renderTxChips(); renderQuick();
 }
 $('#txSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.type); });
-$('#fCatChips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b){ selCat = b.dataset.cat; if(!txMethodExplicit)selMethod=null; renderTxChips(); } });
+$('#fCatChips').addEventListener('click', e => {
+  const button = e.target.closest('[data-cat]');
+  if (!button) return;
+  const restoreFocus = button === document.activeElement || e.detail === 0;
+  selCat = button.dataset.cat;
+  if (!txMethodExplicit) selMethod = null;
+  renderTxChips();
+  if (restoreFocus) $('#fCatChips .chip.active')?.focus({preventScroll:true});
+});
 $('#fMethodChips').addEventListener('click', e => {
   const button = e.target.closest('[data-method]');
   if (!button) return;
@@ -514,8 +537,15 @@ $('#fMethodChips').addEventListener('click', e => {
   renderTxChips();
   if (restoreFocus) $('#fMethodChips .chip.active')?.focus();
 });
-$('#fGoalChips').addEventListener('click', e => { const b = e.target.closest('[data-goal]'); if (b){ selGoal = b.dataset.goal || null; renderTxChips(); } });
-// preset: {type, catId, amount, method, desc, date, goalId}
+$('#fGoalChips').addEventListener('click', e => {
+  const button = e.target.closest('[data-goal]');
+  if (!button) return;
+  const restoreFocus = button === document.activeElement || e.detail === 0;
+  selGoal = button.dataset.goal || null;
+  renderTxChips();
+  if (restoreFocus) $('#fGoalChips .chip.active')?.focus({preventScroll:true});
+});
+// preset: {type, catId, amount, method, desc, date, goalId, contribution}
 // Movimientos frecuentes de los últimos 4 meses (misma descripción, categoría y monto) para registrarlos con un toque
 function quickPicks(type){
   const from = shiftMonth(thisMonth(), -3) + '-01', today = todayISO(), seen = new Map();
@@ -553,6 +583,11 @@ function openTx(id, preset){
   quickExpanded=false; editingId = id || null; quickOK = !id && (!preset || Object.keys(preset).every(k => k === 'date'));
   const t = id ? state.transactions.find(x => x.id === id) : null;
   const p = t || preset || {};
+  contributionGoal = p.contribution ? myGoals().find(g => g.id === p.goalId) : null;
+  if (p.contribution && !contributionGoal) return toast('⚠️ La meta ya no está disponible.');
+  $('#txSeg').hidden = !!contributionGoal;
+  $('#txContributionGoal').hidden = !contributionGoal;
+  $('#txContributionGoal').textContent = contributionGoal?.name || '';
   selCat = p.catId || null; txMethodExplicit=!!t||Object.prototype.hasOwnProperty.call(p,'method'); selMethod=txMethodExplicit?(p.method||''):null; selGoal = p.goalId || null;
   txType = p.type || txType; setTxType(txType);
   $('#txTitle').textContent = t ? 'Editar movimiento' : (preset && preset.goalId) ? 'Aporte a meta' : 'Nuevo movimiento';
@@ -612,16 +647,22 @@ $('#txMore').onclick = () => {
 for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
 // Borra con opción de deshacer (sin pedir confirmación)
 function delTxUndo(id){
-  if (localTabChanged) return;
+  const profile = activeProfile;
   const t = state.transactions.find(x => x.id === id);
-  const restore = removeTransactions([id]); if (!restore) return;
-  save(); renderAll();
+  if (!t) return false;
+  let restore;
+  if (!saveChange(() => { restore = removeTransactions([id]); }, txDialog)){
+    renderAll();
+    return false;
+  }
+  renderAll();
   toast('Movimiento eliminado', {icon:'trash-2', action:'Deshacer', onAction: () => {
-    if (!restore()) return;
+    if (activeProfile !== profile || !saveChange(restore)) return;
     const month = cycleView() ? cycleMonthForDate(t.date) : t.date.slice(0,7);
     if (month !== currentMonth){ currentMonth = month; monthInput.value = month; }
-    save(); renderAll(); flashRow(t.id); toast('Movimiento restaurado', {icon:'undo-2'});
+    renderAll(); flashRow(t.id); toast('Movimiento restaurado', {icon:'undo-2'});
   }});
+  return true;
 }
 // Resalta brevemente una fila de la tabla de movimientos
 function highlightSaved(id){
@@ -659,22 +700,31 @@ $('#txForm').addEventListener('submit', e => {
   if(!$('#txCategoryEditor').hidden){$('#txCategoryName').focus();return toast('Crea la categoría o cancela su edición antes de guardar.');}
   const amount = Math.round(parseFloat($('#fAmount').value) * 100) / 100;
   if (!Number.isFinite(amount) || amount <= 0) return toast('Ingresa un monto válido');
+  if (contributionGoal){
+    if (!myGoals().some(g => g.id === contributionGoal.id)) return toast('⚠️ La meta ya no está disponible.');
+    if (!activeSavingCats().some(c => c.id === selCat)){
+      renderTxChips();
+      const category = $('#fCatChips .chip.active') || $('#txNewCategory');
+      category.focus();
+      return;
+    }
+  }
   if (!selCat) return toast('Elige una categoría');
   const desc = $('#fDesc').value.trim();
   if (!BudgetFinance.validDate($('#fDate').value)) return toast('Elige una fecha válida');
   const data = {type:txType, amount, catId:selCat, date:$('#fDate').value, method:selMethod, desc,
-    goalId: selGoal && !$('#fGoalField').hidden ? selGoal : undefined};
-  if (editingId){
-    const transaction = state.transactions.find(t => t.id === editingId);
-    if (!transaction) return toast('⚠️ El movimiento ya no está disponible. Cierra y vuelve a abrir el formulario.');
-    Object.assign(transaction, data);
-  }
-  else state.transactions.push({id:uid(), created:Date.now(), ...data});
-  const savedId = editingId || state.transactions[state.transactions.length - 1].id;
-  const saved = save(); txDialog.close();
+    goalId: contributionGoal?.id || (selGoal && !$('#fGoalField').hidden ? selGoal : undefined)};
+  const transaction = editingId && state.transactions.find(t => t.id === editingId);
+  if (editingId && !transaction) return toast('⚠️ El movimiento ya no está disponible. Cierra y vuelve a abrir el formulario.');
+  const savedId = editingId || uid();
+  if (!saveChange(() => {
+    if (transaction) Object.assign(transaction, data);
+    else state.transactions.push({id:savedId, created:Date.now(), ...data});
+  }, txDialog)) return;
+  txDialog.close();
   const mov = cycleView()?cycleMonthForDate(data.date):data.date.slice(0,7);
   if (mov !== currentMonth){ currentMonth = mov; monthInput.value = mov; }
-  renderAll(); if (saved) toast(editingId ? 'Movimiento actualizado ✅' : 'Movimiento registrado ✅');
+  renderAll(); toast(editingId ? 'Movimiento actualizado ✅' : 'Movimiento registrado ✅');
   requestAnimationFrame(() => highlightSaved(savedId));
 });
 // En el celular, Eliminar y Duplicar quedan como íconos para que quepan los cuatro botones
@@ -686,7 +736,7 @@ $('#txDup').onclick = () => {
   setTimeout(() => { openTx(null, {type:t.type, catId:t.catId, amount:t.amount, method:t.method, desc:t.desc, goalId:t.goalId, date:todayISO()}); $('#txTitle').textContent = 'Duplicar movimiento'; }, 120);
 };
 $('#txDelete').onclick = () => {
-  const id = editingId; txDialog.close(); delTxUndo(id);
+  if (delTxUndo(editingId)) txDialog.close();
 };
 $('#fab').onclick = () => activeTab()==='goals'?openGoal():openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {}); // el + respeta el día seleccionado en Calendario
 // En la barra táctil, el botón se desvanece al desplazar y vuelve de inmediato al enfocarlo con el teclado.

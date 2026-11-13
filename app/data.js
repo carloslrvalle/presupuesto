@@ -54,6 +54,8 @@ methodsInput.addEventListener('change', () => {
   dirty.add('movs'); if(save())toast('Métodos de pago actualizados');
 });
 $('#btnWipe').onclick = async () => {
+  const profile = activeProfile;
   if (!(await ask({title:'¿Borrar todo?', msg:'Se borrarán todos los movimientos y presupuestos (también en Sheets si está conectado). Te recomiendo exportar un respaldo antes.', ok:'Borrar todo', icon:'🧹'}))) return;
-  state.transactions = []; state.budgets = {}; save(); renderAll(); toast('Datos borrados');
+  if (activeProfile !== profile || !saveChange(() => { state.transactions = []; state.budgets = {}; })) return;
+  renderAll(); toast('Datos borrados');
 };

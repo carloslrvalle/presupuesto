@@ -136,8 +136,7 @@ function pendingPays(m){
   return out.sort((x, y) => x.a - y.a);
 }
 const isSavingCat = id => { const c = state.categories.find(x => x.id === id); return !!c && c.type === 'expense' && roleOf(c) === 'save'; };
-const expSavingCat = () => (state.categories.find(c => c.type === 'expense' && roleOf(c) === 'save') || {}).id;
-const savingsCat = () => (state.categories.find(c => c.type === 'income' && /ahorro|otro/i.test(c.name)) || catsOf('income')[0] || {}).id;
+const activeSavingCats = () => catsActive('expense').filter(c => roleOf(c) === 'save');
 
 function balanceOfMonth(month,data=state,today=todayISO()){return BudgetFinance.balance(data.transactions||[],month+'-01',dateFor(month,31),today);}
 /* ---------- Proyección del mes en curso ---------- */

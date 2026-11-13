@@ -296,12 +296,13 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     <div class="dlg-head"><h3 style="margin:0" id="txTitle">Nuevo movimiento</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <div class="dlg-body">
       <div class="seg" id="txSeg"><button type="button" data-type="expense" class="active">Gasto</button><button type="button" data-type="income">Ingreso</button></div>
+      <p class="small" id="txContributionGoal" hidden></p>
       <div class="quick" id="txQuick" hidden></div>
       <div class="field tx-amount"><label for="fAmount">Monto en soles</label><input type="number" id="fAmount" class="amount-input" inputmode="decimal" step="0.01" min="0.01" required placeholder="0.00"></div>
       <div class="field"><div class="tx-field-head"><label>Categoría</label><button type="button" class="tx-text-button" id="txAllCategories" aria-expanded="false" aria-controls="txCategorySearchBox">Ver todas</button></div>
         <div class="tx-category-search" id="txCategorySearchBox" hidden><input type="search" id="txCategorySearch" placeholder="Buscar categoría" aria-label="Buscar categoría" autocomplete="off"></div>
         <div class="chips" id="fCatChips"></div>
-        <div class="tx-category-tools"><span class="tx-inline-note">Tus categorías más usadas</span><button type="button" class="tx-text-button" id="txNewCategory" aria-expanded="false" aria-controls="txCategoryEditor">＋ Nueva categoría</button></div>
+        <div class="tx-category-tools"><span class="tx-inline-note" id="txCategoryNote">Tus categorías más usadas</span><button type="button" class="tx-text-button" id="txNewCategory" aria-expanded="false" aria-controls="txCategoryEditor">＋ Nueva categoría</button></div>
         <div class="tx-category-editor" id="txCategoryEditor" hidden><h4>Nueva categoría</h4><div class="field"><label for="txCategoryName">Nombre</label><input type="text" id="txCategoryName" maxlength="60" autocomplete="off" placeholder="Ej. Mascotas"></div>
           <div class="tx-category-style"><input type="hidden" id="txCategoryColor" value="#6366f1"><button class="btn category-personalize" type="button" id="txCategoryIcon" aria-label="Personalizar ícono y color"></button></div>
           <div class="tx-category-error" id="txCategoryError" role="status"></div><div class="toolbar"><button type="button" class="btn sm" id="txCancelCategory">Cancelar</button><button type="button" class="btn sm primary" id="txCreateCategory">Crear y usar</button></div>

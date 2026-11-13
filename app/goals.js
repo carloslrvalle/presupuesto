@@ -110,17 +110,25 @@ $('#goalForm').addEventListener('submit', e => {
   if (!name) return toast('Ponle un nombre a la meta');
   if (!(target > 0)) return toast('Ingresa el monto objetivo');
   const data = {name, target, initial: Math.max(0, parseFloat($('#gInitial').value) || 0), deadline: $('#gDeadline').value || '', icon:gIcon, color:gColor, prio:gPrio, shared:$('#gShared').checked || undefined};
-  { const prev = goalEdit && state.goals.find(x => x.id === goalEdit); if (prev && prev.shared && !data.shared){ const th = goalSplit(prev)[otherProfile()]; if (th > 0) setTimeout(() => toast(`Los aportes de ${profOf(otherProfile()).name} (${fmt(th)}) dejan de sumarse a esta meta`, {icon:'users'}), 400); } }
-  if (goalEdit) Object.assign(state.goals.find(g => g.id === goalEdit), data);
-  else state.goals.push({id:uid(), created:Date.now(), ...data});
-  save(); goalDialog.close(); renderAll(); toast(goalEdit ? 'Meta actualizada' : 'Meta creada 🎯');
+  const previous = goalEdit && state.goals.find(g => g.id === goalEdit);
+  if (goalEdit && !previous) return toast('⚠️ La meta ya no está disponible.');
+  const otherContribution = previous?.shared && !data.shared ? goalSplit(previous)[otherProfile()] : 0;
+  const otherName = profOf(otherProfile()).name;
+  if (!saveChange(() => {
+    if (previous) Object.assign(previous, data);
+    else state.goals.push({id:uid(), created:Date.now(), ...data});
+  }, goalDialog)) return;
+  goalDialog.close(); renderAll(); toast(goalEdit ? 'Meta actualizada' : 'Meta creada 🎯');
+  if (otherContribution > 0) setTimeout(() => toast(`Los aportes de ${otherName} (${fmt(otherContribution)}) dejan de sumarse a esta meta`, {icon:'users'}), 400);
 });
 $('#goalDelete').onclick = async () => {
-  const g = state.goals.find(x => x.id === goalEdit); if (!g) return;
+  const g = state.goals.find(x => x.id === goalEdit), profile = activeProfile; if (!g) return;
   if (!(await ask({title:`¿Eliminar "${g.name}"?`, msg:'Los aportes registrados se mantienen como movimientos, pero ya no estarán asociados a la meta.', icon:g.icon, iconColor:g.color}))) return;
-  state.goals = state.goals.filter(x => x.id !== g.id);
-  state.transactions.forEach(t => { if (t.goalId === g.id) delete t.goalId; });
-  save(); goalDialog.close(); renderAll(); toast('Meta eliminada');
+  if (activeProfile !== profile || !saveChange(() => {
+    state.goals = state.goals.filter(x => x.id !== g.id);
+    state.transactions.forEach(t => { if (t.goalId === g.id) delete t.goalId; });
+  }, goalDialog)) return;
+  goalDialog.close(); renderAll(); toast('Meta eliminada');
 };
 $('#btnNewGoal').onclick = () => openGoal();
 $('#goalsGrid').addEventListener('click', e => {
@@ -128,28 +136,38 @@ $('#goalsGrid').addEventListener('click', e => {
   if (b.hasAttribute('data-goal-new')) openGoal();
   if (b.dataset.goalEdit) openGoal(b.dataset.goalEdit);
   if (b.dataset.goalOut) openWithdraw(b.dataset.goalOut);
-  if (b.dataset.goalAdd){ const g = myGoals().find(x => x.id === b.dataset.goalAdd); openTx(null, expSavingCat() ? {type:'expense', catId:expSavingCat(), goalId:g.id, desc:'Aporte: ' + g.name} : {type:'income', catId:savingsCat(), goalId:g.id, desc:'Aporte: ' + g.name}); }
+  if (b.dataset.goalAdd){
+    const g = myGoals().find(x => x.id === b.dataset.goalAdd);
+    if (g) openTx(null, {type:'expense', goalId:g.id, desc:'Aporte: ' + g.name, contribution:true});
+  }
 });
 
 // Retirar dinero de una meta: se descuenta de lo ahorrado (no cuenta como ingreso ni gasto del mes)
-let wdGoal = null;
+let wdGoalId = null;
 function openWithdraw(id){
-  const g = state.goals.find(x => x.id === id); if (!g) return; wdGoal = g;
+  const g = state.goals.find(x => x.id === id); if (!g) return; wdGoalId = id;
   $('#wdTitle').textContent = 'Retirar de «' + g.name + '»';
   $('#wdHint').textContent = `Tienes ${fmt(goalSaved(g))} ahorrados en esta meta. Lo que retires se descuenta de su avance.`;
   $('#wdAmount').value = ''; $('#wdAmount').max = goalSaved(g); $('#wdDate').max = todayISO(); $('#wdDate').value = todayISO(); $('#wdNote').value = '';
   $('#wdDialog').showModal(); setTimeout(() => $('#wdAmount').focus(), 50);
 }
 $('#wdForm').addEventListener('submit', e => {
-  e.preventDefault(); const g = wdGoal; if (!g) return;
+  e.preventDefault();
+  const g = state.goals.find(x => x.id === wdGoalId), profile = activeProfile;
+  if (!g) return toast('⚠️ La meta ya no está disponible.');
   const date = $('#wdDate').value || todayISO();
   if (date > todayISO()) return toast('El retiro debe tener fecha de hoy o anterior');
   const a = Math.round(parseFloat($('#wdAmount').value) * 100) / 100, have = goalSaved(g);
   if (!(a > 0)) return toast('Ingresa un monto válido');
   if (a > have + .005) return toast(`Solo tienes ${fmt(have)} en esta meta`);
   const w = {id:uid(), d:date, a, n:$('#wdNote').value.trim()};
-  g.out = [...(g.out || []), w]; save(); $('#wdDialog').close(); renderAll();
-  toast(`Retiraste ${fmt(a)} de «${g.name}»`, {icon:'hand-coins', action:'Deshacer', onAction: () => { g.out = (g.out || []).filter(x => x.id !== w.id); save(); renderAll(); }});
+  if (!saveChange(() => { g.out = [...(g.out || []), w]; }, $('#wdDialog'))) return;
+  $('#wdDialog').close(); renderAll();
+  toast(`Retiraste ${fmt(a)} de «${g.name}»`, {icon:'hand-coins', action:'Deshacer', onAction: () => {
+    if (activeProfile !== profile) return;
+    const goal = state.goals.find(x => x.id === g.id);
+    if (goal && saveChange(() => { goal.out = (goal.out || []).filter(x => x.id !== w.id); })) renderAll();
+  }});
 });
 
 // ---------- Cierre de mes: al empezar un mes nuevo, cómo te fue en el anterior ----------

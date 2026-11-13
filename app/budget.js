@@ -319,15 +319,20 @@ $('#tab-cats').addEventListener('click', async e => {
   if (btn.dataset.act === 'icon') openIcon(icon => { c.icon = icon; save(); renderAll(); },
     {color:c.color, soft:true, themeColor: curThemeColorCat(c), onColor: col => { c.color = col; save(); }}, c.icon);
   if (btn.dataset.act === 'del'){
+    const profile = activeProfile;
     setMenuDisclosure(btn.closest('.cat-actions'),false);
     const used = state.transactions.filter(t => t.catId === c.id).length;
     const msg = used ? `Tiene ${plural(used, 'movimiento')}; quedarán como "Sin categoría".` : 'También se quitará de tus presupuestos.';
     if (!(await ask({title:`¿Eliminar "${c.name}"?`, msg, icon:c.icon, iconColor:c.color}))) return;
     await fadeOut(row);
-    state.categories = state.categories.filter(x => x.id !== c.id);
-    Object.values(state.budgets).forEach(b => Object.keys(b).forEach(k => { if (k === c.id || k.endsWith(':' + c.id)) delete b[k]; }));
-    Object.values(cycleConfig().defaults || {}).forEach(base => { if (base) delete base[c.id]; });
-    save(); renderAll(); toast('Categoría eliminada');
+    if (activeProfile !== profile) return;
+    const saved = saveChange(() => {
+      state.categories = state.categories.filter(x => x.id !== c.id);
+      Object.values(state.budgets).forEach(b => Object.keys(b).forEach(k => { if (k === c.id || k.endsWith(':' + c.id)) delete b[k]; }));
+      Object.values(cycleConfig().defaults || {}).forEach(base => { if (base) delete base[c.id]; });
+    });
+    renderAll();
+    if (saved) toast('Categoría eliminada');
   }
 });
 document.addEventListener('click', e => { document.querySelectorAll('#tab-cats .cat-actions[open]').forEach(menu => { if (!menu.contains(e.target)) setMenuDisclosure(menu,false); }); });

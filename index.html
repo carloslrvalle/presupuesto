@@ -252,7 +252,9 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
             <button class="btn" id="btnSyncPush"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg> Subir ahora</button>
             <button class="btn" id="btnSyncPull"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg> Traer de Sheets</button>
           </div>
-          <div class="small muted" id="syncInfo">Sin conectar.</div>
+          <div class="small muted" id="syncInfo" role="status">Sin conectar.</div>
+          <button type="button" class="btn" id="btnSyncCheck" hidden>Comprobar lectura de Sheets</button>
+          <div class="small muted" id="syncCheckResult" role="status"></div>
           <div class="persist-info small" id="persistInfo" hidden></div>
           <div class="conn-box" id="connBox" hidden>
             <div class="conn-h"><span id="connIc"></span>Link de conexión</div>

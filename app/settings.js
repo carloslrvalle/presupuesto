@@ -185,6 +185,10 @@ function openSettingsSection(id,focus=false){
 }
 function renderSettingsStatus(){
  if(!$('#settingsStatusTitle'))return;
+ const check = $('#btnSyncCheck');
+ check.hidden = !syncOn();
+ const result = $('#syncCheckResult');
+ if (result.textContent && syncCheckScope !== syncScope()) result.textContent = '';
  const config=$('#settingsConnectionConfig');
  if(config){const summary=config.querySelector('summary');summary.setAttribute('aria-disabled',String(!settingsConnectionReady()));summary.textContent=settingsConnectionReady()?'Configurar conexión':'Vincular hoja de cálculo';}
  const local=!settingsConnectionReady()&&!$('#syncBadge').classList.contains('err');

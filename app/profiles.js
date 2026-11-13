@@ -96,7 +96,7 @@ function pushOtherPending(){
   const latest=profileState(other),latestSnap=SyncCore.clone(withState(latest,()=>snapshot()));const rebased=SyncCore.reconcile(snap,latestSnap,sent);if(rebased.conflicts.length)throw new Error('El otro perfil cambió durante el envío');
   const d=rebased.data;['categories','transactions','recurring','goals','budgets','meta'].forEach(k=>latest[k]=d[k]);latest.settings={...latest.settings,...d.settings,methods:d.methods};localData.writeText(storeKey(other),JSON.stringify(latest));rememberSyncBase(sent,res.rev,other);
   sync.byProf[other]={rev:res.rev,pending:!SyncCore.same(d,sent),lastSync:Date.now()};saveSync();_oth=null;return true;
- }catch(err){if(err.code==='REV_CONFLICT'&&err.remote){/* La siguiente conciliación leerá la revisión nueva, sin escribir sobre ella. */}scheduleSyncRecovery({...err,retryable:err.retryable||err.code==='REV_CONFLICT'});return false;}})().finally(()=>{otherPush=null;if(!pushing)setBadge(sync.pending?'pending':sync.lastSync?'ok':'local',sync.pending?'Pendiente de sincronizar':sync.lastSync?'Sincronizado':'Guardado en este dispositivo');updateSyncInfo();});return otherPush;
+ }catch(err){if(err.code==='REV_CONFLICT'&&err.remote){/* La siguiente conciliación leerá la revisión nueva, sin escribir sobre ella. */}scheduleSyncRecovery({...err,retryable:err.retryable||err.code==='REV_CONFLICT'});return false;}})().finally(()=>{otherPush=null;if(!pushing&&!currentSyncIssue())setBadge(sync.pending?'pending':sync.lastSync?'ok':'local',sync.pending?'Pendiente de sincronizar':sync.lastSync?'Sincronizado':'Guardado en este dispositivo');updateSyncInfo();});return otherPush;
 }
 async function switchProfile(id){
   if (switching) return;

@@ -1,4 +1,4 @@
-// Presupuesto: utils.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: utils.js — ver README.md del proyecto para responsabilidades y orden de carga.
 // Modo oscuro: el que fuerce el tema (Claro / Oscuro OLED) o, si no, el del sistema
 function isDarkUI(){ const m = document.documentElement.dataset.mode; return m ? m === 'dark' : !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
 const PEN = new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'});

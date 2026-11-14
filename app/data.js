@@ -1,4 +1,4 @@
-// Presupuesto: data.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: data.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Datos ---------- */
 function download(name, content, type){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], {type})); a.download = name; a.click();
@@ -51,9 +51,11 @@ $('#btnCsv').onclick = () => {
 const methodsInput = $('#methodsInput');
 methodsInput.addEventListener('change', () => {
   state.settings.methods = methodsInput.value.split(',').map(s => s.trim()).filter(Boolean);
-  save(); toast('Métodos de pago actualizados');
+  dirty.add('movs'); if(save())toast('Métodos de pago actualizados');
 });
 $('#btnWipe').onclick = async () => {
+  const profile = activeProfile;
   if (!(await ask({title:'¿Borrar todo?', msg:'Se borrarán todos los movimientos y presupuestos (también en Sheets si está conectado). Te recomiendo exportar un respaldo antes.', ok:'Borrar todo', icon:'🧹'}))) return;
-  state.transactions = []; state.budgets = {}; save(); renderAll(); toast('Datos borrados');
+  if (activeProfile !== profile || !saveChange(() => { state.transactions = []; state.budgets = {}; })) return;
+  renderAll(); toast('Datos borrados');
 };

@@ -1,4 +1,4 @@
-// Presupuesto: settings.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: settings.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Gestos táctiles y celebraciones ---------- */
 VICONS['arrow-left'] = '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>';
 VICONS['refresh-cw'] ='<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>';
@@ -30,7 +30,7 @@ document.addEventListener('touchend', e => {
 });
 async function pullRefresh(){
   ptrBusy = true; ptr.classList.add('spin', 'back'); ptr.style.opacity = 1; ptr.style.transform = 'translateY(44px)';
-  try { if (sync.pending) await pushNow(); await startupLoad(); otherAt = 0; await refreshOther(true); renderAll(); toast('Actualizado con Sheets', {icon:'cloud'}); }
+  try { if (sync.pending && !await pushNow()) return toast('Los cambios siguen pendientes de confirmación'); if (!await startupLoad()) return toast('No se pudo confirmar la actualización con Sheets'); otherAt = 0; await refreshOther(true); renderAll(); toast('Actualizado con Sheets', {icon:'cloud'}); }
   catch(e){ toast('⚠️ No se pudo actualizar'); }
   finally { ptrBusy = false; ptr.classList.remove('spin'); ptr.style.opacity = 0; ptr.style.transform = 'translateY(-60px)'; }
 }
@@ -58,7 +58,7 @@ function checkGoalCelebration(){
 /* Reorganiza los controles existentes conservando sus eventos y datos. */
 function setupSettings(){
  const root=$('#tab-settings'), cards=[...root.querySelectorAll('.card')];
- const [users,themes,fonts,backup,connection,methods,danger]=cards;
+ const [users,themes,backup,connection,methods,danger]=cards;
  root.querySelector('.toolbar').remove(); root.querySelector('.grid2').remove();
  const version=$('#appVer'),install=$('#btnInstall');
  root.replaceChildren();
@@ -90,26 +90,59 @@ function setupSettings(){
  }
  users.querySelector('p').textContent='Cada usuario conserva sus propios datos y preferencias. Toca su nombre, avatar o foto para editarlo.';
  users.querySelector('h3').remove();panel('users').append(users);
- const themeDetails=disclosure('Tema de colores',themes),fontDetails=disclosure('Tipografía',fonts);
+ const themeDetails=disclosure('Tema de colores',themes);
  themeDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsThemeName"></small>');
+ const fontField = document.createElement('fieldset');
+ fontField.id = 'settingsFont';
+ fontField.className = 'settings-font-field';
+ const options = availableFonts().map(font => `<label class="settings-font-option">
+   <input type="radio" name="interface-font" value="${font.id}">
+   <span class="settings-font-radio" aria-hidden="true"></span>
+   <span>${esc(font.name)}</span>
+ </label>`).join('');
+ fontField.innerHTML = `<legend>Fuente de la interfaz</legend>
+   <div class="settings-font-sample"><strong>Resumen de noviembre</strong><span>Alimentación · S/ 1,250.90</span></div>
+   <div class="settings-font-options">${options}</div>`;
+ fontField.addEventListener('change', event => {
+   if (saveChange(() => { state.settings.font = event.target.value; })) renderAll();
+   else renderSettingsFont();
+ });
+ fontField.addEventListener('keydown', event => {
+   const radio = event.target;
+   if (!radio.matches('input[type="radio"]')) return;
+   const step = {ArrowUp:-1, ArrowLeft:-1, ArrowDown:1, ArrowRight:1}[event.key];
+   if (!step) return;
+   event.preventDefault();
+   const radios = [...fontField.querySelectorAll('input')];
+   const next = radios[(radios.indexOf(radio) + step + radios.length) % radios.length];
+   next.focus();
+   next.click();
+ });
+ const fontDetails = disclosure('Tipografía', fontField);
  fontDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsFontName"></small>');
- panel('appearance').append(themeDetails,fontDetails);
+ panel('appearance').append(fontDetails, themeDetails);
  methods.querySelector('p').textContent='Agrega tus métodos de pago. Toca un nombre para editarlo.';
  methods.querySelector('h3').remove();methodsInput.hidden=true;
  methods.insertAdjacentHTML('beforeend',`<div class="settings-methods" id="settingsMethods"></div><form class="settings-method-add" id="settingsMethodForm"><input id="settingsMethodName" aria-label="Nombre del método de pago" placeholder="Ej. Transferencia" maxlength="60" required><button class="btn primary" type="submit" id="settingsMethodSubmit">Agregar</button></form><div class="settings-method-help" id="settingsMethodHelp" role="status"></div>`);
  panel('methods').append(methods);
- let editing=-1;
- const commit=()=>{methodsInput.value=state.settings.methods.join(', ');methodsInput.dispatchEvent(new Event('change'));renderSettingsOverview();};
- $('#settingsMethodForm').onsubmit=e=>{e.preventDefault();const input=$('#settingsMethodName'),name=input.value.trim(),list=state.settings.methods;
-  if(!name||name.includes(',')){ $('#settingsMethodHelp').textContent='Escribe un nombre sin comas.';return; }
-  if(list.some((m,i)=>i!==editing&&m.toLocaleLowerCase()===name.toLocaleLowerCase())){$('#settingsMethodHelp').textContent='Este método ya existe.';return;}
-  if(editing<0)list.push(name);else list[editing]=name;
-  editing=-1;input.value='';$('#settingsMethodSubmit').textContent='Agregar';$('#settingsMethodHelp').textContent='';commit();
+ let editing=null;
+ const methodInput=$('#settingsMethodName'),methodSubmit=$('#settingsMethodSubmit'),methodHelp=$('#settingsMethodHelp');
+ const resetMethodEditor=()=>{editing=null;methodInput.value='';methodSubmit.textContent='Agregar';methodHelp.textContent='';};
+ const commit=()=>{const saved=save();methodsInput.value=state.settings.methods.join(', ');dirty.add('movs');renderSettingsOverview();return saved;};
+ $('#settingsMethodForm').onsubmit=e=>{e.preventDefault();const name=methodInput.value.trim(),list=state.settings.methods||[];
+  const index=editing?.profile===activeProfile?list.indexOf(editing.name):-1;
+  if(editing&&index<0){resetMethodEditor();methodHelp.textContent='El método cambió. Vuelve a seleccionarlo.';return;}
+  if(!name||name.includes(',')){methodHelp.textContent='Escribe un nombre sin comas.';return;}
+  if(list.some((m,i)=>i!==index&&m.toLocaleLowerCase()===name.toLocaleLowerCase())){methodHelp.textContent='Este método ya existe.';return;}
+  if(index<0)list.push(name);else list[index]=name;
+  state.settings.methods=list;resetMethodEditor();if(commit())toast('Métodos de pago actualizados');
  };
- $('#settingsMethods').onclick=e=>{const button=e.target.closest('button');if(!button)return;const i=Number(button.dataset.index);
-  if(button.dataset.action==='remove'){state.settings.methods.splice(i,1);editing=-1;$('#settingsMethodName').value='';$('#settingsMethodSubmit').textContent='Agregar';commit();}
-  else{editing=i;$('#settingsMethodName').value=state.settings.methods[i];$('#settingsMethodSubmit').textContent='Guardar';$('#settingsMethodName').focus();$('#settingsMethodHelp').textContent='Editando método de pago.';}
+ $('#settingsMethods').onclick=e=>{const button=e.target.closest('button');if(!button)return;const i=Number(button.dataset.index),profile=activeProfile;
+  if(button.dataset.action==='remove'){const[name]=state.settings.methods.splice(i,1);resetMethodEditor();if(!commit())return;
+   toast(`«${name}» eliminado`,{icon:'trash-2',action:'Deshacer',onAction:()=>{if(profile!==activeProfile||localTabChanged)return;const list=state.settings.methods??=[];if(!list.some(m=>m.toLocaleLowerCase()===name.toLocaleLowerCase()))list.splice(Math.min(i,list.length),0,name);commit();}});}
+  else{editing={profile,name:state.settings.methods[i]};methodInput.value=editing.name;methodSubmit.textContent='Guardar';methodInput.focus();methodHelp.textContent='Editando método de pago.';}
  };
+ $('#settingsMethods').resetEditor=resetMethodEditor;
  panel('data').append(connection,backup,danger);
  const stack=connection.querySelector('.stack'),config=document.createElement('div');
  for(const id of ['syncUrl','syncToken'])config.append($('#'+id).closest('.field'));
@@ -134,7 +167,6 @@ function setupSettings(){
  };
  new MutationObserver(()=>renderSettingsStatus()).observe($('#syncInfo'),{childList:true,characterData:true,subtree:true});
  new MutationObserver(()=>renderSettingsOverview()).observe($('#themeGrid'),{childList:true});
- new MutationObserver(()=>renderSettingsOverview()).observe($('#fontGrid'),{childList:true});
  // La primera conexión debe mantener visibles los campos que reciben el foco.
  if(!settingsConnectionReady())configDetails.setExpanded(true,false);
 }
@@ -148,29 +180,39 @@ function openSettingsSection(id,focus=false){
  root.querySelector('.settings-home').hidden=!!id;
  root.querySelectorAll('[data-settings-target]').forEach(b=>{if(b.dataset.settingsTarget===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  const target=id?$('#settings-panel-'+id):root.querySelector('.settings-home');
- if(changed)motionAnimate(target,[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}]);
+ if(changed)revealContent(target);
  if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else root.querySelector('.settings-home [data-settings-target]').focus({preventScroll:true});}
 }
 function renderSettingsStatus(){
  if(!$('#settingsStatusTitle'))return;
+ const check = $('#btnSyncCheck');
+ check.hidden = !syncOn();
+ const result = $('#syncCheckResult');
+ if (result.textContent && syncCheckScope !== syncScope()) result.textContent = '';
  const config=$('#settingsConnectionConfig');
  if(config){const summary=config.querySelector('summary');summary.setAttribute('aria-disabled',String(!settingsConnectionReady()));summary.textContent=settingsConnectionReady()?'Configurar conexión':'Vincular hoja de cálculo';}
- $('#settingsStatusTitle').textContent=!settingsConnectionReady()?'Conecta tu hoja de cálculo':$('#syncBadge').classList.contains('err')?'Revisa la sincronización':sync.pending?'Cambios pendientes de sincronizar':'Google Sheets conectado';
- $('#settingsStatusInfo').textContent=$('#syncInfo').textContent;renderSettingsHome();
+ const local=!settingsConnectionReady()&&!$('#syncBadge').classList.contains('err');
+ $('#settingsStatusTitle').textContent=$('#syncBadge').classList.contains('err')?'Revisa el guardado':local?'Guardado en este dispositivo':sync.pending?'Cambios pendientes de sincronizar':'Google Sheets conectado';
+ $('#settingsStatusInfo').textContent=local?'Vincular Google Sheets o gestionar respaldos':$('#syncInfo').textContent;renderSettingsHome();
 }
 function renderSettingsHome(){
  if(!$('#settingsHomeUsers'))return;
  $('#settingsHomeUsers').textContent=profiles.list.map(p=>p.name).join(' · ');
- $('#settingsHomeAppearance').textContent=(curTheme()?.name||'Personalizado')+' · '+curFont().name;
+ $('#settingsHomeAppearance').textContent=curTheme()?.name||'Personalizado';
  const methods=state.settings.methods||[];
  $('#settingsHomeMethods').textContent=methods.length?methods.slice(0,3).join(' · ')+(methods.length>3?' · +'+(methods.length-3):''):'Sin métodos definidos';
  $('#settingsHomeData').textContent=!syncOn()?'Datos en este dispositivo · Sin conectar a Sheets':$('#syncBadge').classList.contains('err')?'Revisar conexión con Google Sheets':sync.pending?'Google Sheets · Cambios pendientes':sync.lastSync?'Google Sheets · Última sincronización '+new Date(sync.lastSync).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Google Sheets · Esperando sincronización';
 }
 function renderSettingsOverview(){
  if(!$('#settingsThemeName'))return;
- const theme=curTheme()?.name||'Personalizado',font=curFont().name;
- $('#settingsThemeName').textContent=theme;$('#settingsFontName').textContent=font;
+ $('#settingsThemeName').textContent=curTheme()?.name||'Personalizado';
+ renderSettingsFont();
  renderSettingsHome();
  $('#settingsMethods').innerHTML=(state.settings.methods||[]).map((m,i)=>`<span class="settings-method-chip"><button type="button" data-index="${i}" data-action="edit" aria-label="Editar ${esc(m)}">${esc(m)}</button><button type="button" data-index="${i}" data-action="remove" aria-label="Eliminar ${esc(m)}">${ic('x')}</button></span>`).join('')||'<p class="small muted">Aún no agregaste métodos de pago.</p>';
  renderSettingsStatus();
+}
+function renderSettingsFont(){
+ const font = currentFont();
+ for (const radio of $('#settingsFont').querySelectorAll('input')) radio.checked = radio.value === font.id;
+ $('#settingsFontName').textContent = font.name;
 }

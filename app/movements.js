@@ -1,4 +1,4 @@
-// Presupuesto: movements.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: movements.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Movimientos ---------- */
 function fillCatFilter(){
   const sel = $('#fltCat'), v = sel.value;
@@ -20,45 +20,52 @@ function movementHistory(list,dayLbl,filtered){
   const totals=[expense?`<span>− ${fmt(expense)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
   return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h3 id="history-day-${day}">${label}</h3>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div><div class="history-day-totals" aria-label="Totales del día">${totals}</div></header><ul class="history-items">${items.map(t=>{
    const c=getCat(t.catId),isI=t.type==='income';
-   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-label="Editar ${esc(c.name)}${t.desc?': '+esc(t.desc):''}"><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-category" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-label="Editar ${esc(c.name)}${t.desc?': '+esc(t.desc):''}"><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-mobile-title">${esc(t.desc||c.name)}</span><span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-mobile-category">${esc(c.name)}</span>`:''}${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':'xp'}">${isI?'+':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
   }).join('')}</ul></section>`;
  }).join('');
 }
 function toggleMovementFilters(){
- const el=$('#movExtraFilters'),old=el._filterState,open=old?!old.open:!el.classList.contains('expanded'),from=el.getBoundingClientRect().height;
+ const el=$('#movExtraFilters'),old=el._filterState,open=old?!old.open:!el.classList.contains('expanded'),from=motionHeight(el);
+ const style=getComputedStyle(el),margin=from?style.marginTop:'0px',opacity=old?style.opacity:from?1:0;
  if(old)old.animation.cancel();el.classList.add('expanded');el.style.overflow='hidden';
  $('#movFilterToggle').setAttribute('aria-expanded',String(open));
- const to=open?el.getBoundingClientRect().height:0,finish=()=>{el.classList.toggle('expanded',open);el.style.overflow='';el._filterState=null;};
+ el.inert=!open;
+ const to=open?motionHeight(el):0,finish=()=>{el.classList.toggle('expanded',open);el.style.overflow='';el._filterState=null;};
  if(reduceMotion()){finish();return;}
- const animation=el.animate([{height:from+'px',marginTop:from?'12px':'0px',opacity:from?1:0},{height:to+'px',marginTop:open?'12px':'0px',opacity:open?1:0}],{duration:MOTION.panel,easing:MOTION.ease});
+ const animation=el.animate([{height:from+'px',marginTop:margin,opacity},{height:to+'px',marginTop:open?'12px':'0px',opacity:open?1:0}],{duration:MOTION.panel,easing:MOTION.ease});
  el._filterState={animation,open};animation.onfinish=finish;
 }
 
-function renderMovs(){
+function renderMovs(refreshFilters = true){
   closeMovActionMenu(false);
-  fillCatFilter(); fillMethodFilter();
+  if (refreshFilters){ fillCatFilter(); fillMethodFilter(); }
   const ft = $('#fltType').value, fc = $('#fltCat').value, fm = $('#fltMethod').value, scope = $('#fltScope').value, q = $('#fltText').value.trim().toLowerCase();
+  const extraCount = Number(!!fc) + Number(!!fm) + Number(!!ft) + Number(scope !== 'month');
+  $('#movFilterToggle').textContent = extraCount ? `Filtros (${extraCount})` : 'Filtros';
+  $('#movFilterClear').hidden = !$('#fltText').value && !extraCount;
   const y = currentMonth.slice(0, 4);
   const base = scope === 'cycle' ? cycleTx(currentMonth,true) : scope === 'all' ? state.transactions : scope === 'year' ? state.transactions.filter(t => t.date.slice(0, 4) === y) : txOfMonthAll(currentMonth);
-  const match = t => { if (!q) return true; const c = getCat(t.catId);
-    return [(t.desc || ''), c.name, t.method || '', String(t.amount), fmt(t.amount)].some(x => x.toLowerCase().includes(q)); };
+  const match = t => !q || [t.desc || '', getCat(t.catId).name, t.method || '', String(t.amount)]
+    .some(text => text.toLowerCase().includes(q)) || fmt(t.amount).toLowerCase().includes(q);
   const list = base.filter(t => (!ft || t.type === ft) && (!fc || t.catId === fc) && (!fm || t.method === fm) && match(t))
     .sort((a,b) => b.date.localeCompare(a.date) || (b.created||0) - (a.created||0));
   const pl = list.filter(isPlanned);
   const real = list.filter(t => !isPlanned(t)); // los programados se cuentan aparte, igual que en el Resumen
   const inc = sum(real.filter(t => t.type === 'income')), exp = sum(real.filter(t => t.type === 'expense'));
   $('#movSummary').innerHTML='<span class="mov-count">'+plural(list.length,'movimiento')+' '+(scope==='all'?'en total':'en '+(scope==='year'?y:scope==='cycle'?cycleLabel(currentMonth):monthLong(currentMonth)))+'</span><span class="mov-total"><span>Ingresos</span><b class="pos">'+fmt(inc)+'</b></span><span class="mov-total"><span>Gastos</span><b class="xp">'+fmt(exp)+'</b></span>'+(pl.length?'<span class="mov-planned-total">'+plural(pl.length,'programado')+' · '+fmt(sum(pl))+'</span>':'');
-  const extraCount=Number(!!fc)+Number(!!fm)+Number(!!ft)+Number(scope!=='month');$('#movFilterToggle').textContent=(extraCount?'Filtros ('+extraCount+')':'Filtros');
 
   // Agrupados por día, con el total del día en el encabezado
-  const dayLbl = iso => { const [Y, M, D] = iso.split('-').map(Number), d = new Date(Y, M - 1, D), t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    const diff = Math.round((d - t0) / 864e5), wd = d.toLocaleDateString('es-PE', {weekday:'long'});
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const dayLbl = iso => { const [Y, M, D] = iso.split('-').map(Number), d = new Date(Y, M - 1, D);
+    const diff = Math.round((d - t0) / 864e5), wd = movementWeekday.format(d);
     const long = `${wd.charAt(0).toUpperCase() + wd.slice(1)} ${D} ${MONTHS_ES[M - 1].toLowerCase()}${Y !== t0.getFullYear() ? ' ' + Y : ''}`;
     return diff === 0 ? ['Hoy', long] : diff === -1 ? ['Ayer', long] : diff === 1 ? ['Mañana', long] : [long, '']; };
   $('#movBody').classList.toggle('selecting',selMode);
   $('#movBody').innerHTML=movementHistory(list,dayLbl,!!(q||ft||fc||fm));
+  if (typeof renderMobileMovements === 'function') renderMobileMovements({real,inc,exp,scope});
 }
-['#fltType','#fltCat'].forEach(s => $(s).addEventListener('change', renderMovs));
+const movementWeekday = new Intl.DateTimeFormat('es-PE', {weekday:'long'});
+['#fltType','#fltCat'].forEach(s => $(s).addEventListener('change', () => renderMovs(false)));
 
 /* ---------- Desplegables con el estilo de la app ---------- */
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
@@ -133,7 +140,7 @@ function enhanceSelect(sel){
   sync(); return w;
 }
 ['#fltScope','#fltType','#fltCat','#fltMethod'].forEach(s => enhanceSelect($(s)));
-['#fltScope','#fltMethod'].forEach(s => $(s).addEventListener('change', renderMovs));
+['#fltScope','#fltMethod'].forEach(s => $(s).addEventListener('change', () => renderMovs(false)));
 
 /* ---------- Ir a Movimientos con filtros ---------- */
 // Detalle de una categoría: últimos 6 meses, promedio y movimientos del mes
@@ -174,7 +181,7 @@ function openMovs({type = '', cat = '', scope = 'month', view = 'list',month=nul
   if (view !== 'list') return;
   const set = (id, v) => { const el = $(id), changed = el.value !== v; el.value = v; if (changed){ const f = el.closest('.fsel'); f.classList.remove('flash'); void f.offsetWidth; f.classList.add('flash'); } };
   set('#fltScope', scope); set('#fltType', type); fillCatFilter(); set('#fltCat', cat); set('#fltMethod', ''); $('#fltText').value = '';
-  renderMovs();
+  renderMovs(false);
 }
 function goFromCard(go){
   if (go === 'analysis') return showTab('analysis');
@@ -192,21 +199,29 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.kpi.link')){ e.preventDefault(); goFromCard(e.target.dataset.go); } });
 
-/* ---------- Vistas de Movimientos: lista, calendario, recurrentes ---------- */
+/* ---------- Vistas de Movimientos: lista y calendario ---------- */
 let movView = 'list';
 function moveViewInd(){
   const b = $('#movView button.active'), ind = $('#movView .vseg-ind'); if (!b || !b.offsetWidth) return;
-  moveIndicator(ind, {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px'});
+  const left = b.offsetLeft + 'px', width = b.offsetWidth + 'px';
+  if (ind.style.left !== left || ind.style.width !== width) moveIndicator(ind, {left, width});
 }
 function setMovView(v){
-  movView = v;
-  document.querySelectorAll('#movView button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-  document.querySelectorAll('#tab-movs .mview').forEach(el => el.hidden = el.id !== 'view-' + v);
-  $('#btnNewTx').hidden = v === 'rec'; $('#btnNewRec').hidden = v !== 'rec';
+  const previous = movView;
+  movView = v === 'cal' ? 'cal' : 'list';
+  if (movView === 'cal' && selMode) setSelMode(false);
+  document.querySelectorAll('#movView button').forEach(b => {
+    const selected = b.dataset.view === movView;
+    b.classList.toggle('active', selected);
+    b.setAttribute('aria-pressed', String(selected));
+  });
+  document.querySelectorAll('#tab-movs .mview').forEach(el => el.hidden = el.id !== 'view-' + movView);
+  $('#btnSelect').hidden = movView !== 'list';
   updateCreationControls();
-  $('#btnSelect').hidden=v!=='list';
   moveViewInd();
-  if (v === 'cal') renderCalendar();
+  if (movView === 'cal') renderCalendar();
+  else if (previous !== movView) renderMovs();
+  if(previous!==movView)revealContent($('#view-'+movView));
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
 window.addEventListener('resize', moveViewInd);
@@ -230,7 +245,6 @@ function renderCalendar(){
   const maxInc = Math.max(1, ...Object.values(byDay).map(o => o.inc));
   // Escala logarítmica en tonos pastel: un día de alquiler no deja a los demás casi blancos
   const lvlOf = (v, mx) => v ? 10 + 26 * Math.log1p(v) / Math.log1p(mx) : 0;
-  const recBy = {}; recPending(m).forEach(r => { const d = Math.min(r.day, dim); (recBy[d] = recBy[d] || []).push(r); });
   if (!calSel || calSel.slice(0, 7) !== m){
     const firstWith = Object.keys(byDay).map(Number).sort((a, b) => b - a)[0];
     calSel = dateFor(m, today || firstWith || 1);
@@ -245,13 +259,13 @@ function renderCalendar(){
   const closeWeek = end => { weeks.push({start:weekStart,end,total:week});weekStart=end+1;week=0;col=0; };
   for (let i = 0; i < first; i++){ html += '<div class="cal-pad"></div>'; col++; }
   for (let d = 1; d <= dim; d++){
-    const o = byDay[d], iso = dateFor(m, d), recs = recBy[d] || [], we = col > 4;
+    const o = byDay[d], iso = dateFor(m, d), we = col > 4;
     if (o) week += o.exp;
     const hot = o && o.exp > med * 2.5 && exps.length > 3;
     const e = lvlOf(o && o.exp, max), g = lvlOf(o && o.inc, maxInc), kind = e && g ? ' both' : e ? ' has-exp' : g ? ' has-inc' : '';
-    const dayLabel=`${fmtDateLong(iso)}. Ingresos: ${fmt(o?.inc||0)}. Gastos: ${fmt(o?.exp||0)}${recs.length?'. Recurrentes pendientes: '+recs.length:''}`;
-    html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${esc(dayLabel)}" title="${esc(dayLabel)}" aria-pressed="${iso===calSel}">
-      <span class="cd-n">${d}</span>${recs.length ? `<span class="cd-r" title="${recs.length} recurrente(s) pendiente(s)">${ic('repeat')}</span>` : ''}${hot ? '<span class="cd-hot" title="Gasto alto">●</span>' : ''}
+    const dayLabel=`${fmtDateLong(iso)}. Ingresos: ${fmt(o?.inc||0)}. Gastos: ${fmt(o?.exp||0)}`;
+    html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${esc(dayLabel)}" title="${esc(dayLabel)}" aria-pressed="${iso===calSel}" tabindex="${iso===calSel?0:-1}">
+      <span class="cd-n">${d}</span>${hot ? '<span class="cd-hot" title="Gasto alto">●</span>' : ''}
       </button>`;
     if (++col === 7) closeWeek(d);
   }
@@ -275,34 +289,49 @@ function renderCalendar(){
 let calAvg = 0;
 function renderCalDay(){
   const iso = calSel, list = state.transactions.filter(t => t.date === iso).sort((a, b) => (b.created || 0) - (a.created || 0));
-  const recs = recPending(iso.slice(0, 7)).filter(r => Math.min(r.day, daysIn(iso.slice(0, 7))) === Number(iso.slice(8, 10)));
   const exp = sum(list.filter(t => t.type === 'expense')), inc = sum(list.filter(t => t.type === 'income'));
   const vsAvg = calAvg && exp ? exp / calAvg : 0;
   const [y, mo, d] = iso.split('-').map(Number), label = new Date(y, mo - 1, d).toLocaleDateString('es-PE', {weekday:'long', day:'numeric', month:'long'});
-  $('#calDay').innerHTML = `<div class="cal-day-head"><div><h3 id="calDayTitle"><time datetime="${iso}">${label[0].toUpperCase() + label.slice(1)}</time></h3>
-      <div class="cal-day-summary"><span class="small muted">${list.length ? plural(list.length, 'movimiento') : 'Sin movimientos'}</span><div class="cal-day-totals">${list.length ? `<span><small>Gastos</small><b class="xp">${fmt(exp)}</b></span>` : ''}${inc ? `<span><small>Ingresos</small><b class="pos">+${fmt(inc)}</b></span>` : ''}</div></div>
-      ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}</div>
+  $('#calDay').innerHTML = `<header class="cal-day-head">
+      <div class="cal-day-summary">
+        <h3 id="calDayTitle"><time datetime="${iso}">${label[0].toUpperCase() + label.slice(1)}</time></h3>
+        ${list.length ? `<span class="small muted">${plural(list.length, 'movimiento')}</span>` : ''}
       </div>
+      ${list.length ? `<dl class="cal-day-totals">
+        <div><dt>Gastos</dt><dd class="xp">${fmt(exp)}</dd></div>
+        <div><dt>Ingresos</dt><dd class="pos">${inc ? '+' : ''}${fmt(inc)}</dd></div>
+      </dl>` : ''}
+      ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}
+    </header>
     <div class="cal-day-scroll" tabindex="0" role="region" aria-labelledby="calDayTitle">
     ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income'; return `<div class="prow cal-transaction">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div class="cal-copy"><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
       <div class="amt"><b class="${isI ? 'pos' : 'xp'}">${isI ? '+' : '−'} ${fmt(t.amount)}</b></div>
       <div class="row-actions"><button class="iconbtn" data-edit="${esc(t.id)}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${esc(t.id)}" title="Eliminar">${ic('trash-2')}</button></div></div>`; }).join('')}
-    ${recs.map(r => { const c = getCat(r.catId); return `<div class="prow cal-recurring">
-      <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
-      <div><div class="name">${recLabel(r)}</div><div class="small muted">Recurrente ${r.auto ? 'automático' : 'por confirmar'}</div></div>
-      <div class="amt">${fmt(r.amount)}</div></div>`; }).join('')}
-    ${!list.length && !recs.length ? emptyBox('calendar-days', 'Nada registrado este día. Toca «+» para sumar algo.', null, '', false, 'es-sm') : ''}</div>`;
+    ${!list.length ? emptyBox('calendar-days', 'Sin movimientos este día.', 'calendar-tx', 'Registrar movimiento', false, 'es-sm') : ''}</div>`;
 }
 $('#calGrid').addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; calSel = b.dataset.day;
-  document.querySelectorAll('#calGrid .cal-d').forEach(x => {x.classList.toggle('sel', x === b);x.setAttribute('aria-pressed',String(x===b));}); renderCalDay(); $('#calDay').classList.remove('swap'); void $('#calDay').offsetWidth; $('#calDay').classList.add('swap');
+  document.querySelectorAll('#calGrid .cal-d').forEach(x => {
+    const selected=x===b;
+    x.classList.toggle('sel',selected);
+    x.setAttribute('aria-pressed',String(selected));
+    x.tabIndex=selected?0:-1;
+  });
+  motionResize($('#calDay'),renderCalDay);
+  revealContent($('#calDay .cal-day-scroll'));
   if(innerWidth<=700&&e.detail)requestAnimationFrame(()=>{const el=$('#calDay'),header=document.querySelector('.topbar'),gap=getComputedStyle(header).position==='sticky'?header.getBoundingClientRect().height:0;window.scrollTo({top:scrollY+el.getBoundingClientRect().top-gap-12,behavior:reduceMotion()?'instant':'smooth'});});
 });
 $('#calGrid').addEventListener('keydown', e => {
-  const k = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-7, ArrowDown:7}[e.key]; if (!k || !calSel) return;
-  const m = currentMonth, d = Number(calSel.slice(8, 10)) + k; if (d < 1 || d > daysIn(m)) return;
-  e.preventDefault(); const b = $(`#calGrid [data-day="${dateFor(m, d)}"]`); if (b){ b.click(); b.focus(); }
+  const day=e.target.closest('[data-day]'), offset={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
+  if(!day || (!offset && e.key!=='Home' && e.key!=='End'))return;
+  e.preventDefault();
+  const m=currentMonth, last=daysIn(m);
+  const d=e.key==='Home'?1:e.key==='End'?last:Number(day.dataset.day.slice(8))+offset;
+  if(d<1 || d>last)return;
+  const next=$(`#calGrid [data-day="${dateFor(m,d)}"]`);
+  next?.click();
+  next?.focus();
 });
 $('#calDay').addEventListener('click', async e => {
   const ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
@@ -310,36 +339,7 @@ $('#calDay').addEventListener('click', async e => {
   if (dl){ await fadeOut(dl.closest('.prow')); delTxUndo(dl.dataset.del); }
 });
 
-/* ---------- Próximos 7 días (recurrentes) ---------- */
-function upcoming(days = 7){
-  const base = new Date(); base.setHours(0, 0, 0, 0); const out = [];
-  for (let i = 0; i < days; i++){
-    const d = new Date(base); d.setDate(base.getDate() + i);
-    const m = ym(d), day = d.getDate(), dim = daysIn(m);
-    state.recurring.filter(r => r.active !== false && (!r.start || r.start <= m) && Math.min(r.day, dim) === day && !recDone(r, m) && !recSkipped(r, m))
-      .forEach(r => out.push({r, d, m, i}));
-    const iso = ym(d) + '-' + String(day).padStart(2, '0');
-    state.transactions.filter(t => t.date === iso && isPlanned(t) && !t.recId).forEach(t => out.push({r:{type:t.type, amount:t.amount, catId:t.catId, desc:t.desc || getCat(t.catId).name, planned:true, tid:t.id}, d, m, i}));
-  }
-  return out;
-}
-function renderUpcoming(){
-  const up = upcoming(7), el = $('#recUpcoming');
-  const start = new Date();start.setHours(0,0,0,0);const end = new Date(start);end.setDate(start.getDate()+6);
-  const short = d => d.toLocaleDateString('es-PE',{day:'numeric',month:'short'}).replace('.', '');
-  $('#recUpcomingRange').textContent = (ym(start)===ym(end)?start.getDate()+'–'+short(end):short(start)+'–'+short(end))+' '+end.getFullYear();
-  if (!up.length){ el.innerHTML = emptyBox('calendar-clock', 'No hay pagos ni cobros recurrentes o programados en los próximos 7 días.', null, '', true); return; }
-  const when = x => x.i === 0 ? 'Hoy' : x.i === 1 ? 'Mañana' : x.d.toLocaleDateString('es-PE', {weekday:'short', day:'numeric', month:'short'}).replace('.', '');
-  const exp = up.filter(x => x.r.type === 'expense').reduce((a, x) => a + Number(x.r.amount || 0), 0), inc = up.filter(x => x.r.type === 'income').reduce((a, x) => a + Number(x.r.amount || 0), 0);
-  el.innerHTML = `<div class="up-line">${up.map(x => { const c = getCat(x.r.catId), isI = x.r.type === 'income'; return `<div class="up-item${x.i === 0 ? ' now' : ''}">
-      <div class="up-when">${when(x)}</div>
-      <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
-      <div class="up-name">${recLabel(x.r)}</div>
-      <div class="up-amt ${isI ? 'pos' : 'xp'}">${isI ? '+' : '−'} ${fmt(x.r.amount)}</div>
-      <div class="small muted">${x.r.planned ? 'Programado' : x.r.auto ? 'Automático' : 'Manual'}</div></div>`; }).join('')}</div>
-    <div class="list-total"><span>Total próximos 7 días</span><span>${exp ? `<span class="xp">− ${fmt(exp)}</span>` : ''}${exp && inc ? ' · ' : ''}${inc ? `<span class="pos">+ ${fmt(inc)}</span>` : ''}</span></div>`;
-}
-$('#fltText').addEventListener('input', renderMovs);
+$('#fltText').addEventListener('input', () => renderMovs(false));
 // Modo selección: tocar filas para marcarlas y borrarlas juntas (con deshacer)
 let selMode = false; const selSet = new Set();
 const selBar = document.createElement('div'); selBar.className = 'sel-bar'; selBar.hidden = true; document.body.appendChild(selBar);
@@ -359,13 +359,15 @@ $('#btnSelect').onclick = () => setSelMode(!selMode);
 selBar.addEventListener('click', async e => {
   const b = e.target.closest('[data-sel]'); if (!b) return;
   if (b.dataset.sel === 'all'){ const rows = [...document.querySelectorAll('#movBody [data-row]')].map(r => r.dataset.row); const all = rows.every(id => selSet.has(id)); rows.forEach(id => all ? selSet.delete(id) : selSet.add(id)); renderSelUI(); renderMovs(); return; }
-  const ids = [...selSet]; if (!ids.length) return;
+  const ids = [...selSet], profile = activeProfile; if (!ids.length) return;
   if (!(await ask({title:`¿Borrar ${plural(ids.length, 'movimiento')}?`, msg:'Podrás deshacerlo desde el aviso de abajo.'}))) return;
-  const keep = state.transactions.map((t, i) => [i, t]).filter(([, t]) => selSet.has(t.id)), recs = JSON.stringify(state.recurring);
-  ids.forEach(delTx); save(); selMode = false; selSet.clear(); renderSelUI(); renderAll();
+  if(activeProfile !== profile)return;
+  let restore;
+  if (!saveChange(() => { restore = removeTransactions(ids); return !!restore; })) return;
+  selMode = false; selSet.clear(); renderSelUI(); renderAll();
   toast(`${plural(ids.length, 'movimiento')} ${ids.length === 1 ? 'eliminado' : 'eliminados'}`, {icon:'trash-2', action:'Deshacer', onAction: () => {
-    keep.forEach(([i, t]) => { if (!state.transactions.some(x => x.id === t.id)) state.transactions.splice(Math.min(i, state.transactions.length), 0, t); });
-    state.recurring = JSON.parse(recs); save(); renderAll(); toast('Movimientos restaurados', {icon:'undo-2'}); }});
+    if (activeProfile === profile && saveChange(restore)){ renderAll(); toast('Movimientos restaurados', {icon:'undo-2'}); }
+  }});
 });
 $('#movBody').addEventListener('click', e => {
   if (!selMode) return; const tr = e.target.closest('[data-row]'); if (!tr) return;
@@ -395,7 +397,7 @@ function openMovActionMenu(anchor){
  if(movAction?.anchor===anchor){closeMovActionMenu(true);return;}
  closeMovActionMenu();movAction={anchor,id:anchor.dataset.rowMenu};anchor.setAttribute('aria-expanded','true');movActionMenu.hidden=false;
  clearTimeout(movActionMenu._hideTimer);movActionMenu.inert=false;movActionMenu.classList.remove('menu-closing');
- if(movActionMenu.showPopover)movActionMenu.showPopover();
+ if(movActionMenu.showPopover&&!movActionMenu.matches(':popover-open'))movActionMenu.showPopover();
  positionMovActionMenu();
  movActionMenu.querySelector('button').focus({preventScroll:true});
 }
@@ -422,9 +424,16 @@ movActionMenu.addEventListener('click',async e=>{
  if(b.dataset.movAction==='edit')openTx(id);else{await fadeOut(document.querySelector(`#movBody [data-row="${id}"]`));delTxUndo(id);}
 });
 $('#movFilterToggle').onclick=toggleMovementFilters;
+$('#movFilterClear').onclick = () => {
+  $('#fltText').value = '';
+  $('#fltScope').value = 'month';
+  for (const id of ['#fltType', '#fltCat', '#fltMethod']) $(id).value = '';
+  renderMovs(false);
+  $('#movFilterToggle').focus({preventScroll:true});
+};
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');
-let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null, txMode = 'tx', txRecId = null;
+let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null, contributionGoal = null;
 let txCategoryExpanded=false,txNewCategoryIcon='svg:tag';
 function txCategoryOrder(cats){
  const count={};state.transactions.filter(t=>t.type===txType).forEach(t=>count[t.catId]=(count[t.catId]||0)+1);
@@ -445,7 +454,10 @@ function resetTxCategoryUI(){
 }
 function openTxCategoryEditor(){
  const box=$('#txCategoryEditor');box.hidden=false;$('#txNewCategory').setAttribute('aria-expanded','true');$('#txCategoryError').textContent='';
- $('#txCategoryName').value='';txNewCategoryIcon='svg:tag';$('#txCategoryColor').value=PALETTE[state.categories.length%PALETTE.length];paintTxCategoryIcon();
+ const hasAhorro = catsOf('expense').some(c => c.name.toLocaleLowerCase() === 'ahorro');
+ $('#txCategoryName').value=contributionGoal ? (hasAhorro ? 'Aportes a metas' : 'Ahorro') : '';
+ txNewCategoryIcon=contributionGoal ? 'svg:piggy-bank' : 'svg:tag';
+ $('#txCategoryColor').value=PALETTE[state.categories.length%PALETTE.length];paintTxCategoryIcon();
  motionAnimate(box,[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}]);
  $('#txCategoryName').focus();
 }
@@ -455,7 +467,13 @@ function createTxCategory(){
  if(!name){error.textContent='Escribe un nombre para la categoría.';$('#txCategoryName').focus();return;}
  if(catsOf(txType).some(c=>c.name.toLocaleLowerCase()===name.toLocaleLowerCase())){error.textContent='Ya existe una categoría con ese nombre, incluso si está archivada.';return;}
  const c={id:uid(),name,icon:txNewCategoryIcon,type:txType,color:$('#txCategoryColor').value,defaultBudget:0};
- state.categories.push(c);selCat=c.id;save();dirty=new Set(Object.keys(VIEWS));
+ if(contributionGoal && roleOf(c)!=='save'){
+   error.textContent='Usa un nombre o un ícono de ahorro para esta categoría.';
+   return;
+ }
+ if(!saveChange(() => state.categories.push(c), txDialog))return;
+ txDialog.querySelector('.dialog-save-error')?.remove();
+ selCat=c.id;dirty=new Set(Object.keys(VIEWS));
  $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();
  toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
 }
@@ -478,14 +496,19 @@ function suggestedTxMethod(catId,type){
   return previous?(previous.method||''):(methods[0]||'');
 }
 function renderTxChips(){
-  const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
-  gf.hidden = !(txMode === 'tx' && (txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
-  if (!gf.hidden) $('#fGoalChips').innerHTML = `<button type="button" class="chip${!selGoal ? ' active' : ''}" data-goal="">Ninguna</button>` +
-    goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" data-goal="${esc(g.id)}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
-  const cats = catsOf(txType).filter(c => !c.archived || c.id === selCat);
+  const cats = contributionGoal ? activeSavingCats() : catsOf(txType).filter(c => !c.archived || c.id === selCat);
   // Sin categoría elegida se marca la más usada: la primera visible, nunca una oculta.
   if (!cats.some(c => c.id === selCat)) selCat = txCategoryOrder(cats.filter(c => !c.archived))[0]?.id || null;
-  $('#fCatChips').innerHTML = txCategoryMarkup(cats);
+  const gf = $('#fGoalField'), goals = myGoals().filter(g => !goalDone(g) || g.id === selGoal);
+  gf.hidden = !!contributionGoal || !((txType === 'income' || isSavingCat(selCat) || (editingId && selGoal)) && goals.length);
+  if (!gf.hidden) $('#fGoalChips').innerHTML = `<button type="button" class="chip${!selGoal ? ' active' : ''}" aria-pressed="${!selGoal}" data-goal="">Ninguna</button>` +
+    goalsSorted().map(g => `<button type="button" class="chip${g.id === selGoal ? ' active' : ''}" aria-pressed="${g.id === selGoal}" data-goal="${esc(g.id)}"><span class="cico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</span>${esc(g.name)}</button>`).join('');
+  const categoryMarkup = txCategoryMarkup(cats);
+  const needsSavingCategory = contributionGoal && !cats.length;
+  txDialog.classList.toggle('needs-saving-category', !!needsSavingCategory);
+  $('#fCatChips').innerHTML = needsSavingCategory ? '' : categoryMarkup;
+  $('#txAllCategories').hidden = !!needsSavingCategory;
+  $('#txCategoryNote').textContent = needsSavingCategory ? 'Crea una categoría de ahorro para aportar.' : contributionGoal ? 'Categorías de ahorro activas' : 'Tus categorías más usadas';
   if(selMethod==null)selMethod=suggestedTxMethod(selCat,txType);
   const ms=[...new Set([...(state.settings.methods||[]),...(selMethod?[selMethod]:[]),''])];
   $('#fMethodChips').innerHTML=ms.map(m=>`<button type="button" class="chip${m===selMethod?' active':''}" aria-pressed="${m===selMethod}" data-method="${esc(m)}">${esc(m||'Sin especificar')}</button>`).join('');
@@ -497,7 +520,15 @@ function setTxType(type){
   renderTxChips(); renderQuick();
 }
 $('#txSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.type); });
-$('#fCatChips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b){ selCat = b.dataset.cat; if(!txMethodExplicit)selMethod=null; renderTxChips(); } });
+$('#fCatChips').addEventListener('click', e => {
+  const button = e.target.closest('[data-cat]');
+  if (!button) return;
+  const restoreFocus = button === document.activeElement || e.detail === 0;
+  selCat = button.dataset.cat;
+  if (!txMethodExplicit) selMethod = null;
+  renderTxChips();
+  if (restoreFocus) $('#fCatChips .chip.active')?.focus({preventScroll:true});
+});
 $('#fMethodChips').addEventListener('click', e => {
   const button = e.target.closest('[data-method]');
   if (!button) return;
@@ -507,25 +538,33 @@ $('#fMethodChips').addEventListener('click', e => {
   renderTxChips();
   if (restoreFocus) $('#fMethodChips .chip.active')?.focus();
 });
-$('#fGoalChips').addEventListener('click', e => { const b = e.target.closest('[data-goal]'); if (b){ selGoal = b.dataset.goal || null; renderTxChips(); } });
-function setMode(){
-  const rec = txMode === 'rec';
-  $('#fDateField').hidden = rec; $('#fDayField').hidden = !rec; $('#fAutoField').hidden = !rec;
-  txDialog.classList.toggle('rec-mode', rec);
+$('#fGoalChips').addEventListener('click', e => {
+  const button = e.target.closest('[data-goal]');
+  if (!button) return;
+  const restoreFocus = button === document.activeElement || e.detail === 0;
+  selGoal = button.dataset.goal || null;
   renderTxChips();
-}
-// preset: {type, catId, amount, method, desc, date, goalId, recId}
+  if (restoreFocus) $('#fGoalChips .chip.active')?.focus({preventScroll:true});
+});
+// preset: {type, catId, amount, method, desc, date, goalId, contribution}
 // Movimientos frecuentes de los últimos 4 meses (misma descripción, categoría y monto) para registrarlos con un toque
 function quickPicks(type){
-  const from = shiftMonth(thisMonth(), -3) + '-01', seen = {};
-  state.transactions.filter(t => t.type === type && t.date >= from && !t.recId && !t.goalId).forEach(t => {
-    const k = [t.catId, (t.desc || '').toLowerCase(), t.amount,t.method||''].join('|'); (seen[k] = seen[k] || {t, n:0}).n++; });
-  return Object.values(seen).filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date)).slice(0, 6).map(x => x.t);
+  const from = shiftMonth(thisMonth(), -3) + '-01', today = todayISO(), seen = new Map();
+  const categories = new Set(catsActive(type).map(c => c.id));
+  for (const t of state.transactions){
+    if (t.type !== type || t.date < from || t.date > today || t.recId || t.goalId || !categories.has(t.catId)) continue;
+    const key = JSON.stringify([t.catId, (t.desc || '').toLowerCase(), t.amount, t.method || '']);
+    const entry = seen.get(key) || {t, n:0};
+    if (t.date > entry.t.date) entry.t = t;
+    entry.n++;
+    seen.set(key, entry);
+  }
+  return [...seen.values()].filter(x => x.n >= 2).sort((a, b) => b.n - a.n || b.t.date.localeCompare(a.t.date)).slice(0, 6).map(x => x.t);
 }
 let quickOK = false, quickExpanded = false;
 function renderQuick(){
   const el = $('#txQuick'); if (!el) return;
-  const list = txMode === 'tx' && quickOK ? quickPicks(txType) : [];
+  const list = quickOK ? quickPicks(txType) : [];
   el.hidden = !list.length;
   el.innerHTML = list.length ? `<div class="quick-head"><span class="q-l">Frecuentes</span>${list.length>3?`<button type="button" class="quick-toggle" data-quick-toggle aria-controls="txQuickItems" aria-expanded="${quickExpanded}">${quickExpanded?'Ver menos':'Ver más'}</button>`:''}</div><div class="quick-items" id="txQuickItems">` + (quickExpanded?list:list.slice(0,3)).map(t => { const c = getCat(t.catId);
     return `<button type="button" class="q-chip" data-quick="${esc(t.id)}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="q-copy">${esc(t.desc || c.name)}<small>${esc(t.method||'Sin especificar')}</small></span><b>${fmt(t.amount)}</b></button>`; }).join('')+'</div>' : '';
@@ -542,15 +581,19 @@ document.addEventListener('click', e => {
 function openTx(id, preset){
   if(localTabChanged)return toast('⚠️ Hay cambios en otra pestaña. Recarga antes de editar.');
   resetTxCategoryUI();
-  quickExpanded=false;txMode = 'tx'; editingId = id || null; quickOK = !id && (!preset || Object.keys(preset).every(k => k === 'date'));
+  quickExpanded=false; editingId = id || null; quickOK = !id && (!preset || Object.keys(preset).every(k => k === 'date'));
   const t = id ? state.transactions.find(x => x.id === id) : null;
   const p = t || preset || {};
-  txRecId = p.recId || null;
+  contributionGoal = p.contribution ? myGoals().find(g => g.id === p.goalId) : null;
+  if (p.contribution && !contributionGoal) return toast('⚠️ La meta ya no está disponible.');
+  $('#txSeg').hidden = !!contributionGoal;
+  $('#txContributionGoal').hidden = !contributionGoal;
+  $('#txContributionGoal').textContent = contributionGoal?.name || '';
   selCat = p.catId || null; txMethodExplicit=!!t||Object.prototype.hasOwnProperty.call(p,'method'); selMethod=txMethodExplicit?(p.method||''):null; selGoal = p.goalId || null;
-  txType = p.type || txType; setMode(); setTxType(txType);
-  $('#txTitle').textContent = t ? 'Editar movimiento' : (preset && preset.recId) ? 'Registrar recurrente' : (preset && preset.goalId) ? 'Aporte a meta' : 'Nuevo movimiento';
+  txType = p.type || txType; setTxType(txType);
+  $('#txTitle').textContent = t ? 'Editar movimiento' : (preset && preset.goalId) ? 'Aporte a meta' : 'Nuevo movimiento';
   $('#fAmount').value = p.amount || '';
-  $('#fDate').value = p.date || (cycleView() ? (cycleMonthForDate()===currentMonth?todayISO():cyclePeriod(currentMonth).start) : currentMonth === thisMonth() ? todayISO() : currentMonth + '-01');
+  $('#fDate').value = p.date || todayISO();
   $('#fDesc').value = p.desc || '';
   $('#txDelete').style.display = t ? '' : 'none'; $('#txDup').style.display = t ? '' : 'none';
   setTxDetails(false);
@@ -568,49 +611,59 @@ function txDetailsLabel(){
   $('#txMore').classList.toggle('has-desc', !!desc);
 }
 function setTxDetails(open){
-  txDialog.classList.toggle('details-open', open); $('#txMore').setAttribute('aria-expanded', String(open)); txDetailsLabel();
+  const details=$('#txDetails');
+  details._motion?.cancel();
+  details._motion=null;
+  details.style.overflow='';
+  txDialog.classList.remove('details-closing');
+  details.inert=false;
+  txDialog.classList.toggle('details-open', open);
+  $('#txMore').setAttribute('aria-expanded', String(open));
+  txDetailsLabel();
 }
-$('#txMore').onclick = () => { const open=!txDialog.classList.contains('details-open');setTxDetails(open);if(!open)return; motionAnimate($('#txDetails'), [{opacity:.85, transform:'translateY(-4px)'}, {opacity:1, transform:'none'}], 'panel'); $('#fDateField .dp-trigger').focus({preventScroll:true}); keepTxFieldVisible(); };
+$('#txMore').onclick = () => {
+  const details=$('#txDetails'),body=txDialog.querySelector('.dlg-body'),open=$('#txMore').getAttribute('aria-expanded')!=='true';
+  const from=motionHeight(details);
+  const style=getComputedStyle(details),opacity=from?style.opacity:0;
+  const gap=parseFloat(getComputedStyle(body).rowGap)||0;
+  const margin=from?style.marginTop:-gap+'px';
+  setTxDetails(open);
+  if(!open)dpClose();
+  if(!reduceMotion()){
+    txDialog.classList.toggle('details-closing',!open);
+    details.inert=!open;
+    const to=open?motionHeight(details):0;
+    details.style.overflow='hidden';
+    const animation=motionAnimate(details,[{height:from+'px',opacity,marginTop:margin},{height:to+'px',opacity:open?1:0,marginTop:open?'0px':-gap+'px'}],'panel');
+    animation.onfinish=()=>{
+      setTxDetails(open);
+      if(open)keepTxFieldVisible(details.offsetHeight+16<=body.clientHeight?details:document.activeElement);
+    };
+  }
+  if(open){
+    $('#fDateField .dp-trigger').focus({preventScroll:true});
+    if(reduceMotion())keepTxFieldVisible(details.offsetHeight+16<=body.clientHeight?details:document.activeElement);
+  }
+};
 for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
-function openRec(id, preset){
-  resetTxCategoryUI();
-  txMode = 'rec'; editingId = id || null; txRecId = null; selGoal = null; quickOK = false; $('#txDup').style.display = 'none';
-  const r = id ? state.recurring.find(x => x.id === id) : null, pz = preset || {};
-  selCat = r ? r.catId : pz.catId || null; txMethodExplicit=!!r||Object.prototype.hasOwnProperty.call(pz,'method'); selMethod=txMethodExplicit?((r||pz).method||''):null;
-  txType = r ? r.type : pz.type || txType; setMode(); setTxType(txType);
-  $('#txTitle').textContent = r ? 'Editar recurrente' : 'Nuevo recurrente';
-  $('#fAmount').value = r ? r.amount : pz.amount || '';
-  $('#fDay').value = r ? r.day : preset ? '' : new Date().getDate();
-  updateRecDate();
-  $('#fDesc').value = r ? r.desc : pz.desc || '';
-  $('#fAuto').checked = r ? !!r.auto : true;
-  $('#txDelete').style.display = r ? '' : 'none';
-  showTxDialog(preset ? $('#recFixed') : null);
-  if (preset) toast('Elige el día del mes en que te cobran', {icon:'calendar'});
-}
-function updateRecDate(){
-  const day = Number($('#fDay').value), end = day === 31;
-  $('#recFixed').setAttribute('aria-pressed', String(!end));
-  $('#recMonthEnd').setAttribute('aria-pressed', String(end));
-  $('#fDay').disabled = end;
-  $('#recDateHint').textContent = end ? 'Siempre el último día: 28, 29, 30 o 31, según el mes.' : 'Elige del 1 al 31. Si el mes no tiene ese día, se usa su último día.';
-  const valid = Number.isInteger(day) && day >= 1 && day <= 31;
-  $('#recDatePreview').textContent = valid ? 'Fechas: ' + [0,1,2].map(n => fmtDateLong(dateFor(shiftMonth(thisMonth(), n), day))).join(' · ') : 'Ingresa un día para ver las próximas fechas.';
-}
-$('#fDay').addEventListener('input', updateRecDate);
-$('#recMonthEnd').onclick = () => { $('#fDay').value = 31; updateRecDate(); };
-$('#recFixed').onclick = () => { if ($('#fDay').disabled) $('#fDay').value = Math.min(30, new Date().getDate()); updateRecDate(); $('#fDay').focus(); };
 // Borra con opción de deshacer (sin pedir confirmación)
 function delTxUndo(id){
-  const idx = state.transactions.findIndex(x => x.id === id); if (idx < 0) return;
-  const t = state.transactions[idx], r = t.recId && state.recurring.find(x => x.id === t.recId), prevSkip = r ? [...(r.skipped || [])] : null;
-  delTx(id); save(); renderAll();
+  const profile = activeProfile;
+  const t = state.transactions.find(x => x.id === id);
+  if (!t) return false;
+  let restore;
+  if (!saveChange(() => { restore = removeTransactions([id]); }, txDialog)){
+    renderAll();
+    return false;
+  }
+  renderAll();
   toast('Movimiento eliminado', {icon:'trash-2', action:'Deshacer', onAction: () => {
-    if (!state.transactions.some(x => x.id === t.id)) state.transactions.splice(Math.min(idx, state.transactions.length), 0, t);
-    if (r) r.skipped = prevSkip;
-    if (t.date.slice(0,7) !== currentMonth){ currentMonth = t.date.slice(0,7); monthInput.value = currentMonth; }
-    save(); renderAll(); flashRow(t.id); toast('Movimiento restaurado', {icon:'undo-2'});
+    if (activeProfile !== profile || !saveChange(restore)) return;
+    const month = cycleView() ? cycleMonthForDate(t.date) : t.date.slice(0,7);
+    if (month !== currentMonth){ currentMonth = month; monthInput.value = month; }
+    renderAll(); flashRow(t.id); toast('Movimiento restaurado', {icon:'undo-2'});
   }});
+  return true;
 }
 // Resalta brevemente una fila de la tabla de movimientos
 function highlightSaved(id){
@@ -620,56 +673,56 @@ function highlightSaved(id){
   if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
 }
 function flashRow(id){const tr=document.querySelector(`#movBody [data-row="${id}"]`);motionAnimate(tr,[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
-function delTx(id){
-  const t = state.transactions.find(x => x.id === id);
-  if (t && t.recId){ // evita que un recurrente automático se vuelva a crear ese mes
-    const r = state.recurring.find(x => x.id === t.recId), m = t.date.slice(0,7);
-    if (r){ r.skipped = r.skipped || []; if (!r.skipped.includes(m)) r.skipped.push(m); }
-  }
-  state.transactions = state.transactions.filter(x => x.id !== id);
+function removeTransactions(ids){
+  const profile = activeProfile, selected = new Set(ids), removed = [];
+  state.transactions = state.transactions.filter((transaction, index) => {
+    if (!selected.has(transaction.id)) return true;
+    removed.push({transaction, index});
+    return false;
+  });
+  if (!removed.length) return null;
+  return () => {
+    if (profile !== activeProfile || localTabChanged || localRecovery) return false;
+    const existing = new Set(state.transactions.map(t => t.id));
+    for (const {transaction, index} of removed){
+      if (!existing.has(transaction.id)) state.transactions.splice(Math.min(index, state.transactions.length), 0, transaction);
+    }
+    return true;
+  };
 }
-$('#txForm').addEventListener('submit', async e => {
+// Mensajes de validación del monto en español, sin depender del idioma del navegador.
+$('#fAmount').addEventListener('invalid', e => { const v = e.target.validity; e.target.setCustomValidity(v.valueMissing ? 'Ingresa el monto.' : v.badInput ? 'Ingresa un número válido.' : v.rangeUnderflow ? 'El monto debe ser mayor que 0.' : v.stepMismatch ? 'Usa como máximo 2 decimales.' : ''); });
+// El mensaje propio se limpia antes de cada validación (clic o Enter sobre Guardar) para no bloquear un valor ya corregido.
+$('#fAmount').addEventListener('input', e => e.target.setCustomValidity(''));
+$('#txForm').addEventListener('click', e => { if (e.target.closest('[type=submit],button:not([type])')) $('#fAmount').setCustomValidity(''); }, true);
+$('#txForm').addEventListener('submit', e => {
   e.preventDefault();
   if(localTabChanged)return toast('⚠️ Recarga para incorporar los cambios de otra pestaña.');
   if(!$('#txCategoryEditor').hidden){$('#txCategoryName').focus();return toast('Crea la categoría o cancela su edición antes de guardar.');}
   const amount = Math.round(parseFloat($('#fAmount').value) * 100) / 100;
-  if (!(amount > 0)) return toast('Ingresa un monto válido');
+  if (!Number.isFinite(amount) || amount <= 0) return toast('Ingresa un monto válido');
+  if (contributionGoal){
+    if (!myGoals().some(g => g.id === contributionGoal.id)) return toast('⚠️ La meta ya no está disponible.');
+    if (!activeSavingCats().some(c => c.id === selCat)){
+      renderTxChips();
+      const category = $('#fCatChips .chip.active') || $('#txNewCategory');
+      category.focus();
+      return;
+    }
+  }
   if (!selCat) return toast('Elige una categoría');
   const desc = $('#fDesc').value.trim();
-  if (txMode === 'rec'){
-    const day = Number($('#fDay').value);
-    if (!Number.isInteger(day) || day < 1 || day > 31) return toast('Ingresa un día entero del 1 al 31');
-    const data = {type:txType, amount, catId:selCat, method:selMethod, desc, day, auto:$('#fAuto').checked};
-    const isNew = !editingId; let r;
-    if (!isNew){ r = state.recurring.find(x => x.id === editingId); Object.assign(r, data); }
-    else { r = {id:uid(), active:true, start:thisMonth(), skipped:[], ...data}; state.recurring.push(r); }
-    txDialog.close();
-    if (isNew && r.auto && new Date().getDate() >= Math.min(day, daysIn(thisMonth()))){
-      const yes = await ask({title:'¿Registrar también el de este mes?', msg:`La fecha de este mes (${fmtDateLong(dateFor(thisMonth(), day))}) ya llegó. Si ya lo anotaste a mano, elige "No".`, ok:'Sí, registrar', cancel:'No', danger:false, icon:'🔁'});
-      if (!yes) r.skipped.push(thisMonth());
-    }
-    save(); runAutoRecurring(true); renderAll();
-    toast(isNew ? 'Recurrente creado 🔁' : 'Recurrente actualizado');
-    return;
-  }
-  if (!$('#fDate').value) return toast('Elige una fecha');
+  if (!BudgetFinance.validDate($('#fDate').value)) return toast('Elige una fecha válida');
   const data = {type:txType, amount, catId:selCat, date:$('#fDate').value, method:selMethod, desc,
-    goalId: selGoal && !$('#fGoalField').hidden ? selGoal : undefined};
-  if (txRecId) data.recId = txRecId;
-  // ¿Coincide con un recurrente de ese mes que aún no está registrado? Ofrecer vincularlo para no contarlo dos veces
-  const prevTx = editingId && state.transactions.find(t => t.id === editingId);
-  if (!data.recId && !(prevTx && prevTx.recId)){
-    const mm = data.date.slice(0, 7);
-    const r = state.recurring.find(r => r.active !== false && r.type === data.type && r.catId === data.catId && Math.abs(Number(r.amount) - amount) <= Math.max(1, Number(r.amount) * .05) && !recDone(r, mm));
-    if (r){
-      const yes = await ask({title:`¿Es el pago de «${r.desc || getCat(r.catId).name}»?`, msg:`Lo marco como el pago de ${monthLong(mm)} de ese recurrente, así no se registra dos veces.`, ok:'Sí, vincular', cancel:'No', danger:false, icon:'🔁'});
-      if (yes){ data.recId = r.id; r.skipped = (r.skipped || []).filter(x => x !== mm); }
-    }
-  }
-  if (editingId) Object.assign(state.transactions.find(t => t.id === editingId), data);
-  else state.transactions.push({id:uid(), created:Date.now(), ...data});
-  const savedId = editingId || state.transactions[state.transactions.length - 1].id;
-  save(); txDialog.close();
+    goalId: contributionGoal?.id || (selGoal && !$('#fGoalField').hidden ? selGoal : undefined)};
+  const transaction = editingId && state.transactions.find(t => t.id === editingId);
+  if (editingId && !transaction) return toast('⚠️ El movimiento ya no está disponible. Cierra y vuelve a abrir el formulario.');
+  const savedId = editingId || uid();
+  if (!saveChange(() => {
+    if (transaction) Object.assign(transaction, data);
+    else state.transactions.push({id:savedId, created:Date.now(), ...data});
+  }, txDialog)) return;
+  txDialog.close();
   const mov = cycleView()?cycleMonthForDate(data.date):data.date.slice(0,7);
   if (mov !== currentMonth){ currentMonth = mov; monthInput.value = mov; }
   renderAll(); toast(editingId ? 'Movimiento actualizado ✅' : 'Movimiento registrado ✅');
@@ -683,29 +736,39 @@ $('#txDup').onclick = () => {
   txDialog.close();
   setTimeout(() => { openTx(null, {type:t.type, catId:t.catId, amount:t.amount, method:t.method, desc:t.desc, goalId:t.goalId, date:todayISO()}); $('#txTitle').textContent = 'Duplicar movimiento'; }, 120);
 };
-$('#txDelete').onclick = async () => {
-  if (txMode === 'rec'){
-    if (!(await ask({title:'¿Eliminar este recurrente?', msg:'Los movimientos que ya registró se mantienen.'}))) return;
-    state.recurring = state.recurring.filter(r => r.id !== editingId);
-    save(); txDialog.close(); renderAll(); return toast('Recurrente eliminado');
-  }
-  const id = editingId; txDialog.close(); delTxUndo(id);
+$('#txDelete').onclick = () => {
+  if (delTxUndo(editingId)) txDialog.close();
 };
-$('#fab').onclick = () => activeTab()==='goals'?openGoal():(activeTab() === 'movs' && movView === 'rec' ? openRec() : openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {})); // el + respeta el día seleccionado en Calendario
-$('#fab').insertAdjacentHTML('beforeend','<span class="fab-label">Nuevo</span>');
-// El botón conserva su posición flotante durante el desplazamiento y el toque.
+$('#fab').onclick = () => activeTab()==='goals'?openGoal():openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {}); // el + respeta el día seleccionado en Calendario
+// En la barra táctil, el botón se desvanece al desplazar y vuelve de inmediato al enfocarlo con el teclado.
+const fabDock=matchMedia('(max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
+const fabTouch=matchMedia('(pointer:coarse)');
+const creationButton=$('#fab');
+let fabScrollTimer;
+function showFloatingNew(){clearTimeout(fabScrollTimer);creationButton.classList.remove('fab-scroll-hidden');}
+function fadeFloatingNewOnScroll(){
+  if(!fabDock.matches||!fabTouch.matches)return;
+  if(creationButton.hidden||document.querySelector('dialog[open]')||creationButton.matches(':focus-visible'))return;
+  creationButton.classList.add('fab-scroll-hidden');
+  clearTimeout(fabScrollTimer);
+  fabScrollTimer=setTimeout(showFloatingNew,360);
+}
+window.addEventListener('scroll',fadeFloatingNewOnScroll,{capture:true,passive:true});
+creationButton.addEventListener('focus',showFloatingNew);
+fabTouch.addEventListener('change',showFloatingNew);
+fabDock.addEventListener('change',()=>{showFloatingNew();updateCreationControls();moveViewInd();});
 const txPhone=matchMedia('(max-width:700px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
-function showTxDialog(preferredFocus){
+function showTxDialog(){
  resizeTxViewport();
  txDialog.showModal();
- const focus=txPhone.matches ? txDialog.querySelector('.dlg-head [data-close]') : preferredFocus||$('#fAmount');
+ const focus=txPhone.matches ? txDialog.querySelector('.dlg-head [data-close]') : $('#fAmount');
  focus.focus({preventScroll:true});
  txDialog.querySelector('.dlg-body').scrollTop=0;
 }
 // En el celular el teclado tapa la parte baja de la pantalla: la hoja se apoya sobre él y el campo activo queda a la vista.
-function keepTxFieldVisible(){
- const a=document.activeElement,body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!a||!body.contains(a))return;
- const b=body.getBoundingClientRect(),r=a.getBoundingClientRect();
+function keepTxFieldVisible(field=document.activeElement){
+ const body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!field||!body.contains(field))return;
+ const b=body.getBoundingClientRect(),r=field.getBoundingClientRect();
  if(r.bottom>b.bottom-8)body.scrollTop+=r.bottom-b.bottom+8;else if(r.top<b.top+8)body.scrollTop-=b.top+8-r.top;
 }
 let txViewportRef={w:0,h:0},txViewportFrame=0;
@@ -730,9 +793,8 @@ window.visualViewport?.addEventListener('resize',scheduleTxViewport);
 window.visualViewport?.addEventListener('scroll',scheduleTxViewport);
 // Solo los campos editables requieren compensar el teclado. Desplazar un botón
 // entre pointerdown y click puede cancelar el toque en WebKit.
-txDialog.addEventListener('focusin',e=>{if(e.target.matches('input,textarea,select'))requestAnimationFrame(keepTxFieldVisible);});
+txDialog.addEventListener('focusin',e=>{if(e.target.matches('input,textarea,select'))requestAnimationFrame(()=>keepTxFieldVisible());});
 resizeTxViewport();
-$('#btnNewTx').onclick = () => openTx();
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 
 /* Re-dibuja sin perder el campo al que el usuario pasó con Tab o clic */
@@ -749,9 +811,17 @@ function keepFocus(render){
 
 // Una acción global, contextual y ausente en pantallas de configuración.
 function updateCreationControls(){
- const button=$('#fab'),tab=activeTab(),rec=tab==='movs'&&movView==='rec';
+ const button=$('#fab'),tab=activeTab();
+ const inline=fabDock.matches&&tab==='movs'&&movView==='cal';
+ const parent=inline?$('#tab-movs>.toolbar'):document.body;
+ if(button.parentElement!==parent){
+  const focused=document.activeElement===button;
+  if(inline)parent.append(button);
+  else parent.insertBefore(button,$('#toTop').nextSibling);
+  button.classList.toggle('calendar-create',inline);
+  showFloatingNew();
+  if(focused)button.focus({preventScroll:true});
+ }
  button.hidden=bothMode||['settings','cats'].includes(tab)||(tab==='goals'&&!$('#btnNewGoal').hidden);
- button.title=tab==='goals'?'Nueva meta':rec?'Nuevo recurrente':'Nuevo movimiento';button.setAttribute('aria-label',button.title);
- button.querySelector('.fab-label').textContent=button.title;
- $('#btnNewTx').hidden=true;$('#btnNewRec').hidden=true;
+ button.title=tab==='goals'?'Nueva meta':'Nuevo movimiento';button.setAttribute('aria-label',button.title);
 }

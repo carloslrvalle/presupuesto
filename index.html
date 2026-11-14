@@ -68,8 +68,8 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <body>
 <div id="boot" role="status" aria-live="polite"><img class="boot-mark" src="logo.png" alt="" width="220" height="220" fetchpriority="high"><strong>Presupuesto</strong><span class="boot-caption">Abriendo tu presupuesto</span><noscript>Activa JavaScript para abrir la aplicación.</noscript></div>
 <!-- Los estilos en cuerpo permiten pintar primero la entrada crítica. Scripts conservan su orden. -->
-<link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="fonts.css">
 
 <header class="topbar">
   <div class="wrap">
@@ -88,14 +88,14 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
   </div>
   <div class="wrap">
-    <nav class="tabs" id="tabs">
-      <span class="tab-ind" id="tabInd"></span>
-      <button data-tab="dashboard" class="active"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="tb-t">Resumen</span></button>
-      <button data-tab="movs"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></span><span class="tb-t"><span class="hide-m">Movimientos</span><span class="show-m">Movim.</span></span></button>
-      <button data-tab="budget"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span><span class="tb-t"><span class="hide-m">Presupuesto</span><span class="show-m">Presup.</span></span></button>
-      <button data-tab="goals"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/></svg></span><span class="tb-t">Metas</span></button>
-      <button data-tab="analysis"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg></span><span class="tb-t">Análisis</span></button>
-      <button data-tab="cats"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.172 2a2 2 0 0 1 1.414.586l6.71 6.71a2.4 2.4 0 0 1 0 3.408l-4.592 4.592a2.4 2.4 0 0 1-3.408 0l-6.71-6.71A2 2 0 0 1 6 9.172V3a1 1 0 0 1 1-1z"/><path d="M2 7v6.172a2 2 0 0 0 .586 1.414l6.71 6.71a2.4 2.4 0 0 0 3.191.193"/><circle cx="10.5" cy="6.5" r=".5" fill="currentColor"/></svg></span><span class="tb-t"><span class="hide-m">Categorías</span><span class="show-m">Categ.</span></span></button>
+    <nav class="tabs" id="tabs" aria-label="Navegación principal">
+      <span class="tab-ind" id="tabInd" aria-hidden="true"></span>
+      <button data-tab="dashboard" type="button" aria-label="Resumen" aria-current="page" class="active"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="tb-t">Resumen</span></button>
+      <button data-tab="movs" type="button" aria-label="Movimientos"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg></span><span class="tb-t">Movimientos</span></button>
+      <button data-tab="budget" type="button" aria-label="Presupuesto"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span><span class="tb-t">Presupuesto</span></button>
+      <button data-tab="goals" type="button" aria-label="Metas"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span><span class="tb-t">Metas</span></button>
+      <button data-tab="analysis" type="button" aria-label="Análisis"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg></span><span class="tb-t">Análisis</span></button>
+      <button data-tab="cats" type="button" aria-label="Categorías"><span class="tb-i"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.172 2a2 2 0 0 1 1.414.586l6.71 6.71a2.4 2.4 0 0 1 0 3.408l-4.592 4.592a2.4 2.4 0 0 1-3.408 0l-6.71-6.71A2 2 0 0 1 6 9.172V3a1 1 0 0 1 1-1z"/><path d="M2 7v6.172a2 2 0 0 0 .586 1.414l6.71 6.71a2.4 2.4 0 0 0 3.191.193"/><circle cx="10.5" cy="6.5" r=".5" fill="currentColor"/></svg></span><span class="tb-t">Categorías</span></button>
     </nav>
   </div>
 </header>
@@ -129,19 +129,16 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <!-- MOVIMIENTOS -->
   <section class="tab" id="tab-movs">
     <div class="toolbar">
-      <div class="vseg" id="movView"><span class="vseg-ind"></span><button type="button" data-view="list" class="active"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Lista</button><button type="button" data-view="cal"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg>Calendario</button><button type="button" data-view="rec"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Recurrentes</button></div>
-      <span class="spacer"></span>
+      <div class="vseg" id="movView" role="group" aria-label="Vista de movimientos"><span class="vseg-ind" aria-hidden="true"></span><button type="button" data-view="list" aria-pressed="true" class="active"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Lista</button><button type="button" data-view="cal" aria-pressed="false"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg>Calendario</button></div>
       <button class="btn" id="btnSelect" title="Seleccionar varios para borrarlos"><span class="sel-ic"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="sel-t">Seleccionar</span></button>
-      <button class="btn primary" id="btnNewTx"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nuevo movimiento</button>
-      <button class="btn primary" id="btnNewRec" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nuevo recurrente</button>
     </div>
     <div class="mview" id="view-list">
       <div class="toolbar mov-filters">
-        
-        
-        <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
-        <select id="fltMethod" aria-label="Filtrar por método"></select></div><button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
         <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar descripción, categoría o monto…"></div>
+        <button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
+        <button type="button" class="btn mov-filter-clear" id="movFilterClear" aria-label="Borrar filtros" title="Borrar filtros" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Borrar filtros</span></button>
+        <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
+        <select id="fltMethod" aria-label="Filtrar por método"></select></div>
       </div>
       <div class="card">
         <div class="small muted" id="movSummary"></div>
@@ -150,19 +147,10 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
     <div class="mview" id="view-cal" hidden>
       <div class="grid-cal">
-        <div class="card"><div class="cal" id="calGrid"></div><div class="cal-currency"><span class="calendar-desktop-note">Elige otro día para cambiar el detalle.</span><span class="calendar-mobile-note">Toca otro día para cambiar el detalle de ingresos, gastos y movimientos.</span></div><div class="cal-legend small muted"><span class="lg-scale"><i></i><i></i><i></i><i></i></span><span>Gastos</span><span class="lg-scale inc"><i></i><i></i><i></i><i></i></span><span>Ingresos</span><span class="cal-key2"><b class="cd-hot">●</b> muy alto</span><span class="cal-key"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg> recurrente pendiente</span></div></div>
+        <div class="card"><div class="cal" id="calGrid" role="group" aria-label="Días del mes"></div><div class="cal-currency"><span class="calendar-desktop-note">Usa las flechas para cambiar de día.</span><span class="calendar-mobile-note">Toca un día para ver sus movimientos.</span></div><div class="cal-legend small muted"><span class="lg-scale"><i></i><i></i><i></i><i></i></span><span>Gastos</span><span class="lg-scale inc"><i></i><i></i><i></i><i></i></span><span>Ingresos</span><span class="cal-key2"><b class="cd-hot">●</b> muy alto</span></div></div>
         <div class="card" id="calDay"></div>
       </div>
       <details class="analysis-detail cal-summary" id="calSummary"><summary><span>Ver resumen</span><small id="calSummaryMonth"></small></summary><div class="analysis-detail-body"><div class="cal-stats" id="calStats"></div><h3 class="cal-week-heading">Gastos por semana</h3><dl class="cal-week-totals" id="calWeekTotals"></dl></div></details>
-    </div>
-    <div class="mview" id="view-rec" hidden>
-      <div class="card"><h3 class="rec-upcoming-heading"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v3"/><path d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338"/><path d="M3 9h5.859"/><path d="M8 2v3"/><circle cx="16" cy="16" r="6"/></svg> <span class="rec-upcoming-title">Próximos 7 días</span><span id="recUpcomingRange"></span><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Recurrentes: ingresos y gastos que se repiten cada mes. Los automáticos se registran solos en su día; los manuales esperan tu confirmación en «Por confirmar»."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button></h3><div id="recUpcoming"></div></div>
-      <div class="card sug-card" id="recSuggest" hidden style="margin-top:16px"></div>
-      <div class="card" style="margin-top:16px"><h3 id="recPendingTitle">Por confirmar</h3><div id="recPending"></div></div>
-      <div class="grid2">
-        <div class="card"><h3><span class="ui-ic" data-e="💸"></span>Gastos recurrentes</h3><div id="recExpense"></div></div>
-        <div class="card"><h3><span class="ui-ic" data-e="💰"></span>Ingresos recurrentes</h3><div id="recIncome"></div></div>
-      </div>
     </div>
   </section>
 
@@ -189,8 +177,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <!-- METAS -->
   <section class="tab" id="tab-goals">
     <div class="toolbar">
-      
-      <span class="spacer"></span><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Aporta con «Aportar», o elige la meta al registrar un ingreso o un gasto en tu categoría de ahorro."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
       <button class="btn primary" id="btnNewGoal" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nueva meta</button>
     </div>
     <div class="goals-grid" id="goalsGrid"></div>
@@ -198,11 +184,12 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
   <!-- ANÁLISIS -->
   <section class="tab" id="tab-analysis">
-    <div class="toolbar">
+    <div class="toolbar analysis-toolbar">
       <div class="year-nav"><button id="yearPrev" title="Año anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="yearLabel"></span><button id="yearNext" title="Año siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
+      <p class="analysis-available small muted">Saldo disponible del año <b id="analysisAvailable"></b></p>
     </div>
     <div class="kpis" id="anKpis" role="group" aria-label="Indicador de análisis"></div>
-    <div class="card year-chart-card" id="yearChartCard" style="margin-top:16px">
+    <div class="card year-chart-card" id="yearChartCard">
       <div class="year-chart-head"><div><h3 id="analysisChartTitle">Ingresos mes a mes</h3><button type="button" class="info-tip" id="yearChartHelp" aria-label="Ayuda del gráfico" aria-describedby="yearChartDescription">ⓘ</button><span id="yearChartDescription" hidden></span></div>
         <div class="chart-modes" id="yearChartModes" role="group" aria-label="Serie del indicador"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div>
       </div>
@@ -210,13 +197,12 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
     <div class="analysis-details">
       <details class="analysis-detail" id="analysisCategoryDetail"><summary><span id="analysisDetailTitle">Detalle por categoría</span><small id="analysisDetailHint">Ingresos</small></summary><div class="analysis-detail-body"><div class="analysis-mobile" id="yearMobileDetail"></div><div class="table-wrap" id="yearTable" tabindex="0" role="region" aria-label="Detalle mensual del indicador"></div><div class="analysis-detail-actions" id="analysisMovementsAction"></div></div></details>
-      <details class="analysis-detail" id="analysisProjectionDetail"><summary><span>Proyección de cierre</span><small id="projContext">Escenario global del mes</small></summary><div class="analysis-detail-body" id="projDetail"></div></details>
     </div>
   </section>
 
   <!-- CATEGORÍAS -->
   <section class="tab" id="tab-cats">
-    
+    <p class="small muted category-instructions">Toca un nombre para editarlo. Para ordenar, arrastra el asa o enfócala y usa las flechas ↑ y ↓.</p>
     <div class="grid2" style="margin-top:0">
       <div class="card">
         <div class="toolbar" style="margin-bottom:6px"><h3 style="margin:0"><span class="ui-ic" data-e="💸"></span>Categorías de gasto</h3><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Toca el ícono para cambiar ícono y color, y el nombre para renombrarla. Arrastra desde ⋮⋮ para ordenar. Los montos se definen en Presupuesto."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button><span class="spacer"></span><button class="btn sm" data-addcat="expense"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Agregar</button></div>
@@ -244,11 +230,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <p class="small muted" id="themeNote" style="margin:-4px 0 12px"></p>
       <div class="theme-grid" id="themeGrid"></div>
     </div>
-    <div class="card" style="margin-bottom:16px">
-      <h3><span class="ui-ic" data-e="🔤"></span>Personalización · Tipografía</h3>
-      <p class="small muted" id="fontNote" style="margin:-4px 0 12px"></p>
-      <div class="font-grid" id="fontGrid"></div>
-    </div>
     <div class="grid2" style="margin-top:0">
       <div class="card">
         <h3><span class="ui-ic" data-e="💾"></span>Respaldo</h3>
@@ -271,7 +252,9 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
             <button class="btn" id="btnSyncPush"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg> Subir ahora</button>
             <button class="btn" id="btnSyncPull"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg> Traer de Sheets</button>
           </div>
-          <div class="small muted" id="syncInfo">Sin conectar.</div>
+          <div class="small muted" id="syncInfo" role="status">Sin conectar.</div>
+          <button type="button" class="btn" id="btnSyncCheck" hidden>Comprobar lectura de Sheets</button>
+          <div class="small muted" id="syncCheckResult" role="status"></div>
           <div class="persist-info small" id="persistInfo" hidden></div>
           <div class="conn-box" id="connBox" hidden>
             <div class="conn-h"><span id="connIc"></span>Link de conexión</div>
@@ -310,12 +293,13 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     <div class="dlg-head"><h3 style="margin:0" id="txTitle">Nuevo movimiento</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <div class="dlg-body">
       <div class="seg" id="txSeg"><button type="button" data-type="expense" class="active">Gasto</button><button type="button" data-type="income">Ingreso</button></div>
+      <p class="small" id="txContributionGoal" hidden></p>
       <div class="quick" id="txQuick" hidden></div>
       <div class="field tx-amount"><label for="fAmount">Monto en soles</label><input type="number" id="fAmount" class="amount-input" inputmode="decimal" step="0.01" min="0.01" required placeholder="0.00"></div>
       <div class="field"><div class="tx-field-head"><label>Categoría</label><button type="button" class="tx-text-button" id="txAllCategories" aria-expanded="false" aria-controls="txCategorySearchBox">Ver todas</button></div>
         <div class="tx-category-search" id="txCategorySearchBox" hidden><input type="search" id="txCategorySearch" placeholder="Buscar categoría" aria-label="Buscar categoría" autocomplete="off"></div>
         <div class="chips" id="fCatChips"></div>
-        <div class="tx-category-tools"><span class="tx-inline-note">Tus categorías más usadas</span><button type="button" class="tx-text-button" id="txNewCategory" aria-expanded="false" aria-controls="txCategoryEditor">＋ Nueva categoría</button></div>
+        <div class="tx-category-tools"><span class="tx-inline-note" id="txCategoryNote">Tus categorías más usadas</span><button type="button" class="tx-text-button" id="txNewCategory" aria-expanded="false" aria-controls="txCategoryEditor">＋ Nueva categoría</button></div>
         <div class="tx-category-editor" id="txCategoryEditor" hidden><h4>Nueva categoría</h4><div class="field"><label for="txCategoryName">Nombre</label><input type="text" id="txCategoryName" maxlength="60" autocomplete="off" placeholder="Ej. Mascotas"></div>
           <div class="tx-category-style"><input type="hidden" id="txCategoryColor" value="#6366f1"><button class="btn category-personalize" type="button" id="txCategoryIcon" aria-label="Personalizar ícono y color"></button></div>
           <div class="tx-category-error" id="txCategoryError" role="status"></div><div class="toolbar"><button type="button" class="btn sm" id="txCancelCategory">Cancelar</button><button type="button" class="btn sm primary" id="txCreateCategory">Crear y usar</button></div>
@@ -323,21 +307,13 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       </div>
       <div class="field"><label>Método de pago</label><div class="chips" id="fMethodChips"></div></div>
       <div class="field" id="fGoalField" hidden><label>Meta de ahorro (opcional)</label><div class="chips" id="fGoalChips"></div></div>
-      <button type="button" class="tx-more" id="txMore" aria-expanded="false" aria-controls="txDetails"><span class="tx-more-date" id="txMoreDate">Hoy</span><span class="tx-more-hint" id="txMoreHint">Agregar detalle</span></button>
       <div class="row2 tx-details" id="txDetails">
         <div class="field" id="fDateField"><label for="fDate">Fecha</label><input type="date" id="fDate"></div>
-        <div class="field" id="fDayField" hidden>
-          <label for="fDay">Fecha de cada mes</label>
-          <div class="rec-date-modes" role="group" aria-label="Elegir fecha mensual"><button type="button" id="recFixed" class="btn sm" aria-pressed="true">Día fijo</button><button type="button" id="recMonthEnd" class="btn sm" aria-pressed="false">Fin de mes</button></div>
-          <input type="number" id="fDay" inputmode="numeric" min="1" max="31" step="1" placeholder="1–31" aria-describedby="recDateHint recDatePreview">
-          <span class="small muted" id="recDateHint"></span>
-          <span class="rec-date-preview" id="recDatePreview" role="status" aria-live="polite"></span>
-        </div>
         <div class="field"><label for="fDesc">Descripción <span class="muted">(opcional)</span></label><input type="text" id="fDesc" placeholder="Ej. Mercado"></div>
       </div>
-      <label class="check" id="fAutoField" hidden><input type="checkbox" id="fAuto" checked> Registrar automáticamente cada mes en su día</label>
     </div>
     <div class="dlg-foot">
+      <button type="button" class="tx-more" id="txMore" aria-expanded="false" aria-controls="txDetails"><span class="tx-more-date" id="txMoreDate">Hoy</span><span class="tx-more-hint" id="txMoreHint">Fecha y descripción</span></button>
       <button type="button" class="btn danger" id="txDelete" style="margin-right:auto">Eliminar</button>
       <button type="button" class="btn" id="txDup" title="Crear uno igual con fecha de hoy">Duplicar</button>
       <button type="button" class="btn" data-close>Cancelar</button>
@@ -441,7 +417,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <script src="./app/dashboard.js"></script>
 <script src="./app/movements.js"></script>
 <script src="./app/budget.js"></script>
-<script src="./app/recurring.js"></script>
 <script src="./app/goals.js"></script>
 <script src="./app/analysis.js"></script>
 <script src="./app/appearance.js"></script>
@@ -449,6 +424,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <script src="./app/sync.js"></script>
 <script src="./app/profiles.js"></script>
 <script src="./app/settings.js"></script>
+<script src="./app/mobile.js"></script>
 <script src="./app/main.js"></script>
 
 </body>

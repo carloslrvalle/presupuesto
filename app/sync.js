@@ -1,4 +1,4 @@
-// Presupuesto: sync.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: sync.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Google Sheets ---------- */
 const SYNC_KEY = 'budgetPlanner.sync';
 let sync = (() => { try { return JSON.parse(localData.readText(SYNC_KEY)) || {}; } catch(e){ return {}; } })();
@@ -22,6 +22,9 @@ else if (sync.byProf && activeProfile !== 'p1') Object.assign(sync, {rev:0, pend
 const saveSync = () => { sync.byProf = sync.byProf || {}; sync.byProf[activeProfile] = {rev:Number(sync.rev) || 0, pending:!!sync.pending, lastSync:sync.lastSync || 0}; try { localData.writeText(SYNC_KEY, JSON.stringify(sync)); } catch(e){localSaveFailed=true;return false;}return true; };
 const syncOn = () => !localRecovery && !!(sync.url && sync.token);
 let pushTimer = null, pushing = false, pushTask = null, changeSeq = 0;
+let syncIssue = null;
+const syncScope = () => JSON.stringify([activeProfile, sync.url, sync.token]);
+const currentSyncIssue = () => syncIssue?.scope === syncScope() ? syncIssue : null;
 const SYNC_TIMEOUT_MS = 30000;
 const SYNC_RETRY_DELAYS = [5000, 15000, 30000, 60000, 60000];
 let syncRetryTimer = null, syncRetryAttempt = 0;
@@ -41,7 +44,8 @@ function scheduleSyncRecovery(err){
 function syncConflict(profile=activeProfile){return readSyncCache('conflict',profile);}
 function setBadge(kind='local',text='Guardado en este dispositivo'){
  const b=$('#syncBadge');if(!b)return;
- if(localSaveFailed){kind='err';text='No se pudo guardar aquí';}
+ if(localTabChanged){kind='err';text='Cambios en otra pestaña';}
+ else if(localSaveFailed){kind='err';text='No se pudo guardar aquí';}
  else if(syncConflict()){kind='err';text='Cambios por revisar';}
  else if(syncConflict(otherProfile())){kind='err';text='Cambios por revisar de '+profOf(otherProfile()).name;}
  else if(!syncOn()){kind='local';text='Guardado en este dispositivo';}
@@ -49,9 +53,14 @@ function setBadge(kind='local',text='Guardado en este dispositivo'){
  else if(sync.pending&&kind!=='busy'&&kind!=='err'){kind='pending';text='Pendiente de sincronizar';}
  text=text.replace(/^(☁️|⚠️)\s*/,'');b.hidden=false;b.className='sync-badge '+kind;b.title=text;b.setAttribute('aria-label',text+'. Ver estado del guardado');b.innerHTML='<span class="sb-t">'+esc(text)+'</span>';
 }
-function updateSyncInfo(err){
- const status=localSaveFailed?'No se pudo guardar en este dispositivo. Mantén la app abierta.':syncConflict()?'Hay cambios de dos dispositivos que necesitan revisión. Tu copia local se conserva.':!syncOn()?'Guardado en este dispositivo. Sin conectar a Sheets.':sync.pending?'Guardado en este dispositivo. Pendiente de confirmación en Sheets.':sync.lastSync?'Datos confirmados con Sheets.':'Guardado en este dispositivo. Sin confirmación de Sheets.';
- $('#syncInfo').textContent=status+(err?' '+err:'')+(sync.lastSync?' Última confirmación: '+new Date(sync.lastSync).toLocaleString('es-PE'):'');
+function updateSyncInfo(err, phase){
+ if (err === null) syncIssue = null;
+ else if (err) syncIssue = {scope:syncScope(), message:err, phase};
+ const conflict = syncConflict();
+ const status=localTabChanged?'Otra pestaña cambió los datos. Carga la copia más reciente para continuar.':localSaveFailed?'No se pudo guardar en este dispositivo. Mantén la app abierta.':conflict?'Hay cambios de dos dispositivos que necesitan revisión. Tu copia local se conserva.':!syncOn()?'Guardado en este dispositivo. Sin conectar a Sheets.':sync.pending?'Guardado en este dispositivo. Pendiente de confirmación en Sheets.':sync.lastSync?'Datos confirmados con Sheets.':'Guardado en este dispositivo. Sin confirmación de Sheets.';
+ const issue = syncOn() && !conflict && !localSaveFailed && !localTabChanged ? currentSyncIssue() : null;
+ const detail = issue ? (issue.phase === 'save' ? ' Falló el envío a Sheets. ' : ' Falló la carga desde Sheets. ') + issue.message : '';
+ $('#syncInfo').textContent=status+detail+(sync.lastSync?' Última confirmación: '+new Date(sync.lastSync).toLocaleString('es-PE'):'');
  const button=$('#syncReview');if(button){button.hidden=!syncConflict()&&!syncConflict(otherProfile());button.textContent=syncConflict()?'Revisar cambios entre dispositivos':'Revisar cambios de '+profOf(otherProfile()).name;}renderConnBox();
 }
 // Link personal que trae la URL y la clave (la parte después de # nunca sale del dispositivo)
@@ -82,7 +91,7 @@ async function askPersist(){
   } catch(e){}
 }
 window.addEventListener('appinstalled', () => setTimeout(askPersist, 800));
-async function callSheets(payload){
+async function callSheets(payload, {verifyOnly = false} = {}){
   const url = sync.url, token = sync.token, profile = activeProfile;
   const controller = new AbortController(); let timer;
   const timeout = new Promise((_, reject) => { timer = setTimeout(() => {
@@ -102,14 +111,19 @@ async function callSheets(payload){
   if (sync.url !== url || sync.token !== token || (!payload.profile && activeProfile !== profile)) throw new Error('La conexión o el usuario cambió durante la sincronización.');
   if (!j || typeof j !== 'object') throw new Error('Respuesta inválida de Sheets.');
   if (!j.ok){ const err = new Error(j.error || 'Error del script'); err.code=j.code;err.remote=j.data; err.retryable = /lock timeout|timed out|too many times|try again/i.test(err.message); throw err; }
+  if (j.data) validateStateData(j.data);
+  if (j.profiles?.list?.length) validateProfilesData(j.profiles);
+  if (verifyOnly) {
+    if (j.protocol !== 2) throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
+    if (!j.data) throw new Error('Sheets devolvió datos incompletos.');
+    return j;
+  }
   const connectionKey=sync.url+'|'+sync.token;
   if(settingsVerifiedConnection!==connectionKey){
     settingsVerifiedConnection=connectionKey;
     const config=$('#settingsConnectionConfig');if(config&&config.setExpanded)config.setExpanded(false);
     renderSettingsStatus();
   }
-  if(j.data)validateStateData(j.data);
-  if(j.profiles?.list?.length)validateProfilesData(j.profiles);
   if (j.profiles && Array.isArray(j.profiles.list) && j.profiles.list.length === 2 && (Number(j.profiles.u) || 0) > (Number(profiles.u) || 0)){ profiles = j.profiles; saveProfiles(); renderProfileUI(); }
   return j;
 }
@@ -120,6 +134,7 @@ function writeSyncCache(kind,value,profile=activeProfile){const key=syncCacheKey
 function rememberSyncBase(data,rev,profile=activeProfile){return writeSyncCache('base',{data:SyncCore.clone(data),rev:Number(rev)||0},profile);}
 function clearSyncConflict(profile=activeProfile){syncCacheMemory.delete(syncCacheKey('conflict',profile));localData.remove(syncCacheKey('conflict',profile));}
 function acceptSyncRemote(remote,profile=activeProfile){
+ if(localTabChanged||localRecovery)return false;
  if(!remote||!Array.isArray(remote.categories)||!Array.isArray(remote.transactions))throw new Error('Sheets devolvió datos incompletos. Se conserva la copia local.');
  validateStateData(remote);
  const base=readSyncCache('base',profile),local=SyncCore.clone(snapshot()),rev=Number(remote.rev)||0;
@@ -129,11 +144,32 @@ function acceptSyncRemote(remote,profile=activeProfile){
  const fresh=!base&&!local.transactions.length&&!local.goals.length&&!local.recurring.length&&!Object.keys(local.budgets||{}).length&&local.categories.length===seedCats.length&&local.categories.every(c=>!c.defaultBudget&&!c.archived&&!c.pay&&seedCats.some(s=>s.type===c.type&&s.name===c.name));
  const result=empty?{data:local,conflicts:[]}:fresh?{data:remote,conflicts:[]}:SyncCore.reconcile(base?.data||null,local,remote);
  if(result.conflicts.length){writeSyncCache('conflict',{remote:SyncCore.clone(remote),rev},profile);sync.pending=true;saveSync();setBadge('err','Cambios por revisar');updateSyncInfo();return false;}
- sync.rev=rev;sync.pending=!SyncCore.same(result.data,remote);result.data.rev=rev;
- if(!applyRemote(result.data,sync.pending)){sync.pending=true;saveSync();setBadge('err','No se pudo guardar aquí');return false;}
+ const pending=!SyncCore.same(result.data,remote);result.data.rev=rev;
+ if(!applyRemote(result.data,pending)){setBadge('err','No se pudo guardar aquí');return false;}
  rememberSyncBase(remote,rev,profile);return true;
 }
 const syncReview=document.createElement('button');syncReview.id='syncReview';syncReview.type='button';syncReview.className='btn';syncReview.textContent='Revisar cambios entre dispositivos';syncReview.hidden=true;$('#syncInfo').insertAdjacentElement('afterend',syncReview);
+const syncCheck = $('#btnSyncCheck');
+let syncCheckScope;
+syncCheck.onclick = async () => {
+  if (!syncOn()) return;
+  const scope = syncScope(), result = $('#syncCheckResult');
+  syncCheckScope = scope;
+  syncCheck.disabled = true;
+  result.textContent = 'Comprobando la lectura de Sheets…';
+  try {
+    const checked = await callSheets({action:'load', profiles:undefined}, {verifyOnly:true});
+    if (scope === syncScope()) {
+      const writeError = checked.writeStatus?.serviceEnabled === false ? checked.writeStatus.error : currentSyncIssue()?.phase === 'save' ? currentSyncIssue().message : '';
+      result.textContent = 'La hoja respondió y los datos son válidos. La comprobación solo hizo una lectura; no confirma que se pueda guardar.' + (writeError ? ' El guardado requiere atención: ' + writeError : '');
+    }
+  } catch (err) {
+    if (scope === syncScope()) result.textContent = err.message;
+  } finally {
+    if (scope !== syncScope()) result.textContent = '';
+    syncCheck.disabled = false;
+  }
+};
 const syncConflictDialog=document.createElement('dialog');syncConflictDialog.id='syncConflictDialog';syncConflictDialog.setAttribute('aria-labelledby','syncConflictTitle');document.body.append(syncConflictDialog);
 function syncConflictLabel(item,remote){
  const [collection,id,field]=item.path,names={categories:'Categoría',transactions:'Movimiento',recurring:'Recurrente',goals:'Meta',budgets:'Presupuesto',settings:'Ajuste',methods:'Métodos de pago',categoryOrder:'Orden de categorías'};
@@ -161,7 +197,7 @@ function openSyncConflicts(){
  syncConflictDialog.querySelector('form').onsubmit=e=>{e.preventDefault();if(profile!==activeProfile||url!==sync.url){syncConflictDialog.close();return;}
   const form=new FormData(e.target),choices={};result.conflicts.forEach((item,i)=>choices[item.key]=form.get('choice'+i));
   const latest=SyncCore.reconcile(readSyncCache('base')?.data||null,snapshot(),saved.remote,choices);if(latest.conflicts.length){openSyncConflicts();return;}
-  sync.rev=saved.rev;sync.pending=true;latest.data.rev=saved.rev;if(!applyRemote(latest.data,true))return;rememberSyncBase(saved.remote,saved.rev);clearSyncConflict();syncConflictDialog.close();changeSeq++;saveSync();setBadge('pending','Selección guardada aquí · Pendiente');updateSyncInfo();if(sync.auto)pushNow();
+  latest.data.rev=saved.rev;if(!applyRemote(latest.data,true))return;rememberSyncBase(saved.remote,saved.rev);clearSyncConflict();syncConflictDialog.close();changeSeq++;saveSync();setBadge('pending','Selección guardada aquí · Pendiente');updateSyncInfo();if(sync.auto)pushNow();
  };
  if(!syncConflictDialog.open)syncConflictDialog.showModal();
 }
@@ -222,23 +258,36 @@ function mergeData(a, b) {
 /* MERGE:end */
 
 function applyRemote(d, keepSync){
+  if(localTabChanged||localRecovery)return false;
   const previousCycleEnabled=cycleEnabled(),previousCycleDay=cycleDay();
   validateStateData(d);
   d = cleanState(d);
+  const previous = state;
+  state = {...previous, settings:{...previous.settings}};
   state.meta = d.meta && typeof d.meta === 'object' ? d.meta : (state.meta || {});
   state.categories = d.categories; state.transactions = d.transactions || []; state.budgets = d.budgets || {};
   if (Array.isArray(d.methods)) state.settings.methods = d.methods;
   if (Array.isArray(d.recurring)) state.recurring = d.recurring;
   if (Array.isArray(d.goals)) state.goals = d.goals;
   if(d.settings&&typeof d.settings==='object')SYNC_SETTINGS.forEach(k=>{if(Object.prototype.hasOwnProperty.call(d.settings,k))state.settings[k]=d.settings[k];else delete state.settings[k];});
-  if(['dashboard','budget'].includes(activeTab())&&(previousCycleEnabled!==cycleEnabled()||previousCycleDay!==cycleDay())){currentMonth=cycleEnabled()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;}
   state.updatedAt = d.updatedAt || Date.now();
+  const snapshotBeforeMigration = snapState();
+  const migrated = migrateVec();
+  if (!saveLocal()){
+    state = previous;
+    _txIdx = null;
+    setBadge('err','No se pudo guardar aquí');
+    updateSyncInfo();
+    return false;
+  }
+  if(['dashboard','budget'].includes(activeTab())&&(previousCycleEnabled!==cycleEnabled()||previousCycleDay!==cycleDay())){currentMonth=cycleEnabled()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;}
   if (d.rev != null) sync.rev = Number(d.rev) || 0;
-  if (!keepSync){sync.pending=false;sync.lastSync=Date.now();}
+  sync.pending=!!keepSync;
+  if (!keepSync) sync.lastSync=Date.now();
   saveSync();
-  _snapRec = snapState(); _txIdx = null;
-  if (migrateVec()) setTimeout(save, 0);
-  const persisted=saveLocal();renderAll();updateSyncInfo();return persisted;
+  _snapRec = snapshotBeforeMigration; _txIdx = null;
+  if (migrated) setTimeout(save, 0);
+  renderAll();updateSyncInfo();return true;
 }
 function pushNow(){
   if (pushTask) return pushTask;
@@ -247,7 +296,8 @@ function pushNow(){
 }
 async function performPush(){
  if(!syncOn()||localTabChanged)return false;clearTimeout(pushTimer);const profile=activeProfile,connection=sync.url+'|'+sync.token;let succeeded=false;pushing=true;
- const valid=()=>profile===activeProfile&&connection===sync.url+'|'+sync.token;
+ let phase = 'load';
+ const valid=()=>!localTabChanged&&!localRecovery&&profile===activeProfile&&connection===sync.url+'|'+sync.token;
  try{
   if(syncConflict()){setBadge('err','Cambios por revisar');updateSyncInfo();return false;}
   if(navigator.onLine===false){const err=new Error('Se enviará al recuperar la conexión.');err.retryable=true;throw err;}
@@ -255,19 +305,20 @@ async function performPush(){
   const loaded=await callSheets({action:'load'});if(loaded.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
   if(!valid())return false;
   if(!acceptSyncRemote(loaded.data,profile))return false;
-  if(!sync.pending){setBadge('ok','Sincronizado');updateSyncInfo();return true;}
+  if(!sync.pending){setBadge('ok','Sincronizado');updateSyncInfo(null);return true;}
   const sent=SyncCore.clone(snapshot()),seq=changeSeq,base=Number(sync.rev)||0;setBadge('busy','Enviando a Sheets…');
+  phase = 'save';
   const res=await callSheets({action:'save',data:sent,base});if(!valid())return false;
   if(res.protocol!==2||!Number.isInteger(res.rev)||res.rev<=base)throw new Error('Sheets no confirmó el guardado. Se conserva el pendiente.');
-  if(res.rev<Number(sync.rev)){setBadge(sync.pending?'pending':'ok',sync.pending?'Pendiente de sincronizar':'Sincronizado');updateSyncInfo();return true;}
+  if(res.rev<Number(sync.rev)){setBadge(sync.pending?'pending':'ok',sync.pending?'Pendiente de sincronizar':'Sincronizado');updateSyncInfo(null);return true;}
   rememberSyncBase(sent,res.rev,profile);sync.rev=res.rev;sync.lastSync=Date.now();
   sync.pending=seq!==changeSeq||!SyncCore.same(snapshot(),sent);saveSync();
-  setBadge(sync.pending?'pending':'ok',sync.pending?'Guardado aquí · Pendiente de sincronizar':'Sincronizado');updateSyncInfo();resetSyncRecovery();succeeded=true;return true;
+  setBadge(sync.pending?'pending':'ok',sync.pending?'Guardado aquí · Pendiente de sincronizar':'Sincronizado');updateSyncInfo(null);resetSyncRecovery();succeeded=true;return true;
  }catch(err){
   if(!valid())return false;
   sync.pending=true;saveSync();
   if(err.code==='REV_CONFLICT'&&err.remote){acceptSyncRemote(err.remote,profile);if(!syncConflict()){err.retryable=true;succeeded=true;}}
-  setBadge(syncConflict()?'err':err.retryable?'pending':'err',syncConflict()?'Cambios por revisar':err.retryable?'Guardado aquí · Pendiente de sincronizar':'Sin confirmar en Sheets');updateSyncInfo(err.code==='REV_CONFLICT'?null:err.message);scheduleSyncRecovery(err);return false;
+  setBadge(syncConflict()?'err':err.retryable?'pending':'err',syncConflict()?'Cambios por revisar':err.retryable?'Guardado aquí · Pendiente de sincronizar':'Sin confirmar en Sheets');updateSyncInfo(err.code==='REV_CONFLICT'?null:err.message, phase);scheduleSyncRecovery(err);return false;
  }finally{pushing=false;if(valid()&&succeeded&&sync.pending&&sync.auto&&!syncConflict()){clearTimeout(pushTimer);pushTimer=setTimeout(pushNow,1200);}}
 }
 function schedulePush(){
@@ -277,7 +328,7 @@ function schedulePush(){
 }
 const startupTasks=new Map();
 async function startupSync(){
- if(!syncOn())return;const key=activeProfile+'|'+sync.url+'|'+sync.token;if(startupTasks.has(key))return startupTasks.get(key);
+ if(!syncOn()||localTabChanged)return false;const key=activeProfile+'|'+sync.url+'|'+sync.token;if(startupTasks.has(key))return startupTasks.get(key);
  const task=startupLoad().finally(()=>startupTasks.delete(key));startupTasks.set(key,task);return task;
 }
 async function startupLoad(){
@@ -288,11 +339,14 @@ async function startupLoad(){
   // Brillo en indicadores mientras llega la versión de Sheets; las cifras locales siguen visibles.
   document.body.classList.add('syncing');
   const j=await callSheets({action:'load'}).finally(()=>document.body.classList.remove('syncing'));if(j.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
-  if(profile!==activeProfile||connection!==sync.url+'|'+sync.token)return;
+  if(localTabChanged||profile!==activeProfile||connection!==sync.url+'|'+sync.token)return false;
   if(!acceptSyncRemote(j.data,profile))return;
   if(sync.pending){setBadge('pending','Guardado aquí · Pendiente de sincronizar');if(sync.auto&&!await pushNow())return false;}
-  else setBadge('ok','Sincronizado');updateSyncInfo();return true;
- }catch(err){if(profile!==activeProfile||connection!==sync.url+'|'+sync.token)return;setBadge('err','Sin confirmar en Sheets');updateSyncInfo(err.message);scheduleSyncRecovery(err);}
+  else setBadge('ok','Sincronizado');
+  if (currentSyncIssue()?.phase === 'load' || !sync.pending) updateSyncInfo(null);
+  else updateSyncInfo();
+  return true;
+ }catch(err){if(localTabChanged||profile!==activeProfile||connection!==sync.url+'|'+sync.token)return false;setBadge('err','Sin confirmar en Sheets');updateSyncInfo(err.message, 'load');scheduleSyncRecovery(err);return false;}
 }
 
 $('#btnSyncConnect').onclick=async()=>{
@@ -310,7 +364,7 @@ $('#syncAuto').addEventListener('change', e => { sync.auto = e.target.checked; s
 window.addEventListener('online', () => { resetSyncRecovery(); if (syncOn() && sync.auto) startupSync().then(pushOtherPending); });
 window.addEventListener('pagehide',()=>{if(!localTabChanged){saveLocal();saveSync();}});
 window.addEventListener('storage',e=>{if(e.key!==storeKey()||!e.newValue||localTabChanged)return;localTabChanged=true;
- const dialog=document.createElement('dialog');dialog.className='sync-tab-dialog';dialog.innerHTML='<h3>Hay cambios en otra pestaña</h3><p>Esta pestaña quedó desactualizada y dejará de guardar. Puedes descargar su copia antes de cargar los datos nuevos.</p><div class="dlg-actions"><button type="button" class="btn" data-tab-copy>Descargar esta copia</button><button type="button" class="btn primary" data-tab-reload>Cargar datos nuevos</button></div>';document.body.append(dialog);dialog.oncancel=e=>e.preventDefault();dialog.querySelector('[data-tab-copy]').onclick=()=>download('presupuesto-pestana-'+todayISO()+'.json',JSON.stringify(state,null,2),'application/json');dialog.querySelector('[data-tab-reload]').onclick=()=>location.reload();dialog.showModal();setBadge('err','Cambios en otra pestaña');
+ const dialog=document.createElement('dialog');dialog.className='sync-tab-dialog';dialog.innerHTML='<h3>Hay cambios en otra pestaña</h3><p>Esta pestaña quedó desactualizada y dejará de guardar. Puedes descargar su copia antes de cargar los datos nuevos.</p><div class="dlg-actions"><button type="button" class="btn" data-tab-copy>Descargar esta copia</button><button type="button" class="btn primary" data-tab-reload>Cargar datos nuevos</button></div>';document.body.append(dialog);dialog.oncancel=e=>e.preventDefault();dialog.querySelector('[data-tab-copy]').onclick=()=>download('presupuesto-pestana-'+todayISO()+'.json',JSON.stringify(state,null,2),'application/json');dialog.querySelector('[data-tab-reload]').onclick=()=>location.reload();dialog.showModal();setBadge('err','Cambios en otra pestaña');updateSyncInfo();
 });
 window.addEventListener('offline',()=>{setBadge('pending','Sin conexión');updateSyncInfo();});
 // Abierta desde el enlace de Apps Script (celular): la URL de sincronización se completa sola

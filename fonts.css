@@ -1,10 +1,22 @@
-@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/plusjakarta-400.woff2') format('woff2')}
-@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:500;font-display:swap;src:url('./fonts/plusjakarta-500.woff2') format('woff2')}
-@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:600;font-display:swap;src:url('./fonts/plusjakarta-600.woff2') format('woff2')}
-@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:700;font-display:swap;src:url('./fonts/plusjakarta-700.woff2') format('woff2')}
-@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url('./fonts/inter-400.woff2') format('woff2')}
-@font-face{font-family:'Geist';font-style:normal;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/Geist/webfonts/Geist%5Bwght%5D.woff2') format('woff2')}
-@font-face{font-family:'Geist';font-style:italic;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/Geist/webfonts/Geist-Italic%5Bwght%5D.woff2') format('woff2')}
-@font-face{font-family:'Geist Mono';font-style:normal;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/GeistMono/webfonts/GeistMono%5Bwght%5D.woff2') format('woff2')}
-@font-face{font-family:'Geist Mono';font-style:italic;font-weight:100 900;font-display:swap;src:url('./fonts/geist-font/GeistMono/webfonts/GeistMono-Italic%5Bwght%5D.woff2') format('woff2')}
-
+@font-face{font-family:"Anthropic Sans Text";font-style:normal;font-weight:400;font-display:swap;src:url("./fonts/anthropic/sans-text-400.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Text";font-style:normal;font-weight:500;font-display:swap;src:url("./fonts/anthropic/sans-text-500.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Text";font-style:normal;font-weight:600;font-display:swap;src:url("./fonts/anthropic/sans-text-600.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Text";font-style:normal;font-weight:700;font-display:swap;src:url("./fonts/anthropic/sans-text-700.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Text";font-style:italic;font-weight:400;font-display:swap;src:url("./fonts/anthropic/sans-text-400-italic.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Display";font-style:normal;font-weight:400;font-display:swap;src:url("./fonts/anthropic/sans-display-400.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Display";font-style:normal;font-weight:500;font-display:swap;src:url("./fonts/anthropic/sans-display-500.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Display";font-style:normal;font-weight:600;font-display:swap;src:url("./fonts/anthropic/sans-display-600.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Display";font-style:normal;font-weight:700;font-display:swap;src:url("./fonts/anthropic/sans-display-700.otf") format("opentype")}
+@font-face{font-family:"Anthropic Sans Display";font-style:italic;font-weight:400;font-display:swap;src:url("./fonts/anthropic/sans-display-400-italic.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Text";font-style:normal;font-weight:400;font-display:swap;src:url("./fonts/anthropic/serif-text-400.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Text";font-style:normal;font-weight:500;font-display:swap;src:url("./fonts/anthropic/serif-text-500.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Text";font-style:normal;font-weight:600;font-display:swap;src:url("./fonts/anthropic/serif-text-600.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Text";font-style:normal;font-weight:700;font-display:swap;src:url("./fonts/anthropic/serif-text-700.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Text";font-style:italic;font-weight:400;font-display:swap;src:url("./fonts/anthropic/serif-text-400-italic.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Display";font-style:normal;font-weight:400;font-display:swap;src:url("./fonts/anthropic/serif-display-400.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Display";font-style:normal;font-weight:500;font-display:swap;src:url("./fonts/anthropic/serif-display-500.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Display";font-style:normal;font-weight:600;font-display:swap;src:url("./fonts/anthropic/serif-display-600.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Display";font-style:normal;font-weight:700;font-display:swap;src:url("./fonts/anthropic/serif-display-700.otf") format("opentype")}
+@font-face{font-family:"Anthropic Serif Display";font-style:italic;font-weight:400;font-display:swap;src:url("./fonts/anthropic/serif-display-400-italic.otf") format("opentype")}
+@font-face{font-family:"Anthropic Mono Web";font-style:normal;font-weight:400;font-display:swap;src:url("./fonts/anthropic/mono-400.otf") format("opentype")}
+@font-face{font-family:"Anthropic Mono Web";font-style:italic;font-weight:400;font-display:swap;src:url("./fonts/anthropic/mono-400-italic.otf") format("opentype")}

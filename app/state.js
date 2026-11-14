@@ -1,4 +1,4 @@
-// Presupuesto: state.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: state.js — ver README.md del proyecto para responsabilidades y orden de carga.
 const localData=BudgetStorage.create(()=>window.localStorage);
 const STORE = 'budgetPlanner.v1';
 // Usuarios: cada perfil guarda sus datos aparte (mismo link y misma clave)
@@ -75,6 +75,28 @@ function stampChanges(){
 }
 function save(){ if(localRecovery||localTabChanged){toast(localRecovery?'⚠️ Recupera el perfil antes de editar.':'⚠️ Hay cambios en otra pestaña. Recarga antes de seguir editando.');return false;} _txIdx = null; stampChanges(); state.updatedAt = Date.now(); if(!saveLocal()){setBadge('err','No se pudo guardar aquí');updateSyncInfo();return false;} schedulePush(); return true; }
 
+function saveChange(change, dialog){
+  if (localRecovery || localTabChanged) return save();
+  const previous = SyncCore.clone(state), previousSnapshot = _snapRec;
+  if (change() === false) return false;
+  if (save()) return true;
+  state = previous;
+  _snapRec = previousSnapshot;
+  _txIdx = null;
+  if (dialog?.open){
+    let message = dialog.querySelector('.dialog-save-error');
+    if (!message){
+      message = document.createElement('p');
+      message.className = 'dialog-save-error';
+      message.setAttribute('role', 'alert');
+      dialog.querySelector('.dlg-foot').prepend(message);
+      dialog.addEventListener('close', () => message.remove(), {once:true});
+    }
+    message.textContent = 'No se pudo guardar. Libera espacio y vuelve a intentar.';
+  }
+  return false;
+}
+
 // Contrato común para respaldos y datos recibidos. Rechaza antes de cambiar la copia vigente.
 function validateStateData(st){
   const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
@@ -125,7 +147,9 @@ function validateStateData(st){
 }
 // Normaliza formatos locales antiguos; nunca convierte una fecha civil imposible en otra.
 function cleanState(st){
-  if (!st || typeof st !== 'object') return st;
+  if (!st || !Array.isArray(st.categories) || !Array.isArray(st.transactions)){
+    throw new Error('Datos inválidos: faltan categorías o movimientos');
+  }
   const arr = v => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
   st.categories = arr(st.categories); st.recurring = arr(st.recurring); st.goals = arr(st.goals);
   st.transactions = arr(st.transactions).map(t => {

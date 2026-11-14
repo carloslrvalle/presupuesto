@@ -1,4 +1,4 @@
-// Presupuesto: budget.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: budget.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Presupuesto ---------- */
 function budgetTable(type){
   const m = currentMonth, cats = catsOf(type).filter(c => !isArch(c, cycleView()?cyclePeriod(m).start.slice(0,7):m) || planReal(m, c.id)), isE = type === 'expense';
@@ -8,21 +8,22 @@ function budgetTable(type){
     const sav = isE && isSavingCat(c.id); // en la categoría de ahorro, pasarse del plan es bueno
     const diff = isE && !sav ? b - r : r - b, raw = b > 0 ? r / b * 100 : 0, pct = Math.min(raw, 100);
     const status=budgetStatus(r,b),alert=isE&&!sav?(status==='over'?'over':status==='near'?'warn':status==='complete'?'complete':''):'';
-    const amountChars = Math.max(String(b || 0).length, fmt(r).length);
+    const usageHint = alert === 'warn' ? ' title="Cerca del límite"' : alert === 'over' ? ' title="Presupuesto superado"' : '';
+    const largeAmounts = Math.max(Math.abs(b), Math.abs(r)) >= 100000;
     const incomeLabel = !b ? (r ? 'No previsto' : 'Sin plan') : diff > .005 ? 'Adicional' : diff < -.005 ? 'Por recibir' : 'Completo';
     const incomeDiff = diff > .005 ? `<b class="pos">+${fmt(diff)}</b>` : diff < -.005 ? `<span class="muted">−${fmt(-diff)}</span>` : `<span class="muted">${fmt(0)}</span>`;
-    return `<tr class="${alert}" style="--budget-amount-ch:${amountChars};--budget-plan-ch:${String(b || 0).length}">
+    return `<tr class="${alert}${largeAmounts ? ' large-amounts' : ''}" style="--budget-plan-ch:${String(b || 0).length}">
       <td><div class="catcell"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span class="cname">${esc(c.name)}</span></div></td>
-      <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<span class="budget-plan-field"><span class="budget-currency" aria-hidden="true">S/</span><input type="number" inputmode="decimal" class="budget-input" min="0" step="10" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0"></span>` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
+      <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<label class="budget-plan-field"><span class="budget-currency" aria-hidden="true">S/</span><input type="number" inputmode="decimal" class="budget-input" min="0" step="0.01" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0"></label>` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
       <td class="num${r ? '' : ' muted'}" data-mobile-label="Real"><span class="budget-real">${fmt(r)}</span>${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
       <td class="num" data-mobile-label="${isE?(sav?(diff>=0?'Ahorro adicional':'Por ahorrar'):'Disponible'):incomeLabel}">${!b && !r ? '<span class="muted">—</span>' : isE ? (sav ? (diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`) : `<b class="${diff >= 0 ? 'pos' : 'neg'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}`) : `${incomeDiff}${!b && r ? '<small class="income-unplanned">No previsto</small>' : ''}`}</td>
-      <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}">${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
+      <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}"${usageHint}>${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
     </tr>`;
   }).join('');
   const td = isE ? tb - tr : tr - tb;
   const tdCell = isE ? `<td class="num ${td >= 0 ? 'pos' : 'neg'}">${fmt(td)}</td>` : `<td class="num ${td > .005 ? 'pos' : 'muted'}">${td > .005 ? '+' : td < -.005 ? '−' : ''}${fmt(Math.abs(td))}</td>`;
   const wideValues = [tb,tr,td,...cats.map(c=>planBudget(m,c.id)),...cats.map(c=>planReal(m,c.id))].some(v=>Math.abs(v)>=100000);
-  const mobileTotal = `<div class="budget-mobile-total${wideValues?' large-values':''}" aria-label="Totales de ${isE?'gastos':'ingresos'}"><strong>Total de ${isE?'gastos':'ingresos'}</strong><div><span>Plan</span><b data-budget-total="plan">${fmt(tb)}</b></div><div><span>Real</span><b data-budget-total="real">${fmt(tr)}</b></div><div><span>${isE?(td<0?'Excedido':'Disponible'):(tb<=0?(tr>0?'No previsto':'Sin plan'):td>.005?'Adicional':td<-.005?'Por recibir':'Completo')}</span><b data-budget-total="remaining" class="${isE?(td>=0?'pos':'neg'):(td>0?'pos':'muted')}">${fmt(Math.abs(td))}</b></div><div><span>Avance</span><b>${tb ? pctTxt(tr / tb * 100) : '—'}</b></div></div>`;
+  const mobileTotal = `<div class="budget-mobile-total" aria-label="Totales de ${isE?'gastos':'ingresos'}"><strong>Total de ${isE?'gastos':'ingresos'}</strong><div><span>Plan</span><b data-budget-total="plan">${fmt(tb)}</b></div><div><span>Real</span><b data-budget-total="real">${fmt(tr)}</b></div><div><span>${isE?(td<0?'Excedido':'Disponible'):(tb<=0?(tr>0?'No previsto':'Sin plan'):td>.005?'Adicional':td<-.005?'Por recibir':'Completo')}</span><b data-budget-total="remaining" class="${isE?(td>=0?'pos':'neg'):(td>0?'pos':'muted')}">${fmt(Math.abs(td))}</b></div><div><span>Avance</span><b>${tb ? pctTxt(tr / tb * 100) : '—'}</b></div></div>`;
   return mobileTotal + `<table class="bud-table${wideValues?' wide-values':''}">
     <thead><tr><th>Categoría</th><th class="num c-plan"><span class="hide-m">${isE ? 'Presupuesto' : 'Esperado'}</span><span class="show-m">Plan</span></th><th class="num c-real">Real</th><th class="num c-diff"><span class="hide-m">${isE ? 'Disponible' : 'Variación'}</span><span class="show-m">${isE ? 'Queda' : 'Variación'}</span></th><th class="num c-av" title="Avance">%</th></tr></thead>
     <tbody>${body}</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(tb)}</td><td class="num">${fmt(tr)}</td>${tdCell}<td class="av"><span class="av-pct${isE && tr > tb ? ' over' : ''}">${tb ? pctTxt(tr / tb * 100) : '—'}</span></td></tr></tfoot></table>`;
@@ -78,26 +79,55 @@ function renderBudget(){
   $('#budIncome').innerHTML = budgetTable('income');
   if (before.length) document.querySelectorAll('#tab-budget tfoot td').forEach((t, i) => { if (before[i] !== undefined && before[i] !== t.textContent && !reduceMotion()) motionAnimate(t,[{opacity:.55},{opacity:1}],'fast'); });
   animateBars($('#tab-budget'));
+  if (typeof renderMobileBudget === 'function') renderMobileBudget();
+}
+function saveBudgetAmount(id, value){
+  const m = currentMonth;
+  state.budgets[m] = state.budgets[m] || {};
+  state.budgets[m][cycleView()?cycleBudgetKey(id):id] = Math.max(0, parseFloat(value) || 0);
+  return save();
 }
 $('#tab-budget').addEventListener('change', e => {
   const inp = e.target.closest('[data-bud]'); if (!inp) return;
-  const m = currentMonth;
-  state.budgets[m] = state.budgets[m] || {};
-  state.budgets[m][cycleView()?cycleBudgetKey(inp.dataset.bud):inp.dataset.bud] = Math.max(0, parseFloat(inp.value) || 0);
-  save(); keepFocus(() => tickChanges($('#tab-budget'), 'td.num:not([data-mobile-label="Plan"]),td.av,#budSave .sv-tip b', () => { renderBudget(); renderDashboard(); }));
+  saveBudgetAmount(inp.dataset.bud, inp.value); keepFocus(() => tickChanges($('#tab-budget'), 'td.num:not([data-mobile-label="Plan"]),td.av,#budSave .sv-tip b', () => { renderBudget(); renderDashboard(); }));
 });
 $('#tab-budget').addEventListener('input', e => {
   const inp = e.target.closest('.budget-input'); if (!inp) return;
-  const row = inp.closest('tr'), real = row.querySelector('.budget-real');
-  row.style.setProperty('--budget-amount-ch', Math.max((inp.value || '0').length, real?.textContent.length || 0));
-  row.style.setProperty('--budget-plan-ch',(inp.value || '0').length);
+  inp.closest('tr').style.setProperty('--budget-plan-ch',(inp.value || '0').length);
 });
-$('#btnCopyPrev').onclick = () => {
-  if(cycleView()){const m=currentMonth,p=shiftMonth(m,-1);state.budgets[m]=state.budgets[m]||{};state.categories.forEach(c=>state.budgets[m][cycleBudgetKey(c.id)]=cycleBudget(p,c.id));save();renderAll();return toast('Presupuesto copiado del ciclo anterior');}
-  const prev = shiftMonth(currentMonth,-1), obj = {};
+$('#btnCopyPrev').onclick = async () => {
+  const m = currentMonth, prev = shiftMonth(m,-1), cycle = cycleView(), profile = activeProfile;
+  const day = cycle ? cycleDay() : null, copy = {};
+  let changed = 0;
   // Un ingreso que no llega en uno de los dos meses (p. ej. gratificación) conserva su monto esperado.
-  state.categories.forEach(c => { if (payActive(c, prev) && payActive(c, currentMonth) && !isArch(c, prev)) obj[c.id] = getBudget(prev, c.id); });
-  state.budgets[currentMonth] = {...(state.budgets[currentMonth]||{}),...obj}; save(); renderAll(); toast('Presupuesto copiado de ' + monthLong(prev));
+  for(const c of state.categories){
+    if(!cycle && (!payActive(c,prev) || !payActive(c,m) || isArch(c,prev)))continue;
+    const key = cycle?cycleBudgetKey(c.id):c.id, value = planBudget(prev,c.id);
+    copy[key] = value;
+    if(planBudget(m,c.id)!==value)changed++;
+  }
+  if(changed && !await ask({
+    title:cycle?'¿Copiar el ciclo anterior?':'¿Copiar el mes anterior?',
+    msg:changed===1?'Cambiará el importe de 1 categoría.':`Cambiarán los importes de ${changed} categorías.`,
+    ok:'Copiar', danger:false, icon:'copy'
+  }))return;
+  if(activeProfile!==profile || currentMonth!==m || cycleView()!==cycle || (cycle && cycleDay()!==day) || localRecovery || localTabChanged)return;
+  const before = {...state.budgets[m]};
+  state.budgets[m] = {...before,...copy};
+  if(!save())return;
+  renderAll();
+  toast(cycle?'Presupuesto copiado del ciclo anterior':'Presupuesto copiado de '+monthLong(prev), {action:'Deshacer',onAction:()=>{
+    if(activeProfile!==profile || localRecovery || localTabChanged)return;
+    const budget = state.budgets[m];
+    if(!budget)return;
+    for(const [key,value] of Object.entries(copy)){
+      if(budget[key]!==value)continue;
+      if(Object.hasOwn(before,key))budget[key]=before[key];
+      else delete budget[key];
+    }
+    if(!Object.keys(budget).length)delete state.budgets[m];
+    if(save()){renderAll();toast('Presupuesto anterior restaurado');}
+  }});
 };
 $('#btnSetDefault').onclick = () => {
   if(cycleView()){const config=cycleConfig(),defaults={...(config.defaults||{})};defaults[cycleDay()]=Object.fromEntries(state.categories.map(c=>[c.id,cycleBudget(currentMonth,c.id)]));state.settings.budgetCycle={...config,defaults};save();renderAll();return toast('Base guardada para los próximos ciclos');}
@@ -110,18 +140,18 @@ const GRIP = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor
 // Ordenar categorías arrastrando el asa (puntero/táctil), con animación de los vecinos
 let catDrag = null;
 document.addEventListener('pointerdown', e => {
-  const g = e.target.closest('#tab-cats .grip'); if (!g) return;
+  const g = e.target.closest('#tab-cats .grip'); if (!g || e.button !== 0 || catDrag) return;
   const row = g.closest('.cat-row'); e.preventDefault();
-  const r = row.getBoundingClientRect();
-  catDrag = {row, list:row.parentElement, offY:e.clientY - r.top, t:0, id:e.pointerId};
-  row.classList.add('dragging'); g.setPointerCapture(e.pointerId);
+  const r = row.getBoundingClientRect(), list = row.parentElement;
+  catDrag = {row, list, originalNext:row.nextElementSibling, offY:e.clientY - r.top, t:0, id:e.pointerId};
+  row.classList.add('dragging'); list.setPointerCapture(e.pointerId);
 });
 document.addEventListener('pointermove', e => {
   if (!catDrag || e.pointerId !== catDrag.id) return;
-  const {row, list} = catDrag, natural = row.getBoundingClientRect().top - catDrag.t;
+  const {row, list} = catDrag;
   const sibs = [...list.querySelectorAll('.cat-row:not(.dragging)')], y = e.clientY;
   const before = sibs.find(s => { const b = s.getBoundingClientRect(); return y < b.top + b.height / 2; });
-  const target = before || null;
+  const target = before || list.querySelector('.arch-group');
   if ((target && row.nextElementSibling !== target) || (!target && list.lastElementChild !== row)){
     const tops = new Map(sibs.map(s => [s, s.getBoundingClientRect().top]));
     list.insertBefore(row, target);
@@ -132,16 +162,27 @@ document.addEventListener('pointermove', e => {
 });
 const endCatDrag = e => {
   if (!catDrag || e.pointerId !== catDrag.id) return;
-  const {row, list} = catDrag; catDrag = null;
+  const {row, list, originalNext} = catDrag; catDrag = null;
+  if (!row.isConnected) return;
+  if(e.type!=='pointerup'||localTabChanged){
+    list.insertBefore(row, originalNext);
+    row.classList.remove('dragging');row.style.transform='';
+    return;
+  }
   row.style.transition = 'transform '+MOTION.move+'ms '+MOTION.ease; row.style.transform = '';
   setTimeout(() => { row.classList.remove('dragging'); row.style.transition = ''; }, MOTION.move);
   const ids = [...list.querySelectorAll('.cat-row')].map(r => r.dataset.id), type = list.id === 'catsIncome' ? 'income' : 'expense';
-  const before = catsOf(type).map(c => c.id).join();
+  const active = catsActive(type), before = active.map(c => c.id).join();
   if (ids.join() === before) return;
-  state.categories = [...state.categories.filter(c => c.type !== type), ...ids.map(id => state.categories.find(c => c.id === id)).filter(Boolean)];
-  save(); dirty = new Set(Object.keys(VIEWS)); dirty.delete('cats'); toast('Orden actualizado', {icon:'list'});
+  const byId = new Map(active.map(c => [c.id, c]));
+  if(ids.length!==active.length||ids.some(id=>!byId.has(id))){renderCats();return;}
+  let next = 0;
+  state.categories = state.categories.map(c => byId.has(c.id) ? byId.get(ids[next++]) : c);
+  const saved = save(); dirty = new Set(Object.keys(VIEWS)); dirty.delete('cats');
+  if(saved)toast('Orden actualizado', {icon:'list'});
 };
 document.addEventListener('pointerup', endCatDrag); document.addEventListener('pointercancel', endCatDrag);
+document.addEventListener('lostpointercapture', endCatDrag);
 // ---- Selector visual de días de pago (categorías de ingreso) ----
 const ppEl = document.createElement('div'); ppEl.id='payPicker'; ppEl.className = 'pp'; ppEl.setAttribute('role', 'dialog');ppEl.setAttribute('aria-labelledby','ppTitle');
 if ('popover' in HTMLElement.prototype) ppEl.setAttribute('popover', 'manual');
@@ -150,12 +191,15 @@ let ppS = null;
 function openPayPicker(btn, id){
   if (ppS && ppS.id === id) return closePayPicker();
   closePayPicker();
+  clearTimeout(ppEl._hideTimer);
   const c = state.categories.find(x => x.id === id); if (!c) return;
   ppS = {id, btn, c, ...payCfg(c.pay), pend: null, orig: c.pay || ''};
   btn.classList.add('open');btn.setAttribute('aria-expanded','true'); renderPayPicker();
-  if (ppEl.showPopover){ try{ if (ppEl.matches(':popover-open')) ppEl.hidePopover(); ppEl.showPopover(); }catch(e){} }
+  ppEl.inert=false;
+  if (ppEl.showPopover){ try{ if (!ppEl.matches(':popover-open')) ppEl.showPopover(); }catch(e){} }
   placePayPicker();
-  requestAnimationFrame(() => {ppEl.classList.add('show');placePayPicker();ppEl.querySelector('.pp-d.in,.pp-seg button.active')?.focus({preventScroll:true});});
+  const opened=ppS;
+  requestAnimationFrame(() => {if(ppS!==opened)return;ppEl.classList.add('show');placePayPicker();ppEl.querySelector('.pp-d.in,.pp-seg button.active')?.focus({preventScroll:true});});
 }
 function placePayPicker(){
   if (!ppS) return;
@@ -173,7 +217,8 @@ function commitPayPending(S){
 function closePayPicker(keep = true,focusBack = true){
   if (!ppS) return;
   const S = ppS,restoreFocus=focusBack&&ppEl.contains(document.activeElement); if(keep)commitPayPending(S); ppS = null; S.btn.classList.remove('open');S.btn.setAttribute('aria-expanded','false'); ppEl.classList.remove('show'); if (typeof dpClose === 'function') dpClose();
-  setTimeout(() => { if (!ppS){ if(ppEl.hidePopover){try{ppEl.hidePopover();}catch(e){}} if(restoreFocus)[...document.querySelectorAll('#catsIncome .cat-row')].find(r=>r.dataset.id===S.id)?.querySelector('.pay-btn')?.focus({preventScroll:true}); } }, reduceMotion()?0:MOTION.popup);
+  ppEl.inert=true;
+  ppEl._hideTimer=setTimeout(() => { if (!ppS){ if(ppEl.hidePopover){try{ppEl.hidePopover();}catch(e){}} if(restoreFocus)[...document.querySelectorAll('#catsIncome .cat-row')].find(r=>r.dataset.id===S.id)?.querySelector('.pay-btn')?.focus({preventScroll:true}); } }, reduceMotion()?0:MOTION.popup);
   const val = payEncode(S);
   if (keep && val !== S.orig){ S.c.pay = val; save(); renderAll(); toast(val ? `${S.c.name}: ${payHumanCfg(payCfg(val)).toLowerCase()}` : 'Día de pago quitado', {icon:'calendar-days'}); }
 }
@@ -258,7 +303,7 @@ $('#tab-cats').addEventListener('click', async e => {
   const ua = e.target.closest('[data-unarch]');
   if (ua){ const c = state.categories.find(x => x.id === ua.dataset.unarch); if (c){ delete c.archived; save(); renderAll(); toast(`«${c.name}» restaurada`, {icon:'archive-restore'}); } return; }
   const ar = e.target.closest('[data-act="arch"]');
-  if (ar){ ar.closest('.cat-actions').open = false; const c = state.categories.find(x => x.id === ar.closest('.cat-row').dataset.id); if (!c) return;
+  if (ar){ setMenuDisclosure(ar.closest('.cat-actions'),false); const c = state.categories.find(x => x.id === ar.closest('.cat-row').dataset.id); if (!c) return;
     const row = ar.closest('.cat-row'); await fadeOut(row);
     c.archived = currentMonth < thisMonth() ? thisMonth() : currentMonth; save(); renderAll();
     toast(`«${c.name}» archivada: ya no aparece al registrar ni en el presupuesto`, {icon:'archive', action:'Deshacer', onAction: () => { delete c.archived; save(); renderAll(); }});
@@ -278,19 +323,24 @@ $('#tab-cats').addEventListener('click', async e => {
   if (btn.dataset.act === 'icon') openIcon(icon => { c.icon = icon; save(); renderAll(); },
     {color:c.color, soft:true, themeColor: curThemeColorCat(c), onColor: col => { c.color = col; save(); }}, c.icon);
   if (btn.dataset.act === 'del'){
-    btn.closest('.cat-actions').open = false;
+    const profile = activeProfile;
+    setMenuDisclosure(btn.closest('.cat-actions'),false);
     const used = state.transactions.filter(t => t.catId === c.id).length;
     const msg = used ? `Tiene ${plural(used, 'movimiento')}; quedarán como "Sin categoría".` : 'También se quitará de tus presupuestos.';
     if (!(await ask({title:`¿Eliminar "${c.name}"?`, msg, icon:c.icon, iconColor:c.color}))) return;
     await fadeOut(row);
-    state.categories = state.categories.filter(x => x.id !== c.id);
-    Object.values(state.budgets).forEach(b => Object.keys(b).forEach(k => { if (k === c.id || k.endsWith(':' + c.id)) delete b[k]; }));
-    Object.values(cycleConfig().defaults || {}).forEach(base => { if (base) delete base[c.id]; });
-    save(); renderAll(); toast('Categoría eliminada');
+    if (activeProfile !== profile) return;
+    const saved = saveChange(() => {
+      state.categories = state.categories.filter(x => x.id !== c.id);
+      Object.values(state.budgets).forEach(b => Object.keys(b).forEach(k => { if (k === c.id || k.endsWith(':' + c.id)) delete b[k]; }));
+      Object.values(cycleConfig().defaults || {}).forEach(base => { if (base) delete base[c.id]; });
+    });
+    renderAll();
+    if (saved) toast('Categoría eliminada');
   }
 });
-document.addEventListener('click', e => { document.querySelectorAll('#tab-cats .cat-actions[open]').forEach(menu => { if (!menu.contains(e.target)) menu.open = false; }); });
-document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const menu = document.querySelector('#tab-cats .cat-actions[open]'); if (menu){ menu.open = false; menu.querySelector('summary').focus(); e.preventDefault(); } });
+document.addEventListener('click', e => { document.querySelectorAll('#tab-cats .cat-actions[open]').forEach(menu => { if (!menu.contains(e.target)) setMenuDisclosure(menu,false); }); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const menu = document.querySelector('#tab-cats .cat-actions[open]:not([data-menu-closing])'); if (menu){ setMenuDisclosure(menu,false); menu.querySelector('summary').focus(); e.preventDefault(); } });
 
 /* ---------- Selector de íconos ---------- */
 // frame = {color, soft, onColor}: soft=true usa el tono suave (categorías), soft=false el color sólido (logo)

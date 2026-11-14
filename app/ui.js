@@ -1,4 +1,4 @@
-// Presupuesto: ui.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: ui.js — ver README.md del proyecto para responsabilidades y orden de carga.
 const cycleCalendarMonths={},cycleSelectedMonths={};
 if(cycleEnabled())currentMonth=cycleMonthForDate();
 function syncPlanningNavigation(name){
@@ -23,6 +23,7 @@ function shortPeriodLabel(m){const p=cyclePeriod(m);return p.start.slice(0,4)!==
 function renderPeriodControls(){
  const cy=cycleEnabled();
  document.querySelectorAll('[data-plan-controls]').forEach(el=>{
+  el.dataset.periodMode=cy?'cycle':'calendar';
   el.innerHTML=`<button type="button" class="btn period-trigger" data-period-open aria-haspopup="dialog" aria-controls="periodDialog">${ic('calendar-days')}<span>${cy?'Ciclo · día '+cycleDay():'Mes calendario'}</span>${ic('chevron-down')}</button><span class="period-range" title="${cy?cycleLabel(currentMonth):monthLong(currentMonth)}">${cy?shortPeriodLabel(currentMonth):monthLong(currentMonth)}</span>${el.closest('#tab-dashboard')?'<button type="button" class="info-tip" aria-label="Ayuda del período" data-tip="El ciclo reúne compras de dos meses en un solo presupuesto. Cada movimiento conserva su fecha; el análisis mensual sigue por calendario.">'+ic('info')+'</button>':''}`;
  });
  const help=$('#tab-budget .toolbar>.info-tip');if(help)help.dataset.tip='Elige mes o ciclo con el calendario. Copiar trae el plan anterior; Usar como base lo aplica a períodos futuros sin plan propio. Tus movimientos conservan su fecha.';
@@ -50,23 +51,16 @@ function setPlanningMode(enabled,day=cycleDay()){
  cycleSelectedMonths[activeProfile]=enabled?currentMonth:cycleSelectedMonths[activeProfile];monthInput.value=currentMonth;
  save();renderAll();toast(enabled?'Ciclo activo: '+cycleLabel(currentMonth):'Vista por mes calendario');
 }
-let planningToday=todayISO(),planningDateTask=null,dailyRecurringPending=false;
+let planningToday=todayISO();
 function refreshPlanningDate(){
- const today=todayISO();if(document.querySelector('dialog[open]')||localTabChanged)return;
+ const today=todayISO();if(document.querySelector('dialog[open]')||localRecovery||localTabChanged)return;
  if(today!==planningToday){
   const previous=cycleView()?cycleMonthForDate(planningToday):planningToday.slice(0,7);
-  planningToday=today;_txIdx=null;dailyRecurringPending=true;
+  planningToday=today;_txIdx=null;
   if(currentMonth===previous){currentMonth=cycleView()?cycleMonthForDate(today):thisMonth();monthInput.value=currentMonth;}
   renderAll();maybeMonthClose();
  }
- if(!dailyRecurringPending||bothMode||planningDateTask)return planningDateTask;
- const profile=activeProfile,connection=sync.url+'|'+sync.token;
- planningDateTask=(async()=>{
-  const confirmed=!syncOn()||await startupSync();
-  if(!confirmed||profile!==activeProfile||connection!==sync.url+'|'+sync.token||localTabChanged||syncConflict()||document.querySelector('dialog[open]'))return;
-  dailyRecurringPending=false;if(runAutoRecurring())renderAll();
- })().catch(err=>{setBadge('err','No se pudo actualizar el día');updateSyncInfo(err.message);}).finally(()=>{planningDateTask=null;});
- return planningDateTask;
+
 }
 window.addEventListener('focus',refreshPlanningDate);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPlanningDate();});
@@ -190,7 +184,7 @@ document.addEventListener('click', e => {
   const a = b.dataset.empty;
   if (a === 'expense' || a === 'income') openTx(null, {type:a});
   else if (a === 'tx') openTx();
-  else if (a === 'rec') openRec();
+  else if (a === 'calendar-tx') openTx(null, {date:calSel});
   else if (a === 'budget') showTab('budget');
 });
 document.addEventListener('keydown', e => {
@@ -270,33 +264,71 @@ function motionAnimate(el,frames,kind='move'){
  const animation=el.animate(frames,{duration:MOTION[kind],easing:MOTION.ease});el._motion=animation;
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
+function revealContent(el,kind='fast'){
+ return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
+}
+function motionHeight(el){
+ return el.getBoundingClientRect().height/(Number(getComputedStyle(document.documentElement).zoom)||1);
+}
 function motionResize(el,update){
- const from=el.getBoundingClientRect().height;el._resize?.cancel();el._resize=null;el.style.overflow='';update();const to=el.getBoundingClientRect().height;
+ const from=motionHeight(el);el._resize?.cancel();el._resize=null;el.style.overflow='';update();const to=motionHeight(el);
  if(reduceMotion()||Math.abs(from-to)<1)return;
  el.style.overflow='hidden';const animation=el.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});el._resize=animation;
  animation.onfinish=()=>{el.style.overflow='';el._resize=null;};
 }
 function toggleDisclosure(details,summary,wanted,animate=true){
- const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=details.getBoundingClientRect().height;
- const content=details.querySelector(':scope>.metric-expanded,:scope>.disclosure-body,:scope>.analysis-detail-body,:scope>.settings-disclosure-body,:scope>.goal-split,:scope.expense-distribution-more>div');
+ const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=motionHeight(details);
+ const content=summary.nextElementSibling;
  const previousOpacity=current&&content?getComputedStyle(content).opacity:null;
  const previousTransform=current&&content?getComputedStyle(content).transform:null;
  if(current){current.animation.cancel();current.contentAnimation?.cancel();}
- details.style.overflow='hidden';details.open=true;
- const style=getComputedStyle(details);
- const to=open?details.getBoundingClientRect().height:summary.getBoundingClientRect().height+parseFloat(style.borderTopWidth||0)+parseFloat(style.borderBottomWidth||0)+parseFloat(style.paddingTop||0)+parseFloat(style.paddingBottom||0);
+ if(!open&&content?.contains(document.activeElement))summary.focus({preventScroll:true});
+ if(content)content.inert=!open;
+ details.style.overflow='hidden';
+ details.open=open;
+ const to=motionHeight(details);
  const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
  if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
+ details.open=true;
  const distribution=details.matches('.expense-distribution-more'),duration=distribution?360:MOTION.panel;
  const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:[{opacity:previousOpacity??(open?0:1),transform:previousTransform??(open?'translateY(-5px)':'none')},{opacity:open?1:0,transform:'none'}];
- const contentAnimation=content?.animate(frames,{duration:distribution?duration:open?MOTION.panel:MOTION.fast,easing:MOTION.ease});
+ const contentAnimation=content?.animate(frames,{duration,easing:MOTION.ease});
  const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});
  details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
+}
+function menuDisclosureOpen(details){
+ return details.open && !details.hasAttribute('data-menu-closing');
+}
+function setMenuDisclosure(details,open){
+ if(!details||menuDisclosureOpen(details)===open)return;
+ const summary=details.querySelector('summary'),menu=summary.nextElementSibling;
+ const opacity=details.open?getComputedStyle(menu).opacity:0;
+ const transform=details.open?getComputedStyle(menu).transform:'translateY(3px) scale(.98)';
+ details._menuMotion?.cancel();
+ details._menuMotion=null;
+ summary.setAttribute('aria-expanded',String(open));
+ if(!open&&menu.contains(document.activeElement))summary.focus({preventScroll:true});
+ menu.inert=!open;
+ details.toggleAttribute('data-menu-closing',!open);
+ if(open)details.open=true;
+ if(reduceMotion()){details.open=open;details.removeAttribute('data-menu-closing');return;}
+ const animation=menu.animate([{opacity,transform},{opacity:open?1:0,transform:open?'none':'translateY(3px) scale(.98)'}],{duration:MOTION.popup,easing:MOTION.ease,fill:'both'});
+ details._menuMotion=animation;
+ animation.onfinish=()=>{
+  if(details._menuMotion!==animation)return;
+  details.open=open;
+  details.removeAttribute('data-menu-closing');
+  details._menuMotion=null;
+  animation.cancel();
+ };
 }
 document.addEventListener('click',e=>{
  const summary=e.target.closest('summary');if(!summary)return;
  const details=summary.parentElement;
- if(details.tagName!=='DETAILS'||details.matches('.settings-disclosure,.analysis-month-picker,.rec-actions'))return;
+ if(details.tagName!=='DETAILS'||details.matches('.settings-disclosure'))return;
+ if(details.matches('.analysis-month-picker,.cat-actions')){
+  e.preventDefault();setMenuDisclosure(details,!menuDisclosureOpen(details));return;
+ }
  e.preventDefault();toggleDisclosure(details,summary);
 });
 
@@ -328,18 +360,20 @@ function countUp(el, to, kind = 'money', cls){
   const f = v => kind === 'pct' ? v.toFixed(1) + '%' : fmt(v);
   if (cls !== undefined) el.className = cls;
   if(el._raf && el._countTarget===to && key in numMemo && from!==0)return;
+  const target = f(to);
+  if (!entering && !el._raf && el._countTarget === to && el.textContent === target) return;
   cancelAnimationFrame(el._raf);
   el._raf=0;el._countTarget=to;
-  el._fitTexts=[f(from),f(to)];fitMetricValue(el);
-  if (reduceMotion() || entering || from === to){ el._countValue=to;rollDigits(el,f(to),0);el._fitTexts=[f(to)];fitMetricValue(el); return; }
+  if (reduceMotion() || entering || from === to){ el._countValue=to;rollDigits(el,target,0);el._fitTexts=[target];fitMetricValue(el); return; }
+  el._fitTexts=[f(from),target];fitMetricValue(el);
   // Solo los cambios de valor recorren sus dígitos, con el ritmo de los datos.
   const t0 = performance.now(), dur = MOTION.data;
   // Curva con velocidad y aceleración nulas en ambos extremos: evita el arranque brusco y el salto final.
   const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
   // Cada dígito gira en su columna hasta el valor final; una entrada nueva parte de la cifra anterior sin transición.
   if (!el._rollKeys || el._countFresh) rollDigits(el, f(from), 0);
-  el._countFresh = false; void el.offsetWidth; rollDigits(el, f(to), dur);
-  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;rollDigits(el,f(to),0);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[f(to)];fitMetricValue(el);} };
+  el._countFresh = false; void el.offsetWidth; rollDigits(el, target, dur);
+  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;rollDigits(el,target,0);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[target];fitMetricValue(el);} };
   el._raf = requestAnimationFrame(step);
 }
 // Cifras con columnas de dígitos (estilo odómetro). El texto del elemento es siempre la cifra final:
@@ -448,12 +482,16 @@ function showTab(name, scrollTop = 0){
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
   const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab();
-  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
+  for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
+    button.classList.toggle('active', button === b);
+    if (button === b) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  }
   $('#btnSettings').classList.toggle('active', name === 'settings');
-  document.querySelectorAll('.tab').forEach(s => { s.classList.toggle('active', s.id === 'tab-' + name); s.classList.remove('m-next', 'm-prev', 'from-r', 'from-l'); });
-  moveTabInd();
-  // Solo desplaza la fila de pestañas hacia los lados; la página se coloca una vez, después del render.
-  const bar = $('#tabs'); if (b && bar && bar.scrollWidth > bar.clientWidth){ const l = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2; bar.scrollTo({left:Math.max(0, l), behavior:reduceMotion()?'instant':'smooth'}); }
+  document.querySelectorAll('.tab').forEach(s => {
+    s.classList.toggle('active', s.id === 'tab-' + name);
+    if(!s.classList.contains('active')&&s._motion){s._motion.cancel();s._motion=null;}
+  });
   const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
   if (SEC) resetBars(SEC);
   // Al volver a Resumen, cada indicador conserva el último valor dibujado.
@@ -462,20 +500,52 @@ function showTab(name, scrollTop = 0){
   const resumeAnalysis = name === 'analysis' && !dirty.has(name) && prevTab !== name;
   planningHeader();
   renderView(name);
+  moveTabInd();
+  if (b && !floatingTabs.matches && tabBar.scrollWidth > tabBar.clientWidth) {
+    const left = b.offsetLeft - (tabBar.clientWidth - b.offsetWidth) / 2;
+    tabBar.scrollTo({left:Math.max(0, left), behavior:reduceMotion() ? 'instant' : 'smooth'});
+  }
   if (resumeAnalysis && chYear){ chYear.resize(); chYear.update('none'); }
   if (name === 'budget') animateBars($('#tab-budget'));
   if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
   if (name === 'movs') moveViewInd();
   updateCreationControls();
+  if (typeof updateMobileNavigation === 'function') updateMobileNavigation();
   if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
-  // La pestaña entra desde el lado hacia el que te mueves, con su contenido ya dibujado.
-  const ord = Object.keys(VIEWS), d = ord.indexOf(name) - ord.indexOf(prevTab);
-  if(d&&!reduceMotion())$('#tab-'+name)?.classList.add(d>0?'from-r':'from-l');
+  // La vista entra después del render y de restaurar su posición.
+  if(prevTab!==name)revealContent($('#tab-'+name));
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
 const tabScroll = {};
-$('#tabs').addEventListener('click', e => {
+const tabBar = $('#tabs');
+const floatingTabs = matchMedia('(max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse)');
+let tabPress = null;
+
+function endTabPress(event){
+  if (!tabPress || (event && event.pointerId !== tabPress.id)) return;
+  tabPress.button.classList.remove('is-pressed');
+  tabPress = null;
+}
+
+tabBar.addEventListener('pointerdown', event => {
+  const button = event.target.closest('button[data-tab]');
+  if (!floatingTabs.matches || !button || !event.isPrimary || event.button !== 0) return;
+  endTabPress();
+  tabPress = {button, id:event.pointerId, x:event.clientX, y:event.clientY};
+  button.classList.add('is-pressed');
+});
+document.addEventListener('pointermove', event => {
+  if (tabPress?.id === event.pointerId && Math.hypot(event.clientX - tabPress.x, event.clientY - tabPress.y) > 10) {
+    endTabPress(event);
+  }
+}, {passive:true});
+document.addEventListener('pointerup', endTabPress, true);
+document.addEventListener('pointercancel', endTabPress, true);
+window.addEventListener('blur', () => endTabPress());
+floatingTabs.addEventListener('change', () => endTabPress());
+
+tabBar.addEventListener('click', e => {
   const b = e.target.closest('button[data-tab]'); if (!b) return;
   const from = activeTab(), to = b.dataset.tab;
   if (from === to && !bothMode){ window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'}); return; }
@@ -652,23 +722,27 @@ function moveIndicator(indicator, geometry){
 }
 function moveTabInd(){
   const b = $('#tabs button.active'), ind = $('#tabInd'); ind.style.opacity = b ? 1 : 0; if (!b) return;
-  // Teléfono: píldora detrás del ícono; escritorio: línea bajo el texto.
-  const pill = b.querySelector('.tb-i');
-  moveIndicator(ind, pill && pill.offsetWidth
-    ? {left:b.offsetLeft + pill.offsetLeft + 'px', width:pill.offsetWidth + 'px', top:b.offsetTop + pill.offsetTop + 'px', height:pill.offsetHeight + 'px'}
-    : {left:b.offsetLeft + 'px', width:b.offsetWidth + 'px', top:'', height:''});
+  // En el teléfono, el indicador abarca toda la pestaña, incluso al pasar a dos filas.
+  const mobile = b.querySelector('.tb-i').offsetWidth > 0;
+  const geometry = {
+    left: b.offsetLeft + 'px',
+    width: b.offsetWidth + 'px',
+    top: mobile ? b.offsetTop + 'px' : '',
+    height: mobile ? b.offsetHeight + 'px' : ''
+  };
+  if (Object.entries(geometry).some(([key, value]) => ind.style[key] !== value)) {
+    moveIndicator(ind, geometry);
+  }
 }
 moveTabInd();
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { moveTabInd(); requestAnimationFrame(() => $('#tabInd').classList.add('ready')); });
 window.addEventListener('resize', moveTabInd);
+new ResizeObserver(() => requestAnimationFrame(moveTabInd)).observe($('#tabs'));
 // La línea y sombra del encabezado solo aparecen al hacer scroll
 const topbar = $('.topbar');
-let compactTop = false;
 const onScroll = () => {
-  const y = window.scrollY; topbar.classList.toggle('scrolled', y > 4);
-  // Se achica al bajar (con margen para que no titile) solo si la página es lo bastante larga
-  const room = document.documentElement.scrollHeight - innerHeight, want = innerWidth > 600 && room > 180 && (compactTop ? y > 24 : y > 72);
-  if (want !== compactTop){ compactTop = want; topbar.classList.toggle('compact', want); }
+  const y = window.scrollY;
+  topbar.classList.toggle('scrolled', y > 4);
   toTop.classList.toggle('show', y > 400);
 };
 // Volver arriba (solo escritorio, por CSS): devuelve el foco a la pestaña activa porque el botón se oculta.
@@ -677,10 +751,9 @@ toTop.onclick = () => { ($('#tabs button.active') || $('#btnSettings')).focus({p
 window.addEventListener('scroll', onScroll, {passive:true}); window.addEventListener('resize',onScroll); onScroll();
 const monthInput = $('#month');
 monthInput.value = currentMonth;
-monthInput.addEventListener('change', () => { if (monthInput.value) { currentMonth = monthInput.value; renderAll(); } });
-// Al cambiar de mes el contenido se desliza hacia el lado del mes elegido
-function slideMonth(dir){ if (reduceMotion()) return; const t = document.querySelector('.tab.active'); if (!t) return; t.classList.remove('m-next', 'm-prev'); void t.offsetWidth; t.classList.add(dir > 0 ? 'm-next' : 'm-prev'); }
+monthInput.addEventListener('change', () => goMonth(monthInput.value));
+// El período cambia en el sitio, sin mover horizontalmente toda la vista.
 let chartMorph = false;
-function goMonth(v, animate = true){ if (!v || v === currentMonth) return; const dir = v > currentMonth ? 1 : -1; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } if (animate) slideMonth(dir); }
+function goMonth(v, animate = true){ if (!v || v === currentMonth) return; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } if (animate) revealContent(document.querySelector('.tab.active')); }
 $('#prevM').onclick = () => goMonth(shiftMonth(currentMonth, -1));
 $('#nextM').onclick = () => goMonth(shiftMonth(currentMonth, 1));

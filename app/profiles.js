@@ -1,4 +1,4 @@
-// Presupuesto: profiles.js — ver ARQUITECTURA.md para responsabilidades y orden de carga.
+// Presupuesto: profiles.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Usuarios: cambiar de perfil, editarlos y vista «Ambos» ---------- */
 function avatarHTML(pr){ return /^data:image\//.test(pr.photo || '') ? `<img src="${esc(pr.photo)}" alt="">` : iconHTML(pr.icon || 'svg:user', pr.color); }
 function avatarBox(pr, cls = ''){ return `<span class="prof-av ${cls}" style="background:${pr.photo ? 'transparent' : soft(pr.color)}">${avatarHTML(pr)}</span>`; }
@@ -46,6 +46,12 @@ profileTrigger.onclick = e => {
   if (profMenu.hidden) openProfMenu();
   else closeProfMenu(true);
 };
+$('#bothBody').addEventListener('click',e=>{
+  if(!e.target.closest('[data-choose-profile]'))return;
+  e.stopPropagation();
+  profileTrigger.scrollIntoView({block:'nearest'});
+  profileTrigger.click();
+});
 profileTrigger.addEventListener('keydown', e => {
   if (!['ArrowDown','ArrowUp'].includes(e.key)) return;
   e.preventDefault();
@@ -90,32 +96,43 @@ function pushOtherPending(){
   const latest=profileState(other),latestSnap=SyncCore.clone(withState(latest,()=>snapshot()));const rebased=SyncCore.reconcile(snap,latestSnap,sent);if(rebased.conflicts.length)throw new Error('El otro perfil cambió durante el envío');
   const d=rebased.data;['categories','transactions','recurring','goals','budgets','meta'].forEach(k=>latest[k]=d[k]);latest.settings={...latest.settings,...d.settings,methods:d.methods};localData.writeText(storeKey(other),JSON.stringify(latest));rememberSyncBase(sent,res.rev,other);
   sync.byProf[other]={rev:res.rev,pending:!SyncCore.same(d,sent),lastSync:Date.now()};saveSync();_oth=null;return true;
- }catch(err){if(err.code==='REV_CONFLICT'&&err.remote){/* La siguiente conciliación leerá la revisión nueva, sin escribir sobre ella. */}scheduleSyncRecovery({...err,retryable:err.retryable||err.code==='REV_CONFLICT'});return false;}})().finally(()=>{otherPush=null;if(!pushing)setBadge(sync.pending?'pending':sync.lastSync?'ok':'local',sync.pending?'Pendiente de sincronizar':sync.lastSync?'Sincronizado':'Guardado en este dispositivo');updateSyncInfo();});return otherPush;
+ }catch(err){if(err.code==='REV_CONFLICT'&&err.remote){/* La siguiente conciliación leerá la revisión nueva, sin escribir sobre ella. */}scheduleSyncRecovery({...err,retryable:err.retryable||err.code==='REV_CONFLICT'});return false;}})().finally(()=>{otherPush=null;if(!pushing&&!currentSyncIssue())setBadge(sync.pending?'pending':sync.lastSync?'ok':'local',sync.pending?'Pendiente de sincronizar':sync.lastSync?'Sincronizado':'Guardado en este dispositivo');updateSyncInfo();});return otherPush;
 }
 async function switchProfile(id){
   if (switching) return;
-  if (otherPush) { try { await otherPush; } catch(e){} }
   if (id === 'both'){ if (!bothMode) enterBoth(); return; }
   if (bothMode && id === activeProfile){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); showTab('dashboard'); renderAll(); return; }
   if (id === activeProfile) return;
   switching = true;
   try {
+    if (otherPush) await otherPush;
     // Antes de cambiar, se suben los cambios pendientes del usuario actual
     if (syncOn() && (sync.pending || pushing)) { try { await pushNow(); } catch(e){} }
+    if (document.querySelector('dialog[open]')) return;
     resetSyncRecovery(); clearTimeout(pushTimer);
     if(!saveLocal())return;saveSync();
+    const wasCycle = cycleView();
+    const calendarMonth = wasCycle ? cycleCalendarMonths[activeProfile] || thisMonth() : currentMonth;
+    if (wasCycle) cycleSelectedMonths[activeProfile] = currentMonth;
     activeProfile = id; try { localData.writeText(ACT_KEY, id); } catch(e){}
     const bp = (sync.byProf || {})[id] || {}; sync.rev = Number(bp.rev) || 0; sync.pending = !!bp.pending; sync.lastSync = bp.lastSync || 0;
-    loadProfileState(); _doneSet = null;
-    currentMonth=cycleView()?cycleMonthForDate():thisMonth();monthInput.value=currentMonth;
+    loadProfileState(); _doneSet = null; _oth = null; otherAt = 0;
+    $('#settingsMethods').resetEditor();
+    if (selMode) setSelMode(false);
+    cycleCalendarMonths[id] = calendarMonth;
+    currentMonth = cycleView() ? cycleSelectedMonths[id] || cycleMonthForDate() : calendarMonth;
+    monthInput.value = currentMonth;
     if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
     Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
     renderProfileUI(); if (activeTab() === 'both') showTab('dashboard'); renderAll(); updateSyncInfo();
-    { const mw = document.querySelector('main.wrap'); if (mw){ mw.classList.remove('prof-swap'); void mw.offsetWidth; mw.classList.add('prof-swap'); } }
+    revealContent(document.querySelector('.tab.active'));
     if (syncOn()) setBadge('busy', '☁️ Conectando…'); else {setBadge();updateSyncInfo();}
     toast(`Ahora ves: ${profOf(id).name}`, {icon:'user'});
   } finally { switching = false; }
-  if (syncOn()) startupSync().then(() => { if (runAutoRecurring()) renderAll(); otherAt = 0; refreshOther(); });
+  const connection = sync.url+'|'+sync.token;
+  if (syncOn()) await startupSync();
+  if (id !== activeProfile || connection !== sync.url+'|'+sync.token || localRecovery || localTabChanged) return;
+  refreshOther();
 }
 // Edición de usuarios en Ajustes
 let photoFor = null;
@@ -188,7 +205,6 @@ function sharedGoalsCard(){
 async function enterBoth(){
   if(cycleView())cycleSelectedMonths[activeProfile]=currentMonth;
   bothMode = true; document.body.classList.add('both-on'); renderProfileUI(); showTab('both');
-  { const mw = document.querySelector('main.wrap'); if (mw){ mw.classList.remove('prof-swap'); void mw.offsetWidth; mw.classList.add('prof-swap'); } }
   refreshOther(true);
 }
 // Sheets guarda los métodos fuera de settings: se rearma la copia local igual que applyRemote, sin perder métodos ni ajustes locales.
@@ -240,8 +256,9 @@ function renderBoth(){
   const perProfile=(key,total,percentage=false)=>rows.map(r=>`<div class="metric-detail-row"><span>${esc(r.pr.name)}</span><b>${fmt(r[key]||0)}${percentage&&total>0?` <small>${((r[key]||0)/total*100).toFixed(1)}%</small>`:''}</b></div>`).join('');
   const kpi = (lbl, icon, val, sub, cls, style) => `<details class="card kpi metric-disclosure ${cls}" data-both-metric="${esc(lbl)}"${opened.has(lbl)?' open':''}><summary><div class="label"><span class="dot" style="${style}">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><span class="metric-chevron" aria-hidden="true">${ic('chevron-down')}</span></summary><div class="metric-expanded"><div class="metric-details">${sub}</div></div></details>`;
   const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5), shared = sharedGoalsCard();
-  box.innerHTML = `<div class="both-head"><h2>Ambos · ${cycles?'cierre de ':''}${monthLong(m)}</h2><div class="small muted">Solo lectura. Para registrar o editar, elige un usuario.</div></div>
+  box.innerHTML = `<div class="both-head"><h2>Ambos · ${cycles?'cierre de ':''}${monthLong(m)}</h2><div class="both-access"><span class="small muted">Solo lectura</span><button type="button" class="btn sm" data-choose-profile>Elegir perfil</button></div></div>
     ${hasCycles?`<div class="both-period-controls"><div class="seg" role="group" aria-label="Períodos de Ambos"><button type="button" data-both-period="profiles" aria-pressed="${bothPeriodMode==='profiles'}" class="${bothPeriodMode==='profiles'?'active':''}">Según cada usuario</button><button type="button" data-both-period="calendar" aria-pressed="${bothPeriodMode==='calendar'}" class="${bothPeriodMode==='calendar'?'active':''}">Mes calendario</button></div><p class="small muted">${cycles?'Se suman los períodos indicados debajo de cada usuario; sus fechas pueden ser distintas.':'Ambos usuarios se comparan del primer al último día del mes.'} Solo cuentan movimientos realizados.</p></div>`:''}
+    <div class="period-overview"><div><span>Resultado conjunto ${cycles?'de los períodos':'del mes'}</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong><small>Ingresos menos gastos registrados</small></div></div>
     <div class="kpis dashboard-kpis both-kpis">
       ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), perProfile('inc',inc,true), 'k-inc', 'background:var(--income-soft);color:var(--income)')}
       ${kpi('Gastos de ambos', 'arrow-up', fmt(exp), perProfile('exp',exp,true), 'k-exp', 'background:var(--expense-soft);color:var(--expense)')}

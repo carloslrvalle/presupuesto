@@ -134,7 +134,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
     <div class="mview" id="view-list">
       <div class="toolbar mov-filters">
-        <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar descripción, categoría o monto…"></div>
+        <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar movimientos"></div>
         <button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
         <button type="button" class="btn mov-filter-clear" id="movFilterClear" aria-label="Borrar filtros" title="Borrar filtros" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Borrar filtros</span></button>
         <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
@@ -292,7 +292,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <form id="txForm">
     <div class="dlg-head"><h3 style="margin:0" id="txTitle">Nuevo movimiento</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <div class="dlg-body">
-      <div class="seg" id="txSeg"><button type="button" data-type="expense" class="active">Gasto</button><button type="button" data-type="income">Ingreso</button></div>
+      <div class="seg" id="txSeg" role="group" aria-label="Tipo de movimiento"><button type="button" data-type="expense" class="active">Gasto</button><button type="button" data-type="income">Ingreso</button></div>
       <p class="small" id="txContributionGoal" hidden></p>
       <div class="quick" id="txQuick" hidden></div>
       <div class="field tx-amount"><label for="fAmount">Monto en soles</label><input type="number" id="fAmount" class="amount-input" inputmode="decimal" step="0.01" min="0.01" required placeholder="0.00"></div>
@@ -309,7 +309,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <div class="field" id="fGoalField" hidden><label>Meta de ahorro (opcional)</label><div class="chips" id="fGoalChips"></div></div>
       <div class="row2 tx-details" id="txDetails">
         <div class="field" id="fDateField"><label for="fDate">Fecha</label><input type="date" id="fDate"></div>
-        <div class="field"><label for="fDesc">Descripción <span class="muted">(opcional)</span></label><input type="text" id="fDesc" placeholder="Ej. Mercado"></div>
+        <div class="field"><label for="fDesc">Nota <span class="muted">(opcional)</span></label><input type="text" id="fDesc" placeholder="Escribe una nota"></div>
       </div>
     </div>
     <div class="dlg-foot">

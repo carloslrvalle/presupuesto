@@ -48,6 +48,10 @@ function navigateMobile(tab) {
     return;
   }
   tabScroll[from] = window.scrollY;
+  if(tab==='movs' && movView==='list' && ['dashboard','budget'].includes(from)){
+    openMovs({scope:cycleEnabled()?'cycle':'month',month:currentMonth});
+    return;
+  }
   if (tab === 'both') {
     if (bothMode) showTab('both', tabScroll.both || 0);
     else switchProfile('both');
@@ -59,6 +63,67 @@ mobileNav.addEventListener('click', event => {
   const button = event.target.closest('[data-mobile-tab]');
   if (button) navigateMobile(button.dataset.mobileTab);
 });
+
+// Prototipo de alta: los mismos campos y validaciones, con opciones secundarias plegadas.
+const txHeader=txDialog.querySelector('.dlg-head'),txBody=txDialog.querySelector('.dlg-body');
+const mobileTxOptions=document.createElement('button');
+mobileTxOptions.type='button';mobileTxOptions.id='mobileTxOptions';mobileTxOptions.className='mobile-only iconbtn';
+mobileTxOptions.setAttribute('aria-label','Más opciones del movimiento');mobileTxOptions.setAttribute('aria-expanded','false');
+mobileTxOptions.setAttribute('aria-controls','mobileTxExtras');
+mobileTxOptions.innerHTML=ic('settings');txHeader.append(mobileTxOptions);
+const mobileTxNote=document.createElement('button');
+mobileTxNote.id='mobileTxNote';mobileTxNote.type='button';mobileTxNote.className='mobile-only';
+mobileTxNote.innerHTML=ic('pencil')+'<span>Agregar nota</span>';txBody.append(mobileTxNote);
+const mobileTxMeta=document.createElement('div');mobileTxMeta.className='mobile-only mobile-tx-meta';
+const mobileTxCategory=document.createElement('button');mobileTxCategory.type='button';mobileTxCategory.id='mobileTxCategory';mobileTxCategory.setAttribute('aria-expanded','false');
+mobileTxMeta.append(mobileTxCategory);txBody.append(mobileTxMeta);
+const mobileTxExtras=document.createElement('div');mobileTxExtras.id='mobileTxExtras';mobileTxExtras.className='mobile-only mobile-tx-extras';txBody.append(mobileTxExtras);
+const txCategoryField=$('#fCatChips').closest('.field'),txNoteField=$('#fDesc').closest('.field');
+txCategoryField.classList.add('tx-category-panel');txNoteField.classList.add('tx-note-field');
+txCategoryField.id='mobileTxCategoryPanel';mobileTxCategory.setAttribute('aria-controls',txCategoryField.id);
+const txMethodField=$('#fMethodChips').closest('.field');
+const txNodes=[[$('#txSeg'),txHeader],[$('#fDateField'),mobileTxMeta],[txNoteField,txBody],[txMethodField,mobileTxExtras],[$('#fGoalField'),mobileTxExtras],[$('#txQuick'),mobileTxExtras],[$('#txDelete'),mobileTxExtras],[$('#txDup'),mobileTxExtras]].map(([node,parent])=>{
+  const anchor=document.createComment('Posición del campo en escritorio');node.before(anchor);return {node,parent,anchor};
+});
+function positionMobileTx(){
+  txDialog.classList.toggle('tx-mobile-simple',mobileLayout.matches);
+  for(const {node,parent,anchor} of txNodes){if(mobileLayout.matches)parent.append(node);else anchor.after(node);}
+  if(!mobileLayout.matches)$('#fDate').value=$('#fDate').value;
+  syncMobileTxUI();
+}
+function syncMobileTxUI(){
+  if(!mobileLayout.matches)return;
+  const category=getCat(selCat);
+  mobileTxCategory.innerHTML=`${iconHTML(category.icon,category.color)}<span>${selCat?esc(category.name):'Categoría'}</span>${ic('chevron-down')}`;
+  mobileTxCategory.setAttribute('aria-label','Categoría: '+(selCat?category.name:'Elegir'));
+  txDialog.querySelector('[type=submit]').textContent=editingId?'Guardar cambios':txType==='income'?'Guardar ingreso':'Guardar gasto';
+  $('#fAmount').style.setProperty('--amount-characters',String(Math.max(4,($('#fAmount').value||'0.00').length)));
+  const date=$('#fDate').value;
+  $('#fDateField .dp-trigger').innerHTML=ic('calendar')+`<span class="dp-l">${date===todayISO()?'Hoy':esc(fmtDate(date))}</span>`;
+  mobileTxNote.hidden=txDialog.classList.contains('note-open');
+}
+function prepareMobileTxUI(){
+  txDialog.classList.remove('category-open','options-open');
+  txDialog.classList.toggle('note-open',!!$('#fDesc').value);
+  mobileTxOptions.setAttribute('aria-expanded','false');mobileTxCategory.setAttribute('aria-expanded','false');
+  syncMobileTxUI();
+}
+mobileTxNote.onclick=()=>{txDialog.classList.add('note-open');syncMobileTxUI();$('#fDesc').focus({preventScroll:true});};
+mobileTxOptions.onclick=()=>{const open=txDialog.classList.toggle('options-open');mobileTxOptions.setAttribute('aria-expanded',String(open));txDialog.classList.remove('category-open');mobileTxCategory.setAttribute('aria-expanded','false');};
+mobileTxCategory.onclick=()=>{
+  const open=txDialog.classList.toggle('category-open');mobileTxCategory.setAttribute('aria-expanded',String(open));
+  txDialog.classList.remove('options-open');mobileTxOptions.setAttribute('aria-expanded','false');
+  if(open)requestAnimationFrame(()=>keepTxFieldVisible(txCategoryField));
+};
+$('#fCatChips').addEventListener('click',event=>{
+  if(!mobileLayout.matches||!event.target.closest('[data-cat]'))return;
+  txDialog.classList.remove('category-open');mobileTxCategory.setAttribute('aria-expanded','false');syncMobileTxUI();mobileTxCategory.focus({preventScroll:true});
+});
+$('#fAmount').addEventListener('input',syncMobileTxUI);
+$('#fDate').addEventListener('change',syncMobileTxUI);
+mobileLayout.addEventListener('change',positionMobileTx);
+positionMobileTx();
+if(mobileLayout.matches&&cycleEnabled())$('#fltScope').value='cycle';
 $('#mobileNew').onclick = () => {
   if (!bothMode) openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {});
 };
@@ -190,19 +255,21 @@ function mobileMovementBins(real,scope){
     return {label:MONTHS_ES[i].slice(0,3),title:monthLong(month),amount:sum(expenses.filter(t=>t.date.startsWith(month)))};
   })};
   const step=scope==='all'?Math.max(1,Math.ceil(days/7)):7;
-  return {days,label:scope==='all'?'Gastos del rango':'Gastos por semana',bins:Array.from({length:Math.ceil(days/step)},(_,i)=>{
+  return {days,label:scope==='all'?'Gastos del rango':'Gastos semanales',bins:Array.from({length:Math.ceil(days/step)},(_,i)=>{
     const first=BudgetFinance.dateOffset(start,i*step), last=BudgetFinance.dateOffset(start,Math.min(days-1,(i+1)*step-1));
-    return {label:first.slice(8,10)+'/'+first.slice(5,7),title:fmtDate(first)+' – '+fmtDate(last),amount:sum(expenses.filter(t=>t.date>=first&&t.date<=last))};
+    return {label:first.slice(8,10)+'/'+first.slice(5,7),title:first===last?fmtDate(first):fmtDate(first)+' – '+fmtDate(last),amount:sum(expenses.filter(t=>t.date>=first&&t.date<=last))};
   })};
 }
 function renderMobileMovements({real,inc,exp,scope}){
   const {days,label,bins}=mobileMovementBins(real,scope), max=Math.max(0,...bins.map(bin=>bin.amount));
+  const isPeak=amount=>max>0&&Math.round(amount*100)===Math.round(max*100);
   const type=$('#fltType').value;
   const categories=new Map();
   real.filter(t=>t.type==='expense').forEach(t=>categories.set(t.catId,(categories.get(t.catId)||0)+t.amount));
   const ranked=[...categories].sort((a,b)=>b[1]-a[1]), shown=ranked.slice(0,3);
   if(ranked.length>3)shown.push([null,ranked.slice(3).reduce((total,row)=>total+row[1],0)]);
-  mobileMovements.innerHTML = `<div class="mobile-movement-net"><div><span>Resultado de esta vista</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong></div><div><span>Gasto por día</span><b>${fmt(exp/days)}</b><small>Promedio de ${days} días</small></div></div><div class="mobile-movement-totals">${[['income','Ingresos',inc],['expense','Gastos',exp]].map(([kind,name,amount])=>`<button type="button" data-mobile-type="${kind}" aria-pressed="${type===kind}"><span class="mobile-type-icon ${kind}">${ic('arrow-up-right')}</span><span><small>${name}</small><b>${fmt(amount)}</b></span></button>`).join('')}</div><div class="mobile-spending-head"><h3>${label}</h3><span>${max?`Máx. ${fmt(max)}`:'Sin gastos registrados'}</span></div><ol class="mobile-spending-chart" aria-label="${label}">${bins.map(bin=>`<li aria-label="${esc(bin.title)}: ${esc(fmt(bin.amount))}"><span class="mobile-bar-space"><i style="height:${max?bin.amount/max*100:0}%" title="${esc(bin.title)}: ${esc(fmt(bin.amount))}"></i></span><span class="mobile-bar-label" aria-hidden="true">${esc(bin.label)}</span></li>`).join('')}</ol>${exp>0?`<div class="mobile-category-strip" aria-hidden="true">${shown.map(([id,amount])=>`<i style="width:${amount/exp*100}%;background:${id?esc(getCat(id).color):'var(--muted)'}"></i>`).join('')}</div><div class="mobile-category-legend">${shown.map(([id,amount])=>id?`<button type="button" data-mobile-filter-cat="${esc(id)}"><i style="background:${esc(getCat(id).color)}"></i><span>${esc(getCat(id).name)}</span><small>${Math.round(amount/exp*100)}%</small></button>`:`<span><i style="background:var(--muted)"></i>Otras <small>${Math.round(amount/exp*100)}%</small></span>`).join('')}</div>`:''}`;
+  mobileMovements.innerHTML = `<div class="mobile-movement-net"><div><span>Ingresos menos gastos</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong></div><div><span>Gasto por día</span><b>${fmt(exp/days)}</b><small>Promedio · ${days} días</small></div></div><div class="mobile-movement-totals">${[['income','Ingresos',inc],['expense','Gastos',exp]].map(([kind,name,amount])=>`<button type="button" data-mobile-type="${kind}" aria-pressed="${type===kind}"><span class="mobile-type-icon ${kind}">${ic('arrow-up-right')}</span><span><small>${name}</small><b>${fmt(amount)}</b></span></button>`).join('')}</div><div class="mobile-spending-head"><span>${scope==='cycle'?esc(shortPeriodLabel(currentMonth)):scope==='all'?'Todos los movimientos':scope==='year'?currentMonth.slice(0,4):esc(monthLong(currentMonth))}</span><span class="${max>0?'mobile-peak-legend':''}">${max?`Máx. ${fmt(max)}`:'Sin gastos registrados'}</span></div><ol class="mobile-spending-chart" data-granularity="${scope==='year'?'month':'week'}" aria-label="${label}" style="--bar-count:${bins.length}">${bins.map((bin,i)=>`<li class="${isPeak(bin.amount)?'is-peak':''}" aria-label="${esc(bin.title)}: ${esc(fmt(bin.amount))}${isPeak(bin.amount)?' · Mayor gasto':''}"><span class="mobile-bar-space"><i style="height:${max?bin.amount/max*100:0}%" title="${esc(bin.title)}: ${esc(fmt(bin.amount))}"></i></span><span class="mobile-bar-label" aria-hidden="true">${bins.length<=12||i===0||i===bins.length-1||i%7===0?esc(bin.label):''}</span></li>`).join('')}</ol>${exp>0?`<div class="mobile-category-strip" aria-hidden="true">${shown.map(([id,amount])=>`<i style="width:${amount/exp*100}%;background:${id?esc(getCat(id).color):'var(--muted)'}"></i>`).join('')}</div><div class="mobile-category-legend">${shown.map(([id,amount])=>id?`<button type="button" data-mobile-filter-cat="${esc(id)}"><i style="background:${esc(getCat(id).color)}"></i><span>${esc(getCat(id).name)}</span><small>${Math.round(amount/exp*100)}%</small></button>`:`<span><i style="background:var(--muted)"></i>Otras <small>${Math.round(amount/exp*100)}%</small></span>`).join('')}</div>`:''}`;
+  mobileMovements.querySelectorAll('.mobile-movement-net strong,.mobile-movement-net b,.mobile-movement-totals b').forEach(el=>fitMetricValue(el));
 }
 mobileMovements.addEventListener('click', event => {
   const type=event.target.closest('[data-mobile-type]'), category=event.target.closest('[data-mobile-filter-cat]');

@@ -62,6 +62,7 @@ function renderMovs(refreshFilters = true){
     return diff === 0 ? ['Hoy', long] : diff === -1 ? ['Ayer', long] : diff === 1 ? ['Mañana', long] : [long, '']; };
   $('#movBody').classList.toggle('selecting',selMode);
   $('#movBody').innerHTML=movementHistory(list,dayLbl,!!(q||ft||fc||fm));
+  planningHeader();
   if (typeof renderMobileMovements === 'function') renderMobileMovements({real,inc,exp,scope});
 }
 const movementWeekday = new Intl.DateTimeFormat('es-PE', {weekday:'long'});
@@ -217,6 +218,7 @@ function setMovView(v){
   });
   document.querySelectorAll('#tab-movs .mview').forEach(el => el.hidden = el.id !== 'view-' + movView);
   $('#btnSelect').hidden = movView !== 'list';
+  planningHeader();
   updateCreationControls();
   moveViewInd();
   if (movView === 'cal') renderCalendar();
@@ -477,7 +479,7 @@ function createTxCategory(){
  $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();
  toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
 }
-$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';motionResize($('#fCatChips'),renderTxChips);if(txCategoryExpanded&&!txPhone.matches)$('#txCategorySearch').focus();};
+$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';if(txDialog.classList.contains('tx-mobile-simple'))renderTxChips();else motionResize($('#fCatChips'),renderTxChips);if(txCategoryExpanded&&!txPhone.matches)$('#txCategorySearch').focus();};
 $('#txCategorySearch').addEventListener('input',renderTxChips);
 $('#txNewCategory').onclick=openTxCategoryEditor;
 $('#txCancelCategory').onclick=()=>{$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txNewCategory').focus();};
@@ -512,11 +514,12 @@ function renderTxChips(){
   if(selMethod==null)selMethod=suggestedTxMethod(selCat,txType);
   const ms=[...new Set([...(state.settings.methods||[]),...(selMethod?[selMethod]:[]),''])];
   $('#fMethodChips').innerHTML=ms.map(m=>`<button type="button" class="chip${m===selMethod?' active':''}" aria-pressed="${m===selMethod}" data-method="${esc(m)}">${esc(m||'Sin especificar')}</button>`).join('');
+  if(typeof syncMobileTxUI==='function')syncMobileTxUI();
 }
 function setTxType(type){
   if(txType!==type){quickExpanded=false;resetTxCategoryUI();if(!txMethodExplicit)selMethod=null;}
   txType = type;
-  document.querySelectorAll('#txSeg button').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  document.querySelectorAll('#txSeg button').forEach(b => {b.classList.toggle('active', b.dataset.type === type);b.setAttribute('aria-pressed',String(b.dataset.type===type));});
   renderTxChips(); renderQuick();
 }
 $('#txSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.type); });
@@ -597,6 +600,7 @@ function openTx(id, preset){
   $('#fDesc').value = p.desc || '';
   $('#txDelete').style.display = t ? '' : 'none'; $('#txDup').style.display = t ? '' : 'none';
   setTxDetails(false);
+  if(typeof prepareMobileTxUI==='function')prepareMobileTxUI();
   showTxDialog();
 }
 // Fecha y descripción plegadas en teléfono: el resumen muestra lo que se guardará.

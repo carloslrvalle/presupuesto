@@ -10,9 +10,10 @@ function syncPlanningNavigation(name){
 }
 function planningHeader(){
  const bothCycles=bothMode&&bothUsesCycles();
- const cy=cycleView();$('#monthLabel').textContent=bothCycles?'Cierre · '+monthShort(currentMonth):cy?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
- $('#monthLabel').title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':cy?cycleLabel(currentMonth):'Elegir mes';
- $('#prevM').title=bothCycles?'Cierre anterior':cy?'Ciclo anterior':'Mes anterior';$('#nextM').title=bothCycles?'Cierre siguiente':cy?'Ciclo siguiente':'Mes siguiente';
+ const cy=cycleView(),headerCycle=cy||(document.querySelector('#tab-movs.active')&&typeof movView!=='undefined'&&movView==='list'&&$('#fltScope').value==='cycle');
+ $('#monthLabel').textContent=bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
+ $('#monthLabel').title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
+ $('#prevM').title=bothCycles?'Cierre anterior':headerCycle?'Ciclo anterior':'Mes anterior';$('#nextM').title=bothCycles?'Cierre siguiente':headerCycle?'Ciclo siguiente':'Mes siguiente';
  const labels=document.querySelectorAll('#tab-dashboard .kpi .label');
  [cy?'Ingresos del ciclo':'Ingresos del mes',cy?'Gastos del ciclo':'Gastos del mes','Saldo acumulado','Tasa de ahorro'].forEach((text,i)=>{if(!labels[i])return;for(const node of labels[i].childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){node.textContent=text;break;}});
  $('#topExp').closest('.card').querySelector('h3').textContent=cy?'Top 5 gastos del ciclo':'Top 5 gastos del mes';
@@ -265,6 +266,7 @@ function motionAnimate(el,frames,kind='move'){
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
 function revealContent(el,kind='fast'){
+ if(el?.matches('.tab,.mview')&&matchMedia('(max-width:700px)').matches)return;
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
 }
 function motionHeight(el){
@@ -334,13 +336,14 @@ document.addEventListener('click',e=>{
 
 // Números que cuentan hasta su valor
 const numMemo = {};
-function fitMetricValue(el,texts=el?._fitTexts||[el?.textContent||'']){
- if(!el?.matches('.kpi .value'))return;
+function fitMetricValue(el){
+ if(!el)return;
  el.style.removeProperty('font-size');
- const available=el.clientWidth;if(!available)return;
- const style=getComputedStyle(el),size=parseFloat(style.fontSize),canvas=fitMetricValue.canvas||(fitMetricValue.canvas=document.createElement('canvas')),ctx=canvas.getContext('2d');
- ctx.font=style.fontStyle+' '+style.fontWeight+' '+style.fontSize+' '+style.fontFamily;
- const spacing=parseFloat(style.letterSpacing)||0,width=Math.max(...texts.map(text=>ctx.measureText(text).width+Math.max(0,text.length-1)*spacing));
+ el.style.whiteSpace='nowrap';
+ const style=getComputedStyle(el),available=el.clientWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0);
+ if(!available)return;
+ const size=parseFloat(style.fontSize),range=document.createRange();range.selectNodeContents(el);
+ const width=range.getBoundingClientRect().width;
  if(width>available)el.style.fontSize=Math.max(12,size*(available-2)/width)+'px';
 }
 function updateTextScale(){
@@ -352,61 +355,18 @@ function updateTextScale(){
 updateTextScale();
 window.addEventListener('resize',updateTextScale);
 new MutationObserver(updateTextScale).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
-function fitMetricValues(){document.querySelectorAll('.tab.active .kpi .value').forEach(el=>fitMetricValue(el));}
+function fitMetricValues(){document.querySelectorAll('.tab.active .kpi .value,.tab.active .mobile-movement-net strong,.tab.active .mobile-movement-net b,.tab.active .mobile-movement-totals b').forEach(el=>fitMetricValue(el));}
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
+// Importes reales en un solo nodo: sin columnas, mascaras ni transformaciones de glifos.
 function countUp(el, to, kind = 'money', cls){
-  if (!el) return; const key = el.id || el.dataset.k, entering = !(key in numMemo), from = entering ? 0 : (el._countValue ?? numMemo[key]); numMemo[key] = to; if (entering) el._countFresh = true;
-  const f = v => kind === 'pct' ? v.toFixed(1) + '%' : fmt(v);
-  if (cls !== undefined) el.className = cls;
-  if(el._raf && el._countTarget===to && key in numMemo && from!==0)return;
-  const target = f(to);
-  if (!entering && !el._raf && el._countTarget === to && el.textContent === target) return;
-  cancelAnimationFrame(el._raf);
-  el._raf=0;el._countTarget=to;
-  if (reduceMotion() || entering || from === to){ el._countValue=to;rollDigits(el,target,0);el._fitTexts=[target];fitMetricValue(el); return; }
-  el._fitTexts=[f(from),target];fitMetricValue(el);
-  // Solo los cambios de valor recorren sus dígitos, con el ritmo de los datos.
-  const t0 = performance.now(), dur = MOTION.data;
-  // Curva con velocidad y aceleración nulas en ambos extremos: evita el arranque brusco y el salto final.
-  const ease = t => t * t * t * (t * (t * 6 - 15) + 10);
-  // Cada dígito gira en su columna hasta el valor final; una entrada nueva parte de la cifra anterior sin transición.
-  if (!el._rollKeys || el._countFresh) rollDigits(el, f(from), 0);
-  el._countFresh = false; void el.offsetWidth; rollDigits(el, target, dur);
-  const step = now => { if(!el.isConnected){el._raf=0;return;}if(reduceMotion()){el._countValue=to;el._raf=0;rollDigits(el,target,0);return;}const k = Math.min(1, (now - t0) / dur); el._countValue=from + (to - from) * ease(k); if (k < 1) el._raf = requestAnimationFrame(step);else {el._raf=0;el._fitTexts=[target];fitMetricValue(el);} };
-  el._raf = requestAnimationFrame(step);
-}
-// Cifras con columnas de dígitos (estilo odómetro). El texto del elemento es siempre la cifra final:
-// lectores de pantalla, pruebas y ajuste de tamaño leen el valor real; las columnas son decoración CSS.
-function rollKeys(text){
-  const first = text.search(/\d/), last = text.length - 1 - [...text].reverse().join('').search(/\d/);
-  if (first < 0) return [...text].map((ch, i) => ['p' + i, ch]);
-  const core = text.slice(first, last + 1), dot = core.indexOf('.'), int = dot < 0 ? core : core.slice(0, dot), out = [];
-  [...text.slice(0, first)].forEach((ch, i) => out.push(['p' + i, ch]));
-  [...int].forEach((ch, i) => out.push(['i' + (int.length - 1 - i), ch]));
-  if (dot >= 0){ out.push(['dot', '.']); [...core.slice(dot + 1)].forEach((ch, i) => out.push(['f' + i, ch])); }
-  [...text.slice(last + 1)].forEach((ch, i) => out.push(['s' + i, ch]));
-  return out;
-}
-function rollDigits(el, text, dur){
-  const keys = rollKeys(text), old = el._rollKeys && el.firstElementChild?.classList.contains('nf-c') && el.textContent === el._rollText ? el._rollMap : null, map = new Map(), frag = [];
-  el.style.setProperty('--nf-dur', (dur || 0) + 'ms');
-  for (const [key, ch] of keys){
-    const digit = /\d/.test(ch); let span = old?.get(key);
-    if (!span || span._digit !== digit || (!digit && span.textContent !== ch)){
-      const fresh = !span; span = document.createElement('span'); span.className = digit ? 'nf-c nf-d' : 'nf-c'; span._digit = digit;
-      if (digit) span.style.setProperty('--n', '0');
-      if (fresh && old && dur) span.classList.add('nf-in');
-    }
-    if (digit){ const g = document.createElement('span'); g.className = 'nf-g'; g.textContent = ch; span.replaceChildren(g); } else span.textContent = ch;
-    span._target = digit ? ch : null;
-    map.set(key, span); frag.push(span);
-  }
-  el.replaceChildren(...frag);
-  // Las columnas nuevas se pintan en 0 antes de girar hacia su dígito.
-  if (dur) void el.offsetWidth;
-  for (const span of frag) if (span._digit) span.style.setProperty('--n', span._target);
-  el._rollKeys = keys; el._rollMap = map; el._rollText = el.textContent;
+  if (!el) return;
+  const key=el.id||el.dataset.k, target=kind==='pct'?to.toFixed(1)+'%':fmt(to);
+  if(cls!==undefined)el.className=cls;
+  cancelAnimationFrame(el._raf);el._raf=0;
+  numMemo[key]=to;el._countValue=to;el._countTarget=to;el._fitTexts=[target];
+  if(el.textContent!==target||el.childElementCount)el.textContent=target;
+  fitMetricValue(el);
 }
 // Barras que crecen: desde cero al entrar a la pestaña o cambiar de mes; desde su valor anterior en el resto de cambios
 let barMemo = {};

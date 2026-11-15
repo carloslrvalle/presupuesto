@@ -3200,8 +3200,8 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  .topbar>.wrap:last-child{padding-top:0;padding-bottom:20px}
  #tabs{--tab-surface:var(--surface-2);display:flex;gap:4px;align-items:center;flex:0 1 auto;width:auto;margin:0;padding:4px;background:var(--surface-2);border:0;border-radius:24px;box-shadow:none}
  #tabs>button{min-height:40px;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:500}
- #tabs>button.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgb(17 24 39 / .08)}
- #tabs>#tabInd{display:none}
+ #tabs>button.active{background:transparent;color:var(--text);box-shadow:none}
+ #tabs>#tabInd{display:block;z-index:0;bottom:auto;border-radius:20px;background:var(--surface);box-shadow:0 1px 3px rgb(17 24 39 / .08);pointer-events:none}
  .topbar.scrolled #tabs{box-shadow:none}
  main.wrap{padding-top:4px;padding-bottom:96px}
  main.wrap,.topbar>.wrap{width:calc(100% - 2 * (var(--creation-size) + var(--creation-gap)));max-width:calc(var(--content-width) + 2 * var(--page-gutter));margin-inline:auto}
@@ -3264,7 +3264,8 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  .desktop-navigation-host{flex:1;min-height:0;overflow-y:auto}
  html[data-desktop-nav=side] #tabs{--tab-surface:transparent;display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;margin:0;padding:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
  html[data-desktop-nav=side] #tabs>button{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;min-height:46px;padding:11px 12px;border-radius:14px;color:var(--muted);font-size:14px;font-weight:500;text-align:left}
- html[data-desktop-nav=side] #tabs>button.active{background:var(--surface-2);color:var(--text);box-shadow:none}
+ html[data-desktop-nav=side] #tabs>button.active{background:transparent;color:var(--text);box-shadow:none}
+ html[data-desktop-nav=side] #tabs>#tabInd{border-radius:14px;background:var(--surface-2);box-shadow:none}
  html[data-desktop-nav=side] #tabs .tb-i{display:grid;place-items:center;width:20px;height:20px;flex:none}
  html[data-desktop-nav=side] #tabs .tb-i>.vi{width:19px;height:19px}
  html[data-desktop-nav=side] #tabs .tb-t{display:block;min-width:0;white-space:normal}

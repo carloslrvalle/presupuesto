@@ -226,6 +226,10 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
 document.addEventListener('keydown',event=>{
  if(['Shift','Control','Alt','Meta'].includes(event.key))return;
  document.documentElement.dataset.motionInput='keyboard';
+ // El indicador y la sección terminan su recorrido antes de mover el foco.
+ document.querySelectorAll('#tabInd,.tab.active').forEach(el=>{
+  if(el._motion)el._motion.finish();
+ });
 },true);
 document.addEventListener('pointerdown',()=>{
  const root=document.documentElement;
@@ -268,6 +272,10 @@ function motionAnimate(el,frames,kind='move'){
 function revealContent(el,kind='fast'){
  if(el?.matches('.tab,.mview')&&matchMedia('(max-width:700px)').matches)return;
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
+}
+function revealSection(el){
+ if(floatingTabs.matches||matchMedia('(max-width:700px)').matches)return;
+ return motionAnimate(el,[{opacity:.72,transform:'translateY(6px)'},{opacity:1,transform:'none'}],'fast');
 }
 function motionHeight(el){
  return el.getBoundingClientRect().height/(Number(getComputedStyle(document.documentElement).zoom)||1);
@@ -442,6 +450,7 @@ function showTab(name, scrollTop = 0){
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
   const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab();
+  if(prevTab!==name)$('#tabInd')._navigationRect=$('#tabInd').getBoundingClientRect();
   for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
     button.classList.toggle('active', button === b);
     if (button === b) button.setAttribute('aria-current', 'page');
@@ -474,7 +483,7 @@ function showTab(name, scrollTop = 0){
   if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
   if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
   // La vista entra después del render y de restaurar su posición.
-  if(prevTab!==name)revealContent($('#tab-'+name));
+  if(prevTab!==name)revealSection($('#tab-'+name));
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
@@ -669,36 +678,40 @@ document.addEventListener('scroll', e => {
   }, 800));
 }, {capture:true, passive:true});
 // Cambia la geometría una vez y anima únicamente su transformación visual.
-function moveIndicator(indicator, geometry){
- const before=indicator.getBoundingClientRect();
+function moveIndicator(indicator, geometry, previousRect){
+ const before=previousRect||indicator.getBoundingClientRect();
  indicator._motion?.cancel();indicator._motion=null;
  Object.assign(indicator.style,geometry);
  const after=indicator.getBoundingClientRect();
  if(reduceMotion()||!before.width||!before.height||!after.width||!after.height)return;
- const x=before.left-after.left,y=before.top-after.top,sx=before.width/after.width,sy=before.height/after.height;
+ const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
+ const x=(before.left-after.left)/zoom,y=(before.top-after.top)/zoom,sx=before.width/after.width,sy=before.height/after.height;
  if(Math.abs(x)<.5&&Math.abs(y)<.5&&Math.abs(sx-1)<.001&&Math.abs(sy-1)<.001)return;
  const animation=indicator.animate([{transform:'translate('+x+'px,'+y+'px) scale('+sx+','+sy+')'},{transform:'none'}],{duration:MOTION.tab,easing:cssVar('--motion-tab-ease')||MOTION.ease});
  indicator._motion=animation;
  animation.onfinish=()=>{if(indicator._motion===animation)indicator._motion=null;};
 }
-function moveTabInd(){
-  const b = $('#tabs button.active'), ind = $('#tabInd'); ind.style.opacity = b ? 1 : 0; if (!b) return;
+function moveTabInd(animate=true){
+  const b = $('#tabs button.active'), ind = $('#tabInd'), previous=ind._navigationRect;
+  delete ind._navigationRect;
+  ind.style.opacity = b ? 1 : 0; if (!b) return;
   // En el teléfono, el indicador abarca toda la pestaña, incluso al pasar a dos filas.
-  const mobile = b.querySelector('.tb-i').offsetWidth > 0;
+  // La misma pieza sigue la caja completa en la barra superior y en el menú lateral.
   const geometry = {
     left: b.offsetLeft + 'px',
     width: b.offsetWidth + 'px',
-    top: mobile ? b.offsetTop + 'px' : '',
-    height: mobile ? b.offsetHeight + 'px' : ''
+    top: b.offsetTop + 'px',
+    height: b.offsetHeight + 'px'
   };
-  if (Object.entries(geometry).some(([key, value]) => ind.style[key] !== value)) {
-    moveIndicator(ind, geometry);
+  if(animate===false){ind._motion?.cancel();ind._motion=null;Object.assign(ind.style,geometry);return;}
+  if (previous||Object.entries(geometry).some(([key, value]) => ind.style[key] !== value)) {
+    moveIndicator(ind, geometry, previous);
   }
 }
 moveTabInd();
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { moveTabInd(); requestAnimationFrame(() => $('#tabInd').classList.add('ready')); });
-window.addEventListener('resize', moveTabInd);
-new ResizeObserver(() => requestAnimationFrame(moveTabInd)).observe($('#tabs'));
+window.addEventListener('resize',()=>moveTabInd(false));
+new ResizeObserver(() => requestAnimationFrame(()=>moveTabInd(false))).observe($('#tabs'));
 // La línea y sombra del encabezado solo aparecen al hacer scroll
 const topbar = $('.topbar');
 const onScroll = () => {

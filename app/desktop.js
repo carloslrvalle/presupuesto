@@ -29,7 +29,8 @@ function positionDesktopNavigation(){
  desktopToggle.setAttribute('aria-pressed',String(side));
  desktopToggle.title=side?'Usar navegación superior':'Usar navegación lateral';
  for(const {node,parent,anchor} of desktopNodes){if(side)parent.append(node);else anchor.after(node);}
- requestAnimationFrame(()=>{moveTabInd();fitMetricValues();if(typeof renderAll==='function')renderAll();});
+ moveTabInd(false);
+ requestAnimationFrame(()=>{moveTabInd(false);fitMetricValues();if(typeof renderAll==='function')renderAll();});
 }
 desktopToggle.onclick=()=>{desktopPreferredLayout=document.documentElement.dataset.desktopNav==='side'?'top':'side';positionDesktopNavigation();};
 desktopSurface.addEventListener('change',positionDesktopNavigation);

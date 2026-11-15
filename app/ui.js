@@ -68,10 +68,6 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshPla
 setInterval(refreshPlanningDate,60000);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-plan-mode]');if(b)setPlanningMode(b.dataset.planMode==='cycle');});
 document.addEventListener('change',e=>{if(e.target.matches('[data-cycle-day]'))setPlanningMode(true,Number(e.target.value));});
-function renderCycleInsight(m,inc,exp,budget){
- const box=$('#insight'),remaining=budget-exp;box.hidden=false;box.dataset.tone=remaining<-.005?'bad':'good';box.querySelector('.i-ic').innerHTML=ic(remaining<-.005?'triangle-alert':'calendar-days');
- $('#insightText').innerHTML=`${fmt(exp)} gastados${budget>0?` · <b>${fmt(Math.abs(remaining))}</b> ${remaining<0?'de exceso':'del presupuesto disponibles'}`:''}.`;
-}
 function renderCycleSaveCard(){
  const m=currentMonth,sv=cycleSavings(m),own=(state.settings.savePctM||{})[cycleBudgetKey(m)]!=null,mode=saveMode();
  $('#budSave').innerHTML=`<h3>${ic('piggy-bank')} Meta de ahorro del ciclo</h3><div class="sv-form"><label class="sv-l" for="svPct">Meta</label><div class="sv-c"><span class="sv-in"><input type="number" id="svPct" min="0" max="100" step="1" value="${sv.pct||''}" placeholder="20"><i>%</i></span></div><span class="sv-l">Aplica a</span><label class="check sv-c"><input type="checkbox" id="svAll"${own?'':' checked'}><span>Meta general${own?' · excepción en este ciclo':''}</span></label><span class="sv-l">Cuenta como ahorro</span><div class="seg sv-c"><button type="button" data-svmode="set" class="${mode==='set'?'active':''}">Lo que separo</button><button type="button" data-svmode="left" class="${mode==='left'?'active':''}">Lo que sobra</button></div></div><div class="sv-tip"><b>${fmt(sv.saved)}</b> ${sv.pct?'de '+fmt(sv.target):'ahorrados en el ciclo'}${sv.rate!=null?' · '+sv.rate.toFixed(1)+'%':''}</div>`;
@@ -348,10 +344,12 @@ function fitMetricValue(el){
  if(!el)return;
  el.style.removeProperty('font-size');
  el.style.whiteSpace='nowrap';
- const style=getComputedStyle(el),available=el.clientWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0);
- if(!available)return;
+ const style=getComputedStyle(el),boxWidth=parseFloat(style.width)||el.offsetWidth;
+ const available=boxWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0)-(parseFloat(style.borderLeftWidth)||0)-(parseFloat(style.borderRightWidth)||0);
+ if(available<=0||!el.getClientRects().length)return;
  const size=parseFloat(style.fontSize),range=document.createRange();range.selectNodeContents(el);
- const width=range.getBoundingClientRect().width;
+ // El rango se mide en pantalla; convertirlo al mismo espacio CSS que el ancho disponible.
+ const zoom=el.getBoundingClientRect().width/boxWidth||1,width=range.getBoundingClientRect().width/zoom;
  if(width>available)el.style.fontSize=Math.max(12,size*(available-2)/width)+'px';
 }
 function updateTextScale(){
@@ -363,7 +361,15 @@ function updateTextScale(){
 updateTextScale();
 window.addEventListener('resize',updateTextScale);
 new MutationObserver(updateTextScale).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
-function fitMetricValues(){document.querySelectorAll('.tab.active .kpi .value,.tab.active .mobile-movement-net strong,.tab.active .mobile-movement-net b,.tab.active .mobile-movement-totals b').forEach(el=>fitMetricValue(el));}
+function fitMetricValues(){
+ document.querySelectorAll('.tab.active .kpi .value,.tab.active .mobile-movement-net strong,.tab.active .mobile-movement-net b,.tab.active .mobile-movement-totals b').forEach(el=>fitMetricValue(el));
+ // Los indicadores del grupo comparten tamaño, incluso si un importe necesita ajustarse.
+ document.querySelectorAll('.tab.active .dashboard-kpis,.tab.active .both-kpis').forEach(group=>{
+  const values=[...group.querySelectorAll('.value')].filter(el=>el.getBoundingClientRect().width>0);
+  const size=Math.min(...values.map(el=>parseFloat(getComputedStyle(el).fontSize)));
+  if(Number.isFinite(size))values.forEach(el=>el.style.fontSize=size+'px');
+ });
+}
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
 // Importes reales en un solo nodo: sin columnas, mascaras ni transformaciones de glifos.

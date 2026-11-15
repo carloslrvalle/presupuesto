@@ -91,53 +91,6 @@ function progressRow(c, real, budget, type, prev, prevM){
   </${tagName}>`;
 }
 const zeroGroup = (items, label) => items.length ? `<details class="zero-group"><summary>${CHEV_D}${items.length} ${label}</summary><div>${items.join('')}</div></details>` : '';
-// Resumen del mes en una frase
-function renderInsight(m, inc, exp, bExp){
-  const box = $('#insight'), el = $('#insightText'), tm = thisMonth(), pm = shiftMonth(m, -1);
-  if (!txOfMonthAll(m).length){ box.hidden = true; return; }
-  const parts = [], b = x => `<b>${x}</b>`;
-  // Mes que aún no empieza: solo el plan, nada de "cerraste"
-  if (m > tm){
-    const pE = plannedOf(m, 'expense'), pI = plannedOf(m, 'income'), mesF = monthLong(m).split(' ')[0];
-    let t = `${mesF} aún no empieza${bExp > 0 ? `: tienes ${b(fmt(bExp))} presupuestado en gastos` : ''}`;
-    if (pE) t += `${bExp > 0 ? ' y' : ':'} ${b(fmt(pE))} ya programado`;
-    if (pI) t += `. Ingresos programados: ${b(fmt(pI))}`;
-    el.innerHTML = t + '.'; box.querySelector('.i-ic').innerHTML = ic('calendar'); box.dataset.tone = 'good'; box.hidden = false; return;
-  }
-  // Presupuesto
-  if (bExp > 0){
-    const d = bExp - exp;
-    parts.push(d >= 0 ? (Math.abs(d)<.005?`Presupuesto de gastos completo: ${b(fmt(exp))}`:m === tm ? `Llevas ${b(fmt(exp))} gastado de ${b(fmt(bExp))} presupuestado (${Math.round(exp / bExp * 100)}%)` : `Cerraste ${b('<span class="good">' + fmt(d) + '</span>')} por debajo del presupuesto de gastos`)
-                      : `Te ${m === tm ? 'estás pasando' : 'pasaste'} ${b('<span class="bad">' + fmt(-d) + '</span>')} del presupuesto de gastos`);
-  } else parts.push(`Llevas ${b(fmt(exp))} en gastos este mes`);
-  // Comparación con el mes anterior (mismo día si es el mes en curso)
-  const day = m === tm ? new Date().getDate() : 31;
-  const prevExp = sum(txOfMonth(pm).filter(t => t.type === 'expense' && Number(t.date.slice(8,10)) <= day));
-  if (prevExp > 0 && exp > 0){
-    const p = (exp - prevExp) / prevExp * 100, mes = monthLong(pm).split(' ')[0].toLowerCase();
-    if (Math.abs(p) < 2) parts.push(`${m === tm ? 'gastas' : 'gastaste'} casi lo mismo que en ${mes}`);
-    else parts.push(`${m === tm ? 'gastas' : 'gastaste'} ${b('<span class="' + (p < 0 ? 'good' : 'bad') + '">' + Math.abs(p).toFixed(0) + '% ' + (p < 0 ? 'menos' : 'más') + '</span>')} que en ${mes}${m === tm ? ' a esta fecha' : ''}`);
-  }
-  let text = parts.join(' y ') + '.';
-  // Categorías en alerta
-  // Completo no es exceso: solo el gasto superior al presupuesto es una alerta roja.
-  const st = catsOf('expense').filter(c => !isSavingCat(c.id)).map(c => { const bb = getBudget(m, c.id), r = realBy(m, c.id); return {c, bb, r, p: bb > 0 ? r / bb : 0}; }).filter(x => x.bb > 0);
-  const over = st.filter(x => budgetStatus(x.r,x.bb)==='over'), full = st.filter(x => budgetStatus(x.r,x.bb)==='complete'), near = st.filter(x => budgetStatus(x.r,x.bb)==='near');
-  const names = arr => { const n = arr.map(x => b(esc(x.c.name))); return n.length > 2 ? n.slice(0, 2).join(', ') + ` y ${n.length - 2} más` : n.join(' y '); };
-  // Solo la alerta más importante, para que el resumen quepa en dos líneas
-  const alerts = [], rest = n => n ? ` (${n} ${n===1?'categoría con poco presupuesto disponible':'categorías con poco presupuesto disponible'})` : '';
-  if (over.length) alerts.push(`${names(over)} ${over.length === 1 ? `superó su presupuesto por ${b('<span class="bad">' + fmt(over[0].r - over[0].bb) + '</span>')}` : 'superaron su presupuesto'}${rest(near.length)}`);
-  else if (full.length) alerts.push(`Presupuesto completo en ${names(full)}${rest(near.length)}`);
-  else if (near.length) alerts.push(`${names(near)}: ${near.length===1?`quedan ${b(fmt(near[0].bb-near[0].r))} disponibles`:'queda menos del 15% del presupuesto disponible'}`);
-  if (alerts.length) text += ' ' + alerts[0].replace(/^./, ch => ch.toUpperCase()) + '.';
-  if (!alerts.length && inc > 0 && inc - exp > 0 && bExp > 0 && exp > 0) text += ' Sin excesos en las categorías con presupuesto.';
-  const icon = over.length || (bExp > 0 && exp > bExp) ? 'triangle-alert' : near.length ? 'circle-alert' : full.length?'check':'sparkles';
-  box.dataset.tone = over.length || (bExp > 0 && exp > bExp) ? 'bad' : near.length ? 'warn' : full.length?'neutral':'good';
-  // Una sola conclusión; el desglose permanece en los indicadores y Presupuesto.
-  text=bExp>0&&exp>bExp+.005?`Exceso de <b>${fmt(exp-bExp)}</b> en el presupuesto de gastos.`:over.length?`${over.length} ${over.length===1?'categoría supera':'categorías superan'} su presupuesto.`:near.length?`${near.length} ${near.length===1?'categoría tiene':'categorías tienen'} poco margen disponible.`:parts[0]+'.';
-  if (el.innerHTML !== text){ el.innerHTML = text; box.querySelector('.i-ic').innerHTML = ic(icon); box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap'); }
-  box.hidden = false;
-}
 // El saldo anterior es derivado: nunca crea ingresos ni cierres duplicados.
 function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv}){
  const row=(label,value,cls='')=>`<div class="metric-detail-row"><span>${label}</span><b class="${cls}">${value}</b></div>`;
@@ -166,7 +119,7 @@ function renderDashboard(){
   const cy=cycleView();ensureCyclePlan(currentMonth);renderPeriodControls();
   const m = currentMonth, txs = planTx(m);
   const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense'));
-  const bInc = planTotal(m,'income'), bExp = planTotal(m,'expense'), bal = inc - exp;
+  const bInc = planTotal(m,'income'), bExp = planTotal(m,'expense');
   countUp($('#kIncome'), inc);
   const pInc = planPlanned(m, 'income'), pExp = planPlanned(m, 'expense');
   const pp = cy ? [] : pendingPays(m);
@@ -174,7 +127,6 @@ function renderDashboard(){
   // Cuánto puedes gastar por día hasta fin de mes (sin contar lo que es para ahorrar ni lo ya programado)
   // Gastos: lo que el presupuesto aún permite gastar (no es dinero disponible, es el plan)
   let pace = '';
-  const pend = Math.max(0, bExp - exp);
   if (m === planCurrentMonth() && bExp > exp){
     const daysLeft = cy ? Math.max(1, Math.round((Date.parse(cyclePeriod(m).end)-Date.parse(todayISO()))/864e5)+1) : daysIn(m)-new Date().getDate()+1;
     const savLeft = catsOf('expense').filter(c => isSavingCat(c.id)).reduce((a, c) => a + Math.max(0, planBudget(m, c.id) - planReal(m, c.id)), 0);
@@ -215,8 +167,6 @@ function renderDashboard(){
   };
   $('#bvaExpense').innerHTML = rows('expense');
   animateBars($('#tab-dashboard'));
-  if(cy)renderCycleInsight(m,inc,exp,bExp);
-  else renderInsight(m,inc,exp,bExp);
 
   const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.amount - a.amount).slice(0,5);
   $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<button type="button" class="prow link" data-go-tx="${esc(t.id)}" title="Editar movimiento">
@@ -323,7 +273,7 @@ function renderCharts(){
   if(chBars?.canvas?.isConnected){
     chBars.options.plugins.tooltip.callbacks.title=items=>items.length?(cycleView()?cycleLabel(months[items[0].dataIndex]):monthLong(months[items[0].dataIndex])):'';
     chBars.options.scales.x.ticks.color=c=>c.index===months.length-1?cssVar('--text'):cssVar('--muted');
-    chBars.options.scales.x.ticks.font=c=>({size:11,weight:c.index===months.length-1?'700':'500'});
+    chBars.options.scales.x.ticks.font=c=>({size:12,weight:c.index===months.length-1?'700':'500'});
   }
   if(chBars?.canvas?.isConnected && JSON.stringify(chBars.data.labels)===JSON.stringify(labels) && JSON.stringify(chBars.data.datasets.map(d=>d.data))===JSON.stringify([incs.map((v,i)=>(incs[i]||exps[i])?v:null),exps.map((v,i)=>(incs[i]||exps[i])?v:null)])){chBars.update('none');return;}
   const morphB = chartMorph && chBars && chBars.canvas && chBars.canvas.isConnected && (incs.some(Boolean) || exps.some(Boolean));
@@ -345,7 +295,7 @@ function renderCharts(){
     options:{maintainAspectRatio:false, animation:reduceMotion()?false:{duration:650,easing:'easeInOutCubic',delay:c=>c.type==='data'&&!c.chart.$entered?c.dataIndex*(innerWidth<=700?40:80):0,onComplete:({chart})=>{chart.$entered=true;}}, interaction:{mode:'index', intersect:false}, layout:{padding:{top:2, right:6, left:2}},
       plugins:{legend:{...LEGEND, labels:{...LEGEND.labels, generateLabels: ch => ch.data.datasets.map((d, i) => ({text:d.label, fillStyle:cssVar(d.solid), strokeStyle:cssVar(d.solid), lineWidth:d.type === 'line'?2:0, pointStyle:d.type === 'line' ? 'line' : 'rectRounded', hidden:!ch.isDatasetVisible(i), datasetIndex:i, fontColor:cssVar('--muted')}))}},
         tooltip:{filter: i => i.raw != null, callbacks:{title:items=>items.length?(cycleView()?cycleLabel(months[items[0].dataIndex]):monthLong(months[items[0].dataIndex])):'',label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`, labelColor: ctx => ({backgroundColor:cssVar(ctx.dataset.solid), borderColor:cssVar(ctx.dataset.solid), borderRadius:5})}}},
-      scales:{x:{grid:{display:false}, border:{display:false}, ticks:{maxRotation:0,autoSkip:false,color: c => c.index === cur ? cssVar('--text') : cssVar('--muted'), font: c => ({size:11,weight: c.index === cur ? '700' : '500'})}},
+      scales:{x:{grid:{display:false}, border:{display:false}, ticks:{maxRotation:0,autoSkip:false,color: c => c.index === cur ? cssVar('--text') : cssVar('--muted'), font: c => ({size:12,weight: c.index === cur ? '700' : '500'})}},
         y:{beginAtZero:true, grace:'10%', grid:{color: c => c.tick.value === 0 ? cssVar('--muted') + '55' : grid}, border:{display:false, dash:[4,4]}, ticks:{callback:compactS, maxTicksLimit:5, padding:8}}}}
   });
 }

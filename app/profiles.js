@@ -7,19 +7,23 @@ function renderProfileUI(){
   if (bothMode){ $('#profAv').className = 'prof-av both'; $('#profAv').style.background = ''; $('#profAv').innerHTML = ic('users'); $('#profNm').textContent = 'Ambos'; }
   else { const pr = profOf(activeProfile); $('#profAv').className = 'prof-av'; $('#profAv').style.background = pr.photo ? 'transparent' : soft(pr.color); $('#profAv').innerHTML = avatarHTML(pr); $('#profNm').textContent = pr.name; }
   $('#profCv').innerHTML = ic('chevron-down'); chip.title = 'Usuario: ' + (bothMode ? 'Ambos' : profOf(activeProfile).name) + ' · tocar para cambiar';
+  chip.setAttribute('aria-label','Cambiar de usuario. Actual: '+(bothMode?'Ambos':profOf(activeProfile).name));
   if ($('#tab-settings').classList.contains('active')) renderProfEdit();
 }
 const profMenu = document.createElement('div'); profMenu.className = 'prof-menu'; profMenu.hidden = true; profMenu.id = 'profileMenu'; profMenu.setAttribute('role', 'menu'); profMenu.setAttribute('aria-label', 'Cambiar de usuario'); document.body.appendChild(profMenu);
 function renderProfMenu(){
   const on = id => !bothMode && id === activeProfile;
-  profMenu.innerHTML = profiles.list.map(pr => `<button type="button" role="menuitem" data-prof="${esc(pr.id)}" class="${on(pr.id) ? 'on' : ''}">${avatarBox(pr)}<span>${esc(pr.name)}</span>${on(pr.id) ? ic('check') : ''}</button>`).join('')
-    + `<button type="button" role="menuitem" data-prof="both" class="${bothMode ? 'on' : ''}"><span class="prof-av both">${ic('users')}</span><span>Ambos <small>· solo lectura</small></span>${bothMode ? ic('check') : ''}</button><hr>`
-    + `<button type="button" role="menuitem" data-prof="edit"><span class="prof-av plain">${ic('pencil')}</span><span>Editar usuarios</span></button>`;
+  profMenu.innerHTML = '<div class="prof-menu-heading" aria-hidden="true">Usuarios</div>'
+    + profiles.list.map(pr => `<button type="button" role="menuitemradio" aria-checked="${on(pr.id)}" tabindex="-1" data-prof="${esc(pr.id)}" class="${on(pr.id) ? 'on' : ''}">${avatarBox(pr)}<span class="prof-menu-copy"><span class="prof-menu-name">${esc(pr.name)}</span></span>${on(pr.id) ? ic('check') : ''}</button>`).join('')
+    + `<button type="button" role="menuitemradio" aria-checked="${bothMode}" tabindex="-1" data-prof="both" class="${bothMode ? 'on' : ''}"><span class="prof-av both">${ic('users')}</span><span class="prof-menu-copy"><span class="prof-menu-name">Ambos</span><small>Solo lectura</small></span>${bothMode ? ic('check') : ''}</button><hr role="separator">`
+    + `<button type="button" role="menuitem" tabindex="-1" data-prof="edit"><span class="prof-av plain">${ic('pencil')}</span><span class="prof-menu-copy"><span class="prof-menu-name">Editar usuarios</span></span></button>`;
 }
 const profileTrigger = $('#profChip');
 profileTrigger.setAttribute('aria-haspopup', 'menu');
 profileTrigger.setAttribute('aria-controls', profMenu.id);
+let profilePositionFrame=0;
 function closeProfMenu(restoreFocus = false){
+  cancelAnimationFrame(profilePositionFrame);profilePositionFrame=0;
   profMenu.hidden = true;
   profMenu.inert = true;
   profileTrigger.setAttribute('aria-expanded', 'false');
@@ -29,18 +33,32 @@ function openProfMenu(last = false){
   renderProfMenu();
   profMenu.hidden = false;
   profMenu.inert = false;
-  const r = profileTrigger.getBoundingClientRect(), w = profMenu.offsetWidth;
-  const below = innerHeight - r.bottom - 16, above = r.top - 16;
-  const openAbove = below < profMenu.scrollHeight && above > below;
-  profMenu.style.maxHeight = Math.max(0, openAbove ? above : below) + 'px';
-  profMenu.style.top = (openAbove ? r.top - profMenu.offsetHeight - 8 : r.bottom + 8) + 'px';
-  const left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w));
-  profMenu.style.left = left + 'px';
-  profMenu.style.transformOrigin = Math.max(0,Math.min(w,r.left+r.width/2-left))+'px '+(openAbove?'bottom':'top');
+  profMenu.scrollTop=0;
+  positionProfMenu();
   profileTrigger.setAttribute('aria-expanded', 'true');
   const items = profMenu.querySelectorAll('button');
   items[last ? items.length - 1 : 0]?.focus({preventScroll:true});
 }
+function positionProfMenu(){
+  if(profMenu.hidden)return;
+  const zoom=Number(getComputedStyle(document.documentElement).zoom)||1,r=profileTrigger.getBoundingClientRect(),scrollTop=profMenu.scrollTop;
+  profMenu.style.width=Math.max(0,Math.min(288,(innerWidth-16)/zoom))+'px';
+  profMenu.style.maxHeight='none';
+  const w=profMenu.offsetWidth*zoom,h=profMenu.offsetHeight*zoom;
+  const below=Math.max(0,innerHeight-r.bottom-16),above=Math.max(0,r.top-16),openAbove=h>below&&above>below;
+  const available=openAbove?above:below;
+  profMenu.style.maxHeight=available/zoom+'px';
+  const height=Math.min(h,available),targetLeft=profileTrigger.closest('#desktopSidebar')?r.left:r.right-w;
+  const left=Math.max(8,Math.min(innerWidth-w-8,targetLeft));
+  const top=Math.max(8,Math.min(innerHeight-height-8,openAbove?r.top-height-8:r.bottom+8));
+  profMenu.style.left=left/zoom+'px';profMenu.style.top=top/zoom+'px';
+  profMenu.style.transformOrigin=Math.max(0,Math.min(w,r.left+r.width/2-left))/zoom+'px '+(openAbove?'bottom':'top');
+  profMenu.scrollTop=scrollTop;
+}
+document.addEventListener('scroll',event=>{
+  if(profMenu.hidden||profMenu.contains(event.target)||profilePositionFrame)return;
+  profilePositionFrame=requestAnimationFrame(()=>{profilePositionFrame=0;positionProfMenu();});
+},{capture:true,passive:true});
 profileTrigger.onclick = e => {
   e.stopPropagation();
   if (profMenu.hidden) openProfMenu();
@@ -67,7 +85,7 @@ profMenu.addEventListener('keydown', e => {
   const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (current + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
   items[next]?.focus();
 });
-window.addEventListener('resize', () => { if (!profMenu.hidden) closeProfMenu(); });
+window.addEventListener('resize', () => { if (!profMenu.hidden) closeProfMenu(true); });
 profMenu.addEventListener('click', e => {
   const b = e.target.closest('[data-prof]'); if (!b) return; closeProfMenu(true);
   const id = b.dataset.prof;

@@ -697,11 +697,13 @@ function moveTabInd(animate=true){
   ind.style.opacity = b ? 1 : 0; if (!b) return;
   // En el teléfono, el indicador abarca toda la pestaña, incluso al pasar a dos filas.
   // La misma pieza sigue la caja completa en la barra superior y en el menú lateral.
+  const box=b.getBoundingClientRect(),nav=tabBar.getBoundingClientRect();
+  const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
   const geometry = {
-    left: b.offsetLeft + 'px',
-    width: b.offsetWidth + 'px',
-    top: b.offsetTop + 'px',
-    height: b.offsetHeight + 'px'
+    left: ((box.left-nav.left)/zoom-tabBar.clientLeft+tabBar.scrollLeft) + 'px',
+    width: box.width/zoom + 'px',
+    top: ((box.top-nav.top)/zoom-tabBar.clientTop+tabBar.scrollTop) + 'px',
+    height: box.height/zoom + 'px'
   };
   if(animate===false){ind._motion?.cancel();ind._motion=null;Object.assign(ind.style,geometry);return;}
   if (previous||Object.entries(geometry).some(([key, value]) => ind.style[key] !== value)) {

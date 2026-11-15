@@ -3269,7 +3269,7 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  #desktopLayoutToggle{flex:none;align-items:center;justify-content:center;width:40px;height:40px;min-width:40px;border:1px solid transparent;border-radius:12px;color:var(--muted);background:transparent}
  #desktopLayoutToggle:hover{background:var(--surface-2);color:var(--text)}
  .topbar .brand{margin-right:auto}
- html[data-desktop-nav=side]{--desktop-sidebar-width:240px}
+ html[data-desktop-nav=side]{--desktop-sidebar-width:240px;--creation-right:var(--page-gutter)}
  html[data-desktop-nav=side] .topbar{margin-left:var(--desktop-sidebar-width);margin-right:calc(var(--creation-size) + var(--creation-gap))}
  html[data-desktop-nav=side] .topbar>.wrap{width:100%;margin-inline:auto}
  html[data-desktop-nav=side] main.wrap{width:auto;max-width:none;margin-left:var(--desktop-sidebar-width);margin-right:calc(var(--creation-size) + var(--creation-gap))}
@@ -3302,6 +3302,7 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  @media(max-width:1049px){
   :root{--page-gutter:24px}
   main.wrap,.topbar>.wrap{width:100%;margin-inline:0}
+  main.wrap{width:auto;margin-right:calc(var(--creation-size) + var(--creation-gap))}
   #tabs>button{padding-inline:14px}
   .topbar>.wrap:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto;padding-top:20px;gap:14px}
   .topbar .brand{min-width:0;grid-column:1;grid-row:1}

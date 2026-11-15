@@ -19,21 +19,55 @@ const desktopNodes=[[$('#tabs'),desktopSidebar.querySelector('.desktop-navigatio
  const anchor=document.createComment('Posición de la navegación superior');node.before(anchor);return {node,parent,anchor};
 });
 let desktopPreferredLayout='side';
+const desktopMotionNodes=[$('.topbar'),$('main.wrap'),$('#fab')];
+function stopDesktopMotion(){
+ for(const node of [...desktopMotionNodes,desktopSidebar]){node._desktopMotion?.cancel();node._desktopMotion=null;}
+}
 function updateDesktopNavigation(){
  const active=activeTab()==='settings';desktopSettings.classList.toggle('active',active);
  if(active)desktopSettings.setAttribute('aria-current','page');else desktopSettings.removeAttribute('aria-current');
 }
-function positionDesktopNavigation(){
+function positionDesktopNavigation(animate=false){
  const side=desktopSurface.matches&&desktopSidebarSpace.matches&&desktopPreferredLayout==='side';
+ const changed=document.documentElement.dataset.desktopNav!==(side?'side':'top');
+ const smooth=animate===true&&changed&&desktopSurface.matches&&!reduceMotion();
+ // Leer la posición visible antes de cancelar permite invertir un cambio en curso sin saltos.
+ const previous=smooth?desktopMotionNodes.map(node=>node.getBoundingClientRect()):[];
+ stopDesktopMotion();
  document.documentElement.dataset.desktopNav=side?'side':'top';
  desktopToggle.setAttribute('aria-pressed',String(side));
  desktopToggle.title=side?'Usar navegación superior':'Usar navegación lateral';
- for(const {node,parent,anchor} of desktopNodes){if(side)parent.append(node);else anchor.after(node);}
+ const focused=document.activeElement;
+ for(const {node,parent,anchor} of desktopNodes){
+  if(side){if(node.parentElement!==parent)parent.append(node);}
+  else if(node.previousSibling!==anchor)anchor.after(node);
+ }
+ if(focused!==document.activeElement&&focused instanceof HTMLElement)focused.focus({preventScroll:true});
  moveTabInd(false);
+ if(smooth){
+  const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
+  desktopMotionNodes.forEach((node,index)=>{
+   const from=previous[index],to=node.getBoundingClientRect();
+   if(!from.width||!to.width)return;
+   const x=(from.left-to.left)/zoom,y=(from.top-to.top)/zoom;
+   if(Math.abs(x)<.5&&Math.abs(y)<.5)return;
+   const motion=node.animate([{transform:`translate(${x}px,${y}px)`},{transform:'none'}],{duration:MOTION.panel,easing:MOTION.ease});
+   node._desktopMotion=motion;
+   motion.onfinish=()=>{if(node._desktopMotion===motion)node._desktopMotion=null;};
+  });
+  if(side){
+   const motion=desktopSidebar.animate([{opacity:0},{opacity:1}],{duration:MOTION.panel,easing:MOTION.ease});
+   desktopSidebar._desktopMotion=motion;
+   motion.onfinish=()=>{if(desktopSidebar._desktopMotion===motion)desktopSidebar._desktopMotion=null;};
+  }
+ }
  requestAnimationFrame(()=>{moveTabInd(false);fitMetricValues();if(typeof renderAll==='function')renderAll();});
 }
-desktopToggle.onclick=()=>{desktopPreferredLayout=document.documentElement.dataset.desktopNav==='side'?'top':'side';positionDesktopNavigation();};
+desktopToggle.onclick=()=>{desktopPreferredLayout=document.documentElement.dataset.desktopNav==='side'?'top':'side';positionDesktopNavigation(true);};
 desktopSurface.addEventListener('change',positionDesktopNavigation);
 desktopSidebarSpace.addEventListener('change',positionDesktopNavigation);
+window.addEventListener('resize',stopDesktopMotion);
+document.addEventListener('keydown',event=>{if(!['Shift','Control','Alt','Meta'].includes(event.key))stopDesktopMotion();},true);
+matchMedia('(prefers-reduced-motion:reduce)').addEventListener('change',stopDesktopMotion);
 // Las superficies cambian solo al cruzar el umbral de escritorio o teléfono.
 positionDesktopNavigation();

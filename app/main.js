@@ -86,6 +86,7 @@ function renderAll(){
   renderProfileUI();
   renderView(activeTab());
   updateMobileNavigation();
+  updateDesktopNavigation();
   checkGoalCelebration();
 }
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);

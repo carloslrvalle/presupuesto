@@ -466,7 +466,8 @@ function themeSeries(t, surface, dark = isDarkUI()){
 function applyThemeVars(){
   const r=document.documentElement.style, t=curTheme(), dark=isDarkUI();
   // Superficies propias del tema: ui en oscuro, uiLight en claro; texto y texto secundario son opcionales.
-  const ui=themeUi(t,dark),uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
+  const desktopLight=matchMedia('(min-width:601px)').matches&&!matchMedia('(max-width:960px) and (max-height:500px) and (pointer:coarse)').matches&&!dark;
+  const originalUi=themeUi(t,dark),ui=desktopLight?{...originalUi,bg:'#f4f5f6',surface:'#ffffff',s2:'#eceef0',border:'#e5e7e9'}:originalUi,uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
   for(const [key,field] of uiMap){if(ui?.[field])r.setProperty(key,ui[field]);else r.removeProperty(key);}
   const palette = themePalette(t, dark);
   for (const key of PALETTE_KEYS){

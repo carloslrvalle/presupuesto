@@ -471,6 +471,7 @@ function showTab(name, scrollTop = 0){
   if (name === 'movs') moveViewInd();
   updateCreationControls();
   if (typeof updateMobileNavigation === 'function') updateMobileNavigation();
+  if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
   if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
   // La vista entra después del render y de restaurar su posición.
   if(prevTab!==name)revealContent($('#tab-'+name));

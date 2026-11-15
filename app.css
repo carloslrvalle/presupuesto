@@ -3187,3 +3187,109 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  html #txDialog.tx-mobile-simple.kb-open .dlg-body{gap:8px;padding-block:4px 10px}
  @media(max-width:360px){#tab-movs #movView{gap:14px}.mobile-movement-net strong,.mobile-movement-net b{font-size:20px}html #txDialog.tx-mobile-simple .dlg-body{padding-inline:18px}.tx-mobile-simple .mobile-tx-meta{gap:6px}.tx-mobile-simple #fDateField .dp-trigger,.tx-mobile-simple #mobileTxCategory{font-size:11px}}
 }
+
+/* 1.10.118: primer borrador de escritorio, superficies claras y bordes suaves. */
+#desktopSidebar,#desktopLayoutToggle{display:none}
+@media (min-width:601px) and (min-height:501px), (min-width:961px), (min-width:601px) and (pointer:fine){
+ :root{--content-width:1440px;--page-gutter:32px;--section-gap:24px;--report-gap:24px;--metric-padding:1.375rem;--metric-value-size:1.75rem}
+ .topbar,.topbar.scrolled{background:var(--bg);border-bottom-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+ .topbar::before{display:none}
+ .topbar>.wrap:first-child{padding-top:28px;padding-bottom:16px;gap:20px}
+ .topbar .brand{font-size:24px;letter-spacing:-.7px}
+ .head-right{gap:12px}
+ .topbar>.wrap:last-child{padding-top:0;padding-bottom:20px}
+ #tabs{--tab-surface:var(--surface-2);display:flex;gap:4px;align-items:center;flex:0 1 auto;width:auto;margin:0;padding:4px;background:var(--surface-2);border:0;border-radius:24px;box-shadow:none}
+ #tabs>button{min-height:40px;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:500}
+ #tabs>button.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgb(17 24 39 / .08)}
+ #tabs>#tabInd{display:none}
+ .topbar.scrolled #tabs{box-shadow:none}
+ main.wrap{padding-top:4px;padding-bottom:96px}
+ main.wrap,.topbar>.wrap{width:calc(100% - 2 * (var(--creation-size) + var(--creation-gap)));max-width:calc(var(--content-width) + 2 * var(--page-gutter));margin-inline:auto}
+ .card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:0 1px 2px rgb(17 24 39 / .045),0 2px 4px rgb(17 24 39 / .025)}
+ .dashboard-kpis>.metric-disclosure{border-radius:20px}
+ #tab-dashboard .dashboard-kpis,#bothBody .both-kpis,#anKpis{gap:16px}
+ #tab-dashboard .dashboard-kpis>.kpi>summary{padding:22px;min-height:156px}
+ #tab-dashboard .metric-disclosure>summary .label{font-weight:500;color:var(--muted)}
+ #tab-dashboard .metric-disclosure>summary .value{font-weight:600;letter-spacing:-.7px;margin:16px 0 8px}
+ #tab-dashboard .metric-preview{font-size:12px;line-height:1.5}
+ #tab-dashboard .metric-chevron{top:23px;right:18px}
+ .dashboard-charts{gap:24px}
+ .dashboard-charts>.card{padding:24px}
+ .dashboard-chart-heading{margin-bottom:24px}
+ .dashboard-chart-heading h3{font-size:17px;font-weight:600;letter-spacing:-.3px}
+ .dashboard-chart-heading p{font-size:12px}
+ .grid2{gap:24px}
+ .section-disclosure>summary{border-radius:20px;padding:20px 24px}
+ .section-disclosure>.disclosure-body{padding-inline:24px}
+ .month-nav,.year-nav,.prof-chip,.sync-badge,.gear-btn{border-radius:14px;box-shadow:none}
+ .month-nav,.year-nav{background:var(--surface-2);border-color:transparent;min-height:42px;padding-inline:6px}
+ .month-nav button,.year-nav button{border-radius:10px}
+ .btn,.period-trigger,.dp-trigger,.fsel-btn,.search-box{border-radius:12px;box-shadow:none}
+ .search-box{background:var(--surface);border-color:var(--border)}
+ .seg,.vseg{border-radius:14px;background:var(--surface-2)}
+ .seg>button,.vseg>button,.vseg-ind{border-radius:11px}
+ .seg:has(>button.active)::before{border-radius:11px}
+ .iconbtn{border-radius:50%}
+ .table-wrap{border-radius:14px}
+ #movSummary{border-radius:20px 20px 0 0;padding:20px 24px;background:var(--surface)}
+ #movBody.mov-history{padding:0 24px 16px}
+ #movBody .history-day-head{padding-top:22px;padding-bottom:10px}
+ #movBody .history-row{border-radius:12px}
+ #movBody .history-edit{min-height:72px}
+ #movBody .history-edit>.history-icon{border-radius:12px}
+ #tab-budget .bud-grid{gap:24px}
+ #tab-budget .bud-side{gap:24px}
+ #tab-budget .bud-grid>.card,#tab-budget .bud-side>.card{padding:24px}
+ dialog{border-radius:22px}
+ dialog .dlg-head{padding:22px 24px 16px}
+ dialog .dlg-body{padding-inline:24px}
+ dialog .dlg-foot{padding:16px 24px 22px}
+ #fab{border-radius:18px;box-shadow:0 3px 10px rgb(17 24 39 / .14)}
+ #desktopLayoutToggle{flex:none;align-items:center;justify-content:center;width:40px;height:40px;min-width:40px;border:1px solid transparent;border-radius:12px;color:var(--muted);background:transparent}
+ #desktopLayoutToggle:hover{background:var(--surface-2);color:var(--text)}
+ .topbar .brand{margin-right:auto}
+ html[data-desktop-nav=side]{--desktop-sidebar-width:240px}
+ html[data-desktop-nav=side] .topbar{margin-left:var(--desktop-sidebar-width);margin-right:calc(var(--creation-size) + var(--creation-gap))}
+ html[data-desktop-nav=side] .topbar>.wrap{width:100%;margin-inline:auto}
+ html[data-desktop-nav=side] main.wrap{width:auto;max-width:none;margin-left:var(--desktop-sidebar-width);margin-right:calc(var(--creation-size) + var(--creation-gap))}
+ html[data-desktop-nav=side] .topbar>.wrap:last-child{display:none}
+ html[data-desktop-nav=side] #btnSettings{display:none}
+ html[data-desktop-nav=side] #desktopSidebar{position:fixed;z-index:20;top:16px;bottom:16px;left:16px;display:flex;flex-direction:column;gap:24px;width:224px;padding:16px 12px;border:1px solid var(--border);border-radius:22px;background:var(--bg)}
+ .desktop-profile-host .top-pair{display:flex;align-items:center;gap:6px;min-width:0;padding:0 0 4px}
+ .desktop-profile-host .prof-chip{flex:1;justify-content:flex-start;min-width:0;padding:6px;border-color:transparent;background:transparent;box-shadow:none}
+ .desktop-profile-host .prof-nm{max-width:110px;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+ .desktop-profile-host .prof-cv{margin-left:auto}
+ .desktop-profile-host .sync-badge{flex:none;min-width:32px;padding:0 9px;border:0;background:transparent;box-shadow:none}
+ .desktop-profile-host .sync-badge .sb-t{display:none}
+ .desktop-navigation-host{flex:1;min-height:0;overflow-y:auto}
+ html[data-desktop-nav=side] #tabs{--tab-surface:transparent;display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;margin:0;padding:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+ html[data-desktop-nav=side] #tabs>button{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;min-height:46px;padding:11px 12px;border-radius:14px;color:var(--muted);font-size:14px;font-weight:500;text-align:left}
+ html[data-desktop-nav=side] #tabs>button.active{background:var(--surface-2);color:var(--text);box-shadow:none}
+ html[data-desktop-nav=side] #tabs .tb-i{display:grid;place-items:center;width:20px;height:20px;flex:none}
+ html[data-desktop-nav=side] #tabs .tb-i>.vi{width:19px;height:19px}
+ html[data-desktop-nav=side] #tabs .tb-t{display:block;min-width:0;white-space:normal}
+ .desktop-sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border)}
+ .desktop-settings{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:11px 12px;border:0;border-radius:14px;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;text-align:left}
+ .desktop-settings>.vi{width:19px;height:19px;flex:none}
+ .desktop-settings:is(:hover,.active){color:var(--text);background:var(--surface-2)}
+ @media(min-width:1050px){#desktopLayoutToggle{display:flex}}
+ @media(max-width:1279px){html[data-desktop-nav=side] #tab-dashboard .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+ @media(max-width:1199px){html[data-desktop-nav=side] .dashboard-charts{grid-template-columns:minmax(0,1fr)}}
+ @media(max-width:1049px){
+  :root{--page-gutter:24px}
+  main.wrap,.topbar>.wrap{width:100%;margin-inline:0}
+  #tabs>button{padding-inline:14px}
+  .topbar>.wrap:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto;padding-top:20px;gap:14px}
+  .topbar .brand{min-width:0;grid-column:1;grid-row:1}
+  .topbar .brand #appName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .head-right{display:contents}
+  .topbar .top-pair{display:flex;align-items:center;gap:8px;grid-column:2;grid-row:1}
+  .topbar .sync-badge .sb-t{display:none}
+  .topbar .sync-badge{min-width:36px;padding-inline:10px}
+  .topbar #btnSettings{grid-column:2;grid-row:2;justify-self:end}
+  .topbar .month-nav{grid-column:1;grid-row:2;justify-self:start}
+  #tab-dashboard .dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dashboard-charts{grid-template-columns:minmax(0,1fr)}
+ }
+ @media(max-width:760px){:root{--page-gutter:20px;--section-gap:20px;--report-gap:20px}#tabs{width:100%;overflow-x:auto}#tabs>button{padding-inline:12px}.topbar>.wrap:first-child{gap:12px}.dashboard-charts>.card{padding:20px}}
+}

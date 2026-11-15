@@ -10,6 +10,30 @@ mobileNav.innerHTML = mobileNavItem('dashboard', 'Inicio', 'house')
   + mobileNavItem('budget', 'Presupuesto', 'wallet')
   + `<button type="button" id="mobileMoreButton" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileMore"><span class="mobile-nav-glyph">${ic('list')}</span><span class="mobile-nav-label">Más</span></button>`;
 document.body.append(mobileNav);
+const mobileNavIndicator=document.createElement('span');
+mobileNavIndicator.id='mobileNavIndicator';mobileNavIndicator.className='mobile-nav-indicator';
+mobileNavIndicator.setAttribute('aria-hidden','true');mobileNav.prepend(mobileNavIndicator);
+
+function moveMobileNavIndicator(animate=true){
+ const glyph=mobileNav.querySelector('button.active .mobile-nav-glyph');
+ if(!mobileLayout.matches||!mobileNav.offsetWidth||!glyph){
+  mobileNavIndicator._motion?.cancel();mobileNavIndicator._motion=null;
+  mobileNavIndicator._placed=false;mobileNavIndicator.style.opacity='0';return;
+ }
+ const box=glyph.getBoundingClientRect(),nav=mobileNav.getBoundingClientRect();
+ const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
+ const geometry={left:((box.left-nav.left)/zoom-mobileNav.clientLeft)+'px',top:((box.top-nav.top)/zoom-mobileNav.clientTop)+'px',width:glyph.offsetWidth+'px',height:glyph.offsetHeight+'px'};
+ mobileNavIndicator.style.opacity='1';
+ if(animate===false||!mobileNavIndicator._placed||reduceMotion()){
+  mobileNavIndicator._motion?.cancel();mobileNavIndicator._motion=null;Object.assign(mobileNavIndicator.style,geometry);
+ }else if(Object.entries(geometry).some(([key,value])=>mobileNavIndicator.style[key]!==value)){
+  moveIndicator(mobileNavIndicator,geometry,undefined,MOTION.popup);
+ }
+ mobileNavIndicator._placed=true;
+}
+window.addEventListener('resize',()=>moveMobileNavIndicator(false));
+mobileLayout.addEventListener('change',()=>moveMobileNavIndicator(false));
+new ResizeObserver(()=>requestAnimationFrame(()=>moveMobileNavIndicator(false))).observe(mobileNav);
 
 const mobileMore = document.createElement('dialog');
 mobileMore.id = 'mobileMore';
@@ -39,6 +63,7 @@ function updateMobileNavigation() {
   });
   $('#mobileNew').disabled = bothMode;
   $('#mobileNew').title = bothMode ? 'Elige un perfil para registrar movimientos' : 'Nuevo movimiento';
+  moveMobileNavIndicator();
 }
 
 function navigateMobile(tab) {

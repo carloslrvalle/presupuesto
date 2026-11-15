@@ -227,7 +227,7 @@ document.addEventListener('keydown',event=>{
  if(['Shift','Control','Alt','Meta'].includes(event.key))return;
  document.documentElement.dataset.motionInput='keyboard';
  // El indicador y la sección terminan su recorrido antes de mover el foco.
- document.querySelectorAll('#tabInd,.tab.active').forEach(el=>{
+ document.querySelectorAll('#tabInd,#mobileNavIndicator,.tab.active').forEach(el=>{
   if(el._motion)el._motion.finish();
  });
 },true);
@@ -678,7 +678,7 @@ document.addEventListener('scroll', e => {
   }, 800));
 }, {capture:true, passive:true});
 // Cambia la geometría una vez y anima únicamente su transformación visual.
-function moveIndicator(indicator, geometry, previousRect){
+function moveIndicator(indicator, geometry, previousRect, duration=MOTION.tab){
  const before=previousRect||indicator.getBoundingClientRect();
  indicator._motion?.cancel();indicator._motion=null;
  Object.assign(indicator.style,geometry);
@@ -687,7 +687,7 @@ function moveIndicator(indicator, geometry, previousRect){
  const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
  const x=(before.left-after.left)/zoom,y=(before.top-after.top)/zoom,sx=before.width/after.width,sy=before.height/after.height;
  if(Math.abs(x)<.5&&Math.abs(y)<.5&&Math.abs(sx-1)<.001&&Math.abs(sy-1)<.001)return;
- const animation=indicator.animate([{transform:'translate('+x+'px,'+y+'px) scale('+sx+','+sy+')'},{transform:'none'}],{duration:MOTION.tab,easing:cssVar('--motion-tab-ease')||MOTION.ease});
+ const animation=indicator.animate([{transform:'translate('+x+'px,'+y+'px) scale('+sx+','+sy+')'},{transform:'none'}],{duration,easing:cssVar('--motion-tab-ease')||MOTION.ease});
  indicator._motion=animation;
  animation.onfinish=()=>{if(indicator._motion===animation)indicator._motion=null;};
 }

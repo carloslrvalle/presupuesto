@@ -242,7 +242,7 @@ const mobileBudgetView = document.createElement('section');
 mobileBudgetView.id = 'mobileBudgetView';
 mobileBudgetView.className = 'mobile-only';
 mobileBudgetView.setAttribute('aria-labelledby', 'mobileBudgetTitle');
-mobileBudgetView.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileBudgetTitle">Presupuestos</h2><span id="mobileBudgetRange"></span></div><div id="mobileBudgetGauge"></div><div class="mobile-budget-categories" id="mobileBudgetCategories"></div>`;
+mobileBudgetView.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileBudgetTitle">Presupuestos</h2></div><div id="mobileBudgetGauge"></div><div class="mobile-budget-categories" id="mobileBudgetCategories"></div>`;
 $('#tab-budget .bud-grid').before(mobileBudgetView);
 
 // Las herramientas existentes se despliegan debajo de las tarjetas y vuelven a su sitio en escritorio.
@@ -271,7 +271,6 @@ function renderMobileBudget(){
     .map(c => ({c, budget:planBudget(m,c.id), real:planReal(m,c.id)}));
   const budget = rows.reduce((total,row) => total+row.budget,0), real = rows.reduce((total,row) => total+row.real,0);
   const left = budget-real, used = budget>0 ? Math.max(0,real/budget*100) : 0;
-  $('#mobileBudgetRange').textContent = cycleView() ? 'Por ciclo de sueldo' : 'Por mes';
   $('#mobileBudgetGauge').innerHTML = `<div class="mobile-budget-gauge"><svg viewBox="0 0 240 140" aria-hidden="true"><path class="gauge-track" d="M24 120 A96 96 0 0 1 216 120" pathLength="100"/><path class="gauge-fill${left<0?' over':''}" d="M24 120 A96 96 0 0 1 216 120" pathLength="100" stroke-dasharray="${Math.min(100,used)} 100"/></svg><div class="mobile-gauge-copy"><span>${budget>0?(left<0?'Exceso del presupuesto':'Por gastar del presupuesto'):'Presupuesto de gastos'}</span><strong class="${budget>0&&left<0?'neg':''}">${budget>0?fmt(Math.abs(left)):'Sin definir'}</strong><small>${budget>0?`${pctTxt(used)} usado`:'Asigna un monto por categoría'}</small></div></div><p class="mobile-gauge-totals"><span>Gastado <b>${fmt(real)}</b></span><span>Plan <b>${fmt(budget)}</b></span></p>`;
   $('#mobileBudgetCategories').innerHTML = rows.length ? rows.map(({c,budget,real}) => {
     const saving = isSavingCat(c.id), left = budget-real, pct = budget>0?real/budget*100:0;

@@ -135,7 +135,7 @@ function renderDashboard(){
     if (free > 0) pace = `<span class="per-day" title="${how}">Para no pasarte: máx. <b>${fmt(free / daysLeft)}</b>/día</span>`;
   }
   const cash=planBalance(m);
-  countUp($('#kBalance'),cash.total,'money','value '+(cash.total>=0?'pos':'neg'));
+  countUp($('#kBalance'),cash.total,'money','value'+(cash.total<0?' neg':''));
   // Balance: cuánto quedaría libre al cierre (después del presupuesto, que ya incluye lo que separas para ahorro)
   // Mes cerrado: lo real. Mes en curso o futuro: la estimación del cierre
   const closed = m < planCurrentMonth(), prj = closed ? null : cy ? cycleProjection(m) : projection(m);
@@ -219,8 +219,6 @@ function chartTheme(){
   const dk = isDarkUI();
   Object.assign(tt, {backgroundColor: dk ? '#16181d' : cssVar('--text'), titleColor: dk ? cssVar('--text') : cssVar('--bg'), bodyColor: dk ? cssVar('--muted') : cssVar('--bg'), borderColor: dk ? '#2a2e37' : 'transparent', borderWidth: dk ? 1 : 0, padding:10, cornerRadius:10, boxPadding:4, usePointStyle:true, titleFont:{weight:'700'}});
 }
-// Degradado vertical de un color (más intenso arriba)
-const vGrad = (hex, a1 = 'ff', a2 = '55') => c => { const {ctx, chartArea:ar} = c.chart; if (!ar) return hex; const g = ctx.createLinearGradient(0, ar.bottom, 0, ar.top); g.addColorStop(0, hex + a2); g.addColorStop(1, hex + a1); return g; };
 const stagger=()=>reduceMotion()?false:{duration:MOTION.data,easing:MOTION.dataEasing};
 const compactS = v => { const a = Math.abs(v), r = x => (Math.round(x * 10) / 10).toString().replace(/\.0$/, ''); return (v < 0 ? '−' : '') + 'S/ ' + (a >= 1e6 ? r(a / 1e6) + 'M' : a >= 1000 ? r(a / 1000) + 'k' : Math.round(a)); };
 // Quita la marca del borde del eje si queda pegada a la anterior (evita etiquetas encimadas como «S/ 440» sobre «S/ 400»)
@@ -284,7 +282,8 @@ function renderCharts(){
   if (!bw.querySelector('canvas')) bw.innerHTML = '<canvas id="chBars"></canvas>';
   const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? planSavings(mm).saved : null), cur = months.length - 1, ink = cssVar('--k-violet');
   const nul = arr => arr.map((v, i) => has(i) ? v : null);
-  const barBg = v => c => vGrad(cssVar(v), c.dataIndex === c.chart.data.labels.length-1 || c.active ? 'ff' : 'b3', c.dataIndex === c.chart.data.labels.length-1 || c.active ? '66' : '3a')(c);
+  // Barras sólidas: el mes actual a color completo y el resto aclarado hacia la superficie, como en Análisis
+  const barBg = v => c => mixHex(cssVar(v), cssVar('--surface'), c.dataIndex === c.chart.data.labels.length-1 || c.active ? 0 : .4);
   if (morphB){ chBars.data.labels = months.map(mm=>innerWidth<=700?monthAbbr(mm):cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm)); chBars.data.datasets[0].data = nul(incs); chBars.data.datasets[1].data = nul(exps); chBars.update(reduceMotion()?'none':undefined); return; }
   chBars = new Chart($('#chBars'), {
     plugins:[legendGap],

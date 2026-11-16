@@ -485,7 +485,6 @@ function applyThemeVars(){
   const surface=cssVar('--surface'), series=themeSeries(t,surface);
   for(const [key,role] of [['--income-chart','income'],['--expense-chart','expense'],['--k-violet','savings']])r.setProperty(key,series[role]);
   const textSurfaces=[surface,cssVar('--surface-2'),cssVar('--bg')];
-  r.setProperty('--savings-ink',fitThemeColor(series.savings,textSurfaces,4.65));
   for(const role of ['income','expense']){
     const soft=mixHex(series[role],surface,dark?.88:.92);
     const ink=fitThemeColor(series[role],[...textSurfaces,soft],4.65);

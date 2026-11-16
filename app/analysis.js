@@ -111,7 +111,9 @@ function renderAnalysisChart(){
     pointRadius:ctx=>data.months[indices[ctx.dataIndex]]===analysisSelectedMonth?5:2,pointHoverRadius:6,pointHitRadius:12,pointBackgroundColor:color,pointBorderColor:surface,pointBorderWidth:1.5};
   const valid=dataset.data.filter(v=>v!=null),lower=Math.min(0,...valid),upper=Math.max(0,...valid),span=upper-lower||1;
   const step=10**Math.floor(Math.log10(span));
-  const domainMin=lower<0?(percentage?Math.floor((lower-span*.1)/step)*step:lower-span*.16):0,domainMax=upper>0?(percentage?Math.ceil((upper+span*.1)/step)*step:upper+span*.16):(lower<0?0:1);
+  // Importes: los extremos caen en múltiplos de 1, 2, 2.5 o 5 para que el eje termine en un valor redondo (S/ 10k, no S/ 9.5k).
+  const rawUnit=span/4,unitBase=10**Math.floor(Math.log10(rawUnit)),unitRatio=rawUnit/unitBase,moneyUnit=(unitRatio<=1?1:unitRatio<=2?2:unitRatio<=2.5?2.5:unitRatio<=5?5:10)*unitBase;
+  const domainMin=lower<0?(percentage?Math.floor((lower-span*.1)/step)*step:Math.floor((lower-span*.08)/moneyUnit)*moneyUnit):0,domainMax=upper>0?(percentage?Math.ceil((upper+span*.1)/step)*step:Math.ceil((upper+span*.08)/moneyUnit)*moneyUnit):(lower<0?0:1);
   // Revela el trazo real y desplaza su punta sobre cada segmento, sin mover los datos.
   const trace={id:'analysisLineTrace',
     afterInit(chart){if(line)chart.$analysisTrace={progress:animate?0:1,start:null,raf:0,head:null};},

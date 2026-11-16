@@ -3019,6 +3019,7 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  #tab-budget>.budget-actions{margin-bottom:16px;gap:8px;align-items:center}
  #tab-budget .budget-actions>.plan-period{flex:1 1 0;min-width:0}
  #tab-budget #mobileBudgetView{margin-bottom:24px}
+ #mobileBudgetRange{font-size:12px;color:var(--muted);white-space:nowrap}
  .mobile-budget-gauge{position:relative;max-width:340px;margin:8px auto 0;min-width:0}
  .mobile-budget-gauge>svg{display:block;width:100%;height:auto;overflow:visible}
  .mobile-budget-gauge path{fill:none;stroke-width:12;stroke-linecap:round}
@@ -3370,10 +3371,8 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  #tab-dashboard .metric-expanded{padding:0 12px 12px}
  #mobileHomeChart .mobile-spending-head{margin:2px 0 8px}
  #mobileHomeChart .mobile-spending-head>span{font-size:12px;font-weight:500}
- /* Inicio conserva la tinta neutra, pero solo la semana de mayor gasto va a tono completo. */
- #mobileHomeChart .mobile-bar-space>i{background:color-mix(in srgb,var(--text) 32%,var(--surface-2))}
  #mobileHomeChart .mobile-spending-chart .is-peak .mobile-bar-space>i{background:var(--text)}
- #mobileHomeChart .mobile-spending-chart .is-peak .mobile-bar-label{color:var(--text);font-weight:600}
+ #mobileHomeChart .mobile-spending-chart .is-peak .mobile-bar-label{color:var(--muted);font-weight:400}
  #mobileHomeChart .mobile-category-legend{margin-bottom:0}
  #mobileHomeTop .mobile-section-heading{margin-bottom:0}
  #mobileHomeTop .mobile-section-heading h2{font-size:16px;font-weight:600;letter-spacing:-.2px}
@@ -3385,8 +3384,7 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  .mobile-log-balance{display:grid;gap:3px;min-width:0;padding-right:56px;font-variant-numeric:tabular-nums}
  .mobile-log-balance>span{font-size:11px;color:var(--muted)}
  .mobile-log-balance>strong{font-size:26px;font-weight:600;line-height:1.3;letter-spacing:-.4px;white-space:nowrap}
- /* El margen negativo compensa el relleno de los botones: sus textos alinean con «Resultado de la vista». */
- .mobile-log-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:8px -8px 0}
+ .mobile-log-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:8px}
  .mobile-log-totals>button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-width:0;min-height:48px;padding:6px 8px;border:0;border-radius:8px;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
  .mobile-log-totals>button>span{font-size:11px;color:var(--muted)}
  .mobile-log-totals b{max-width:100%;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}

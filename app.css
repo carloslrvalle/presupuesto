@@ -3161,7 +3161,7 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  .tx-mobile-simple #txSeg{grid-column:2;grid-row:1;display:flex;justify-content:center;min-width:0;padding:3px;border:0;border-radius:12px;background:var(--surface-2)}
  .tx-mobile-simple #txSeg>button{flex:1;min-height:44px;padding:6px;font-size:13px}
  .tx-mobile-simple #mobileTxOptions{grid-column:3;grid-row:1;display:grid;place-items:center;color:var(--muted)}
- html #txDialog.tx-mobile-simple .dlg-body{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;padding:8px 20px 12px;overflow-y:auto;overflow-x:hidden;scroll-padding-block:8px}
+ html #txDialog.tx-mobile-simple .dlg-body{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;padding:8px 20px 12px;overflow-y:auto;overflow-x:hidden;scroll-padding-block:8px}
  html #txDialog.tx-mobile-simple .tx-amount{display:flex;align-items:baseline;justify-content:center;gap:8px;order:0;flex:none;min-height:80px;margin:clamp(0px,3vh,24px) 0 0;padding:12px 0 4px;border:0}
  #txDialog.tx-mobile-simple .tx-amount::before{font-size:26px;font-weight:400;line-height:1.3;color:var(--muted)}
  html #txDialog.tx-mobile-simple #fAmount{width:min(calc(var(--amount-characters,4) * 1ch + 8px),calc(100% - 44px));max-width:100%;min-width:0;min-height:58px;height:auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-align:left;font-size:44px;font-weight:400;line-height:1.3;letter-spacing:-1px;appearance:textfield;-moz-appearance:textfield}
@@ -3180,18 +3180,18 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  #mobileTxCategory>.vi{width:18px;height:18px;flex:none}
  #mobileTxCategory>.vi:last-child{width:12px;height:12px;color:var(--muted)}
  #mobileTxCategory>span{overflow-wrap:anywhere;min-width:0}
- .tx-mobile-simple .tx-category-panel{display:none;order:3;flex:none;min-width:0;padding:0;border:0}
- .tx-mobile-simple.category-open .tx-category-panel,.tx-mobile-simple.needs-saving-category .tx-category-panel{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ #txDialog.tx-mobile-simple .mobile-tx-panel-viewport{position:absolute;z-index:2;inset:0;overflow:hidden;pointer-events:none}
+ #txDialog.tx-mobile-simple .tx-category-panel,#txDialog.tx-mobile-simple .mobile-tx-extras{position:absolute;inset:0;min-width:0;margin:0;padding:8px 20px 12px;border:0;background:var(--surface);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:8px;align-content:start;visibility:hidden;pointer-events:none;transform:translateY(100%);transition:transform 180ms cubic-bezier(.32,.72,0,1),visibility 0s 180ms}
+ #txDialog.tx-mobile-simple .tx-category-panel{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ #txDialog.tx-mobile-simple[open].category-open .tx-category-panel,#txDialog.tx-mobile-simple[open].options-open .mobile-tx-extras{visibility:visible;pointer-events:auto;transform:translateY(0);transition:transform 220ms cubic-bezier(.32,.72,0,1),visibility 0s}
  #txDialog.tx-mobile-simple .tx-category-panel #fCatChips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0;margin:0;overflow:visible;mask-image:none;-webkit-mask-image:none}
  #txDialog.tx-mobile-simple .tx-category-panel .chip{border-radius:12px;min-height:44px}
- .tx-mobile-simple .mobile-tx-extras{display:none;order:4;flex:none}
- .tx-mobile-simple.options-open .mobile-tx-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding-top:0;border:0}
+ #txDialog.tx-mobile-simple .mobile-tx-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
  .tx-mobile-simple .mobile-tx-extras>.field,.tx-mobile-simple .mobile-tx-extras>.quick{grid-column:1/-1;min-width:0}
  .tx-mobile-simple .mobile-tx-extras .chips{display:flex;flex-wrap:wrap;gap:6px}
  .tx-mobile-simple .mobile-tx-extras .chip{min-height:44px;white-space:normal;overflow-wrap:anywhere;text-align:left;justify-content:flex-start}
  .tx-mobile-simple .mobile-tx-extras .btn{min-height:44px;font-size:13px}
  .tx-mobile-simple .mobile-tx-extras .hide-m{display:inline}
- html #txDialog.tx-mobile-simple:is(.category-open,.options-open) :is(.tx-amount,.tx-note-field,#mobileTxNote,.mobile-tx-meta){display:none}
  #txDialog.tx-mobile-simple :is(#txCategorySearch,#txCategoryName){font-size:16px}
  #txDialog.tx-mobile-simple .dlg-foot>#mobileTxDone{display:none}
  #txDialog.tx-mobile-simple:is(.category-open,.options-open) .dlg-foot>[type=submit]{display:none}
@@ -3205,6 +3205,8 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  html #txDialog.tx-mobile-simple.kb-open .dlg-body{gap:8px;padding-block:4px 10px}
  html #txDialog.tx-mobile-simple.kb-open #txSeg>button{min-height:44px}
  html #txDialog.tx-mobile-simple.kb-open .dlg-foot{padding-bottom:8px}
+ html #txDialog.tx-mobile-simple.tx-panel-instant :is(.tx-category-panel,.mobile-tx-extras){transition:none}
+ @media(prefers-reduced-motion:reduce){html #txDialog.tx-mobile-simple :is(.tx-category-panel,.mobile-tx-extras){transform:none}}
  @media(max-width:360px){#tab-movs #movView{gap:14px}.mobile-movement-net strong,.mobile-movement-net b{font-size:20px}html #txDialog.tx-mobile-simple .dlg-body{padding-inline:18px}.tx-mobile-simple .mobile-tx-meta{gap:6px}.tx-mobile-simple #fDateField .dp-trigger,.tx-mobile-simple #mobileTxCategory{font-size:11px}}
 }
 

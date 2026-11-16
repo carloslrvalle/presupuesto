@@ -106,6 +106,8 @@ const mobileTxExtras=document.createElement('div');mobileTxExtras.id='mobileTxEx
 const mobileTxDone=document.createElement('button');mobileTxDone.type='button';mobileTxDone.id='mobileTxDone';mobileTxDone.className='mobile-only btn';mobileTxDone.textContent='Listo';
 txDialog.querySelector('.dlg-foot').append(mobileTxDone);
 const txCategoryField=$('#fCatChips').closest('.field'),txNoteField=$('#fDesc').closest('.field');
+const txCategoryAnchor=document.createComment('Posición del selector de categorías en escritorio');txCategoryField.before(txCategoryAnchor);
+const mobileTxViewport=document.createElement('div');mobileTxViewport.className='mobile-only mobile-tx-panel-viewport';txBody.append(mobileTxViewport);
 txCategoryField.classList.add('tx-category-panel');txNoteField.classList.add('tx-note-field');
 txCategoryField.id='mobileTxCategoryPanel';mobileTxCategory.setAttribute('aria-controls',txCategoryField.id);
 const txMethodField=$('#fMethodChips').closest('.field');
@@ -115,7 +117,12 @@ const txNodes=[[$('#txSeg'),txHeader],[$('#fDateField'),mobileTxMeta],[txNoteFie
 function positionMobileTx(){
   txDialog.classList.toggle('tx-mobile-simple',mobileLayout.matches);
   for(const {node,parent,anchor} of txNodes){if(mobileLayout.matches)parent.append(node);else anchor.after(node);}
-  if(!mobileLayout.matches)$('#fDate').value=$('#fDate').value;
+  if(mobileLayout.matches)mobileTxViewport.append(txCategoryField,mobileTxExtras);else txCategoryAnchor.after(txCategoryField);
+  if(!mobileLayout.matches){
+    $('#fDate').value=$('#fDate').value;
+    for(const node of [txCategoryField,mobileTxExtras,txNoteField,mobileTxNote,mobileTxMeta])node.inert=false;
+    $('#fAmount').tabIndex=0;txDialog.classList.remove('category-open','options-open','tx-panel-instant');
+  }
   syncMobileTxUI();
 }
 function syncMobileTxUI(){
@@ -134,20 +141,35 @@ function prepareMobileTxUI(){
   txDialog.classList.remove('category-open','options-open');
   txDialog.classList.toggle('note-open',!!$('#fDesc').value);
   mobileTxOptions.setAttribute('aria-expanded','false');mobileTxCategory.setAttribute('aria-expanded','false');
+  txCategoryField.scrollTop=0;mobileTxExtras.scrollTop=0;
+  setMobileTxPanel(txDialog.classList.contains('needs-saving-category')?'category':null,{focus:false});
   syncMobileTxUI();
 }
-function setMobileTxPanel(panel){
+function setMobileTxPanel(panel,{focus=true}={}){
+  const amount=$('#fAmount');
+  if(focus&&(!panel||document.activeElement.matches('input,textarea')&&document.activeElement!==amount))amount.focus({preventScroll:true});
+  if(panel){mobileTxViewport.style.top=txBody.scrollTop+'px';mobileTxViewport.style.bottom=-txBody.scrollTop+'px';}
   txDialog.classList.toggle('category-open',panel==='category');
   txDialog.classList.toggle('options-open',panel==='options');
+  txCategoryField.inert=panel!=='category';mobileTxExtras.inert=panel!=='options';
   mobileTxCategory.setAttribute('aria-expanded',String(panel==='category'));
   mobileTxOptions.setAttribute('aria-expanded',String(panel==='options'));
+  amount.tabIndex=panel?-1:0;
+  txNoteField.inert=!!panel;mobileTxNote.inert=!!panel;mobileTxMeta.inert=!!panel;
+  txDialog.classList.toggle('tx-panel-instant',reduceMotion());
   dpClose();
-  // El selector ocupa el cuerpo desde arriba; el teclado se solicita otra vez al volver al importe.
-  const target=panel==='category'?$('#txAllCategories'):panel==='options'?mobileTxOptions:$('#fAmount');
-  (target.hidden?mobileTxOptions:target).focus({preventScroll:true});
-  txBody.scrollTop=0;
+  // El selector ocupa el cuerpo desde arriba; su capa recortada evita cambiar el ancho útil al aparecer o desaparecer.
+  // El importe permanece montado y enfocado bajo el selector; tocar una categoría no cierra el teclado.
+  if(focus&&panel&&reduceMotion())(panel==='category'&&!$('#txAllCategories').hidden?$('#txAllCategories'):mobileTxOptions).focus({preventScroll:true});
 }
+// Cancelar el foco automático del botón evita el ciclo de ocultar y abrir el teclado al tocar selectores.
+const txKeepKeyboardButtons='#mobileTxCategory,#mobileTxOptions,#mobileTxDone,#txAllCategories,#txNewCategory,#txCancelCategory,#txCreateCategory,#txSeg button,#fCatChips [data-cat],#fMethodChips [data-method],#fGoalChips [data-goal],#txQuick button';
+txDialog.addEventListener('mousedown',event=>{
+  if(!mobileLayout.matches||event.button>0||!event.target.closest(txKeepKeyboardButtons))return;
+  if(txDialog.contains(document.activeElement)&&document.activeElement.matches('input:not([type=hidden]),textarea'))event.preventDefault();
+});
 mobileTxDone.onclick=()=>setMobileTxPanel(null);
+txDialog.addEventListener('close',()=>{if(mobileLayout.matches)setMobileTxPanel(null,{focus:false});});
 mobileTxNote.onclick=()=>{txDialog.classList.add('note-open');syncMobileTxUI();$('#fDesc').focus({preventScroll:true});};
 mobileTxOptions.onclick=()=>setMobileTxPanel(txDialog.classList.contains('options-open')?null:'options');
 mobileTxCategory.onclick=()=>setMobileTxPanel(txDialog.classList.contains('category-open')?null:'category');

@@ -781,7 +781,12 @@ function showTxDialog(){
 }
 // En el celular el teclado tapa la parte baja de la pantalla: la hoja se apoya sobre él y el campo activo queda a la vista.
 function keepTxFieldVisible(field=document.activeElement){
- const body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!field||!body.contains(field))return;
+ let body=txDialog.querySelector('.dlg-body');if(!txDialog.open||!field||!body.contains(field))return;
+ if(txDialog.classList.contains('tx-mobile-simple')){
+  const panel=field.closest('.tx-category-panel,.mobile-tx-extras');
+  if(panel)body=panel;
+  else if(txDialog.matches('.category-open,.options-open'))return;
+ }
  const b=body.getBoundingClientRect(),r=field.getBoundingClientRect();
  if(r.bottom>b.bottom-8)body.scrollTop+=r.bottom-b.bottom+8;else if(r.top<b.top+8)body.scrollTop-=b.top+8-r.top;
 }

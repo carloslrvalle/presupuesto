@@ -210,15 +210,33 @@ mobileLayout.addEventListener('change', () => {
 });
 
 // El inicio móvil reutiliza el ranking del Resumen para mantener el mismo período y orden.
+// El orden de Resumen es cronológico desde 1.10.127: los cinco gastos recientes del mes o ciclo.
+const mobileHomeMetrics=document.createElement('section');mobileHomeMetrics.id='mobileHomeMetrics';mobileHomeMetrics.className='mobile-only';mobileHomeMetrics.setAttribute('aria-label','Resultado del período');
+const mobileHomeChart=document.createElement('section');mobileHomeChart.id='mobileHomeChart';mobileHomeChart.className='mobile-only';mobileHomeChart.setAttribute('aria-label','Evolución de los gastos del período');
+$('#tab-dashboard .dashboard-kpis').before(mobileHomeMetrics);
+$('#tab-dashboard .dashboard-kpis').after(mobileHomeChart);
 const mobileHomeTop = document.createElement('section');
 mobileHomeTop.id = 'mobileHomeTop';
 mobileHomeTop.className = 'mobile-only';
 mobileHomeTop.setAttribute('aria-labelledby', 'mobileHomeTopTitle');
-mobileHomeTop.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileHomeTopTitle">Gastos más altos</h2><button type="button" data-gotab="movs">Ver todos ${ic('chevron-right')}</button></div><div id="mobileHomeTopRows"></div>`;
-$('#tab-dashboard .dashboard-kpis').after(mobileHomeTop);
-function renderMobileHome(){
+mobileHomeTop.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileHomeTopTitle">Gastos recientes</h2><button type="button" id="mobileRecentAll">Ver todos ${ic('chevron-right')}</button></div><div id="mobileHomeTopRows"></div>`;
+mobileHomeChart.after(mobileHomeTop);
+function renderMobileHome(data){
+  const scope=cycleView()?'cycle':'month',content=document.createElement('div');
+  content.innerHTML=mobileInsightsHTML({...data,scope});
+  mobileHomeMetrics.replaceChildren(content.querySelector('.mobile-movement-net'));
+  content.querySelector('.mobile-movement-totals').remove();
+  content.querySelector('.mobile-spending-head>span').textContent=mobileMovementBins(data.real,scope).label;
+  content.querySelector('.mobile-spending-head>span+span').remove();
+  mobileHomeChart.replaceChildren(...content.childNodes);
   $('#mobileHomeTopRows').innerHTML = $('#topExp').innerHTML;
+  mobileHomeMetrics.querySelectorAll('strong,b').forEach(el=>fitMetricValue(el));
 }
+$('#mobileRecentAll').onclick=()=>openMovs({type:'expense',scope:cycleView()?'cycle':'month',month:currentMonth});
+mobileHomeChart.addEventListener('click',event=>{
+  const button=event.target.closest('[data-mobile-filter-cat]');
+  if(button)openMovs({type:'expense',cat:button.dataset.mobileFilterCat,scope:cycleView()?'cycle':'month',month:currentMonth});
+});
 
 const mobileBudgetView = document.createElement('section');
 mobileBudgetView.id = 'mobileBudgetView';
@@ -318,23 +336,28 @@ function mobileMovementBins(real,scope){
     return {label:first.slice(8,10)+'/'+first.slice(5,7),title:first===last?fmtDate(first):fmtDate(first)+' – '+fmtDate(last),amount:sum(expenses.filter(t=>t.date>=first&&t.date<=last))};
   })};
 }
-function renderMobileMovements({real,inc,exp,scope}){
+function mobileInsightsHTML({real,inc,exp,scope,selectedType=''}){
   const {days,label,bins}=mobileMovementBins(real,scope), max=Math.max(0,...bins.map(bin=>bin.amount));
   const isPeak=amount=>max>0&&Math.round(amount*100)===Math.round(max*100);
-  const type=$('#fltType').value;
+  const type=selectedType;
   const categories=new Map();
   real.filter(t=>t.type==='expense').forEach(t=>categories.set(t.catId,(categories.get(t.catId)||0)+t.amount));
   const ranked=[...categories].sort((a,b)=>b[1]-a[1]), shown=ranked.slice(0,3);
   if(ranked.length>3)shown.push([null,ranked.slice(3).reduce((total,row)=>total+row[1],0)]);
-  mobileMovements.innerHTML = `<div class="mobile-movement-net"><div><span>Ingresos menos gastos</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong></div><div><span>Gasto por día</span><b>${fmt(exp/days)}</b><small>Promedio · ${days} días</small></div></div><div class="mobile-movement-totals">${[['income','Ingresos',inc],['expense','Gastos',exp]].map(([kind,name,amount])=>`<button type="button" data-mobile-type="${kind}" aria-pressed="${type===kind}"><span class="mobile-type-icon ${kind}">${ic('arrow-up-right')}</span><span><small>${name}</small><b>${fmt(amount)}</b></span></button>`).join('')}</div><div class="mobile-spending-head"><span>${scope==='cycle'?esc(shortPeriodLabel(currentMonth)):scope==='all'?'Todos los movimientos':scope==='year'?currentMonth.slice(0,4):esc(monthLong(currentMonth))}</span><span class="${max>0?'mobile-peak-legend':''}">${max?`Máx. ${fmt(max)}`:'Sin gastos registrados'}</span></div><ol class="mobile-spending-chart" data-granularity="${scope==='year'?'month':'week'}" aria-label="${label}" style="--bar-count:${bins.length}">${bins.map((bin,i)=>`<li class="${isPeak(bin.amount)?'is-peak':''}" aria-label="${esc(bin.title)}: ${esc(fmt(bin.amount))}${isPeak(bin.amount)?' · Mayor gasto':''}"><span class="mobile-bar-space"><i style="height:${max?bin.amount/max*100:0}%" title="${esc(bin.title)}: ${esc(fmt(bin.amount))}"></i></span><span class="mobile-bar-label" aria-hidden="true">${bins.length<=12||i===0||i===bins.length-1||i%7===0?esc(bin.label):''}</span></li>`).join('')}</ol>${exp>0?`<div class="mobile-category-strip" aria-hidden="true">${shown.map(([id,amount])=>`<i style="width:${amount/exp*100}%;background:${id?esc(getCat(id).color):'var(--muted)'}"></i>`).join('')}</div><div class="mobile-category-legend">${shown.map(([id,amount])=>id?`<button type="button" data-mobile-filter-cat="${esc(id)}"><i style="background:${esc(getCat(id).color)}"></i><span>${esc(getCat(id).name)}</span><small>${Math.round(amount/exp*100)}%</small></button>`:`<span><i style="background:var(--muted)"></i>Otras <small>${Math.round(amount/exp*100)}%</small></span>`).join('')}</div>`:''}`;
-  mobileMovements.querySelectorAll('.mobile-movement-net strong,.mobile-movement-net b,.mobile-movement-totals b').forEach(el=>fitMetricValue(el));
+  return `<div class="mobile-movement-net"><div><span>Ingresos menos gastos</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong></div><div><span>Gasto por día</span><b>${fmt(exp/days)}</b><small>Promedio · ${days} días</small></div></div><div class="mobile-movement-totals">${[['income','Ingresos',inc],['expense','Gastos',exp]].map(([kind,name,amount])=>`<button type="button" data-mobile-type="${kind}" aria-pressed="${type===kind}"><span class="mobile-type-icon ${kind}">${ic('arrow-up-right')}</span><span><small>${name}</small><b>${fmt(amount)}</b></span></button>`).join('')}</div><div class="mobile-spending-head"><span>${scope==='cycle'?esc(shortPeriodLabel(currentMonth)):scope==='all'?'Todos los movimientos':scope==='year'?currentMonth.slice(0,4):esc(monthLong(currentMonth))}</span><span class="${max>0?'mobile-peak-legend':''}">${max?`Máx. ${fmt(max)}`:'Sin gastos registrados'}</span></div><ol class="mobile-spending-chart" data-granularity="${scope==='year'?'month':'week'}" aria-label="${label}" style="--bar-count:${bins.length}">${bins.map((bin,i)=>`<li class="${isPeak(bin.amount)?'is-peak':''}" aria-label="${esc(bin.title)}: ${esc(fmt(bin.amount))}${isPeak(bin.amount)?' · Mayor gasto':''}"><span class="mobile-bar-space"><i style="height:${max?bin.amount/max*100:0}%" title="${esc(bin.title)}: ${esc(fmt(bin.amount))}"></i></span><span class="mobile-bar-label" aria-hidden="true">${bins.length<=12||i===0||i===bins.length-1||i%7===0?esc(bin.label):''}</span></li>`).join('')}</ol>${exp>0?`<div class="mobile-category-strip" aria-hidden="true">${shown.map(([id,amount])=>`<i style="width:${amount/exp*100}%;background:${id?esc(getCat(id).color):'var(--muted)'}"></i>`).join('')}</div><div class="mobile-category-legend">${shown.map(([id,amount])=>id?`<button type="button" data-mobile-filter-cat="${esc(id)}"><i style="background:${esc(getCat(id).color)}"></i><span>${esc(getCat(id).name)}</span><small>${Math.round(amount/exp*100)}%</small></button>`:`<span><i style="background:var(--muted)"></i>Otras <small>${Math.round(amount/exp*100)}%</small></span>`).join('')}</div>`:''}`;
+}
+function renderMobileMovements(data){
+  const expanded=mobileMovements.querySelector('details')?.open||false;
+  mobileMovements.innerHTML=`<div class="mobile-log-balance"><span>Resultado de la vista</span><strong class="${data.inc-data.exp<0?'neg':''}">${fmt(data.inc-data.exp)}</strong></div><div class="mobile-log-totals">${[['income','Ingresos',data.inc],['expense','Gastos',data.exp]].map(([kind,label,amount])=>`<button type="button" data-mobile-type="${kind}" aria-pressed="${$('#fltType').value===kind}"><span>${label}</span><b>${fmt(amount)}</b></button>`).join('')}</div><details class="mobile-log-stats"${expanded?' open':''}><summary aria-label="Estadísticas de esta vista" title="Estadísticas de esta vista">${ic('chart-column')}</summary><div class="mobile-log-stats-body">${mobileInsightsHTML({...data,selectedType:$('#fltType').value})}</div></details>`;
+  mobileMovements.querySelectorAll('.mobile-log-balance strong,.mobile-log-totals b,.mobile-movement-net strong,.mobile-movement-net b,.mobile-movement-totals b').forEach(el=>fitMetricValue(el));
 }
 mobileMovements.addEventListener('click', event => {
   const type=event.target.closest('[data-mobile-type]'), category=event.target.closest('[data-mobile-filter-cat]');
+  const fromStatistics=!!type?.closest('.mobile-log-stats-body');
   if(type){$('#fltType').value=$('#fltType').value===type.dataset.mobileType?'':type.dataset.mobileType;$('#fltCat').value='';}
   else if(category){$('#fltCat').value=category.dataset.mobileFilterCat;$('#fltType').value='expense';}
   else return;
   renderMovs(false);
-  if(type) [...mobileMovements.querySelectorAll('[data-mobile-type]')].find(button=>button.dataset.mobileType===type.dataset.mobileType)?.focus({preventScroll:true});
+  if(type) [...mobileMovements.querySelectorAll(fromStatistics?'.mobile-log-stats-body [data-mobile-type]':'.mobile-log-totals [data-mobile-type]')].find(button=>button.dataset.mobileType===type.dataset.mobileType)?.focus({preventScroll:true});
   if(category) [...mobileMovements.querySelectorAll('[data-mobile-filter-cat]')].find(button=>button.dataset.mobileFilterCat===category.dataset.mobileFilterCat)?.focus({preventScroll:true});
 });

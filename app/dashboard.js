@@ -168,14 +168,14 @@ function renderDashboard(){
   $('#bvaExpense').innerHTML = rows('expense');
   animateBars($('#tab-dashboard'));
 
-  const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.amount - a.amount).slice(0,5);
+  const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.date.localeCompare(a.date) || (Number(b.created)||0)-(Number(a.created)||0)).slice(0,5);
   $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<button type="button" class="prow link" data-go-tx="${esc(t.id)}" title="Editar movimiento">
     <span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span>
-    <span class="top-exp-copy"><span class="name">${esc(t.desc || c.name)}</span><span class="small muted">${t.desc ? esc(c.name) + ' · ' : ''}${t.method ? esc(t.method) + ' · ' : ''}${fmtDate(t.date)}</span></span>
-    <span class="amt"><b class="xp">${fmt(t.amount)}</b></span></button>`; }).join('') : emptyBox('receipt', 'Aquí verás tus 5 gastos más grandes del período.', null, '', true);
+    <span class="top-exp-copy"><span class="name">${esc(t.desc || c.name)}</span><span class="small muted">${t.desc ? esc(c.name) + ' · ' : ''}${t.method ? `<span class="recent-method">${esc(t.method)} · </span>` : ''}${fmtDate(t.date)}</span></span>
+    <span class="amt"><b class="xp">− ${fmt(t.amount)}</b></span></button>`; }).join('') : emptyBox('receipt', 'Aún no hay gastos registrados en este período.', 'expense', 'Registrar gasto', true);
 
   renderCharts();
-  if (typeof renderMobileHome === 'function') renderMobileHome();
+  if (typeof renderMobileHome === 'function') renderMobileHome({real:txs,inc,exp});
 }
 // Mini tendencia (últimos 6 meses) dentro de las tarjetas de Ingresos, Gastos y Balance
 const sparkMemo = {};

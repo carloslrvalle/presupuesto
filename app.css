@@ -3338,3 +3338,51 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  .topbar .prof-nm{display:none}
  .topbar .month-nav{grid-column:1/-1;grid-row:2}
 }
+
+/* 1.10.127: Resumen concentra las cifras; Movimientos deja espacio al registro diario. */
+@media (max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse){
+ #tab-dashboard.active{gap:12px}
+ #tab-dashboard>.plan-period{display:none}
+ #tab-dashboard>#mobileHomeMetrics{order:1}
+ #tab-dashboard>.dashboard-kpis{order:2;gap:8px}
+ #tab-dashboard>#mobileHomeChart{order:3}
+ #tab-dashboard>#mobileHomeTop{order:4}
+ #mobileHomeMetrics .mobile-movement-net{margin:0}
+ #mobileHomeMetrics .mobile-movement-net span{font-size:11px}
+ #mobileHomeMetrics .mobile-movement-net strong,#mobileHomeMetrics .mobile-movement-net b{font-size:24px;font-weight:600}
+ #tab-dashboard .dashboard-kpis>.kpi{border:0;border-radius:10px;background:var(--surface-2)}
+ #tab-dashboard .dashboard-kpis>.kpi>summary{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;align-content:center;gap:4px;min-height:76px;padding:10px 12px}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .label{min-height:0;gap:6px;padding-right:0;font-size:11px;line-height:1.4}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .dot{width:20px;height:20px;border-radius:6px}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .dot .vi{width:14px;height:14px}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .value{font-size:20px;line-height:1.3;letter-spacing:-.35px}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .metric-preview,#tab-dashboard .dashboard-kpis>.kpi>summary .metric-chevron{display:none}
+ #tab-dashboard .dashboard-kpis>.kpi[open]{background:var(--surface);outline:1px solid var(--border)}
+ #tab-dashboard .metric-expanded{padding:0 12px 12px}
+ #mobileHomeChart .mobile-spending-head{margin:2px 0 8px}
+ #mobileHomeChart .mobile-spending-head>span{font-size:12px;font-weight:500}
+ #mobileHomeChart .mobile-spending-chart .is-peak .mobile-bar-space>i{background:var(--text)}
+ #mobileHomeChart .mobile-spending-chart .is-peak .mobile-bar-label{color:var(--muted);font-weight:400}
+ #mobileHomeChart .mobile-category-legend{margin-bottom:0}
+ #mobileHomeTop .mobile-section-heading{margin-bottom:0}
+ #mobileHomeTop .mobile-section-heading h2{font-size:16px;font-weight:600;letter-spacing:-.2px}
+ #mobileHomeTopRows>.prow{grid-template-columns:32px minmax(0,1fr) fit-content(38%);gap:10px;min-height:58px;padding:8px 0}
+ #mobileHomeTopRows .ico{width:32px;height:32px;border-radius:9px}
+ #mobileHomeTopRows .top-exp-copy{gap:2px}
+ #mobileHomeTopRows .recent-method{display:none}
+ #mobileMovementsOverview{position:relative;margin-bottom:8px}
+ .mobile-log-balance{display:grid;gap:3px;min-width:0;padding-right:56px;font-variant-numeric:tabular-nums}
+ .mobile-log-balance>span{font-size:11px;color:var(--muted)}
+ .mobile-log-balance>strong{font-size:26px;font-weight:600;line-height:1.3;letter-spacing:-.4px;white-space:nowrap}
+ .mobile-log-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:8px}
+ .mobile-log-totals>button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-width:0;min-height:48px;padding:6px 8px;border:0;border-radius:8px;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+ .mobile-log-totals>button>span{font-size:11px;color:var(--muted)}
+ .mobile-log-totals b{max-width:100%;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+ .mobile-log-totals>button[aria-pressed=true]{background:var(--surface-2)}
+ .mobile-log-stats>summary{position:absolute;top:0;right:0;display:grid;place-items:center;width:44px;height:44px;border-radius:10px;list-style:none;color:var(--muted);cursor:pointer}
+ .mobile-log-stats>summary::-webkit-details-marker{display:none}
+ .mobile-log-stats[open]>summary{background:var(--surface-2);color:var(--text)}
+ .mobile-log-stats-body{padding-top:16px;margin-top:8px;border-top:1px solid var(--border)}
+ #tab-movs .mov-filters{margin-bottom:8px}
+ @media(max-width:360px){#mobileHomeMetrics .mobile-movement-net strong,#mobileHomeMetrics .mobile-movement-net b{font-size:21px}#tab-dashboard .dashboard-kpis>.kpi>summary{padding-inline:10px}}
+}

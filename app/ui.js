@@ -16,7 +16,7 @@ function planningHeader(){
  $('#prevM').title=bothCycles?'Cierre anterior':headerCycle?'Ciclo anterior':'Mes anterior';$('#nextM').title=bothCycles?'Cierre siguiente':headerCycle?'Ciclo siguiente':'Mes siguiente';
  const labels=document.querySelectorAll('#tab-dashboard .kpi .label');
  [cy?'Ingresos del ciclo':'Ingresos del mes',cy?'Gastos del ciclo':'Gastos del mes','Saldo acumulado','Tasa de ahorro'].forEach((text,i)=>{if(!labels[i])return;for(const node of labels[i].childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){node.textContent=text;break;}});
- $('#topExp').closest('.card').querySelector('h3').textContent=cy?'Top 5 gastos del ciclo':'Top 5 gastos del mes';
+ $('#topExp').closest('.card').querySelector('h3').textContent='Gastos recientes';
  $('#barsWrap').closest('.card').querySelector('h3').textContent='Evolución de ingresos y gastos';
  const copy=$('#btnCopyPrev span');if(copy)copy.textContent=cy?'Copiar ciclo anterior':'Copiar mes anterior';
 }
@@ -362,7 +362,7 @@ updateTextScale();
 window.addEventListener('resize',updateTextScale);
 new MutationObserver(updateTextScale).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
 function fitMetricValues(){
- document.querySelectorAll('.tab.active .kpi .value,.tab.active .mobile-movement-net strong,.tab.active .mobile-movement-net b,.tab.active .mobile-movement-totals b').forEach(el=>fitMetricValue(el));
+ document.querySelectorAll('.tab.active .kpi .value,.tab.active .mobile-movement-net strong,.tab.active .mobile-movement-net b,.tab.active .mobile-movement-totals b,.tab.active .mobile-log-balance strong,.tab.active .mobile-log-totals b').forEach(el=>fitMetricValue(el));
  // Los indicadores del grupo comparten tamaño, incluso si un importe necesita ajustarse.
  document.querySelectorAll('.tab.active .dashboard-kpis,.tab.active .both-kpis').forEach(group=>{
   const values=[...group.querySelectorAll('.value')].filter(el=>el.getBoundingClientRect().width>0);

@@ -43,7 +43,7 @@ function confetti(){
   const cols = [cssVar('--primary'), cssVar('--income'), '#f59e0b', '#ec4899', '#38bdf8', '#a78bfa'].concat(profiles.list.map(p => p.color)).filter(Boolean);
   const P = Array.from({length:150}, (_, i) => ({x:W / 2 + (Math.random() - .5) * W * .25, y:H * .38, vx:(Math.random() - .5) * 13, vy:-Math.random() * 13 - 4, s:5 + Math.random() * 6, r:Math.random() * 6, vr:(Math.random() - .5) * .35, c:cols[i % cols.length]}));
   const t0 = performance.now(), DUR = 2000;
-  (function frame(now){ const t = now - t0; x.clearRect(0, 0, W, H);
+  (function frame(now){ if (reduceMotion()){c.remove();return;} const t = now - t0; x.clearRect(0, 0, W, H);
     P.forEach(p => { p.vy += .33; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.r += p.vr; x.save(); x.globalAlpha = Math.max(0, 1 - t / DUR); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); x.restore(); });
     if (t < DUR) requestAnimationFrame(frame); else c.remove(); })(t0);
 }
@@ -198,14 +198,14 @@ function renderSettingsStatus(){
 function renderSettingsHome(){
  if(!$('#settingsHomeUsers'))return;
  $('#settingsHomeUsers').textContent=profiles.list.map(p=>p.name).join(' · ');
- $('#settingsHomeAppearance').textContent=curTheme()?.name||'Personalizado';
+ $('#settingsHomeAppearance').textContent=themeName(curTheme());
  const methods=state.settings.methods||[];
  $('#settingsHomeMethods').textContent=methods.length?methods.slice(0,3).join(' · ')+(methods.length>3?' · +'+(methods.length-3):''):'Sin métodos definidos';
  $('#settingsHomeData').textContent=!syncOn()?'Datos en este dispositivo · Sin conectar a Sheets':$('#syncBadge').classList.contains('err')?'Revisar conexión con Google Sheets':sync.pending?'Google Sheets · Cambios pendientes':sync.lastSync?'Google Sheets · Última sincronización '+new Date(sync.lastSync).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Google Sheets · Esperando sincronización';
 }
 function renderSettingsOverview(){
  if(!$('#settingsThemeName'))return;
- $('#settingsThemeName').textContent=curTheme()?.name||'Personalizado';
+ $('#settingsThemeName').textContent=themeName(curTheme());
  renderSettingsFont();
  renderSettingsHome();
  $('#settingsMethods').innerHTML=(state.settings.methods||[]).map((m,i)=>`<span class="settings-method-chip"><button type="button" data-index="${i}" data-action="edit" aria-label="Editar ${esc(m)}">${esc(m)}</button><button type="button" data-index="${i}" data-action="remove" aria-label="Eliminar ${esc(m)}">${ic('x')}</button></span>`).join('')||'<p class="small muted">Aún no agregaste métodos de pago.</p>';

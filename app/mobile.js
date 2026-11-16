@@ -20,9 +20,9 @@ function moveMobileNavIndicator(animate=true){
   mobileNavIndicator._motion?.cancel();mobileNavIndicator._motion=null;
   mobileNavIndicator._placed=false;mobileNavIndicator.style.opacity='0';return;
  }
- const box=glyph.getBoundingClientRect(),nav=mobileNav.getBoundingClientRect();
- const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
- const geometry={left:((box.left-nav.left)/zoom-mobileNav.clientLeft)+'px',top:((box.top-nav.top)/zoom-mobileNav.clientTop)+'px',width:glyph.offsetWidth+'px',height:glyph.offsetHeight+'px'};
+ // Mide la posición sin la escala del gesto de presión.
+ const button=glyph.parentElement;
+ const geometry={left:(button.offsetLeft+glyph.offsetLeft)+'px',top:(button.offsetTop+glyph.offsetTop)+'px',width:glyph.offsetWidth+'px',height:glyph.offsetHeight+'px'};
  mobileNavIndicator.style.opacity='1';
  if(animate===false||!mobileNavIndicator._placed||reduceMotion()){
   mobileNavIndicator._motion?.cancel();mobileNavIndicator._motion=null;Object.assign(mobileNavIndicator.style,geometry);
@@ -68,15 +68,23 @@ function updateMobileNavigation() {
 
 function navigateMobile(tab) {
   const from = activeTab();
+  if(tab==='movs'){
+    const completeList = movView === 'list' && $('#fltScope').value === 'all' && $('#mobileMovementReset').hidden;
+    if(from===tab && completeList){
+      window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'});
+      return;
+    }
+    if(from!==tab)tabScroll[from]=window.scrollY;
+    setMobileMovementTools(false);
+    if(completeList)showTab('movs',tabScroll.movs || 0);
+    else openMovs({scope:'all'});
+    return;
+  }
   if (from === tab && !bothMode) {
     window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'});
     return;
   }
   tabScroll[from] = window.scrollY;
-  if(tab==='movs' && movView==='list' && ['dashboard','budget'].includes(from)){
-    openMovs({scope:cycleEnabled()?'cycle':'month',month:currentMonth});
-    return;
-  }
   if (tab === 'both') {
     if (bothMode) showTab('both', tabScroll.both || 0);
     else switchProfile('both');
@@ -181,7 +189,11 @@ $('#fAmount').addEventListener('input',syncMobileTxUI);
 $('#fDate').addEventListener('change',syncMobileTxUI);
 mobileLayout.addEventListener('change',positionMobileTx);
 positionMobileTx();
-if(mobileLayout.matches&&cycleEnabled())$('#fltScope').value='cycle';
+if(mobileLayout.matches)$('#fltScope').value='all';
+mobileLayout.addEventListener('change', ({matches}) => {
+  const scope = $('#fltScope');
+  if(scope.value === (matches ? 'month' : 'all')) scope.value = defaultMovementScope();
+});
 $('#mobileNew').onclick = () => {
   if (!bothMode) openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {});
 };
@@ -211,32 +223,16 @@ mobileLayout.addEventListener('change', () => {
 
 // El inicio móvil reutiliza el ranking del Resumen para mantener el mismo período y orden.
 // El orden de Resumen es cronológico desde 1.10.127: los cinco gastos recientes del mes o ciclo.
-const mobileHomeMetrics=document.createElement('section');mobileHomeMetrics.id='mobileHomeMetrics';mobileHomeMetrics.className='mobile-only';mobileHomeMetrics.setAttribute('aria-label','Resultado del período');
-const mobileHomeChart=document.createElement('section');mobileHomeChart.id='mobileHomeChart';mobileHomeChart.className='mobile-only';mobileHomeChart.setAttribute('aria-label','Evolución de los gastos del período');
-$('#tab-dashboard .dashboard-kpis').before(mobileHomeMetrics);
-$('#tab-dashboard .dashboard-kpis').after(mobileHomeChart);
 const mobileHomeTop = document.createElement('section');
 mobileHomeTop.id = 'mobileHomeTop';
 mobileHomeTop.className = 'mobile-only';
 mobileHomeTop.setAttribute('aria-labelledby', 'mobileHomeTopTitle');
 mobileHomeTop.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileHomeTopTitle">Gastos recientes</h2><button type="button" id="mobileRecentAll">Ver todos ${ic('chevron-right')}</button></div><div id="mobileHomeTopRows"></div>`;
-mobileHomeChart.after(mobileHomeTop);
-function renderMobileHome(data){
-  const scope=cycleView()?'cycle':'month',content=document.createElement('div');
-  content.innerHTML=mobileInsightsHTML({...data,scope});
-  mobileHomeMetrics.replaceChildren(content.querySelector('.mobile-movement-net'));
-  content.querySelector('.mobile-movement-totals').remove();
-  content.querySelector('.mobile-spending-head>span').textContent=mobileMovementBins(data.real,scope).label;
-  content.querySelector('.mobile-spending-head>span+span').remove();
-  mobileHomeChart.replaceChildren(...content.childNodes);
+$('#tab-dashboard .dashboard-kpis').after(mobileHomeTop);
+function renderMobileHome(){
   $('#mobileHomeTopRows').innerHTML = $('#topExp').innerHTML;
-  mobileHomeMetrics.querySelectorAll('strong,b').forEach(el=>fitMetricValue(el));
 }
 $('#mobileRecentAll').onclick=()=>openMovs({type:'expense',scope:cycleView()?'cycle':'month',month:currentMonth});
-mobileHomeChart.addEventListener('click',event=>{
-  const button=event.target.closest('[data-mobile-filter-cat]');
-  if(button)openMovs({type:'expense',cat:button.dataset.mobileFilterCat,scope:cycleView()?'cycle':'month',month:currentMonth});
-});
 
 const mobileBudgetView = document.createElement('section');
 mobileBudgetView.id = 'mobileBudgetView';
@@ -313,51 +309,45 @@ mobileBudgetEditor.addEventListener('close', () => {
   mobileBudgetDraft = null;
 });
 
-const mobileMovements = document.createElement('section');
-mobileMovements.id = 'mobileMovementsOverview';
-mobileMovements.className = 'mobile-only';
-mobileMovements.setAttribute('aria-label','Resumen de los movimientos de esta vista');
-$('#view-list .mov-filters').before(mobileMovements);
+const mobileWeeklySpending = document.createElement('section');
+mobileWeeklySpending.id = 'mobileWeeklySpending';
+mobileWeeklySpending.className = 'mobile-only';
+mobileWeeklySpending.setAttribute('aria-labelledby','mobileWeeklyTitle');
+const mobileMovementHeader = document.createElement('header');
+mobileMovementHeader.className = 'mobile-only mobile-movement-header';
+mobileMovementHeader.innerHTML = `<h2>Movimientos</h2><button type="button" id="mobileMovementReset" class="btn sm" hidden>Ver todo</button><button type="button" id="mobileMovementTools" class="iconbtn" aria-label="Opciones de movimientos" aria-expanded="false" aria-controls="movementToolbar movementFilters">${ic('settings')}</button>`;
+$('#tab-movs .toolbar').before(mobileWeeklySpending,mobileMovementHeader);
 
-function mobileMovementBins(real,scope){
-  let start = currentMonth+'-01', end = currentMonth+'-'+String(daysIn(currentMonth)).padStart(2,'0');
-  if (scope==='cycle') ({start,end}=cyclePeriod(currentMonth));
-  if (scope==='year') {start=currentMonth.slice(0,4)+'-01-01';end=currentMonth.slice(0,4)+'-12-31';}
-  if (scope==='all' && real.length){const dates=real.map(t=>t.date).sort();start=dates[0];end=dates[dates.length-1];}
-  const days=Math.max(1,Math.round((Date.parse(end)-Date.parse(start))/864e5)+1);
-  const expenses=real.filter(t=>t.type==='expense');
-  if(scope==='year') return {days,label:'Gastos por mes',bins:Array.from({length:12},(_,i)=>{
-    const month=start.slice(0,4)+'-'+String(i+1).padStart(2,'0');
-    return {label:MONTHS_ES[i].slice(0,3),title:monthLong(month),amount:sum(expenses.filter(t=>t.date.startsWith(month)))};
-  })};
-  const step=scope==='all'?Math.max(1,Math.ceil(days/7)):7;
-  return {days,label:scope==='all'?'Gastos del rango':'Gastos semanales',bins:Array.from({length:Math.ceil(days/step)},(_,i)=>{
-    const first=BudgetFinance.dateOffset(start,i*step), last=BudgetFinance.dateOffset(start,Math.min(days-1,(i+1)*step-1));
-    return {label:first.slice(8,10)+'/'+first.slice(5,7),title:first===last?fmtDate(first):fmtDate(first)+' – '+fmtDate(last),amount:sum(expenses.filter(t=>t.date>=first&&t.date<=last))};
-  })};
+function setMobileMovementTools(open){
+  $('#mobileMovementTools').setAttribute('aria-expanded',String(open));
 }
-function mobileInsightsHTML({real,inc,exp,scope,selectedType=''}){
-  const {days,label,bins}=mobileMovementBins(real,scope), max=Math.max(0,...bins.map(bin=>bin.amount));
-  const isPeak=amount=>max>0&&Math.round(amount*100)===Math.round(max*100);
-  const type=selectedType;
-  const categories=new Map();
-  real.filter(t=>t.type==='expense').forEach(t=>categories.set(t.catId,(categories.get(t.catId)||0)+t.amount));
-  const ranked=[...categories].sort((a,b)=>b[1]-a[1]), shown=ranked.slice(0,3);
-  if(ranked.length>3)shown.push([null,ranked.slice(3).reduce((total,row)=>total+row[1],0)]);
-  return `<div class="mobile-movement-net"><div><span>Ingresos menos gastos</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong></div><div><span>Gasto por día</span><b>${fmt(exp/days)}</b><small>Promedio · ${days} días</small></div></div><div class="mobile-movement-totals">${[['income','Ingresos',inc],['expense','Gastos',exp]].map(([kind,name,amount])=>`<button type="button" data-mobile-type="${kind}" aria-pressed="${type===kind}"><span class="mobile-type-icon ${kind}">${ic('arrow-up-right')}</span><span><small>${name}</small><b>${fmt(amount)}</b></span></button>`).join('')}</div><div class="mobile-spending-head"><span>${scope==='cycle'?esc(shortPeriodLabel(currentMonth)):scope==='all'?'Todos los movimientos':scope==='year'?currentMonth.slice(0,4):esc(monthLong(currentMonth))}</span><span class="${max>0?'mobile-peak-legend':''}">${max?`Máx. ${fmt(max)}`:'Sin gastos registrados'}</span></div><ol class="mobile-spending-chart" data-granularity="${scope==='year'?'month':'week'}" aria-label="${label}" style="--bar-count:${bins.length}">${bins.map((bin,i)=>`<li class="${isPeak(bin.amount)?'is-peak':''}" aria-label="${esc(bin.title)}: ${esc(fmt(bin.amount))}${isPeak(bin.amount)?' · Mayor gasto':''}"><span class="mobile-bar-space"><i style="height:${max?bin.amount/max*100:0}%" title="${esc(bin.title)}: ${esc(fmt(bin.amount))}"></i></span><span class="mobile-bar-label" aria-hidden="true">${bins.length<=12||i===0||i===bins.length-1||i%7===0?esc(bin.label):''}</span></li>`).join('')}</ol>${exp>0?`<div class="mobile-category-strip" aria-hidden="true">${shown.map(([id,amount])=>`<i style="width:${amount/exp*100}%;background:${id?esc(getCat(id).color):'var(--muted)'}"></i>`).join('')}</div><div class="mobile-category-legend">${shown.map(([id,amount])=>id?`<button type="button" data-mobile-filter-cat="${esc(id)}"><i style="background:${esc(getCat(id).color)}"></i><span>${esc(getCat(id).name)}</span><small>${Math.round(amount/exp*100)}%</small></button>`:`<span><i style="background:var(--muted)"></i>Otras <small>${Math.round(amount/exp*100)}%</small></span>`).join('')}</div>`:''}`;
+$('#mobileMovementTools').onclick = event => setMobileMovementTools(event.currentTarget.getAttribute('aria-expanded') !== 'true');
+$('#mobileMovementReset').onclick = () => {
+  openMovs({scope:'all'});
+  $('#mobileMovementTools').focus({preventScroll:true});
+};
+
+function renderMobileMovements(scope, filtered){
+  $('#mobileMovementReset').hidden = !filtered;
+  const cycle = scope === 'cycle';
+  const period = cycle ? cyclePeriod(currentMonth) : {start:dateFor(currentMonth,1),end:dateFor(currentMonth,daysIn(currentMonth))};
+  const expenses = (cycle ? cycleTx(currentMonth) : txOfMonth(currentMonth)).filter(t => t.type === 'expense');
+  const weeks = [];
+  // Las semanas terminan en domingo y se recortan al período visible.
+  for(let start=period.start;start<=period.end;){
+    const weekday = new Date(start+'T00:00:00Z').getUTCDay();
+    const sunday = dateOffset(start,(7-weekday)%7);
+    const end = sunday < period.end ? sunday : period.end;
+    weeks.push({start,end,amount:sum(expenses.filter(t=>t.date>=start&&t.date<=end))});
+    start=dateOffset(end,1);
+  }
+  const max = Math.max(...weeks.map(week=>week.amount),0);
+  const dateLabel = date => date.slice(8,10)+'/'+date.slice(5,7);
+  mobileWeeklySpending.innerHTML = `<div class="mobile-weekly-head"><h2 id="mobileWeeklyTitle">Gastos por semana</h2><p>${esc(cycle ? shortPeriodLabel(currentMonth) : monthLong(currentMonth))}</p></div>${
+    max ? `<dl class="mobile-weekly-chart">${weeks.map(({start,end,amount}) => `<div>
+      <dt><time datetime="${start}">${dateLabel(start)}</time>${end!==start?`–<time datetime="${end}">${dateLabel(end)}</time>`:''}</dt>
+      <dd><span class="mobile-weekly-track" aria-hidden="true"><i style="--weekly-share:${amount/max*100}%"></i></span><b>${fmt(amount)}</b></dd>
+    </div>`).join('')}</dl>` : '<p class="mobile-weekly-empty">Sin gastos registrados en este período.</p>'
+  }`;
 }
-function renderMobileMovements(data){
-  const expanded=mobileMovements.querySelector('details')?.open||false;
-  mobileMovements.innerHTML=`<div class="mobile-log-balance"><span>Resultado de la vista</span><strong class="${data.inc-data.exp<0?'neg':''}">${fmt(data.inc-data.exp)}</strong></div><div class="mobile-log-totals">${[['income','Ingresos',data.inc],['expense','Gastos',data.exp]].map(([kind,label,amount])=>`<button type="button" data-mobile-type="${kind}" aria-pressed="${$('#fltType').value===kind}"><span>${label}</span><b>${fmt(amount)}</b></button>`).join('')}</div><details class="mobile-log-stats"${expanded?' open':''}><summary aria-label="Estadísticas de esta vista" title="Estadísticas de esta vista">${ic('chart-column')}</summary><div class="mobile-log-stats-body">${mobileInsightsHTML({...data,selectedType:$('#fltType').value})}</div></details>`;
-  mobileMovements.querySelectorAll('.mobile-log-balance strong,.mobile-log-totals b,.mobile-movement-net strong,.mobile-movement-net b,.mobile-movement-totals b').forEach(el=>fitMetricValue(el));
-}
-mobileMovements.addEventListener('click', event => {
-  const type=event.target.closest('[data-mobile-type]'), category=event.target.closest('[data-mobile-filter-cat]');
-  const fromStatistics=!!type?.closest('.mobile-log-stats-body');
-  if(type){$('#fltType').value=$('#fltType').value===type.dataset.mobileType?'':type.dataset.mobileType;$('#fltCat').value='';}
-  else if(category){$('#fltCat').value=category.dataset.mobileFilterCat;$('#fltType').value='expense';}
-  else return;
-  renderMovs(false);
-  if(type) [...mobileMovements.querySelectorAll(fromStatistics?'.mobile-log-stats-body [data-mobile-type]':'.mobile-log-totals [data-mobile-type]')].find(button=>button.dataset.mobileType===type.dataset.mobileType)?.focus({preventScroll:true});
-  if(category) [...mobileMovements.querySelectorAll('[data-mobile-filter-cat]')].find(button=>button.dataset.mobileFilterCat===category.dataset.mobileFilterCat)?.focus({preventScroll:true});
-});
+

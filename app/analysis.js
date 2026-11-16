@@ -90,6 +90,13 @@ function selectAnalysisMonth(month){
   if (month !== currentMonth) goMonth(month, false);
   else { renderYearReadout(); renderAnalysisDetails(); }
 }
+function finishAnalysisTrace(chart){
+  const trace=chart.$analysisTrace;
+  if(!trace)return;
+  cancelAnimationFrame(trace.raf);
+  trace.raf=0;
+  trace.progress=1;
+}
 function renderAnalysisChart(){
   const data=analysisData,phone=mobileAnalysis(),metric=ANALYSIS_METRICS[analysisMetric],cumulative=analysisChartMode==='total',percentage=analysisMetric==='rate',line=cumulative||percentage;
   const last=data.months.findLastIndex((_,i)=>data.cum[i]!=null),indices=data.months.map((_,i)=>i).slice(data.first,last+1);
@@ -117,8 +124,8 @@ function renderAnalysisChart(){
   // Revela el trazo real y desplaza su punta sobre cada segmento, sin mover los datos.
   const trace={id:'analysisLineTrace',
     afterInit(chart){if(line)chart.$analysisTrace={progress:animate?0:1,start:null,raf:0,head:null};},
-    beforeUpdate(chart,args){const t=chart.$analysisTrace;if(t&&args.mode==='none'){cancelAnimationFrame(t.raf);t.raf=0;t.progress=1;}},
-    resize(chart){const t=chart.$analysisTrace;if(t&&t.start!=null){cancelAnimationFrame(t.raf);t.raf=0;t.progress=1;}},
+    beforeUpdate(chart,args){if(args.mode==='none')finishAnalysisTrace(chart);},
+    resize(chart){if(chart.$analysisTrace?.start!=null)finishAnalysisTrace(chart);},
     beforeDatasetDraw(chart,args){
       const t=chart.$analysisTrace;if(!t||t.progress>=1||args.index!==0)return;
       if(reduceMotion()){t.progress=1;return;}
@@ -130,8 +137,18 @@ function renderAnalysisChart(){
       t.head=head;chart.ctx.save();chart.ctx.beginPath();chart.ctx.rect(chart.chartArea.left-8,chart.chartArea.top-8,Math.max(0,head.x-chart.chartArea.left+8),chart.chartArea.height+16);chart.ctx.clip();t.clipped=true;
     },
     afterDatasetDraw(chart){const t=chart.$analysisTrace;if(!t?.clipped)return;chart.ctx.restore();t.clipped=false;const {ctx}=chart,{x,y}=t.head;ctx.save();ctx.beginPath();ctx.arc(x,y,4.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=surface;ctx.stroke();ctx.restore();},
-    afterDraw(chart){const t=chart.$analysisTrace;if(!t||t.progress>=1||t.raf)return;t.raf=requestAnimationFrame(now=>{t.raf=0;if(!chart.canvas)return;t.start??=now;t.progress=reduceMotion()?1:Math.max(0,Math.min(1,(now-t.start)/MOTION.trace));chart.draw();});},
-    afterDestroy(chart){const t=chart.$analysisTrace;if(t)cancelAnimationFrame(t.raf);}
+    afterDraw(chart){
+      const t=chart.$analysisTrace;
+      if(!t||t.progress>=1||t.raf||activeTab()!=='analysis')return;
+      t.raf=requestAnimationFrame(now=>{
+        t.raf=0;
+        if(!chart.canvas?.isConnected||activeTab()!=='analysis'){finishAnalysisTrace(chart);return;}
+        t.start??=now;
+        t.progress=reduceMotion()?1:Math.max(0,Math.min(1,(now-t.start)/MOTION.trace));
+        chart.draw();
+      });
+    },
+    afterDestroy:finishAnalysisTrace
   };
   const valueLabels={id:'yearValueLabels',afterDatasetsDraw(chart){
     if(indices.length>3)return;

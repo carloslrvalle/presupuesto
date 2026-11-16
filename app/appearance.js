@@ -255,8 +255,20 @@ const THEMES = [
     ]
   }];
 const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
+const MOBILE_PALETTE = {
+  light:{bg:'#f2f5fa',surface:'#ffffff',s2:'#e9eef5',border:'#dce4ee',text:'#152235',muted:'#526278',accent:'#005ecb',income:'#16764e',expense:'#b93349',savings:'#916000'},
+  dark:{bg:'#10141c',surface:'#1b2330',s2:'#253143',border:'#334056',text:'#eff4fc',muted:'#adbed3',accent:'#83bcff',income:'#6dd5a3',expense:'#ff899b',savings:'#f7c66c'}
+};
+function mobilePalette(t, dark){
+  return mobileLayout.matches && t.id === 'vercel' ? MOBILE_PALETTE[dark ? 'dark' : 'light'] : null;
+}
+function themeName(t){
+  return mobileLayout.matches && t.id === 'vercel' ? 'Azul' : t.name;
+}
 function themePalette(t, dark = isDarkUI()){ return t.palette?.[dark ? 'dark' : 'light']; }
 function themeUi(t, dark){
+  const mobile = mobilePalette(t, dark);
+  if (mobile) return mobile;
   const p = themePalette(t, dark);
   return p ? {bg:p.background, surface:p.card, s2:p.muted, border:p.border, text:p.foreground, muted:p['muted-foreground']} : dark ? t.ui : t.uiLight;
 }
@@ -289,7 +301,7 @@ function applyTheme(id){
   state.goals.forEach((g, i) => g.color = goalThemeColor(t, i));
   state.settings.appColor = themeAccent(t); state.settings.theme = id;
   save(); renderAll();
-  toast(`Tema ${t.name} aplicado`, {icon:'palette', action:'Deshacer', onAction: () => {
+  toast(`Tema ${themeName(t)} aplicado`, {icon:'palette', action:'Deshacer', onAction: () => {
     state.settings.theme = prev.theme; state.settings.appColor = prev.app;
     prev.cats.forEach(([i, col]) => { const c = state.categories.find(x => x.id === i); if (c) c.color = col; });
     prev.goals.forEach(([i, col]) => { const g = state.goals.find(x => x.id === i); if (g) g.color = col; });
@@ -371,19 +383,20 @@ function renderThemes(){
     const dark=t.mode==='dark'||(!t.mode&&matchMedia('(prefers-color-scheme: dark)').matches), ui=themeUi(t,dark), surface=ui?.surface||(dark?'#101114':'#ffffff');
     const bg=ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface,dark), cols=themeColors(t);
     const categories=[0,1,2,3,4].map(i=>fitThemeColor(cols[i],surface,3));
-    return `<div class="theme-option"><button type="button" class="theme-card${t.id===cur?' active':''}" data-theme="${t.id}" aria-pressed="${t.id===cur}" title="${esc(t.desc)}">
+    const description=mobilePalette(t,dark)?'Azul, verde y coral, sigue el modo del sistema':t.desc;
+    return `<div class="theme-option"><button type="button" class="theme-card${t.id===cur?' active':''}" data-theme="${t.id}" aria-pressed="${t.id===cur}" title="${esc(description)}">
       <div class="theme-preview" style="--preview-bg:${bg};--preview-surface:${surface};--preview-income:${series.income};--preview-expense:${series.expense};--preview-saving:${series.savings}">
         <div class="theme-preview-bars">${[40,65,53,82,68,92].map((v,i)=>`<i style="height:${v}%"></i><i class="out" style="height:${v*.67}%"></i>`).join('')}</div>
         <svg class="theme-preview-line" viewBox="0 0 180 46" aria-hidden="true"><path d="M2 41 L36 35 L70 31 L104 21 L138 17 L178 4"/><circle cx="178" cy="4" r="2.5"/></svg>
         <div class="theme-preview-categories">${categories.map(c=>`<i style="background:${c}"></i>`).join('')}</div>
-      </div><div class="tc-row"><b>${esc(t.name)}</b>${t.id===cur?`<span class="tc-on">${ic('check')}</span>`:''}</div>
+      </div><div class="tc-row"><b>${esc(themeName(t))}</b>${t.id===cur?`<span class="tc-on">${ic('check')}</span>`:''}</div>
       <span class="theme-mode-label">${t.mode==='light'?'Siempre claro':t.mode==='dark'?'Siempre oscuro':'Se adapta al dispositivo'}</span></button>
       </div>`;
   };
   el.innerHTML='<div class="theme-key"><span style="--key:var(--income-chart)">Ingresos</span><span style="--key:var(--expense-chart)">Gastos</span><span style="--key:var(--k-violet)">Ahorro acumulado</span></div>'+THEMES.map(card).join('');
   const t=curTheme();
   const custom=t&&state.categories.some(c=>String(c.color).toLowerCase()!==String(themeMap(t)[c.id]).toLowerCase());
-  $('#themeNote').textContent=t?'Tema '+t.name+(custom?' · categorías personalizadas.':'.')+' Las muestras muestran ingresos, gastos, ahorro y categorías.':'Elige una paleta para coordinar categorías, metas, indicadores y gráficos.';
+  $('#themeNote').textContent=t?'Tema '+themeName(t)+(custom?' · categorías personalizadas.':'.')+' Las muestras muestran ingresos, gastos, ahorro y categorías.':'Elige una paleta para coordinar categorías, metas, indicadores y gráficos.';
 }
 
 $('#themeGrid').addEventListener('click', e => {
@@ -434,7 +447,7 @@ function applyBrand(){
 // Caché derivada y local por perfil; no contiene finanzas ni cambia el estado sincronizado.
 function cacheBootAppearance(){
   try{
-    const root=document.documentElement,css=getComputedStyle(root),hex=v=>/^#[a-f\d]{6}$/i.test(v),data={mode:root.dataset.mode||'',systemDark:matchMedia('(prefers-color-scheme: dark)').matches};
+    const root=document.documentElement,css=getComputedStyle(root),hex=v=>/^#[a-f\d]{6}$/i.test(v),data={mode:root.dataset.mode||'',systemDark:matchMedia('(prefers-color-scheme: dark)').matches,mobile:mobileLayout.matches};
     for(const key of ['bg','text','muted']){const value=css.getPropertyValue('--'+key).trim();if(!hex(value))return;data[key]=value;}
     const key='budgetPlanner.appearance.'+activeProfile,value=JSON.stringify(data);if(localData.readText(key)!==value)localData.writeText(key,value);
   }catch(e){/* La caché visual es opcional; su fallo no altera el guardado financiero. */}
@@ -460,13 +473,17 @@ function fitThemeColor(color, background, minimum=3){
   return target;
 }
 function themeSeries(t, surface, dark = isDarkUI()){
-  const p = themePalette(t, dark);
-  return {income:fitThemeColor(p?.['chart-2'] || t?.inc || '#329477',surface), expense:fitThemeColor(p?.['chart-1'] || t?.exp || '#d7657b',surface), savings:fitThemeColor(p?.['chart-5'] || t?.sav || '#8b7aca',surface)};
+  const p = themePalette(t, dark), mobile = mobilePalette(t, dark);
+  return {
+    income:fitThemeColor(mobile?.income || p?.['chart-2'] || t.inc || '#329477',surface),
+    expense:fitThemeColor(mobile?.expense || p?.['chart-1'] || t.exp || '#d7657b',surface),
+    savings:fitThemeColor(mobile?.savings || p?.['chart-5'] || t.sav || '#8b7aca',surface)
+  };
 }
 function applyThemeVars(){
   const r=document.documentElement.style, t=curTheme(), dark=isDarkUI();
   // Superficies propias del tema: ui en oscuro, uiLight en claro; texto y texto secundario son opcionales.
-  const desktopLight=matchMedia('(min-width:601px)').matches&&!matchMedia('(max-width:960px) and (max-height:500px) and (pointer:coarse)').matches&&!dark;
+  const desktopLight=!mobileLayout.matches&&!dark;
   const originalUi=themeUi(t,dark),ui=desktopLight?{...originalUi,bg:'#f4f5f6',surface:'#ffffff',s2:'#eceef0',border:'#e5e7e9'}:originalUi,uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
   for(const [key,field] of uiMap){if(ui?.[field])r.setProperty(key,ui[field]);else r.removeProperty(key);}
   const palette = themePalette(t, dark);
@@ -494,8 +511,10 @@ function applyThemeVars(){
 }
 
 function applyAccent(){
-  const r = document.documentElement.style, c = state.settings.appColor, L = hexLum(c), dark = isDarkUI();
-  const palette = themePalette(curTheme());
+  const r = document.documentElement.style, t = curTheme(), dark = isDarkUI();
+  const saved = state.settings.appColor, mobile = mobilePalette(t, dark);
+  const c = mobile && (!saved || normalizeColor(saved) === t.accent) ? mobile.accent : saved;
+  const L = hexLum(c), palette = themePalette(t);
   if (palette && c === curTheme().accent){
     const fill = palette.primary, surfaces = [palette.background,palette.card,palette.muted,palette.accent];
     const ink = fitThemeColor(fill, surfaces, 4.65);

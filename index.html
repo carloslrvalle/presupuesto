@@ -36,9 +36,10 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
  const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];
  try{
   const storage=window.localStorage,profile=storage.getItem('budgetPlanner.activeProfile')==='p2'?'p2':'p1',systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const mobile=matchMedia('(max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse)').matches;
   const cached=JSON.parse(storage.getItem('budgetPlanner.appearance.'+profile)||'null'),hex=v=>typeof v==='string'&&/^#[a-f\d]{6}$/i.test(v);
   let bg,text,muted,mode;
-  if(cached&&['','light','dark'].includes(cached.mode)&&(cached.mode||cached.systemDark===systemDark)&&hex(cached.bg)&&hex(cached.text)&&hex(cached.muted)){
+  if(cached&&(cached.mobile===undefined||cached.mobile===mobile)&&['','light','dark'].includes(cached.mode)&&(cached.mode||cached.systemDark===systemDark)&&hex(cached.bg)&&hex(cached.text)&&hex(cached.muted)){
    ({bg,text,muted,mode}=cached);
   }else{
    const settings=JSON.parse(storage.getItem(profile==='p2'?'budgetPlanner.v1.p2':'budgetPlanner.v1')||'null')?.settings||{};
@@ -49,6 +50,9 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
    bg=dark?'#000000':'#fcfcfc';text=dark?'#ffffff':'#000000';muted=dark?'#a4a4a4':'#525252';
    const palettes={clay:dark?['#262624','#c3c0b6','#b7b5a9']:['#faf9f5','#3d3929','#83827d'],indigo:dark?['#0f172a','#e2e8f0','#9ca3af']:['#f8fafc','#1e293b','#6b7280']};
    if(palettes[settings.theme])[bg,text,muted]=palettes[settings.theme];
+   if(mobile&&(!settings.theme||['vercel','minimal','sage'].includes(settings.theme))){
+    [bg,text,muted]=dark?['#10141c','#eff4fc','#adbed3']:['#f2f5fa','#152235','#526278'];
+   }
   }
   if(mode)root.dataset.mode=mode;
   for(const [key,value] of Object.entries({bg,text,muted}))root.style.setProperty('--boot-'+key,value);
@@ -127,12 +131,12 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
   <!-- MOVIMIENTOS -->
   <section class="tab" id="tab-movs">
-    <div class="toolbar">
+    <div class="toolbar" id="movementToolbar">
       <div class="vseg" id="movView" role="group" aria-label="Vista de movimientos"><span class="vseg-ind" aria-hidden="true"></span><button type="button" data-view="list" aria-pressed="true" class="active"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Lista</button><button type="button" data-view="cal" aria-pressed="false"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg>Calendario</button></div>
       <button class="btn" id="btnSelect" title="Seleccionar varios para borrarlos"><span class="sel-ic"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="sel-t">Seleccionar</span></button>
     </div>
     <div class="mview" id="view-list">
-      <div class="toolbar mov-filters">
+      <div class="toolbar mov-filters" id="movementFilters">
         <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar movimientos"></div>
         <button type="button" class="mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
         <button type="button" class="btn mov-filter-clear" id="movFilterClear" aria-label="Borrar filtros" title="Borrar filtros" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Borrar filtros</span></button>
@@ -175,6 +179,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
   <!-- METAS -->
   <section class="tab" id="tab-goals">
+    <h2 class="mobile-only mobile-view-title">Metas</h2>
     <div class="toolbar">
       <button class="btn primary" id="btnNewGoal" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nueva meta</button>
     </div>
@@ -183,6 +188,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
   <!-- ANÁLISIS -->
   <section class="tab" id="tab-analysis">
+    <h2 class="mobile-only mobile-view-title">Análisis</h2>
     <div class="toolbar analysis-toolbar">
       <div class="year-nav"><button id="yearPrev" title="Año anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="yearLabel"></span><button id="yearNext" title="Año siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
       <p class="analysis-available small muted">Saldo disponible del año <b id="analysisAvailable"></b></p>
@@ -201,6 +207,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
   <!-- CATEGORÍAS -->
   <section class="tab" id="tab-cats">
+    <h2 class="mobile-only mobile-view-title">Categorías</h2>
     <p class="small muted category-instructions">Toca un nombre para editarlo. Para ordenar, arrastra el asa o enfócala y usa las flechas ↑ y ↓.</p>
     <div class="grid2" style="margin-top:0">
       <div class="card">
@@ -322,8 +329,8 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 </dialog>
 
 <!-- Dialog: íconos -->
-<dialog id="iconDialog">
-  <div class="dlg-head"><h3 style="margin:0">Personalizar</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+<dialog id="iconDialog" aria-labelledby="iconDialogTitle">
+  <div class="dlg-head"><h3 style="margin:0" id="iconDialogTitle">Personalizar</h3><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
   <div class="dlg-body">
     <div class="icon-preview"><div class="ico" id="iconPreview"></div></div>
     <div class="field" id="frameField"><label>Color</label>
@@ -339,7 +346,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <div class="dlg-head"><div class="cd-title" id="cdTitle"></div><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
   <div class="dlg-body" id="cdBody"></div>
 </dialog>
-<dialog id="goalDialog">
+<dialog id="goalDialog" aria-labelledby="goalTitle">
   <form id="goalForm">
     <div class="dlg-head"><h3 style="margin:0" id="goalTitle">Nueva meta</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <div class="dlg-body">
@@ -364,8 +371,8 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 </dialog>
 
 <!-- Dialog: colores -->
-<dialog id="colorDialog" style="width:min(360px,calc(100% - 32px))">
-  <div class="dlg-head"><h3 style="margin:0">Elige un color</h3><button type="button" class="iconbtn" data-close><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+<dialog id="colorDialog" aria-labelledby="colorDialogTitle" style="width:min(360px,calc(100% - 32px))">
+  <div class="dlg-head"><h3 style="margin:0" id="colorDialogTitle">Elige un color</h3><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
   <div class="dlg-body">
     <div class="color-preview" id="colorPreview"><span id="colorPreviewIcon"></span><strong id="colorPreviewValue"></strong><small>Vista previa</small></div>
     <div class="field color-hex-field"><label for="colorHex">Código HEX</label><input id="colorHex" type="text" maxlength="7" autocomplete="off" spellcheck="false" aria-describedby="colorError" placeholder="#A6DCEF"><span id="colorError" class="color-error" role="status"></span></div>
@@ -376,7 +383,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 </dialog>
 
 <!-- Dialog: confirmación -->
-<dialog id="wdDialog" style="width:min(400px,calc(100% - 32px))">
+<dialog id="wdDialog" aria-labelledby="wdTitle" style="width:min(400px,calc(100% - 32px))">
   <form id="wdForm">
     <div class="dlg-head"><h3 style="margin:0" id="wdTitle">Retirar de la meta</h3><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <div class="dlg-body">
@@ -393,7 +400,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <div class="dlg-body" id="clBody"></div>
   <div class="dlg-foot"><button type="button" class="btn" data-cl="an">Ver análisis</button><button type="button" class="btn primary" data-close>Listo</button></div>
 </dialog>
-<dialog id="confirmDialog" style="width:min(380px,calc(100% - 32px))">
+<dialog id="confirmDialog" aria-labelledby="cfTitle" aria-describedby="cfMsg" style="width:min(380px,calc(100% - 32px))">
   <div class="dlg-body" style="padding-top:22px">
     <div class="confirm-ico" id="cfIco"></div>
     <h3 style="margin:4px 0 0" id="cfTitle"></h3>

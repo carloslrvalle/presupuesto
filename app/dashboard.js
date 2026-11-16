@@ -175,7 +175,7 @@ function renderDashboard(){
     <span class="amt"><b class="xp">− ${fmt(t.amount)}</b></span></button>`; }).join('') : emptyBox('receipt', 'Aún no hay gastos registrados en este período.', 'expense', 'Registrar gasto', true);
 
   renderCharts();
-  if (typeof renderMobileHome === 'function') renderMobileHome({real:txs,inc,exp});
+  if (typeof renderMobileHome === 'function') renderMobileHome();
 }
 // Mini tendencia (últimos 6 meses) dentro de las tarjetas de Ingresos, Gastos y Balance
 const sparkMemo = {};

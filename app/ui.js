@@ -270,6 +270,7 @@ function revealContent(el,kind='fast'){
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
 }
 function revealSection(el){
+ if(mobileLayout.matches)return motionAnimate(el,[{opacity:.9},{opacity:1}],'fast');
  if(floatingTabs.matches||matchMedia('(max-width:700px)').matches)return;
  return motionAnimate(el,[{opacity:.72,transform:'translateY(6px)'},{opacity:1,transform:'none'}],'fast');
 }
@@ -362,7 +363,7 @@ updateTextScale();
 window.addEventListener('resize',updateTextScale);
 new MutationObserver(updateTextScale).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
 function fitMetricValues(){
- document.querySelectorAll('.tab.active .kpi .value,.tab.active .mobile-movement-net strong,.tab.active .mobile-movement-net b,.tab.active .mobile-movement-totals b,.tab.active .mobile-log-balance strong,.tab.active .mobile-log-totals b').forEach(el=>fitMetricValue(el));
+ document.querySelectorAll('.tab.active .kpi .value').forEach(el=>fitMetricValue(el));
  // Los indicadores del grupo comparten tamaño, incluso si un importe necesita ajustarse.
  document.querySelectorAll('.tab.active .dashboard-kpis,.tab.active .both-kpis').forEach(group=>{
   const values=[...group.querySelectorAll('.value')].filter(el=>el.getBoundingClientRect().width>0);
@@ -456,6 +457,10 @@ function showTab(name, scrollTop = 0){
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
   const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab();
+  if (prevTab === 'analysis' && name !== 'analysis' && chYear) {
+    chYear.stop();
+    finishAnalysisTrace(chYear);
+  }
   if(prevTab!==name)$('#tabInd')._navigationRect=$('#tabInd').getBoundingClientRect();
   for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
     button.classList.toggle('active', button === b);

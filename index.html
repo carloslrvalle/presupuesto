@@ -294,7 +294,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <div class="seg" id="txSeg" role="group" aria-label="Tipo de movimiento"><button type="button" data-type="expense" class="active">Gasto</button><button type="button" data-type="income">Ingreso</button></div>
       <p class="small" id="txContributionGoal" hidden></p>
       <div class="quick" id="txQuick" hidden></div>
-      <div class="field tx-amount"><label for="fAmount">Monto en soles</label><input type="number" id="fAmount" class="amount-input" inputmode="decimal" step="0.01" min="0.01" required placeholder="0.00"></div>
+      <div class="field tx-amount"><label for="fAmount">Monto en soles</label><input type="number" id="fAmount" class="amount-input" inputmode="decimal" step="0.01" min="0.01" required placeholder="0.00" autofocus autocomplete="off" enterkeyhint="done"></div>
       <div class="field"><div class="tx-field-head"><label>Categoría</label><button type="button" class="tx-text-button" id="txAllCategories" aria-expanded="false" aria-controls="txCategorySearchBox">Ver todas</button></div>
         <div class="tx-category-search" id="txCategorySearchBox" hidden><input type="search" id="txCategorySearch" placeholder="Buscar categoría" aria-label="Buscar categoría" autocomplete="off"></div>
         <div class="chips" id="fCatChips"></div>

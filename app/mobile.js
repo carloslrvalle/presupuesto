@@ -103,6 +103,8 @@ const mobileTxMeta=document.createElement('div');mobileTxMeta.className='mobile-
 const mobileTxCategory=document.createElement('button');mobileTxCategory.type='button';mobileTxCategory.id='mobileTxCategory';mobileTxCategory.setAttribute('aria-expanded','false');
 mobileTxMeta.append(mobileTxCategory);txBody.append(mobileTxMeta);
 const mobileTxExtras=document.createElement('div');mobileTxExtras.id='mobileTxExtras';mobileTxExtras.className='mobile-only mobile-tx-extras';txBody.append(mobileTxExtras);
+const mobileTxDone=document.createElement('button');mobileTxDone.type='button';mobileTxDone.id='mobileTxDone';mobileTxDone.className='mobile-only btn';mobileTxDone.textContent='Listo';
+txDialog.querySelector('.dlg-foot').append(mobileTxDone);
 const txCategoryField=$('#fCatChips').closest('.field'),txNoteField=$('#fDesc').closest('.field');
 txCategoryField.classList.add('tx-category-panel');txNoteField.classList.add('tx-note-field');
 txCategoryField.id='mobileTxCategoryPanel';mobileTxCategory.setAttribute('aria-controls',txCategoryField.id);
@@ -124,7 +126,8 @@ function syncMobileTxUI(){
   txDialog.querySelector('[type=submit]').textContent=editingId?'Guardar cambios':txType==='income'?'Guardar ingreso':'Guardar gasto';
   $('#fAmount').style.setProperty('--amount-characters',String(Math.max(4,($('#fAmount').value||'0.00').length)));
   const date=$('#fDate').value;
-  $('#fDateField .dp-trigger').innerHTML=ic('calendar')+`<span class="dp-l">${date===todayISO()?'Hoy':esc(fmtDate(date))}</span>`;
+  const dateLabel=date===todayISO()?'Hoy':fmtDate(date),trigger=$('#fDateField .dp-trigger');
+  if(trigger.querySelector('.dp-l')?.textContent!==dateLabel)trigger.innerHTML=ic('calendar')+`<span class="dp-l">${esc(dateLabel)}</span>`;
   mobileTxNote.hidden=txDialog.classList.contains('note-open');
 }
 function prepareMobileTxUI(){
@@ -133,16 +136,24 @@ function prepareMobileTxUI(){
   mobileTxOptions.setAttribute('aria-expanded','false');mobileTxCategory.setAttribute('aria-expanded','false');
   syncMobileTxUI();
 }
+function setMobileTxPanel(panel){
+  txDialog.classList.toggle('category-open',panel==='category');
+  txDialog.classList.toggle('options-open',panel==='options');
+  mobileTxCategory.setAttribute('aria-expanded',String(panel==='category'));
+  mobileTxOptions.setAttribute('aria-expanded',String(panel==='options'));
+  dpClose();
+  // El selector ocupa el cuerpo desde arriba; el teclado se solicita otra vez al volver al importe.
+  const target=panel==='category'?$('#txAllCategories'):panel==='options'?mobileTxOptions:$('#fAmount');
+  (target.hidden?mobileTxOptions:target).focus({preventScroll:true});
+  txBody.scrollTop=0;
+}
+mobileTxDone.onclick=()=>setMobileTxPanel(null);
 mobileTxNote.onclick=()=>{txDialog.classList.add('note-open');syncMobileTxUI();$('#fDesc').focus({preventScroll:true});};
-mobileTxOptions.onclick=()=>{const open=txDialog.classList.toggle('options-open');mobileTxOptions.setAttribute('aria-expanded',String(open));txDialog.classList.remove('category-open');mobileTxCategory.setAttribute('aria-expanded','false');};
-mobileTxCategory.onclick=()=>{
-  const open=txDialog.classList.toggle('category-open');mobileTxCategory.setAttribute('aria-expanded',String(open));
-  txDialog.classList.remove('options-open');mobileTxOptions.setAttribute('aria-expanded','false');
-  if(open)requestAnimationFrame(()=>keepTxFieldVisible(txCategoryField));
-};
+mobileTxOptions.onclick=()=>setMobileTxPanel(txDialog.classList.contains('options-open')?null:'options');
+mobileTxCategory.onclick=()=>setMobileTxPanel(txDialog.classList.contains('category-open')?null:'category');
 $('#fCatChips').addEventListener('click',event=>{
   if(!mobileLayout.matches||!event.target.closest('[data-cat]'))return;
-  txDialog.classList.remove('category-open');mobileTxCategory.setAttribute('aria-expanded','false');syncMobileTxUI();mobileTxCategory.focus({preventScroll:true});
+  syncMobileTxUI();setMobileTxPanel(null);
 });
 $('#fAmount').addEventListener('input',syncMobileTxUI);
 $('#fDate').addEventListener('change',syncMobileTxUI);

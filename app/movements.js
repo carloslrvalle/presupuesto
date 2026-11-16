@@ -477,6 +477,7 @@ function createTxCategory(){
  txDialog.querySelector('.dialog-save-error')?.remove();
  selCat=c.id;dirty=new Set(Object.keys(VIEWS));
  $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();
+ if(txDialog.classList.contains('tx-mobile-simple'))setMobileTxPanel(null);
  toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
 }
 $('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';if(txDialog.classList.contains('tx-mobile-simple'))renderTxChips();else motionResize($('#fCatChips'),renderTxChips);if(txCategoryExpanded&&!txPhone.matches)$('#txCategorySearch').focus();};
@@ -522,7 +523,11 @@ function setTxType(type){
   document.querySelectorAll('#txSeg button').forEach(b => {b.classList.toggle('active', b.dataset.type === type);b.setAttribute('aria-pressed',String(b.dataset.type===type));});
   renderTxChips(); renderQuick();
 }
-$('#txSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.type); });
+$('#txSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  setTxType(b.dataset.type);
+  if(txDialog.classList.contains('tx-mobile-simple')) setMobileTxPanel(null);
+});
 $('#fCatChips').addEventListener('click', e => {
   const button = e.target.closest('[data-cat]');
   if (!button) return;
@@ -579,7 +584,9 @@ document.addEventListener('click', e => {
   const t = state.transactions.find(x => x.id === q.dataset.quick); if (!t) return;
   $('#fAmount').value = t.amount; selCat = t.catId; selMethod = t.method || ''; txMethodExplicit=true; $('#fDesc').value = t.desc || '';
   renderTxChips(); q.classList.add('picked'); setTimeout(() => q.classList.remove('picked'), 400);
-  $('#txForm button[type=submit]').focus();
+  if(txDialog.classList.contains('tx-mobile-simple')){
+    txDialog.classList.toggle('note-open',!!$('#fDesc').value);syncMobileTxUI();setMobileTxPanel(null);
+  }else $('#txForm button[type=submit]').focus();
 });
 function openTx(id, preset){
   if(localTabChanged)return toast('⚠️ Hay cambios en otra pestaña. Recarga antes de editar.');
@@ -714,7 +721,10 @@ $('#txForm').addEventListener('submit', e => {
       return;
     }
   }
-  if (!selCat) return toast('Elige una categoría');
+  if (!selCat){
+    if(txDialog.classList.contains('tx-mobile-simple')&&!txDialog.classList.contains('category-open')) $('#mobileTxCategory').click();
+    return toast('Elige una categoría');
+  }
   const desc = $('#fDesc').value.trim();
   if (!BudgetFinance.validDate($('#fDate').value)) return toast('Elige una fecha válida');
   const data = {type:txType, amount, catId:selCat, date:$('#fDate').value, method:selMethod, desc,
@@ -765,8 +775,8 @@ const txPhone=matchMedia('(max-width:700px), (max-width:960px) and (max-height:5
 function showTxDialog(){
  resizeTxViewport();
  txDialog.showModal();
- const focus=txPhone.matches ? txDialog.querySelector('.dlg-head [data-close]') : $('#fAmount');
- focus.focus({preventScroll:true});
+ // Dentro del mismo toque: Safari solo permite abrir el teclado durante la activación del usuario.
+ $('#fAmount').focus({preventScroll:true});
  txDialog.querySelector('.dlg-body').scrollTop=0;
 }
 // En el celular el teclado tapa la parte baja de la pantalla: la hoja se apoya sobre él y el campo activo queda a la vista.

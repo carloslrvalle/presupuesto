@@ -188,20 +188,6 @@ function renderAnalysisChart(){
     ctx.save();ctx.strokeStyle=cssVar('--muted');ctx.globalAlpha=.53;ctx.setLineDash([3,5]);
     ctx.beginPath();ctx.moveTo(point.x,area.top);ctx.lineTo(point.x,area.bottom);ctx.stroke();ctx.restore();
   }};
-  const valueLabels={id:'yearValueLabels',afterDatasetsDraw(chart){
-    if(chart.$analysisTrace?.progress<1 || chart.$analysisUpdating)return;
-    const {ctx,chartArea:area}=chart,meta=chart.getDatasetMeta(0),series=chart.data.datasets[0];
-    const label=MONTHS_ES[Number(analysisSelectedMonth.slice(5))-1];
-    ctx.save();ctx.font='600 12px '+cssVar('--font-body');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=cssVar('--text');
-    meta.data.forEach((point,i)=>{
-      const value=series.data[i];
-      if(chart.data.labels[i]!==label||value==null||point.skip)return;
-      let text=analysisFormat(value),width=ctx.measureText(text).width;
-      if(width>area.width*.38){text=series.unit==='pct'?analysisPercent(value):compactS(value);width=ctx.measureText(text).width;}
-      const x=Math.max(area.left+width/2,Math.min(area.right-width/2,point.x)),rawY=point.y+(value<0?16:-16),y=Math.max(area.top-8,Math.min(area.bottom-8,rawY));
-      ctx.fillText(text,x,y);
-    });ctx.restore();
-  }};
   const labels=indices.map(i=>MONTHS_ES[i]);
   const options={maintainAspectRatio:false,
       animation:reduceMotion()?false:{
@@ -212,7 +198,11 @@ function renderAnalysisChart(){
       interaction:{mode:'index',intersect:false},layout:{padding:{top:22,right:12,bottom:8}},
       onClick:(event,items)=>{const item=items[0];if(item)selectAnalysisMonth(data.months[indices[item.index]]);},
       plugins:{legend:{display:false},tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+dataset.label+': '+analysisFormat(ctx.parsed.y)}}},
-      scales:{x:{offset:labels.length<2,grid:{display:false},border:{display:false},ticks:{maxRotation:0,autoSkip:false,maxTicksLimit:12,callback:function(value){const selected=data.months[indices[value]]===analysisSelectedMonth;return phone&&innerWidth<=440&&labels.length>8&&value%2&&!selected?'':this.getLabelForValue(value);},color:ctx=>data.months[indices[ctx.index]]===analysisSelectedMonth?cssVar('--text'):cssVar('--muted'),font:ctx=>({size:phone?10:12,weight:data.months[indices[ctx.index]]===analysisSelectedMonth?700:400}),padding:10}},
+      scales:{x:{offset:labels.length<2,grid:{display:false},border:{display:false},ticks:{maxRotation:0,autoSkip:false,maxTicksLimit:12,callback:function(value){
+        const selectedIndex=indices.findIndex(index=>data.months[index]===analysisSelectedMonth);
+        if(phone&&labels.length>8&&value!==selectedIndex&&(value%2||Math.abs(value-selectedIndex)===1))return '';
+        return this.getLabelForValue(value);
+      },color:ctx=>data.months[indices[ctx.index]]===analysisSelectedMonth?cssVar('--text'):cssVar('--muted'),font:ctx=>({size:phone?10:12,weight:data.months[indices[ctx.index]]===analysisSelectedMonth?700:400}),padding:10}},
         y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>mixHex(cssVar(ctx.tick.value===0?'--muted':'--border'),cssVar('--surface'),ctx.tick.value===0?.42:.38),lineWidth:ctx=>ctx.tick.value===0?1.2:1},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}
   };
   if(chYear){
@@ -227,7 +217,7 @@ function renderAnalysisChart(){
   } else {
     if(!$('#chYear'))$('#yearWrap').innerHTML='<canvas id="chYear"></canvas>';
     chYear=new Chart($('#chYear'),{
-      type:'line',plugins:[trace,selectedGuide,valueLabels], data:{labels,datasets:[dataset]},
+      type:'line',plugins:[trace,selectedGuide], data:{labels,datasets:[dataset]},
       options:{...options,animation:false}
     });
     chYear.options.animation=options.animation;

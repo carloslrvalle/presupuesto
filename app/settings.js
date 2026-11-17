@@ -97,13 +97,24 @@ function setupSettings(){
  const financeForm=document.createElement('form');
  financeForm.className='settings-finance-colors';
  financeForm.innerHTML='<p class="small muted">Personaliza las series y las cifras destacadas de este dispositivo.</p>'+
-   '<div class="finance-color-fields">'+FINANCE_COLOR_ROLES.map(([role,label])=>
-     '<label><span>'+label+'</span><input type="color" name="'+role+'"></label>').join('')+
+   '<div class="finance-color-fields">'+FINANCE_COLOR_ROLES.map(([role,label],index)=>
+     '<input type="hidden" name="'+role+'"><button type="button" class="finance-color-option" data-finance-color="'+role+'" aria-label="Personalizar color de '+label.toLowerCase()+'" aria-haspopup="dialog"><span class="finance-color-icon">'+ic(['arrow-down','arrow-up','piggy-bank','scale'][index])+'</span><span class="finance-color-copy"><b>'+label+'</b><small data-finance-hex></small></span><span class="finance-color-value">S/ 1,250.00</span>'+ic('chevron-right')+'</button>').join('')+
    '</div><label class="finance-tone">Intensidad <select name="tone"><option value="soft">Suave</option><option value="standard">Equilibrada</option><option value="strong">Intensa</option></select></label>'+
    '<div class="finance-color-actions"><button type="submit" class="btn primary">Aplicar colores</button><button type="button" class="btn" data-reset-colors>Restablecer</button></div><p class="small" role="status" hidden></p>';
  const financePanel=disclosure('Colores de gráficos y cifras',financeForm);
  const fields=financeForm.elements, status=financeForm.querySelector('[role=status]');
  let startingColors={};
+ function renderFinancePreview(){
+   const surface=cssVar('--surface'),dark=isDarkUI();
+   for(const [role] of FINANCE_COLOR_ROLES){
+     const color=fields.namedItem(role).value, button=financeForm.querySelector('[data-finance-color="'+role+'"]');
+     const tone=fields.namedItem('tone').value, series=financialChartColor(color,surface,tone);
+     const tint=mixHex(series,surface,dark?.84:.88);
+     button.style.setProperty('--preview-color',fitThemeColor(series,[surface,cssVar('--surface-2'),cssVar('--bg'),tint],tone==='strong'?5.5:4.65));
+     button.style.setProperty('--preview-soft',tint);
+     button.querySelector('[data-finance-hex]').textContent=color.toUpperCase();
+   }
+ }
  function fillFinanceForm(keepEdits=false){
    const palette=themePalette(curTheme());
    for(const [role,,key] of FINANCE_COLOR_ROLES){
@@ -112,7 +123,20 @@ function setupSettings(){
      if(!keepEdits||!edited)input.value=startingColors[role];
    }
    if(!keepEdits)fields.namedItem('tone').value=financeColors.tone;
+   renderFinancePreview();
  }
+ financeForm.addEventListener('click',event=>{
+   const button=event.target.closest('[data-finance-color]');
+   if(!button)return;
+   const role=button.dataset.financeColor, index=FINANCE_COLOR_ROLES.findIndex(([id])=>id===role);
+   button.focus({preventScroll:true});
+   openColor(fields.namedItem(role).value,color=>{
+     fields.namedItem(role).value=color;
+     renderFinancePreview();
+     status.hidden=true;
+   },{title:'Color de '+FINANCE_COLOR_ROLES[index][1].toLowerCase(),icon:['arrow-down','arrow-up','piggy-bank','scale'][index]});
+ });
+ fields.namedItem('tone').addEventListener('change',renderFinancePreview);
  function submitFinanceColors(preference,message){
    const saved=saveFinanceColors(preference);
    if(saved)fillFinanceForm();

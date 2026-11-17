@@ -105,26 +105,32 @@ const curTheme = () => themeById(state.settings.theme) || THEMES[0];
 const curThemeColorCat = c => { const t = curTheme(); return t ? themeMap(t)[c.id] : null; };
 const curThemeColorGoal = id => { const t = curTheme(); if (!t) return null; const i = id ? state.goals.findIndex(g => g.id === id) : state.goals.length; return goalThemeColor(t, Math.max(0, i)); };
 /* ---------- Selector de colores ---------- */
-const colorDialog = $('#colorDialog'); let colorCb = null,colorDraft='#6366f1';
+const colorDialog = $('#colorDialog'); let colorCb = null,colorDraft='#6366f1',colorOpener=null;
 function normalizeColor(value){const s=String(value).trim().replace(/^#/,'');return /^[a-f\d]{6}$/i.test(s)?'#'+s.toLowerCase():/^[a-f\d]{3}$/i.test(s)?'#'+[...s].map(c=>c+c).join('').toLowerCase():null;}
 function previewColor(color,fromSliders=false,keepInput=false){
  colorDraft=color;if(!keepInput)$('#colorHex').value=color.toUpperCase();$('#colorHex').setAttribute('aria-invalid','false');$('#colorError').textContent='';$('#applyColor').disabled=false;
  const hsl=hueOf(color);
  if(!fromSliders){$('#colorHue').value=hsl.h;$('#colorSaturation').value=hsl.s*100;$('#colorLightness').value=hexLight(color)*100;}
  const hue=Number($('#colorHue').value),sat=Number($('#colorSaturation').value),light=Number($('#colorLightness').value),preview=$('#colorPreview');
- preview.style.background=color;preview.style.color=hexLum(color)>.45?'#1b2232':'#ffffff';$('#colorPreviewValue').textContent=color.toUpperCase();
+ preview.style.background=color;preview.style.color=themeForeground('#ffffff',color);$('#colorPreviewValue').textContent=color.toUpperCase();
  $('#colorSaturation').style.background=`linear-gradient(90deg,${hslHex(hue,0,light/100)},${hslHex(hue,1,light/100)})`;
  $('#colorLightness').style.background=`linear-gradient(90deg,#000000,${hslHex(hue,sat/100,.5)},#ffffff)`;
  $('#paletteGrid').querySelectorAll('[data-color]').forEach(b=>{const on=b.dataset.color.toLowerCase()===color;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
 }
-function openColor(current, cb){
+function openColor(current, cb, options={}){
   colorCb = cb;
+  colorOpener=document.activeElement;
+  $('#colorDialogTitle').textContent=options.title||'Elegir color';
   const cur = String(current).toLowerCase();
   const items = list => list.map(([hex, name]) => `<div class="sw-item"><button type="button" class="swatch lg${hex.toLowerCase() === cur ? ' active' : ''}" data-color="${hex}" style="background:${hex}" title="${name}"></button>${name}</div>`).join('');
   $('#paletteGrid').innerHTML = `<div class="pal-title">Pastel</div>${items(COLORS_PASTEL)}<div class="pal-title">Intensos</div>${items(COLORS_MAIN)}`;
-  $('#colorPreviewIcon').innerHTML=ic('palette');previewColor(normalizeColor(current)||'#6366f1');
+  $('#colorPreviewIcon').innerHTML=ic(options.icon||'palette');previewColor(normalizeColor(current)||'#6366f1');
   colorDialog.showModal();
 }
+colorDialog.addEventListener('close',()=>{
+  if(colorOpener?.isConnected)colorOpener.focus({preventScroll:true});
+  colorOpener=null;
+});
 $('#paletteGrid').addEventListener('click', e => { const b = e.target.closest('[data-color]'); if(b)previewColor(b.dataset.color.toLowerCase()); });
 $('#colorHex').addEventListener('input',()=>{const color=normalizeColor($('#colorHex').value);if(color)previewColor(color,false,true);else{$('#colorHex').setAttribute('aria-invalid','true');$('#colorError').textContent='Usa 3 o 6 caracteres HEX (0–9, A–F).';$('#applyColor').disabled=true;}});
 for(const id of ['colorHue','colorSaturation','colorLightness'])$('#'+id).addEventListener('input',()=>previewColor(hslHex(Number($('#colorHue').value),Number($('#colorSaturation').value)/100,Number($('#colorLightness').value)/100),true));
@@ -188,8 +194,7 @@ try {
   }
 } catch (error) { /* Una preferencia ilegible usa la paleta original. */ }
 
-function financialChartColor(color, surface = cssVar('--surface')){
-  const tone = financeColors.tone;
+function financialChartColor(color, surface = cssVar('--surface'), tone = financeColors.tone){
   const ink = hexLum(surface)<.25 ? '#ffffff' : '#111113';
   const seed = tone === 'soft' ? mixHex(color,surface,.17) : tone === 'strong' ? mixHex(color,ink,.18) : color;
   return fitThemeColor(seed,surface,FINANCE_TONES[tone]);

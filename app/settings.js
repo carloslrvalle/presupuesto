@@ -67,7 +67,7 @@ function setupSettings(){
  <div class="settings-layout"><nav class="settings-nav" aria-label="Secciones de ajustes"></nav><div class="settings-content"><div class="settings-home"><h3>Configuración actual</h3><div class="settings-home-rows"><button type="button" class="settings-home-row" data-settings-target="users"><span class="settings-home-icon">${ic('users')}</span><span class="settings-home-copy"><b>Usuarios</b><span class="settings-home-value" id="settingsHomeUsers"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="appearance"><span class="settings-home-icon">${ic('palette')}</span><span class="settings-home-copy"><b>Apariencia</b><span class="settings-home-value" id="settingsHomeAppearance"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="methods"><span class="settings-home-icon">${ic('credit-card')}</span><span class="settings-home-copy"><b>Métodos de pago</b><span class="settings-home-value" id="settingsHomeMethods"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="data"><span class="settings-home-icon">${ic('cloud')}</span><span class="settings-home-copy"><b>Datos y sincronización</b><span class="settings-home-value" id="settingsHomeData"></span></span>${ic('chevron-right')}</button></div></div></div></div>
  <footer class="settings-footer"></footer>`;
  root.querySelector('.settings-footer').append(version,install);
- const entries=[['users','Usuarios','Nombres, fotos e íconos','users'],['appearance','Apariencia','Colores y tipografía','palette'],['methods','Métodos de pago','Organiza cómo pagas','credit-card'],['data','Datos y sincronización','Conexión y respaldos','cloud']];
+ const entries=[['users','Usuarios','Nombres, fotos e íconos','users'],['appearance','Apariencia','Modo claro u oscuro','palette'],['methods','Métodos de pago','Organiza cómo pagas','credit-card'],['data','Datos y sincronización','Conexión y respaldos','cloud']];
  const nav=root.querySelector('.settings-nav'),content=root.querySelector('.settings-content');
  for(const [id,title,desc,icon] of entries){
   const button=document.createElement('button');button.type='button';button.dataset.settingsTarget=id;button.setAttribute('aria-controls','settings-panel-'+id);
@@ -90,37 +90,11 @@ function setupSettings(){
  }
  users.querySelector('p').textContent='Cada usuario conserva sus propios datos y preferencias. Toca su nombre, avatar o foto para editarlo.';
  users.querySelector('h3').remove();panel('users').append(users);
- const themeDetails=disclosure('Tema de colores',themes);
+ const themeDetails=disclosure('Modo de apariencia',themes);
  themeDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsThemeName"></small>');
- const fontField = document.createElement('fieldset');
- fontField.id = 'settingsFont';
- fontField.className = 'settings-font-field';
- const options = availableFonts().map(font => `<label class="settings-font-option">
-   <input type="radio" name="interface-font" value="${font.id}">
-   <span class="settings-font-radio" aria-hidden="true"></span>
-   <span>${esc(font.name)}</span>
- </label>`).join('');
- fontField.innerHTML = `<legend>Fuente de la interfaz</legend>
-   <div class="settings-font-sample"><strong>Resumen de noviembre</strong><span>Alimentación · S/ 1,250.90</span></div>
-   <div class="settings-font-options">${options}</div>`;
- fontField.addEventListener('change', event => {
-   if (saveChange(() => { state.settings.font = event.target.value; })) renderAll();
-   else renderSettingsFont();
- });
- fontField.addEventListener('keydown', event => {
-   const radio = event.target;
-   if (!radio.matches('input[type="radio"]')) return;
-   const step = {ArrowUp:-1, ArrowLeft:-1, ArrowDown:1, ArrowRight:1}[event.key];
-   if (!step) return;
-   event.preventDefault();
-   const radios = [...fontField.querySelectorAll('input')];
-   const next = radios[(radios.indexOf(radio) + step + radios.length) % radios.length];
-   next.focus();
-   next.click();
- });
- const fontDetails = disclosure('Tipografía', fontField);
- fontDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsFontName"></small>');
- panel('appearance').append(fontDetails, themeDetails);
+ const fontField=document.createElement('div');fontField.id='settingsFont';fontField.className='settings-font-field';
+ fontField.innerHTML='<h4>Fuente de la interfaz</h4><p id="settingsFontName">Geist Sans</p><p class="small muted">Una sola familia para títulos, texto e importes, disponible sin conexión.</p><div class="settings-font-sample"><strong>Resumen del período</strong><span>Alimentación · S/ 1,250.90</span></div>';
+ panel('appearance').append(themeDetails,fontField);
  methods.querySelector('p').textContent='Agrega tus métodos de pago. Toca un nombre para editarlo.';
  methods.querySelector('h3').remove();methodsInput.hidden=true;
  methods.insertAdjacentHTML('beforeend',`<div class="settings-methods" id="settingsMethods"></div><form class="settings-method-add" id="settingsMethodForm"><input id="settingsMethodName" aria-label="Nombre del método de pago" placeholder="Ej. Transferencia" maxlength="60" required><button class="btn primary" type="submit" id="settingsMethodSubmit">Agregar</button></form><div class="settings-method-help" id="settingsMethodHelp" role="status"></div>`);

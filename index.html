@@ -13,13 +13,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preload" as="image" href="logo.png">
+<link rel="preload" as="font" type="font/woff2" href="fonts/geist/geist-latin-variable.woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css">
 <style>
 /* Entrada crítica: visible antes de descargar estilos, fuentes o gráficas. */
 :root{--boot-bg:#f5f6fa;--boot-text:#1b2232;--boot-muted:#60697c}
 @media(prefers-color-scheme:dark){:root{--boot-bg:#000000;--boot-text:#e9ebf0;--boot-muted:#8f96a6}}
 html[data-booting],html[data-booting] body{margin:0;background:var(--boot-bg)}
 html[data-booting] body>:not(#boot):not(script):not(link){visibility:hidden}
-#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;box-sizing:border-box;padding:24px;background:var(--boot-bg);color:var(--boot-text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}
+#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;box-sizing:border-box;padding:24px;background:var(--boot-bg);color:var(--boot-text);font:14px/1.5 "Geist",system-ui,sans-serif;text-align:center}
 #boot .boot-mark{width:clamp(176px,22vw,220px);height:auto;display:block;margin-bottom:8px;animation:boot-mark-in 600ms ease-out both}
 #boot strong{font-size:24px;font-weight:650;letter-spacing:-.4px}
 #boot .boot-caption{color:var(--boot-muted);font-size:13px}
@@ -36,21 +38,11 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
  const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];
  try{
   const storage=window.localStorage,profile=storage.getItem('budgetPlanner.activeProfile')==='p2'?'p2':'p1',systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
-  const mobile=matchMedia('(max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse)').matches;
-  const cached=JSON.parse(storage.getItem('budgetPlanner.appearance.'+profile)||'null'),hex=v=>typeof v==='string'&&/^#[a-f\d]{6}$/i.test(v);
-  let bg,text,muted,mode;
-  if(cached&&(cached.mobile===undefined||cached.mobile===mobile)&&['','light','dark'].includes(cached.mode)&&(cached.mode||cached.systemDark===systemDark)&&hex(cached.bg)&&hex(cached.text)&&hex(cached.muted)){
-   ({bg,text,muted,mode}=cached);
-  }else{
-   const settings=JSON.parse(storage.getItem(profile==='p2'?'budgetPlanner.v1.p2':'budgetPlanner.v1')||'null')?.settings||{};
-   // Oscuro OLED y los temas oscuros retirados (leídos como OLED desde 1.10.72) fuerzan el modo oscuro.
-   const darkThemes=['mono','dracula','tokyo','midnight','obsidian','charcoal','wine','nightforest'];
-   mode=darkThemes.includes(settings.theme)?'dark':'';
-   const dark=mode==='dark'||!mode&&systemDark;
-   bg=dark?'#000000':'#fafafa';text=dark?'#ededed':'#171717';muted=dark?'#a4a4a4':'#525252'; // Tiesen (1.10.135), igual en móvil y escritorio
-   const palettes={clay:dark?['#262624','#c3c0b6','#b7b5a9']:['#faf9f5','#3d3929','#83827d'],indigo:dark?['#0f172a','#e2e8f0','#9ca3af']:['#f8fafc','#1e293b','#6b7280']};
-   if(palettes[settings.theme])[bg,text,muted]=palettes[settings.theme];
-  }
+  const settings=JSON.parse(storage.getItem(profile==='p2'?'budgetPlanner.v1.p2':'budgetPlanner.v1')||'null')?.settings||{};
+  // Las elecciones antiguas solo determinan el modo inicial; ya no aportan una paleta.
+  const darkThemes=['mono','dracula','tokyo','midnight','obsidian','charcoal','wine','nightforest'];
+  const mode=settings.theme==='light'?'light':settings.theme==='dark'||darkThemes.includes(settings.theme)?'dark':systemDark?'dark':'light';
+  const bg=mode==='dark'?'#000000':'#fafafa',text=mode==='dark'?'#ededed':'#171717',muted=mode==='dark'?'#a4a4a4':'#525252';
   if(mode)root.dataset.mode=mode;
   for(const [key,value] of Object.entries({bg,text,muted}))root.style.setProperty('--boot-'+key,value);
   document.querySelector('meta[name=theme-color]').content=bg;
@@ -70,7 +62,6 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <div id="boot" role="status" aria-live="polite"><img class="boot-mark" src="logo.png" alt="" width="220" height="220" fetchpriority="high"><strong>Presupuesto</strong><span class="boot-caption">Abriendo tu presupuesto</span><noscript>Activa JavaScript para abrir la aplicación.</noscript></div>
 <!-- Los estilos en cuerpo permiten pintar primero la entrada crítica. Scripts conservan su orden. -->
 <link rel="stylesheet" href="app.css">
-<link rel="stylesheet" href="fonts.css">
 
 <header class="topbar">
   <div class="wrap">
@@ -229,7 +220,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <input type="file" id="profPhoto" accept="image/*" hidden>
     </div>
     <div class="card" style="margin-bottom:16px">
-      <h3><span class="ui-ic" data-e="🎨"></span>Personalización · Tema de colores</h3>
+      <h3><span class="ui-ic" data-e="🎨"></span>Personalización · Apariencia</h3>
       <div class="field app-name-field"><label for="appNameInput">Nombre de la app</label><input type="text" id="appNameInput" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="done"></div>
       <p class="small muted" id="themeNote" style="margin:-4px 0 12px"></p>
       <div class="theme-grid" id="themeGrid"></div>

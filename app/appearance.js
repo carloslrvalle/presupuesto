@@ -31,243 +31,22 @@ function roleOf(c){
 // R(): un color por ROL → home, food, transport, bills, health, fun, shop, edu, debt, save, other, income, bonus, pet, travel, tech
 // inc / exp / sav: colores del tema para gráficos, barras de ingresos/alertas y calendario
 const R = (...c) => c;
-// Seis temas desde 1.10.86. Vercel es la base: también se usa cuando no hay tema elegido.
-const THEMES = [
-  // 1.10.135: diseño base Tiesen (tweakcn.com/themes/cmie97f2b000704l27r9g1p11): neutros con índigo. Se conserva el id 'vercel' para las elecciones guardadas.
-  // Ingresos índigo, gastos rojos y ahorro índigo oscuro; superficies, radio y sombras vienen de la paleta.
-  {id:'vercel', name:'Tiesen', desc:'Neutro con índigo intenso, sigue el modo del sistema', accent:'#1f42d0',
-   inc:'#8caaff', exp:'#e54b4f', sav:'#26449d',
-   c:R('#2d62ef','#ffae04','#747474','#a4a4a4','#2d62ef','#ffae04','#747474','#525252','#e54b4f','#ffae04','#a4a4a4','#2d62ef','#ffae04','#747474','#2d62ef','#525252'),
-   palette:{"light":{"background":"#fafafa","foreground":"#171717","card":"#ffffff","card-foreground":"#171717","popover":"#ffffff","popover-foreground":"#171717","primary":"#1f42d0","primary-foreground":"#fafafa","secondary":"#ebebeb","secondary-foreground":"#222222","muted":"#f5f5f5","muted-foreground":"#525252","accent":"#dbe4ff","accent-foreground":"#0d1633","destructive":"#e54b4f","destructive-foreground":"#fafafa","border":"#e4e4e4","input":"#ebebeb","ring":"#1f42d0","chart-1":"#e54b4f","chart-2":"#8caaff","chart-3":"#1f42d0","chart-4":"#26449d","chart-5":"#26449d","radius":"0.5rem","sidebar":"#fafafa","sidebar-foreground":"#171717","sidebar-primary":"#1f42d0","sidebar-primary-foreground":"#fafafa","sidebar-accent":"#dbe4ff","sidebar-accent-foreground":"#0d1633","sidebar-border":"#e4e4e4","sidebar-ring":"#1f42d0","shadow-color":"#14185a","shadow-opacity":"0.15","shadow-blur":"3px","shadow-spread":"0px","shadow-offset-x":"0.25px","shadow-offset-y":"1px"},"dark":{"background":"#000000","foreground":"#ededed","card":"#0a0a0a","card-foreground":"#ededed","popover":"#0a0a0a","popover-foreground":"#ededed","primary":"#1f42d0","primary-foreground":"#fafafa","secondary":"#222222","secondary-foreground":"#ebebeb","muted":"#1d1d1d","muted-foreground":"#a4a4a4","accent":"#333333","accent-foreground":"#dbe4ff","destructive":"#ff5b5b","destructive-foreground":"#fafafa","border":"#242424","input":"#333333","ring":"#1f42d0","chart-1":"#ff5b5b","chart-2":"#8caaff","chart-3":"#1f42d0","chart-4":"#8caaff","chart-5":"#26449d","radius":"0.5rem","sidebar":"#000000","sidebar-foreground":"#ededed","sidebar-primary":"#1f42d0","sidebar-primary-foreground":"#fafafa","sidebar-accent":"#333333","sidebar-accent-foreground":"#dbe4ff","sidebar-border":"#242424","sidebar-ring":"#1f42d0","shadow-color":"#14185a","shadow-opacity":"0.15","shadow-blur":"3px","shadow-spread":"0px","shadow-offset-x":"0.25px","shadow-offset-y":"1px"}}},
-  {id:'mono', name:'Oscuro OLED', desc:'Siempre en negro puro, íconos en blanco puro', mode:'dark', accent:'#ffffff', uniform:'#ffffff', inc:'#e4e4e7', exp:'#71717a', sav:'#a1a1aa'},
-  {id:'nordic', name:'Nórdico', desc:'Escarcha y aurora boreal', accent:'#5e81ac', inc:'#a3be8c', exp:'#bf616a', sav:'#b48ead',
-   c:R('#5e81ac','#d08770','#81a1c1','#ebcb8b','#a3be8c','#b48ead','#c5727a','#88c0d0','#bf616a','#8fbcbb','#9aa5b8','#a3be8c','#ebcb8b','#c79a7a','#7fb0c7','#b0bccf')},
-  {id:'pastel', name:'Pastel', desc:'Suave y luminoso, ideal para modo oscuro', accent:'#8b7fd6', inc:'#a6e3a1', exp:'#f38ba8', sav:'#cba6f7',
-   c:R('#89b4fa','#fab387','#74c7ec','#f9e2af','#89dceb','#cba6f7','#f5c2e7','#b4befe','#f38ba8','#94e2d5','#f2cdcd','#a6e3a1','#f9e2af','#eba0ac','#a6e3a1','#f5e0dc')},
-  {
-    "id": "clay",
-    "name": "Arcilla",
-    "desc": "Crema y terracota, sigue el modo del sistema",
-    "accent": "#c96442",
-    "inc": "#9c87f5",
-    "exp": "#b05730",
-    "sav": "#b4552d",
-    "palette": {
-      "light": {
-        "card": "#faf9f5",
-        "ring": "#c96442",
-        "input": "#b4b2a7",
-        "muted": "#ede9de",
-        "accent": "#e9e6dc",
-        "border": "#dad9d4",
-        "radius": "0.5rem",
-        "chart-1": "#b05730",
-        "chart-2": "#9c87f5",
-        "chart-3": "#ded8c4",
-        "chart-4": "#dbd3f0",
-        "chart-5": "#b4552d",
-        "popover": "#ffffff",
-        "primary": "#c96442",
-        "sidebar": "#f5f4ee",
-        "secondary": "#e9e6dc",
-        "background": "#faf9f5",
-        "foreground": "#3d3929",
-        "destructive": "#141413",
-        "sidebar-ring": "#b5b5b5",
-        "sidebar-accent": "#e9e6dc",
-        "sidebar-border": "#ebebeb",
-        "card-foreground": "#141413",
-        "sidebar-primary": "#c96442",
-        "muted-foreground": "#83827d",
-        "accent-foreground": "#28261b",
-        "popover-foreground": "#28261b",
-        "primary-foreground": "#ffffff",
-        "sidebar-foreground": "#3d3d3a",
-        "secondary-foreground": "#535146",
-        "destructive-foreground": "#ffffff",
-        "sidebar-accent-foreground": "#343434",
-        "sidebar-primary-foreground": "#fbfbfb"
-      },
-      "dark": {
-        "card": "#262624",
-        "ring": "#d97757",
-        "input": "#52514a",
-        "muted": "#1b1b19",
-        "accent": "#1a1915",
-        "border": "#3e3e38",
-        "radius": "0.5rem",
-        "chart-1": "#b05730",
-        "chart-2": "#9c87f5",
-        "chart-3": "#1a1915",
-        "chart-4": "#2f2b48",
-        "chart-5": "#b4552d",
-        "popover": "#30302e",
-        "primary": "#d97757",
-        "sidebar": "#1f1e1d",
-        "secondary": "#faf9f5",
-        "background": "#262624",
-        "foreground": "#c3c0b6",
-        "destructive": "#ef4444",
-        "sidebar-ring": "#b5b5b5",
-        "sidebar-accent": "#0f0f0e",
-        "sidebar-border": "#ebebeb",
-        "card-foreground": "#faf9f5",
-        "sidebar-primary": "#343434",
-        "muted-foreground": "#b7b5a9",
-        "accent-foreground": "#f5f4ee",
-        "popover-foreground": "#e5e5e2",
-        "primary-foreground": "#ffffff",
-        "sidebar-foreground": "#c3c0b6",
-        "secondary-foreground": "#30302e",
-        "destructive-foreground": "#ffffff",
-        "sidebar-accent-foreground": "#c3c0b6",
-        "sidebar-primary-foreground": "#fbfbfb"
-      }
-    },
-    "c": [
-      "#b05730",
-      "#9c87f5",
-      "#ded8c4",
-      "#dbd3f0",
-      "#b4552d",
-      "#b05730",
-      "#9c87f5",
-      "#ded8c4",
-      "#dbd3f0",
-      "#b4552d",
-      "#b05730",
-      "#9c87f5",
-      "#ded8c4",
-      "#dbd3f0",
-      "#b4552d",
-      "#b05730"
-    ]
-  },
-  {
-    "id": "indigo",
-    "name": "Índigo",
-    "desc": "Pizarra e Índigo, sigue el modo del sistema",
-    "accent": "#6366f1",
-    "inc": "#4f46e5",
-    "exp": "#6366f1",
-    "sav": "#312e81",
-    "palette": {
-      "light": {
-        "card": "#ffffff",
-        "ring": "#6366f1",
-        "input": "#d1d5db",
-        "muted": "#f3f4f6",
-        "accent": "#e0e7ff",
-        "border": "#d1d5db",
-        "radius": "0.5rem",
-        "chart-1": "#6366f1",
-        "chart-2": "#4f46e5",
-        "chart-3": "#4338ca",
-        "chart-4": "#3730a3",
-        "chart-5": "#312e81",
-        "popover": "#ffffff",
-        "primary": "#6366f1",
-        "sidebar": "#f3f4f6",
-        "secondary": "#e5e7eb",
-        "background": "#f8fafc",
-        "foreground": "#1e293b",
-        "destructive": "#ef4444",
-        "shadow-blur": "8px",
-        "shadow-color": "hsl(0 0% 0%)",
-        "sidebar-ring": "#6366f1",
-        "shadow-spread": "-1px",
-        "shadow-opacity": "0.1",
-        "sidebar-accent": "#e0e7ff",
-        "sidebar-border": "#d1d5db",
-        "card-foreground": "#1e293b",
-        "shadow-offset-x": "0px",
-        "shadow-offset-y": "4px",
-        "sidebar-primary": "#6366f1",
-        "muted-foreground": "#6b7280",
-        "accent-foreground": "#374151",
-        "popover-foreground": "#1e293b",
-        "primary-foreground": "#ffffff",
-        "sidebar-foreground": "#1e293b",
-        "secondary-foreground": "#374151",
-        "destructive-foreground": "#ffffff",
-        "sidebar-accent-foreground": "#374151",
-        "sidebar-primary-foreground": "#ffffff"
-      },
-      "dark": {
-        "card": "#1e293b",
-        "ring": "#818cf8",
-        "input": "#4b5563",
-        "muted": "#152032",
-        "accent": "#374151",
-        "border": "#4b5563",
-        "radius": "0.5rem",
-        "chart-1": "#818cf8",
-        "chart-2": "#6366f1",
-        "chart-3": "#4f46e5",
-        "chart-4": "#4338ca",
-        "chart-5": "#3730a3",
-        "popover": "#1e293b",
-        "primary": "#818cf8",
-        "sidebar": "#1e293b",
-        "secondary": "#2d3748",
-        "background": "#0f172a",
-        "foreground": "#e2e8f0",
-        "destructive": "#ef4444",
-        "shadow-blur": "8px",
-        "shadow-color": "hsl(0 0% 0%)",
-        "sidebar-ring": "#818cf8",
-        "shadow-spread": "-1px",
-        "shadow-opacity": "0.1",
-        "sidebar-accent": "#374151",
-        "sidebar-border": "#4b5563",
-        "card-foreground": "#e2e8f0",
-        "shadow-offset-x": "0px",
-        "shadow-offset-y": "4px",
-        "sidebar-primary": "#818cf8",
-        "muted-foreground": "#9ca3af",
-        "accent-foreground": "#d1d5db",
-        "popover-foreground": "#e2e8f0",
-        "primary-foreground": "#0f172a",
-        "sidebar-foreground": "#e2e8f0",
-        "secondary-foreground": "#d1d5db",
-        "destructive-foreground": "#0f172a",
-        "sidebar-accent-foreground": "#d1d5db",
-        "sidebar-primary-foreground": "#0f172a"
-      }
-    },
-    "c": [
-      "#6366f1",
-      "#4f46e5",
-      "#4338ca",
-      "#3730a3",
-      "#312e81",
-      "#6366f1",
-      "#4f46e5",
-      "#4338ca",
-      "#3730a3",
-      "#312e81",
-      "#6366f1",
-      "#4f46e5",
-      "#4338ca",
-      "#3730a3",
-      "#312e81",
-      "#6366f1"
-    ]
-  }];
-const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
-function themeName(t){
-  return mobileLayout.matches && t.id === 'vercel' ? 'Azul' : t.name;
+// Historial: seis temas desde 1.10.86, con Vercel como base. Desde 1.10.138 solo se exponen Claro y Oscuro.
+function neutralPalette(dark){
+ const bg=dark?'#000000':'#fafafa',surface=dark?'#0a0a0a':'#ffffff',text=dark?'#ededed':'#171717',muted=dark?'#a4a4a4':'#525252',secondary=dark?'#1d1d1d':'#f5f5f5',border=dark?'#292929':'#e4e4e4';
+ return {background:bg,foreground:text,card:surface,'card-foreground':text,popover:surface,'popover-foreground':text,primary:text,'primary-foreground':bg,secondary,'secondary-foreground':text,muted:secondary,'muted-foreground':muted,accent:secondary,'accent-foreground':text,destructive:dark?'#f07a8e':'#be123c','destructive-foreground':'#ffffff',border,input:border,ring:muted,'chart-1':dark?'#f07a8e':'#be123c','chart-2':dark?'#4cc79a':'#14783a','chart-3':muted,'chart-4':text,'chart-5':muted,radius:'0.5rem',sidebar:bg,'sidebar-foreground':text,'sidebar-primary':text,'sidebar-primary-foreground':bg,'sidebar-accent':secondary,'sidebar-accent-foreground':text,'sidebar-border':border,'sidebar-ring':muted,'shadow-opacity':'.08','shadow-blur':'3px','shadow-spread':'0px','shadow-offset-x':'0px','shadow-offset-y':'1px'};
 }
+const THEMES=['light','dark'].map(mode=>({id:mode,name:mode==='dark'?'Oscuro':'Claro',mode,accent:mode==='dark'?'#ededed':'#171717',inc:'#14783a',exp:'#be123c',sav:'#525252',c:R('#8b829c','#b67a65','#6398a6','#ad4056','#698a73','#b0966b','#8f819d','#82755f','#b44c60','#6d7d91','#8b8b8b','#5b8c71','#9b875d','#8a7994','#688898','#798595'),palette:{light:neutralPalette(false),dark:neutralPalette(true)}}));
+const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
+function themeName(t){return t.name;}
 function themePalette(t, dark = isDarkUI()){ return t.palette?.[dark ? 'dark' : 'light']; }
 function themeUi(t, dark){
   const p = themePalette(t, dark);
   return p ? {bg:p.background, surface:p.card, s2:p.muted, border:p.border, text:p.foreground, muted:p['muted-foreground']} : dark ? t.ui : t.uiLight;
 }
 // Temas retirados en 1.10.72: cada elección guardada se lee como el tema vigente más parecido (sin reescribir datos).
-const THEME_REPLACEMENTS = {minimal:'vercel', sage:'vercel', charcoal:'mono', obsidian:'mono', midnight:'mono', dracula:'mono', tokyo:'mono', wine:'mono', nightforest:'mono',
-  ocean:'nordic', solar:'nordic', kanagawa:'nordic', everforest:'nordic', forest:'nordic',
-  rose:'pastel', lavender:'pastel', sunset:'pastel', vivid:'pastel', gruvbox:'pastel', earth:'pastel', cafe:'pastel'};
-const themeById = id => THEMES.find(x => x.id === (THEME_REPLACEMENTS[id] || id));
+const LEGACY_DARK_THEMES=['mono','charcoal','obsidian','midnight','dracula','tokyo','wine','nightforest'];
+const themeById=id=>THEMES.find(t=>t.id===id)||THEMES[LEGACY_DARK_THEMES.includes(id)||matchMedia('(prefers-color-scheme: dark)').matches?1:0];
 const logoHue = () => state.settings.appColor && hueOf(state.settings.appColor).s > .15 ? state.settings.appColor : '#4f46e5';
 function themeColors(t){
   if (t.uniform) return ROLES.map(() => t.uniform);
@@ -285,57 +64,14 @@ function themeMap(t){
 const goalThemeColor = (t, i) => { const cols = themeColors(t); return cols[[9, 12, 14, 5, 0, 3, 7, 1][i % 8]]; }; // (en temas de un solo color todas las metas comparten el tono)
 const hexLight = hex => { const [r,g,b] = [1,3,5].map(i => parseInt(hex.substr(i,2),16) / 255); return (Math.max(r,g,b) + Math.min(r,g,b)) / 2; };
 function applyTheme(id){
-  const t = themeById(id); if (!t) return;
-  const prev = {theme:state.settings.theme, app:state.settings.appColor, cats:state.categories.map(c => [c.id, c.color]), goals:state.goals.map(g => [g.id, g.color])};
-  const map = themeMap(t);
-  state.categories.forEach(c => c.color = map[c.id]);
-  state.goals.forEach((g, i) => g.color = goalThemeColor(t, i));
-  state.settings.appColor = themeAccent(t); state.settings.theme = id;
-  save(); renderAll();
-  toast(`Tema ${themeName(t)} aplicado`, {icon:'palette', action:'Deshacer', onAction: () => {
-    state.settings.theme = prev.theme; state.settings.appColor = prev.app;
-    prev.cats.forEach(([i, col]) => { const c = state.categories.find(x => x.id === i); if (c) c.color = col; });
-    prev.goals.forEach(([i, col]) => { const g = state.goals.find(x => x.id === i); if (g) g.color = col; });
-    save(); renderAll(); toast('Colores restaurados', {icon:'undo-2'});
-  }});
+ if(!['light','dark'].includes(id))return;
+ if(!saveChange(()=>{state.settings.theme=id;}))return;
+ renderAll();toast('Modo '+themeName(curTheme()).toLowerCase()+' aplicado');
 }
 // ---- Tipografía ----
-const SYSTEM_FONT = {id:'system', name:'Del sistema', body:'system-ui'};
-const WEB_FONTS = [
-  {id:'geist', name:'Geist', body:'"Geist"', google:'Geist'},
-  {id:'inter', name:'Inter', body:'"Inter"', google:'Inter'},
-  {id:'jakarta', name:'Plus Jakarta Sans', body:'"Plus Jakarta Sans"', google:'Plus+Jakarta+Sans'},
-  {id:'jetbrains-mono', name:'JetBrains Mono', body:'"JetBrains Mono"', google:'JetBrains+Mono', mono:true}
-];
-const ANTHROPIC_FONTS = [
-  {id:'anthropic-sans', name:'Anthropic Sans', body:'"Anthropic Sans Text"', head:'"Anthropic Sans Display"'},
-  {id:'anthropic-serif', name:'Anthropic Serif', body:'"Anthropic Serif Text"', head:'"Anthropic Serif Display"', serif:true},
-  {id:'anthropic-mono', name:'Anthropic Mono', body:'"Anthropic Mono Web"', mono:true}
-];
-function availableFonts(){
-  const onlineFonts = document.documentElement.hasAttribute('data-offline-demo') ? [] : WEB_FONTS;
-  return [SYSTEM_FONT, ...onlineFonts, ...ANTHROPIC_FONTS];
-}
-function currentFont(){
-  // 1.10.135: sin elección guardada se usa Geist (Tiesen); sin conexión a Google Fonts, la del sistema.
-  const fonts = availableFonts();
-  return fonts.find(font => font.id === state.settings.font) || fonts.find(font => font.id === 'geist') || SYSTEM_FONT;
-}
-const fontStylesheets = new Map();
-function loadFontStylesheet(family){
-  if (fontStylesheets.has(family)) return fontStylesheets.get(family);
-  const stylesheet = document.createElement('link');
-  stylesheet.rel = 'stylesheet';
-  stylesheet.href = 'https://fonts.googleapis.com/css2?family=' + family + ':wght@400..700&display=swap';
-  const ready = new Promise((resolve, reject) => {
-    stylesheet.onload = resolve;
-    stylesheet.onerror = () => { stylesheet.remove(); fontStylesheets.delete(family); reject(new Error('Fuente no disponible')); };
-  });
-  fontStylesheets.set(family, ready);
-  document.head.append(stylesheet);
-  return ready;
-}
-let activeFontId;
+const INTERFACE_FONT={id:'geist',name:'Geist Sans',body:'"Geist"'};
+function availableFonts(){return [INTERFACE_FONT];}
+function currentFont(){return INTERFACE_FONT;}
 function refreshFontLayout(){
   fitMetricValues();
   moveTabInd();
@@ -347,55 +83,23 @@ function refreshFontLayout(){
     if (chart.canvas.getBoundingClientRect().width){ chart.resize(); chart.update('none'); }
   }
 }
+let activeFontId;
 function applyAppFont(){
-  const font = currentFont(), root = document.documentElement;
-  if (activeFontId === font.id) return;
-  activeFontId = font.id;
-  const fallback = font.mono ? 'ui-monospace, monospace' : font.serif ? 'Georgia, serif' : 'system-ui, sans-serif';
-  root.style.setProperty('--font-body', font === SYSTEM_FONT ? fallback : font.body + ', ' + fallback);
-  root.style.setProperty('--font-head', font.head ? font.head + ', ' + fallback : 'var(--font-body)');
-  requestAnimationFrame(refreshFontLayout);
-  if (font === SYSTEM_FONT || !document.fonts) return;
-  const ready = font.google ? loadFontStylesheet(font.google) : Promise.resolve();
-  ready.then(() => Promise.all([
-    document.fonts.load('400 16px ' + font.body, 'Presupuesto Áéñ S/ 1,250.90'),
-    document.fonts.load('700 24px ' + (font.head || font.body), 'Presupuesto Áéñ S/ 1,250.90')
-  ])).then(() => {
-    if (currentFont().id === font.id) requestAnimationFrame(refreshFontLayout);
-  }).catch(() => {});
+ const root=document.documentElement;
+ root.style.setProperty('--font-body','"Geist", system-ui, sans-serif');
+ root.style.setProperty('--font-head','var(--font-body)');
+ if(activeFontId==='geist')return;
+ activeFontId='geist';requestAnimationFrame(refreshFontLayout);
+ if(document.fonts)Promise.all([document.fonts.load('400 14px Geist','Presupuesto Áéñ S/ 1,250.90'),document.fonts.load('600 24px Geist')]).then(()=>requestAnimationFrame(refreshFontLayout)).catch(()=>toast('No se pudo cargar Geist Sans. Se usa temporalmente la fuente del dispositivo.'));
 }
-window.addEventListener('online', () => {
-  if (!currentFont().google || fontStylesheets.has(currentFont().google)) return;
-  activeFontId = undefined;
-  applyAppFont();
-});
 
 // ---- Temas ----
 function renderThemes(){
-  const el=$('#themeGrid');if(!el)return;const cur=curTheme().id;
-  const card=t=>{
-    const dark=t.mode==='dark'||(!t.mode&&matchMedia('(prefers-color-scheme: dark)').matches), ui=themeUi(t,dark), surface=ui?.surface||(dark?'#101114':'#ffffff');
-    const bg=ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface,dark), cols=themeColors(t);
-    const categories=[0,1,2,3,4].map(i=>fitThemeColor(cols[i],surface,3));
-    const description=t.desc;
-    return `<div class="theme-option"><button type="button" class="theme-card${t.id===cur?' active':''}" data-theme="${t.id}" aria-pressed="${t.id===cur}" title="${esc(description)}">
-      <div class="theme-preview" style="--preview-bg:${bg};--preview-surface:${surface};--preview-income:${series.income};--preview-expense:${series.expense};--preview-saving:${series.savings}">
-        <div class="theme-preview-bars">${[40,65,53,82,68,92].map((v,i)=>`<i style="height:${v}%"></i><i class="out" style="height:${v*.67}%"></i>`).join('')}</div>
-        <svg class="theme-preview-line" viewBox="0 0 180 46" aria-hidden="true"><path d="M2 41 L36 35 L70 31 L104 21 L138 17 L178 4"/><circle cx="178" cy="4" r="2.5"/></svg>
-        <div class="theme-preview-categories">${categories.map(c=>`<i style="background:${c}"></i>`).join('')}</div>
-      </div><div class="tc-row"><b>${esc(themeName(t))}</b>${t.id===cur?`<span class="tc-on">${ic('check')}</span>`:''}</div>
-      <span class="theme-mode-label">${t.mode==='light'?'Siempre claro':t.mode==='dark'?'Siempre oscuro':'Se adapta al dispositivo'}</span></button>
-      </div>`;
-  };
-  el.innerHTML='<div class="theme-key"><span style="--key:var(--income-chart)">Ingresos</span><span style="--key:var(--expense-chart)">Gastos</span><span style="--key:var(--k-violet)">Ahorro acumulado</span></div>'+THEMES.map(card).join('');
-  const t=curTheme();
-  const custom=t&&state.categories.some(c=>String(c.color).toLowerCase()!==String(themeMap(t)[c.id]).toLowerCase());
-  $('#themeNote').textContent=t?'Tema '+themeName(t)+(custom?' · categorías personalizadas.':'.')+' Las muestras muestran ingresos, gastos, ahorro y categorías.':'Elige una paleta para coordinar categorías, metas, indicadores y gráficos.';
+ const el=$('#themeGrid');if(!el)return;
+ el.innerHTML=THEMES.map(t=>'<button type="button" class="btn'+(t.id===curTheme().id?' primary':'')+'" data-theme="'+t.id+'" aria-pressed="'+(t.id===curTheme().id)+'">'+ic(t.id==='dark'?'moon':'sun')+t.name+'</button>').join('');
+ $('#themeNote').textContent='Solo modo claro u oscuro. La interfaz utiliza Geist Sans y una base neutra común.';
 }
-
-$('#themeGrid').addEventListener('click', e => {
-  const b = e.target.closest('[data-theme]'); if (b) applyTheme(b.dataset.theme);
-});
+$('#themeGrid').addEventListener('click',e=>{const button=e.target.closest('[data-theme]');if(button)applyTheme(button.dataset.theme);});
 
 const curTheme = () => themeById(state.settings.theme) || THEMES[0];
 const curThemeColorCat = c => { const t = curTheme(); return t ? themeMap(t)[c.id] : null; };
@@ -429,15 +133,8 @@ $('#colorHex').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefau
 
 /* ---------- Nombre de la app ---------- */
 const nameEl = $('#appName'), nameInput = $('#appNameInput');
-// 1.10.135: cada perfil pasa una vez al diseño Tiesen (tema base, acento índigo y Geist). Después puede volver a cambiarlos en Ajustes.
-function adoptTiesenDesign(){
-  const settings = state.settings;
-  if (!settings || settings.design === 'tiesen' || bothMode || localRecovery || localTabChanged) return;
-  settings.theme = 'vercel'; settings.appColor = ''; settings.font = 'geist'; settings.design = 'tiesen';
-  save();
-}
+// Historial 1.10.135: adopción de Tiesen (tema base, acento índigo y Geist). Desde 1.10.138 se aplica el modo sin migrar ni recolorear los datos del perfil.
 function applyBrand(){
-  adoptTiesenDesign();
   const mode = curTheme().mode;
   document.documentElement.dataset.theme = curTheme().id;
   if (mode) document.documentElement.dataset.mode = mode; else delete document.documentElement.dataset.mode;
@@ -487,8 +184,7 @@ function themeSeries(t, surface, dark = isDarkUI()){
 function applyThemeVars(){
   const r=document.documentElement.style, t=curTheme(), dark=isDarkUI();
   // Superficies propias del tema: ui en oscuro, uiLight en claro; texto y texto secundario son opcionales.
-  const desktopLight=!mobileLayout.matches&&!dark&&t.id!=='vercel'; // Tiesen usa su propio fondo
-  const originalUi=themeUi(t,dark),ui=desktopLight?{...originalUi,bg:'#f4f5f6',surface:'#ffffff',s2:'#eceef0',border:'#e5e7e9'}:originalUi,uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
+  const ui=themeUi(t,dark),uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
   for(const [key,field] of uiMap){if(ui?.[field])r.setProperty(key,ui[field]);else r.removeProperty(key);}
   const palette = themePalette(t, dark);
   for (const key of PALETTE_KEYS){
@@ -515,37 +211,8 @@ function applyThemeVars(){
 }
 
 function applyAccent(){
-  const r = document.documentElement.style, t = curTheme(), dark = isDarkUI();
-  // Sin color guardado, o con el negro del diseño anterior, se usa el índigo del tema. El teléfono usa la misma paleta que el escritorio.
-  const saved = state.settings.appColor, legacyBlack = t.id === 'vercel' && /^#0{6}$/i.test(String(saved||''));
-  const c = !saved || legacyBlack ? t.accent : saved;
-  const L = hexLum(c), palette = themePalette(t);
-  if (palette && c === curTheme().accent){
-    const fill = palette.primary, surfaces = [palette.background,palette.card,palette.muted,palette.accent];
-    const ink = fitThemeColor(fill, surfaces, 4.65);
-    const foreground = themeForeground(palette['primary-foreground'],fill);
-    for (const [key,value] of Object.entries({'--primary':ink,'--primary-fill':fill,'--primary-soft':palette.accent,'--on-primary':foreground,'--accent':fill,'--accent-bg':palette.accent,'--accent-ink':ink})) r.setProperty(key,value);
-    return;
-  }
-  const keys = ['--primary','--primary-soft','--primary-fill','--on-primary','--accent','--accent-bg','--accent-ink'];
-  if (!c || !/^#[0-9a-f]{6}$/i.test(c)){ keys.forEach(k => r.removeProperty(k)); return; }
-  if (L > .9 || L < .03){ // blanco o negro (tema Minimalista): acento neutro que se invierte con el modo
-    const ink = dark ? '#e4e4e7' : '#18181b', fill = ink, bg = dark ? '#1c1c20' : '#ececef';
-    [['--primary', ink], ['--primary-soft', bg], ['--primary-fill', fill], ['--on-primary', dark ? '#111113' : '#ffffff'], ['--accent', fill], ['--accent-bg', bg], ['--accent-ink', ink]].forEach(([k, v]) => r.setProperty(k, v));
-    return;
-  }
-  const bg = dark ? mixHex(c, '#171b24', L > .45 ? .72 : .8) : mixHex(c, '#ffffff', L > .45 ? .5 : .87);
-  const contrast=(a,b)=>{const x=hexLum(a),y=hexLum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
-  const surfaces=[cssVar('--bg'),cssVar('--surface'),cssVar('--surface-2'),bg];
-  let ink=c;
-  for(let step=0;step<=20;step++){
-    ink=mixHex(c,dark?'#ffffff':'#111113',step/20);
-    if(surfaces.every(surface=>contrast(ink,surface)>=4.7))break;
-  }
-  const fill = dark && L < .06 ? mixHex(c, '#ffffff', .25) : c;
-  r.setProperty('--primary', ink); r.setProperty('--primary-soft', bg);
-  r.setProperty('--primary-fill', fill); r.setProperty('--on-primary', contrast('#111113',fill)>contrast('#ffffff',fill)?'#111113':'#ffffff');
-  r.setProperty('--accent', fill); r.setProperty('--accent-bg', bg); r.setProperty('--accent-ink', ink);
+ const r=document.documentElement.style,p=themePalette(curTheme());
+ for(const [key,value] of Object.entries({'--primary':p.primary,'--primary-fill':p.primary,'--primary-soft':p.accent,'--on-primary':p['primary-foreground'],'--accent':p.primary,'--accent-bg':p.accent,'--accent-ink':p.primary}))r.setProperty(key,value);
 }
 // El nombre se edita en Ajustes: en la cabecera era fácil cambiarlo por accidente.
 nameInput.addEventListener('keydown', e => {

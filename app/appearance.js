@@ -33,12 +33,12 @@ function roleOf(c){
 const R = (...c) => c;
 // Seis temas desde 1.10.86. Vercel es la base: también se usa cuando no hay tema elegido.
 const THEMES = [
-  // Tema Vercel (shadcn/ui, 21st.dev): blanco y negro neutros que siguen el modo del sistema; azul ingresos, rojo gastos, ámbar ahorro.
-  {id:'vercel', name:'Vercel', desc:'Blanco y negro preciso, sigue el modo del sistema', accent:'#000000',
-   ui:{bg:'#000000', surface:'#090909', s2:'#1d1d1d', border:'#242424', text:'#ffffff', muted:'#a4a4a4'},
-   uiLight:{bg:'#fcfcfc', surface:'#ffffff', s2:'#f5f5f5', border:'#e4e4e4', text:'#000000', muted:'#525252'},
-   inc:'#2d62ef', exp:'#e54b4f', sav:'#ffae04',
-   c:R('#2d62ef','#ffae04','#747474','#a4a4a4','#2d62ef','#ffae04','#747474','#525252','#e54b4f','#ffae04','#a4a4a4','#2d62ef','#ffae04','#747474','#2d62ef','#525252')},
+  // 1.10.135: diseño base Tiesen (tweakcn.com/themes/cmie97f2b000704l27r9g1p11): neutros con índigo. Se conserva el id 'vercel' para las elecciones guardadas.
+  // Ingresos índigo, gastos rojos y ahorro índigo oscuro; superficies, radio y sombras vienen de la paleta.
+  {id:'vercel', name:'Tiesen', desc:'Neutro con índigo intenso, sigue el modo del sistema', accent:'#1f42d0',
+   inc:'#8caaff', exp:'#e54b4f', sav:'#26449d',
+   c:R('#2d62ef','#ffae04','#747474','#a4a4a4','#2d62ef','#ffae04','#747474','#525252','#e54b4f','#ffae04','#a4a4a4','#2d62ef','#ffae04','#747474','#2d62ef','#525252'),
+   palette:{"light":{"background":"#fafafa","foreground":"#171717","card":"#ffffff","card-foreground":"#171717","popover":"#ffffff","popover-foreground":"#171717","primary":"#1f42d0","primary-foreground":"#fafafa","secondary":"#ebebeb","secondary-foreground":"#222222","muted":"#f5f5f5","muted-foreground":"#525252","accent":"#dbe4ff","accent-foreground":"#0d1633","destructive":"#e54b4f","destructive-foreground":"#fafafa","border":"#e4e4e4","input":"#ebebeb","ring":"#1f42d0","chart-1":"#e54b4f","chart-2":"#8caaff","chart-3":"#1f42d0","chart-4":"#26449d","chart-5":"#26449d","radius":"0.5rem","sidebar":"#fafafa","sidebar-foreground":"#171717","sidebar-primary":"#1f42d0","sidebar-primary-foreground":"#fafafa","sidebar-accent":"#dbe4ff","sidebar-accent-foreground":"#0d1633","sidebar-border":"#e4e4e4","sidebar-ring":"#1f42d0","shadow-color":"#14185a","shadow-opacity":"0.15","shadow-blur":"3px","shadow-spread":"0px","shadow-offset-x":"0.25px","shadow-offset-y":"1px"},"dark":{"background":"#000000","foreground":"#ededed","card":"#0a0a0a","card-foreground":"#ededed","popover":"#0a0a0a","popover-foreground":"#ededed","primary":"#1f42d0","primary-foreground":"#fafafa","secondary":"#222222","secondary-foreground":"#ebebeb","muted":"#1d1d1d","muted-foreground":"#a4a4a4","accent":"#333333","accent-foreground":"#dbe4ff","destructive":"#ff5b5b","destructive-foreground":"#fafafa","border":"#242424","input":"#333333","ring":"#1f42d0","chart-1":"#ff5b5b","chart-2":"#8caaff","chart-3":"#1f42d0","chart-4":"#8caaff","chart-5":"#26449d","radius":"0.5rem","sidebar":"#000000","sidebar-foreground":"#ededed","sidebar-primary":"#1f42d0","sidebar-primary-foreground":"#fafafa","sidebar-accent":"#333333","sidebar-accent-foreground":"#dbe4ff","sidebar-border":"#242424","sidebar-ring":"#1f42d0","shadow-color":"#14185a","shadow-opacity":"0.15","shadow-blur":"3px","shadow-spread":"0px","shadow-offset-x":"0.25px","shadow-offset-y":"1px"}}},
   {id:'mono', name:'Oscuro OLED', desc:'Siempre en negro puro, íconos en blanco puro', mode:'dark', accent:'#ffffff', uniform:'#ffffff', inc:'#e4e4e7', exp:'#71717a', sav:'#a1a1aa'},
   {id:'nordic', name:'Nórdico', desc:'Escarcha y aurora boreal', accent:'#5e81ac', inc:'#a3be8c', exp:'#bf616a', sav:'#b48ead',
    c:R('#5e81ac','#d08770','#81a1c1','#ebcb8b','#a3be8c','#b48ead','#c5727a','#88c0d0','#bf616a','#8fbcbb','#9aa5b8','#a3be8c','#ebcb8b','#c79a7a','#7fb0c7','#b0bccf')},
@@ -255,20 +255,11 @@ const THEMES = [
     ]
   }];
 const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
-const MOBILE_PALETTE = {
-  light:{bg:'#f2f5fa',surface:'#ffffff',s2:'#e9eef5',border:'#dce4ee',text:'#152235',muted:'#526278',accent:'#005ecb'},
-  dark:{bg:'#10141c',surface:'#1b2330',s2:'#253143',border:'#334056',text:'#eff4fc',muted:'#adbed3',accent:'#83bcff'}
-};
-function mobilePalette(t, dark){
-  return mobileLayout.matches && t.id === 'vercel' ? MOBILE_PALETTE[dark ? 'dark' : 'light'] : null;
-}
 function themeName(t){
   return mobileLayout.matches && t.id === 'vercel' ? 'Azul' : t.name;
 }
 function themePalette(t, dark = isDarkUI()){ return t.palette?.[dark ? 'dark' : 'light']; }
 function themeUi(t, dark){
-  const mobile = mobilePalette(t, dark);
-  if (mobile) return mobile;
   const p = themePalette(t, dark);
   return p ? {bg:p.background, surface:p.card, s2:p.muted, border:p.border, text:p.foreground, muted:p['muted-foreground']} : dark ? t.ui : t.uiLight;
 }
@@ -311,6 +302,7 @@ function applyTheme(id){
 // ---- Tipografía ----
 const SYSTEM_FONT = {id:'system', name:'Del sistema', body:'system-ui'};
 const WEB_FONTS = [
+  {id:'geist', name:'Geist', body:'"Geist"', google:'Geist'},
   {id:'inter', name:'Inter', body:'"Inter"', google:'Inter'},
   {id:'jakarta', name:'Plus Jakarta Sans', body:'"Plus Jakarta Sans"', google:'Plus+Jakarta+Sans'},
   {id:'jetbrains-mono', name:'JetBrains Mono', body:'"JetBrains Mono"', google:'JetBrains+Mono', mono:true}
@@ -325,7 +317,9 @@ function availableFonts(){
   return [SYSTEM_FONT, ...onlineFonts, ...ANTHROPIC_FONTS];
 }
 function currentFont(){
-  return availableFonts().find(font => font.id === state.settings.font) || SYSTEM_FONT;
+  // 1.10.135: sin elección guardada se usa Geist (Tiesen); sin conexión a Google Fonts, la del sistema.
+  const fonts = availableFonts();
+  return fonts.find(font => font.id === state.settings.font) || fonts.find(font => font.id === 'geist') || SYSTEM_FONT;
 }
 const fontStylesheets = new Map();
 function loadFontStylesheet(family){
@@ -435,7 +429,15 @@ $('#colorHex').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefau
 
 /* ---------- Nombre de la app ---------- */
 const nameEl = $('#appName'), nameInput = $('#appNameInput');
+// 1.10.135: cada perfil pasa una vez al diseño Tiesen (tema base, acento índigo y Geist). Después puede volver a cambiarlos en Ajustes.
+function adoptTiesenDesign(){
+  const settings = state.settings;
+  if (!settings || settings.design === 'tiesen' || bothMode || localRecovery || localTabChanged) return;
+  settings.theme = 'vercel'; settings.appColor = ''; settings.font = 'geist'; settings.design = 'tiesen';
+  save();
+}
 function applyBrand(){
+  adoptTiesenDesign();
   const mode = curTheme().mode;
   document.documentElement.dataset.theme = curTheme().id;
   if (mode) document.documentElement.dataset.mode = mode; else delete document.documentElement.dataset.mode;
@@ -485,7 +487,7 @@ function themeSeries(t, surface, dark = isDarkUI()){
 function applyThemeVars(){
   const r=document.documentElement.style, t=curTheme(), dark=isDarkUI();
   // Superficies propias del tema: ui en oscuro, uiLight en claro; texto y texto secundario son opcionales.
-  const desktopLight=!mobileLayout.matches&&!dark;
+  const desktopLight=!mobileLayout.matches&&!dark&&t.id!=='vercel'; // Tiesen usa su propio fondo
   const originalUi=themeUi(t,dark),ui=desktopLight?{...originalUi,bg:'#f4f5f6',surface:'#ffffff',s2:'#eceef0',border:'#e5e7e9'}:originalUi,uiMap=[['--bg','bg'],['--surface','surface'],['--surface-2','s2'],['--border','border'],['--text','text'],['--muted','muted']];
   for(const [key,field] of uiMap){if(ui?.[field])r.setProperty(key,ui[field]);else r.removeProperty(key);}
   const palette = themePalette(t, dark);
@@ -514,8 +516,9 @@ function applyThemeVars(){
 
 function applyAccent(){
   const r = document.documentElement.style, t = curTheme(), dark = isDarkUI();
-  const saved = state.settings.appColor, mobile = mobilePalette(t, dark);
-  const c = mobile && (!saved || normalizeColor(saved) === t.accent) ? mobile.accent : saved;
+  // Sin color guardado, o con el negro del diseño anterior, se usa el índigo del tema. El teléfono usa la misma paleta que el escritorio.
+  const saved = state.settings.appColor, legacyBlack = t.id === 'vercel' && /^#0{6}$/i.test(String(saved||''));
+  const c = !saved || legacyBlack ? t.accent : saved;
   const L = hexLum(c), palette = themePalette(t);
   if (palette && c === curTheme().accent){
     const fill = palette.primary, surfaces = [palette.background,palette.card,palette.muted,palette.accent];

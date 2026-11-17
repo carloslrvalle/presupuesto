@@ -226,9 +226,10 @@ function setMobileTxPanel(panel,{focus=true}={}){
   const amount=$('#fAmount');
   if(focus&&(!panel||document.activeElement.matches('input,textarea')&&document.activeElement!==amount))amount.focus({preventScroll:true});
   // El selector ocupa el lugar del teclado propio. Con el teclado del sistema abierto (búsqueda) usa todo el cuerpo y se cierra con Listo.
-  if(panel){mobileTxViewport.style.top=(mobileTxKeypad.offsetParent?mobileTxKeypad.offsetTop:txBody.scrollTop)+'px';mobileTxViewport.style.bottom=-txBody.scrollTop+'px';}
   txDialog.classList.toggle('category-open',panel==='category');
   txDialog.classList.toggle('options-open',panel==='options');
+  // Se mide después de cambiar de estado: así el panel cubre exactamente el teclado y nunca queda una fila de teclas encima.
+  if(panel){mobileTxViewport.style.top=(mobileTxKeypad.offsetParent?mobileTxKeypad.offsetTop:txBody.scrollTop)+'px';mobileTxViewport.style.bottom=-txBody.scrollTop+'px';}
   txCategoryField.inert=panel!=='category';mobileTxExtras.inert=panel!=='options';
   mobileTxCategory.setAttribute('aria-expanded',String(panel==='category'));
   mobileTxOptions.setAttribute('aria-expanded',String(panel==='options'));
@@ -303,9 +304,24 @@ mobileHomeTop.id = 'mobileHomeTop';
 mobileHomeTop.className = 'mobile-only';
 mobileHomeTop.setAttribute('aria-labelledby', 'mobileHomeTopTitle');
 mobileHomeTop.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileHomeTopTitle">Gastos recientes</h2><button type="button" id="mobileRecentAll">Ver todos ${ic('chevron-right')}</button></div><div id="mobileHomeTopRows"></div>`;
-$('#tab-dashboard .dashboard-kpis').after(mobileHomeTop);
-function renderMobileHome(){
-  $('#mobileHomeTopRows').innerHTML = $('#topExp').innerHTML;
+const mobileHomeSpent = document.createElement('section');
+mobileHomeSpent.id = 'mobileHomeSpent';
+mobileHomeSpent.className = 'mobile-only mobile-spent';
+mobileHomeSpent.setAttribute('aria-label', 'Gastado de tus ingresos');
+$('#tab-dashboard .dashboard-kpis').after(mobileHomeSpent);
+mobileHomeSpent.after(mobileHomeTop);
+// Inicio móvil: cuánto de lo cobrado ya se gastó (sin contar ahorro) y una lista de recientes que llena la pantalla.
+const MOBILE_RECENT_LIMIT = 12;
+function renderMobileHome(txs = planTx(currentMonth), totals){
+  const inc = totals ? totals.inc : sum(txs.filter(t => t.type === 'income')), exp = totals ? totals.exp : spendSum(txs);
+  const pct = inc > 0 ? exp / inc * 100 : null, left = inc - exp;
+  const tone = pct == null ? '' : pct > 100 ? 'over' : pct >= 85 ? 'near' : '';
+  const card = $('#mobileHomeSpent');
+  card.dataset.tone = tone;
+  card.innerHTML = `<div class="mobile-spent-head"><span class="mobile-spent-label">${ic('chart-pie')}Gastado de tus ingresos</span><b class="mobile-spent-pct">${pct == null ? '—' : pctTxt(pct)}</b></div>
+    <div class="mobile-spent-bar" role="img" aria-label="${pct == null ? 'Sin ingresos en el período' : esc(`Gastaste ${pctTxt(pct)} de tus ingresos`)}"><span style="width:${pct == null ? 0 : Math.min(100, pct).toFixed(1)}%"></span></div>
+    <p class="mobile-spent-meta">${pct == null ? 'Aún no registras ingresos en este período.' : `${fmt(exp)} de ${fmt(inc)} · <b>${left >= 0 ? 'Quedan ' + fmt(left) : 'Te pasaste ' + fmt(-left)}</b>`}</p>`;
+  $('#mobileHomeTopRows').innerHTML = recentExpenseRows(txs, MOBILE_RECENT_LIMIT);
 }
 $('#mobileRecentAll').onclick=()=>openMovs({type:'expense',scope:cycleView()?'cycle':'month',month:currentMonth});
 

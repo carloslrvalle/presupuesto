@@ -53,7 +53,7 @@ let _txIdx = null;
 /* Registro de cambios para sincronizar entre dispositivos: cada registro guarda cuándo cambió (u) y los borrados quedan anotados */
 var _snapRec = null;
 var SYNC_COLLS = ['categories', 'transactions', 'recurring', 'goals'];
-var SYNC_SETTINGS = ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose','budgetCycle'];
+var SYNC_SETTINGS = ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose','budgetCycle','design'];
 function syncSettings(){ const o = {}; SYNC_SETTINGS.forEach(k => o[k] = state.settings[k]); return o; }
 function recKey(r){ const o = Object.assign({}, r); delete o.u; return JSON.stringify(o); }
 function snapState(){

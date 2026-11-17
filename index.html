@@ -6,7 +6,7 @@
 <title>Presupuesto</title>
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png">
-<meta name="theme-color" content="#f5f6fa">
+<meta name="theme-color" content="#fafafa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
 <meta name="apple-mobile-web-app-title" content="Presupuesto">
@@ -47,12 +47,9 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
    const darkThemes=['mono','dracula','tokyo','midnight','obsidian','charcoal','wine','nightforest'];
    mode=darkThemes.includes(settings.theme)?'dark':'';
    const dark=mode==='dark'||!mode&&systemDark;
-   bg=dark?'#000000':'#fcfcfc';text=dark?'#ffffff':'#000000';muted=dark?'#a4a4a4':'#525252';
+   bg=dark?'#000000':'#fafafa';text=dark?'#ededed':'#171717';muted=dark?'#a4a4a4':'#525252'; // Tiesen (1.10.135), igual en móvil y escritorio
    const palettes={clay:dark?['#262624','#c3c0b6','#b7b5a9']:['#faf9f5','#3d3929','#83827d'],indigo:dark?['#0f172a','#e2e8f0','#9ca3af']:['#f8fafc','#1e293b','#6b7280']};
    if(palettes[settings.theme])[bg,text,muted]=palettes[settings.theme];
-   if(mobile&&(!settings.theme||['vercel','minimal','sage'].includes(settings.theme))){
-    [bg,text,muted]=dark?['#10141c','#eff4fc','#adbed3']:['#f2f5fa','#152235','#526278'];
-   }
   }
   if(mode)root.dataset.mode=mode;
   for(const [key,value] of Object.entries({bg,text,muted}))root.style.setProperty('--boot-'+key,value);

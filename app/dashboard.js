@@ -109,7 +109,7 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
  const expenseFoot=$('#kExpenseFoot');expenseFoot.innerHTML=!bExp?'Define un presupuesto':budgetStatus(exp,bExp)==='complete'?'Presupuesto completo':expenseRemaining<0?'Presupuesto superado':pace||pExp?pace||`${fmt(pExp)} programados`:`${Math.round(exp/bExp*100)}% del presupuesto usado`;
  $('#balanceParts').innerHTML=row('Saldo anterior',fmt(cash.previous))+row(cycleView()?'Resultado del ciclo':'Resultado del mes',fmt(cash.result),cash.result<0?'neg':'');
  $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';
- $('#kBalanceSub').innerHTML=closed?'Cierre registrado':cash.provisional?'Saldo previo provisional':`Cierre estimado: <b class="${closing<0?'neg':'pos'}">${fmt(closing)}</b>`;
+ $('#kBalanceSub').innerHTML=closed?'Cierre registrado':cash.provisional?'Saldo previo provisional':`Cierre estimado: <b class="${closing<0?'neg':''}">${fmt(closing)}</b>`;
  $('#kSavingsSub').innerHTML=row(saveMode()==='set'?'Separado':'Ahorro calculado',fmt(sv.saved))+row(sv.pct?`Objetivo (${sv.pct}%)`:'Objetivo',sv.pct?fmt(sv.target):'Sin definir');
  const savingsFoot=$('#kSavingsFoot');
  savingsFoot.innerHTML=!sv.pct?'Define tu meta en Presupuesto':sv.target<=0?'Se calcula con tus ingresos':sv.saved>=sv.target-.005?'<span class="pos">Meta de ahorro cumplida</span>':`${closed?'Faltaron':'Faltan'} ${fmt(Math.max(0,sv.target-sv.saved))} para la meta`;
@@ -144,7 +144,8 @@ function renderDashboard(){
   const incEnd = closed ? inc : prj.projInc, expEnd = closed ? exp : prj.projExp, freeEnd = incEnd - expEnd;
   const closing=cash.previous+freeEnd;
   const sv = planSavings(m);
-  if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value'); // la meta cumplida se indica en el pie, no con el color de Ingresos else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
+  if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value');
+  else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
   renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv});
 
 
@@ -195,7 +196,7 @@ function renderSparks(m){
   const exp = ms.map(x => spendSum(txOfMonth(x)));
   const bal = ms.map(month=>balanceOfMonth(month).total);
   const show = ms.filter((_, i) => inc[i] || exp[i]).length >= 2;
-  [['spIncome', inc, 'var(--income)'], ['spExpense', exp, 'var(--expense)'], ['spBalance', bal, 'var(--primary)']].forEach(([id, v, col]) => {
+  [['spIncome', inc, 'var(--income)'], ['spExpense', exp, 'var(--expense)'], ['spBalance', bal, 'var(--balance-chart)']].forEach(([id, v, col]) => {
     const el = $('#' + id); if (!el) return;
     if (!show){ el.style.display = 'none'; el.innerHTML = ''; sparkMemo[id] = ''; return; }
     el.style.display = '';
@@ -236,7 +237,7 @@ const legendGap = {id:'legendGap', beforeInit(chart){ const lg = chart.legend; i
 const LEGEND = {position:'top', align:'center', labels:{usePointStyle:true, boxWidth:7, boxHeight:7, padding:20, font:{size:12, weight:'600'}}};
 // Colores de la dona: si varias categorías comparten color (temas de un solo color), se escalonan en claridad
 // Ajusta un color del tema para que se vea sobre el fondo actual (sin cambiar su carácter)
-function themeInk(h){ return fitThemeColor(h,cssVar('--surface'),3); }
+function themeInk(h){ return financialChartColor(h); }
 function sliceCols(data, bump){
   const seen={}, dark=isDarkUI();
   return data.map(x=>{const key=String(x.c.color).toLowerCase(), n=seen[key]=(seen[key]??-1)+1;
@@ -287,7 +288,7 @@ function renderCharts(){
   if (!loadChartFor(bw)) return;
   const grid = cssVar('--border'); chartTheme();
   if (!bw.querySelector('canvas')) bw.innerHTML = '<canvas id="chBars"></canvas>';
-  const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? planSavings(mm).saved : null), cur = months.length - 1, ink = cssVar('--k-violet');
+  const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? planSavings(mm).saved : null), cur = months.length - 1, ink = cssVar('--savings-chart');
   const nul = arr => arr.map((v, i) => has(i) ? v : null);
   // Barras sólidas: el mes actual a color completo y el resto aclarado hacia la superficie, como en Análisis
   const barBg = v => c => mixHex(cssVar(v), cssVar('--surface'), c.dataIndex === c.chart.data.labels.length-1 || c.active ? 0 : .4);

@@ -182,8 +182,8 @@ function maybeMonthClose(){
   const k = (l,v,cls='',tone='neutral') => `<div data-tone="${tone}"><span>${l}</span><b class="${cls}">${v}</b></div>`;
   $('#clBody').innerHTML = `<p class="cl-context">${esc(profOf(activeProfile).name)} · ${cy?cycleLabel(pm):"Movimientos registrados de "+monthLong(pm).toLowerCase()}</p>
     <div class="cl-hero" data-tone="${result < -.005 ? 'bad' : positive ? 'good' : 'neutral'}">${ic(result < -.005 ? 'triangle-alert' : positive ? 'check' : 'minus')}<div><span>Resultado ${cy?"del ciclo":"del mes"}</span><b>${fmt(result)}</b><span>${result < -.005 ? 'Los gastos superaron los ingresos del período.' : positive ? 'Ingresos menos gastos registrados.' : 'Ingresos y gastos en equilibrio.'}</span></div></div>
-    <div class="cd-stats">${k('Ingresos',fmt(inc),'pos','income')}${k('Gastos',fmt(exp),'neg','expense')}${k(saveMode() === 'set' ? 'Ahorro separado' : 'Ahorro del mes',fmt(sv.saved),sv.saved < 0 ? 'neg' : '',sv.saved < 0 ? 'expense' : 'saving')}</div>
-    <div class="cl-balances">${k('Saldo anterior',fmt(cash.previous),'','previous')}${k('Saldo al cierre',fmt(cash.total),cash.total < 0 ? 'neg' : '',cash.total < 0 ? 'expense' : 'saving')}</div>
+    <div class="cd-stats">${k('Ingresos',fmt(inc),'pos','income')}${k('Gastos',fmt(exp),'neg','expense')}${k(saveMode() === 'set' ? 'Ahorro separado' : 'Ahorro del mes',fmt(sv.saved),sv.saved < 0 ? 'neg' : '',sv.saved < 0 ? 'deficit' : 'saving')}</div>
+    <div class="cl-balances">${k('Saldo anterior',fmt(cash.previous),'','previous')}${k('Saldo al cierre',fmt(cash.total),cash.total < 0 ? 'neg' : '',cash.total < 0 ? 'deficit' : 'previous')}</div>
     <ul class="cl-summary" aria-label="Balance del mes">
       <li><span>Presupuesto</span><b class="${bExp > 0 && exp > bExp + .005 ? 'neg' : ''}">${bExp <= 0 ? 'Sin definir' : Math.abs(exp-bExp)<.005 ? 'Completo' : exp > bExp ? fmt(exp-bExp) + ' de exceso' : fmt(bExp-exp) + ' disponibles'}</b></li>
       ${sv.pct ? `<li><span>Meta de ahorro · ${sv.pct}%</span><b>${sv.base <= 0 ? 'Sin ingresos' : sv.saved >= sv.target ? 'Cumplida' : 'Faltan ' + fmt(sv.target-sv.saved)}</b></li>` : ''}

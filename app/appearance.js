@@ -34,9 +34,9 @@ const R = (...c) => c;
 // Historial: seis temas desde 1.10.86, con Vercel como base. Desde 1.10.138 solo se exponen Claro y Oscuro.
 function neutralPalette(dark){
  const bg=dark?'#000000':'#fafafa',surface=dark?'#0a0a0a':'#ffffff',text=dark?'#ededed':'#171717',muted=dark?'#a4a4a4':'#525252',secondary=dark?'#1d1d1d':'#f5f5f5',border=dark?'#292929':'#e4e4e4';
- return {background:bg,foreground:text,card:surface,'card-foreground':text,popover:surface,'popover-foreground':text,primary:text,'primary-foreground':bg,secondary,'secondary-foreground':text,muted:secondary,'muted-foreground':muted,accent:secondary,'accent-foreground':text,destructive:dark?'#f07a8e':'#be123c','destructive-foreground':'#ffffff',border,input:border,ring:muted,'chart-1':dark?'#f07a8e':'#be123c','chart-2':dark?'#4cc79a':'#14783a','chart-3':muted,'chart-4':text,'chart-5':muted,radius:'0.5rem',sidebar:bg,'sidebar-foreground':text,'sidebar-primary':text,'sidebar-primary-foreground':bg,'sidebar-accent':secondary,'sidebar-accent-foreground':text,'sidebar-border':border,'sidebar-ring':muted,'shadow-opacity':'.08','shadow-blur':'3px','shadow-spread':'0px','shadow-offset-x':'0px','shadow-offset-y':'1px'};
+ return {background:bg,foreground:text,card:surface,'card-foreground':text,popover:surface,'popover-foreground':text,primary:text,'primary-foreground':bg,secondary,'secondary-foreground':text,muted:secondary,'muted-foreground':muted,accent:secondary,'accent-foreground':text,destructive:dark?'#f07a8e':'#be123c','destructive-foreground':'#ffffff',border,input:border,ring:muted,'chart-1':dark?'#ff9b9b':'#db666a','chart-2':dark?'#77ddb1':'#319e77','chart-3':dark?'#91c5ff':'#528dce','chart-4':text,'chart-5':dark?'#c3abff':'#9670d1',radius:'0.5rem',sidebar:bg,'sidebar-foreground':text,'sidebar-primary':text,'sidebar-primary-foreground':bg,'sidebar-accent':secondary,'sidebar-accent-foreground':text,'sidebar-border':border,'sidebar-ring':muted,'shadow-opacity':'.08','shadow-blur':'3px','shadow-spread':'0px','shadow-offset-x':'0px','shadow-offset-y':'1px'};
 }
-const THEMES=['light','dark'].map(mode=>({id:mode,name:mode==='dark'?'Oscuro':'Claro',mode,accent:mode==='dark'?'#ededed':'#171717',inc:'#14783a',exp:'#be123c',sav:'#525252',c:R('#8b829c','#b67a65','#6398a6','#ad4056','#698a73','#b0966b','#8f819d','#82755f','#b44c60','#6d7d91','#8b8b8b','#5b8c71','#9b875d','#8a7994','#688898','#798595'),palette:{light:neutralPalette(false),dark:neutralPalette(true)}}));
+const THEMES=['light','dark'].map(mode=>({id:mode,name:mode==='dark'?'Oscuro':'Claro',mode,accent:mode==='dark'?'#ededed':'#171717',c:R('#8b829c','#b67a65','#6398a6','#ad4056','#698a73','#b0966b','#8f819d','#82755f','#b44c60','#6d7d91','#8b8b8b','#5b8c71','#9b875d','#8a7994','#688898','#798595'),palette:{light:neutralPalette(false),dark:neutralPalette(true)}}));
 const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
 function themeName(t){return t.name;}
 function themePalette(t, dark = isDarkUI()){ return t.palette?.[dark ? 'dark' : 'light']; }
@@ -172,15 +172,40 @@ function fitThemeColor(color, background, minimum=3){
   }
   return target;
 }
-function themeSeries(t, surface, dark = isDarkUI()){
-  // Ingresos, gastos y ahorro conservan el mismo color en móvil y escritorio: el móvil solo cambia superficies.
-  const p = themePalette(t, dark);
-  return {
-    income:fitThemeColor(p?.['chart-2'] || t.inc || '#329477',surface),
-    expense:fitThemeColor(p?.['chart-1'] || t.exp || '#d7657b',surface),
-    savings:fitThemeColor(p?.['chart-5'] || t.sav || '#8b7aca',surface)
-  };
+const FINANCE_COLOR_ROLES = [
+  ['income','Ingresos','chart-2'], ['expense','Gastos','chart-1'],
+  ['savings','Ahorro','chart-5'], ['balance','Saldo acumulado','chart-3']
+];
+const FINANCE_TONES = {soft:3, standard:3, strong:5};
+const financeColorKey = 'budgetPlanner.financeColors';
+let financeColors = {tone:'standard', colors:{}};
+try {
+  const stored = JSON.parse(localData.readText(financeColorKey));
+  if (Object.hasOwn(FINANCE_TONES, stored?.tone)) financeColors.tone = stored.tone;
+  for (const [role] of FINANCE_COLOR_ROLES){
+    const color = stored?.colors?.[role];
+    if (typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)) financeColors.colors[role] = color;
+  }
+} catch (error) { /* Una preferencia ilegible usa la paleta original. */ }
+
+function financialChartColor(color, surface = cssVar('--surface')){
+  const tone = financeColors.tone;
+  const ink = hexLum(surface)<.25 ? '#ffffff' : '#111113';
+  const seed = tone === 'soft' ? mixHex(color,surface,.17) : tone === 'strong' ? mixHex(color,ink,.18) : color;
+  return fitThemeColor(seed,surface,FINANCE_TONES[tone]);
 }
+
+function saveFinanceColors(preference){
+  try {
+    localData.writeText(financeColorKey, JSON.stringify(preference));
+  } catch (error) {
+    return false;
+  }
+  financeColors = preference;
+  renderAll();
+  return true;
+}
+
 function applyThemeVars(){
   const r=document.documentElement.style, t=curTheme(), dark=isDarkUI();
   // Superficies propias del tema: ui en oscuro, uiLight en claro; texto y texto secundario son opcionales.
@@ -199,13 +224,19 @@ function applyThemeVars(){
     r.setProperty('--muted',fitThemeColor(palette['muted-foreground'],[palette.background,palette.card,palette.muted,palette.popover],4.65));
     if (palette['shadow-blur']) r.setProperty('--shadow-sm', palette['shadow-offset-x']+' '+palette['shadow-offset-y']+' '+palette['shadow-blur']+' '+palette['shadow-spread']+' rgb(0 0 0 / '+palette['shadow-opacity']+')');
   }
-  const surface=cssVar('--surface'), series=themeSeries(t,surface);
-  for(const [key,role] of [['--income-chart','income'],['--expense-chart','expense'],['--k-violet','savings']])r.setProperty(key,series[role]);
-  const textSurfaces=[surface,cssVar('--surface-2'),cssVar('--bg')];
-  for(const role of ['income','expense']){
-    const soft=mixHex(series[role],surface,dark?.88:.92);
-    const ink=fitThemeColor(series[role],[...textSurfaces,soft],4.65);
-    r.setProperty('--'+role,ink);r.setProperty('--'+role+'-soft',soft);
+  const surface=ui.surface, textSurfaces=[surface,ui.s2,ui.bg];
+  for(const [role,,key] of FINANCE_COLOR_ROLES){
+    const base = fitThemeColor(palette[key], surface);
+    const soft = mixHex(base, surface, dark ? .84 : .88);
+    const ink = fitThemeColor(base, [...textSurfaces, soft], 4.65);
+    const series = financialChartColor(financeColors.colors[role] || palette[key], surface);
+    const tint = mixHex(series, surface, dark ? .84 : .88);
+    r.setProperty('--'+role+'-chart',series);
+    r.setProperty('--'+role+'-soft',soft);
+    r.setProperty('--'+role,ink);
+    r.setProperty('--'+role+'-figure',fitThemeColor(series,[...textSurfaces,tint],financeColors.tone==='strong'?5.5:4.65));
+    r.setProperty('--'+role+'-figure-soft',tint);
+    if(role==='expense')r.setProperty('--on-expense',themeForeground('#ffffff',ink));
   }
   r.setProperty('--warn-ink', dark ? '#fbbf24' : '#854d0e');
 }

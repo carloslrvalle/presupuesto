@@ -280,10 +280,10 @@ function revealSection(el){
 function motionHeight(el){
  return el.getBoundingClientRect().height/(Number(getComputedStyle(document.documentElement).zoom)||1);
 }
-function motionResize(el,update){
+function motionResize(el,update,clip=true){
  const from=motionHeight(el);el._resize?.cancel();el._resize=null;el.style.overflow='';update();const to=motionHeight(el);
  if(reduceMotion()||Math.abs(from-to)<1)return;
- el.style.overflow='hidden';const animation=el.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});el._resize=animation;
+ if(clip)el.style.overflow='hidden';const animation=el.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});el._resize=animation;
  animation.onfinish=()=>{el.style.overflow='';el._resize=null;};
 }
 function toggleDisclosure(details,summary,wanted,animate=true){

@@ -67,7 +67,7 @@ function setupSettings(){
  <div class="settings-layout"><nav class="settings-nav" aria-label="Secciones de ajustes"></nav><div class="settings-content"><div class="settings-home"><h3>Configuración actual</h3><div class="settings-home-rows"><button type="button" class="settings-home-row" data-settings-target="users"><span class="settings-home-icon">${ic('users')}</span><span class="settings-home-copy"><b>Usuarios</b><span class="settings-home-value" id="settingsHomeUsers"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="appearance"><span class="settings-home-icon">${ic('palette')}</span><span class="settings-home-copy"><b>Apariencia</b><span class="settings-home-value" id="settingsHomeAppearance"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="methods"><span class="settings-home-icon">${ic('credit-card')}</span><span class="settings-home-copy"><b>Métodos de pago</b><span class="settings-home-value" id="settingsHomeMethods"></span></span>${ic('chevron-right')}</button><button type="button" class="settings-home-row" data-settings-target="data"><span class="settings-home-icon">${ic('cloud')}</span><span class="settings-home-copy"><b>Datos y sincronización</b><span class="settings-home-value" id="settingsHomeData"></span></span>${ic('chevron-right')}</button></div></div></div></div>
  <footer class="settings-footer"></footer>`;
  root.querySelector('.settings-footer').append(version,install);
- const entries=[['users','Usuarios','Nombres, fotos e íconos','users'],['appearance','Apariencia','Modo claro u oscuro','palette'],['methods','Métodos de pago','Organiza cómo pagas','credit-card'],['data','Datos y sincronización','Conexión y respaldos','cloud']];
+ const entries=[['users','Usuarios','Nombres, fotos e íconos','users'],['appearance','Apariencia','Modo y colores de datos','palette'],['methods','Métodos de pago','Organiza cómo pagas','credit-card'],['data','Datos y sincronización','Conexión y respaldos','cloud']];
  const nav=root.querySelector('.settings-nav'),content=root.querySelector('.settings-content');
  for(const [id,title,desc,icon] of entries){
   const button=document.createElement('button');button.type='button';button.dataset.settingsTarget=id;button.setAttribute('aria-controls','settings-panel-'+id);
@@ -94,7 +94,51 @@ function setupSettings(){
  themeDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsThemeName"></small>');
  const fontField=document.createElement('div');fontField.id='settingsFont';fontField.className='settings-font-field';
  fontField.innerHTML='<h4>Fuente de la interfaz</h4><p id="settingsFontName">Geist Sans</p><p class="small muted">Una sola familia para títulos, texto e importes, disponible sin conexión.</p><div class="settings-font-sample"><strong>Resumen del período</strong><span>Alimentación · S/ 1,250.90</span></div>';
- panel('appearance').append(themeDetails,fontField);
+ const financeForm=document.createElement('form');
+ financeForm.className='settings-finance-colors';
+ financeForm.innerHTML='<p class="small muted">Personaliza las series y las cifras destacadas de este dispositivo.</p>'+
+   '<div class="finance-color-fields">'+FINANCE_COLOR_ROLES.map(([role,label])=>
+     '<label><span>'+label+'</span><input type="color" name="'+role+'"></label>').join('')+
+   '</div><label class="finance-tone">Intensidad <select name="tone"><option value="soft">Suave</option><option value="standard">Equilibrada</option><option value="strong">Intensa</option></select></label>'+
+   '<div class="finance-color-actions"><button type="submit" class="btn primary">Aplicar colores</button><button type="button" class="btn" data-reset-colors>Restablecer</button></div><p class="small" role="status" hidden></p>';
+ const financePanel=disclosure('Colores de gráficos y cifras',financeForm);
+ const fields=financeForm.elements, status=financeForm.querySelector('[role=status]');
+ let startingColors={};
+ function fillFinanceForm(keepEdits=false){
+   const palette=themePalette(curTheme());
+   for(const [role,,key] of FINANCE_COLOR_ROLES){
+     const input=fields.namedItem(role), edited=input.value!==startingColors[role];
+     startingColors[role]=financeColors.colors[role]||palette[key];
+     if(!keepEdits||!edited)input.value=startingColors[role];
+   }
+   if(!keepEdits)fields.namedItem('tone').value=financeColors.tone;
+ }
+ function submitFinanceColors(preference,message){
+   const saved=saveFinanceColors(preference);
+   if(saved)fillFinanceForm();
+   status.hidden=false;
+   status.classList.toggle('neg',!saved);
+   status.textContent=saved?message:'No se pudieron guardar los colores. Vuelve a intentarlo.';
+ }
+ financePanel.querySelector('summary').addEventListener('click',()=>{
+   if(!(financePanel._disclosure?.open??financePanel.open))return;
+   fillFinanceForm();
+   status.hidden=true;
+ });
+ themes.querySelector('#themeGrid').addEventListener('click',()=>{
+   if(financePanel.open)fillFinanceForm(true);
+ });
+ financeForm.addEventListener('submit',event=>{
+   event.preventDefault();
+   const colors={...financeColors.colors};
+   for(const [role] of FINANCE_COLOR_ROLES){
+     const value=fields.namedItem(role).value;
+     if(value!==startingColors[role])colors[role]=value;
+   }
+   submitFinanceColors({tone:fields.namedItem('tone').value,colors},'Colores aplicados.');
+ });
+ financeForm.querySelector('[data-reset-colors]').onclick=()=>submitFinanceColors({tone:'standard',colors:{}},'Colores originales restaurados.');
+ panel('appearance').append(themeDetails,financePanel,fontField);
  methods.querySelector('p').textContent='Agrega tus métodos de pago. Toca un nombre para editarlo.';
  methods.querySelector('h3').remove();methodsInput.hidden=true;
  methods.insertAdjacentHTML('beforeend',`<div class="settings-methods" id="settingsMethods"></div><form class="settings-method-add" id="settingsMethodForm"><input id="settingsMethodName" aria-label="Nombre del método de pago" placeholder="Ej. Transferencia" maxlength="60" required><button class="btn primary" type="submit" id="settingsMethodSubmit">Agregar</button></form><div class="settings-method-help" id="settingsMethodHelp" role="status"></div>`);

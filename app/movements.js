@@ -17,7 +17,7 @@ function movementHistory(list,dayLbl,filtered){
  const groups=new Map();for(const t of list){if(!groups.has(t.date))groups.set(t.date,[]);groups.get(t.date).push(t);}
  return [...groups].map(([day,items])=>{
   const [label,date]=dayLbl(day),expense=spendSum(items),saved=saveSum(items),income=sum(items.filter(t=>t.type==='income')),planned=isPlanned(items[0]);
-  const totals=[expense?`<span>− ${fmt(expense)}</span>`:'',saved?`<span class="sv" title="Separado como ahorro">↗ ${fmt(saved)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
+  const totals=[expense?`<span class="xp">− ${fmt(expense)}</span>`:'',saved?`<span class="sv" title="Separado como ahorro">↗ ${fmt(saved)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
   return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h2 class="history-day-title" id="history-day-${day}">${label}</h2>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div><div class="history-day-totals" aria-label="Totales del día">${totals}</div></header><ul class="history-items">${items.map(t=>{
    const c=getCat(t.catId),isI=t.type==='income',isS=isSavingTx(t);
    const actionLabel=[(selMode?'Seleccionar ':'Editar ')+(t.desc||c.name),t.desc?c.name:'',isI?'Ingreso':isS?'Ahorro':'Gasto',fmt(t.amount)].filter(Boolean).join(', ');
@@ -112,8 +112,20 @@ function enhanceSelect(sel){
     if (top < menu.scrollTop) menu.scrollTop = top;
     else if (bottom > menu.scrollTop + menu.clientHeight) menu.scrollTop = bottom - menu.clientHeight;
   };
-  const open = () => { document.querySelectorAll('.fsel.open').forEach(x => x !== w && x._close()); build(); w.classList.add('open'); menu.removeAttribute('aria-hidden'); btn.setAttribute('aria-expanded','true'); setHl(sel.selectedIndex);
-    const el = menu.querySelector('.sel'); if (el) menu.scrollTop = el.offsetTop - menu.clientHeight / 2 + el.offsetHeight / 2; };
+  const open = () => {
+    document.querySelectorAll('.fsel.open').forEach(x => x !== w && x._close());
+    build();
+    const rect = btn.getBoundingClientRect(), dock = $('#mobileNav')?.getBoundingClientRect();
+    const zoom = Number(getComputedStyle(document.documentElement).zoom) || 1;
+    const above = rect.top - 12, below = (dock?.height ? dock.top : innerHeight) - rect.bottom - 12;
+    const up = below < menu.scrollHeight * zoom && above > below;
+    w.classList.toggle('opens-up', up);
+    menu.style.setProperty('--filter-menu-space', Math.max(72, (up ? above : below) / zoom) + 'px');
+    w.classList.add('open'); menu.removeAttribute('aria-hidden'); btn.setAttribute('aria-expanded','true');
+    setHl(sel.selectedIndex);
+    const el = menu.querySelector('.sel');
+    if (el) menu.scrollTop = el.offsetTop - menu.clientHeight / 2 + el.offsetHeight / 2;
+  };
   const close = () => {
     if (!w.classList.contains('open')) return;
     w.classList.remove('open');
@@ -308,10 +320,10 @@ function renderCalDay(){
       ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}
     </header>
     <div class="cal-day-scroll" tabindex="0" role="region" aria-labelledby="calDayTitle">
-    ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income'; return `<div class="prow cal-transaction">
+    ${list.map(t => { const c = getCat(t.catId), isI = t.type === 'income', isS = isSavingTx(t); return `<div class="prow cal-transaction">
       <div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div>
       <div class="cal-copy"><div class="name" title="${esc(t.desc || c.name)}">${esc(t.desc || c.name)}${isPlanned(t) ? ' <span class="plan-pill">Programado</span>' : ''}</div><div class="small muted" title="${esc(c.name+(t.method?' · '+t.method:''))}">${esc(c.name)}${t.method ? ' · ' + esc(t.method) : ''}</div></div>
-      <div class="amt"><b class="${isI ? 'pos' : 'xp'}">${isI ? '+' : '−'} ${fmt(t.amount)}</b></div>
+      <div class="amt"><b class="${isI ? 'pos' : isS ? 'sv' : 'xp'}">${isI ? '+' : isS ? '↗' : '−'} ${fmt(t.amount)}</b></div>
       <div class="row-actions"><button class="iconbtn" data-edit="${esc(t.id)}" title="Editar">${ic('pencil')}</button><button class="iconbtn" data-del="${esc(t.id)}" title="Eliminar">${ic('trash-2')}</button></div></div>`; }).join('')}
     ${!list.length ? emptyBox('calendar-days', 'Sin movimientos este día.', 'calendar-tx', 'Registrar movimiento', false, 'es-sm') : ''}</div>`;
 }

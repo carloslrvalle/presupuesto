@@ -319,9 +319,12 @@ function renderMobileHome(txs = planTx(currentMonth), totals){
   const tone = pct == null ? '' : pct > 100 ? 'over' : pct >= 85 ? 'near' : '';
   const card = $('#mobileHomeSpent');
   card.dataset.tone = tone;
-  card.innerHTML = `<div class="mobile-spent-head"><span class="mobile-spent-label">${ic('chart-pie')}Gastado de tus ingresos</span><b class="mobile-spent-pct">${pct == null ? '—' : pctTxt(pct)}</b></div>
-    <div class="mobile-spent-bar" role="img" aria-label="${pct == null ? 'Sin ingresos en el período' : esc(`Gastaste ${pctTxt(pct)} de tus ingresos`)}"><span style="width:${pct == null ? 0 : Math.min(100, pct).toFixed(1)}%"></span></div>
-    <p class="mobile-spent-meta">${pct == null ? 'Aún no registras ingresos en este período.' : `${fmt(exp)} de ${fmt(inc)} · <b>${left >= 0 ? 'Quedan ' + fmt(left) : 'Te pasaste ' + fmt(-left)}</b>`}</p>`;
+  const share=pct==null?0:Math.max(0,Math.min(1,pct/100));
+  const red=fitThemeColor(mixHex(cssVar('--expense'),cssVar('--surface'),.5*(1-share)),[cssVar('--surface'),cssVar('--surface-2')],3.1);
+  card.style.setProperty('--spent-progress',red);
+  card.innerHTML = `<div class="mobile-spent-head"><span class="mobile-spent-label">Gastado de tus ingresos</span><b class="mobile-spent-pct">${pct == null ? '—' : pctTxt(pct)}</b></div>
+    <div class="mobile-spent-bar" role="img" aria-label="${pct == null ? 'Sin ingresos en el período' : esc(`${fmt(exp)} gastados de ${fmt(inc)} de ingresos, ${pctTxt(pct)}`)}"><span style="width:${(share*100).toFixed(1)}%"></span></div>
+    <p class="mobile-spent-meta">${pct == null ? 'Aún sin ingresos en este período.' : `${left >= 0 ? 'Quedan' : 'Exceso de'} <b>${fmt(Math.abs(left))}</b>`}</p>`;
   $('#mobileHomeTopRows').innerHTML = recentExpenseRows(txs, MOBILE_RECENT_LIMIT);
 }
 $('#mobileRecentAll').onclick=()=>openMovs({type:'expense',scope:cycleView()?'cycle':'month',month:currentMonth});

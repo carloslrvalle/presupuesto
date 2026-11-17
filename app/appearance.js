@@ -47,6 +47,15 @@ function themeUi(t, dark){
 // Temas retirados en 1.10.72: cada elección guardada se lee como el tema vigente más parecido (sin reescribir datos).
 const LEGACY_DARK_THEMES=['mono','charcoal','obsidian','midnight','dracula','tokyo','wine','nightforest'];
 const themeById=id=>THEMES.find(t=>t.id===id)||THEMES[LEGACY_DARK_THEMES.includes(id)||matchMedia('(prefers-color-scheme: dark)').matches?1:0];
+const colorSchemeKey='budgetPlanner.colorScheme';
+let colorSchemePreference='system';
+try {
+ const stored=localData.readText(colorSchemeKey);
+ if(['system','light','dark'].includes(stored))colorSchemePreference=stored;
+} catch(error) { /* Sin preferencia local, se sigue el equipo. */ }
+function appearanceModeName(){
+ return colorSchemePreference==='system'?'Sistema · '+themeName(curTheme()):themeName(curTheme());
+}
 const logoHue = () => state.settings.appColor && hueOf(state.settings.appColor).s > .15 ? state.settings.appColor : '#4f46e5';
 function themeColors(t){
   if (t.uniform) return ROLES.map(() => t.uniform);
@@ -64,9 +73,11 @@ function themeMap(t){
 const goalThemeColor = (t, i) => { const cols = themeColors(t); return cols[[9, 12, 14, 5, 0, 3, 7, 1][i % 8]]; }; // (en temas de un solo color todas las metas comparten el tono)
 const hexLight = hex => { const [r,g,b] = [1,3,5].map(i => parseInt(hex.substr(i,2),16) / 255); return (Math.max(r,g,b) + Math.min(r,g,b)) / 2; };
 function applyTheme(id){
- if(!['light','dark'].includes(id))return;
- if(!saveChange(()=>{state.settings.theme=id;}))return;
- renderAll();toast('Modo '+themeName(curTheme()).toLowerCase()+' aplicado');
+ if(!['system','light','dark'].includes(id))return;
+ try { localData.writeText(colorSchemeKey,id); }
+ catch(error){toast('No se pudo guardar el modo. Vuelve a intentarlo.');return;}
+ colorSchemePreference=id;
+ renderAll();toast(id==='system'?'Se sigue el modo del equipo':'Modo '+themeName(curTheme()).toLowerCase()+' aplicado');
 }
 // ---- Tipografía ----
 const INTERFACE_FONT={id:'geist',name:'Geist Sans',body:'"Geist"'};
@@ -96,12 +107,12 @@ function applyAppFont(){
 // ---- Temas ----
 function renderThemes(){
  const el=$('#themeGrid');if(!el)return;
- el.innerHTML=THEMES.map(t=>'<button type="button" class="btn'+(t.id===curTheme().id?' primary':'')+'" data-theme="'+t.id+'" aria-pressed="'+(t.id===curTheme().id)+'">'+ic(t.id==='dark'?'moon':'sun')+t.name+'</button>').join('');
- $('#themeNote').textContent='Solo modo claro u oscuro. La interfaz utiliza Geist Sans y una base neutra común.';
+ el.innerHTML=[['system','Sistema','monitor'],['light','Claro','sun'],['dark','Oscuro','moon']].map(([id,name,icon])=>'<button type="button" class="btn'+(id===colorSchemePreference?' primary':'')+'" data-theme="'+id+'" aria-pressed="'+(id===colorSchemePreference)+'">'+ic(icon)+name+'</button>').join('');
+ $('#themeNote').textContent='Sistema sigue automáticamente el modo claro u oscuro de este equipo.';
 }
 $('#themeGrid').addEventListener('click',e=>{const button=e.target.closest('[data-theme]');if(button)applyTheme(button.dataset.theme);});
 
-const curTheme = () => themeById(state.settings.theme) || THEMES[0];
+const curTheme = () => themeById(colorSchemePreference==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):colorSchemePreference);
 const curThemeColorCat = c => { const t = curTheme(); return t ? themeMap(t)[c.id] : null; };
 const curThemeColorGoal = id => { const t = curTheme(); if (!t) return null; const i = id ? state.goals.findIndex(g => g.id === id) : state.goals.length; return goalThemeColor(t, Math.max(0, i)); };
 /* ---------- Selector de colores ---------- */

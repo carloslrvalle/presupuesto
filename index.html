@@ -33,15 +33,13 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 #boot button{padding:10px 18px;border:1px solid currentColor;border-radius:12px;background:transparent;color:inherit;font:inherit}
 </style>
 <script>
-// Solo presentación. La copia de finanzas se lee aquí únicamente si aún no existe caché visual.
+// Presentación inicial según la preferencia visual de este dispositivo.
 (function(){
  const root=document.documentElement;root.dataset.booting='';window.__bootErrs=[];
  try{
-  const storage=window.localStorage,profile=storage.getItem('budgetPlanner.activeProfile')==='p2'?'p2':'p1',systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
-  const settings=JSON.parse(storage.getItem(profile==='p2'?'budgetPlanner.v1.p2':'budgetPlanner.v1')||'null')?.settings||{};
-  // Las elecciones antiguas solo determinan el modo inicial; ya no aportan una paleta.
-  const darkThemes=['mono','dracula','tokyo','midnight','obsidian','charcoal','wine','nightforest'];
-  const mode=settings.theme==='light'?'light':settings.theme==='dark'||darkThemes.includes(settings.theme)?'dark':systemDark?'dark':'light';
+  const storage=window.localStorage,systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const preference=storage.getItem('budgetPlanner.colorScheme');
+  const mode=preference==='light'?'light':preference==='dark'?'dark':systemDark?'dark':'light';
   const bg=mode==='dark'?'#000000':'#fafafa',text=mode==='dark'?'#ededed':'#171717',muted=mode==='dark'?'#a4a4a4':'#525252';
   if(mode)root.dataset.mode=mode;
   for(const [key,value] of Object.entries({bg,text,muted}))root.style.setProperty('--boot-'+key,value);

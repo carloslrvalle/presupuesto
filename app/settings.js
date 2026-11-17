@@ -244,14 +244,14 @@ function renderSettingsStatus(){
 function renderSettingsHome(){
  if(!$('#settingsHomeUsers'))return;
  $('#settingsHomeUsers').textContent=profiles.list.map(p=>p.name).join(' · ');
- $('#settingsHomeAppearance').textContent=themeName(curTheme());
+ $('#settingsHomeAppearance').textContent=appearanceModeName();
  const methods=state.settings.methods||[];
  $('#settingsHomeMethods').textContent=methods.length?methods.slice(0,3).join(' · ')+(methods.length>3?' · +'+(methods.length-3):''):'Sin métodos definidos';
  $('#settingsHomeData').textContent=!syncOn()?'Datos en este dispositivo · Sin conectar a Sheets':$('#syncBadge').classList.contains('err')?'Revisar conexión con Google Sheets':sync.pending?'Google Sheets · Cambios pendientes':sync.lastSync?'Google Sheets · Última sincronización '+new Date(sync.lastSync).toLocaleString('es-PE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Google Sheets · Esperando sincronización';
 }
 function renderSettingsOverview(){
  if(!$('#settingsThemeName'))return;
- $('#settingsThemeName').textContent=themeName(curTheme());
+ $('#settingsThemeName').textContent=appearanceModeName();
  renderSettingsFont();
  renderSettingsHome();
  $('#settingsMethods').innerHTML=(state.settings.methods||[]).map((m,i)=>`<span class="settings-method-chip"><button type="button" data-index="${i}" data-action="edit" aria-label="Editar ${esc(m)}">${esc(m)}</button><button type="button" data-index="${i}" data-action="remove" aria-label="Eliminar ${esc(m)}">${ic('x')}</button></span>`).join('')||'<p class="small muted">Aún no agregaste métodos de pago.</p>';

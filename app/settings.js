@@ -100,7 +100,7 @@ function setupSettings(){
    '<div class="finance-color-fields">'+FINANCE_COLOR_ROLES.map(([role,label],index)=>
      '<input type="hidden" name="'+role+'"><button type="button" class="finance-color-option" data-finance-color="'+role+'" aria-label="Personalizar color de '+label.toLowerCase()+'" aria-haspopup="dialog"><span class="finance-color-icon">'+ic(['arrow-down','arrow-up','piggy-bank','scale'][index])+'</span><span class="finance-color-copy"><b>'+label+'</b><small data-finance-hex></small></span><span class="finance-color-value">S/ 1,250.00</span>'+ic('chevron-right')+'</button>').join('')+
    '</div><label class="finance-tone">Intensidad <select name="tone"><option value="soft">Suave</option><option value="standard">Equilibrada</option><option value="strong">Intensa</option></select></label>'+
-   '<div class="finance-color-actions"><button type="submit" class="btn primary">Aplicar colores</button><button type="button" class="btn" data-reset-colors>Restablecer</button></div><p class="small" role="status" hidden></p>';
+   '<div class="finance-color-actions"><button type="submit" class="btn primary" data-retry-colors hidden>Reintentar guardado</button><button type="button" class="btn" data-reset-colors>Restablecer</button></div><p class="small" role="status" hidden></p>';
  const financePanel=disclosure('Colores de gráficos y cifras',financeForm);
  const fields=financeForm.elements, status=financeForm.querySelector('[role=status]');
  let startingColors={};
@@ -133,14 +133,18 @@ function setupSettings(){
    openColor(fields.namedItem(role).value,color=>{
      fields.namedItem(role).value=color;
      renderFinancePreview();
-     status.hidden=true;
+     financeForm.requestSubmit();
    },{title:'Color de '+FINANCE_COLOR_ROLES[index][1].toLowerCase(),icon:['arrow-down','arrow-up','piggy-bank','scale'][index]});
  });
- fields.namedItem('tone').addEventListener('change',renderFinancePreview);
+ fields.namedItem('tone').addEventListener('change',()=>{
+   renderFinancePreview();
+   financeForm.requestSubmit();
+ });
  function submitFinanceColors(preference,message){
    const saved=saveFinanceColors(preference);
    if(saved)fillFinanceForm();
    status.hidden=false;
+   financeForm.querySelector('[data-retry-colors]').hidden=saved;
    status.classList.toggle('neg',!saved);
    status.textContent=saved?message:'No se pudieron guardar los colores. Vuelve a intentarlo.';
  }

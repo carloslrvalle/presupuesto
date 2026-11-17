@@ -122,8 +122,68 @@ const txMethodField=$('#fMethodChips').closest('.field');
 const txNodes=[[$('#txSeg'),txHeader],[$('#fDateField'),mobileTxMeta],[txNoteField,txBody],[txMethodField,mobileTxExtras],[$('#fGoalField'),mobileTxExtras],[$('#txQuick'),mobileTxExtras],[$('#txDelete'),mobileTxExtras],[$('#txDup'),mobileTxExtras]].map(([node,parent])=>{
   const anchor=document.createComment('Posición del campo en escritorio');node.before(anchor);return {node,parent,anchor};
 });
+// Teclado del monto inspirado en Dime (github.com/rafsoh/dimeApp, NumberPad): 1–9, punto, 0 y ✓ para guardar.
+// El importe se escribe sin el teclado del sistema; el campo sigue siendo #fAmount, así el guardado no cambia.
+const mobileTxKeypad=document.createElement('div');
+mobileTxKeypad.id='mobileTxKeypad';mobileTxKeypad.className='mobile-only mobile-tx-keypad';
+mobileTxKeypad.setAttribute('role','group');mobileTxKeypad.setAttribute('aria-label','Teclado del monto');
+mobileTxKeypad.innerHTML=['1','2','3','4','5','6','7','8','9','.','0'].map(k=>`<button type="button" data-key="${k}"${k==='.'?' aria-label="Punto decimal"':''}>${k}</button>`).join('')
+  +`<button type="submit" class="keypad-submit" aria-label="Guardar">${ic('check')}</button>`;
+txBody.append(mobileTxKeypad);
+const mobileTxBackspace=document.createElement('button');
+mobileTxBackspace.type='button';mobileTxBackspace.id='mobileTxBackspace';mobileTxBackspace.className='mobile-only';
+mobileTxBackspace.setAttribute('aria-label','Borrar último dígito');
+mobileTxBackspace.innerHTML='<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H9l-7 7 7 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m18 9-6 6"/><path d="m12 9 6 6"/></svg>';
+$('#fAmount').closest('.tx-amount').append(mobileTxBackspace);
+const TX_KEYPAD_MAX_INTEGER=8; // como Dime: hasta 99,999,999.99
+function setKeypadAmount(value){
+  const amount=$('#fAmount');amount.value=value;
+  amount.dispatchEvent(new Event('input',{bubbles:true}));
+}
+function nudgeAmount(){
+  const box=$('#fAmount').closest('.tx-amount');box.classList.remove('tx-shake');void box.offsetWidth;box.classList.add('tx-shake');
+}
+function pressKeypad(key){
+  let value=$('#fAmount').value;
+  const [whole,decimals]=value.split('.');
+  if(key==='.'){if(decimals!==undefined)return nudgeAmount();value=(whole||'0')+'.';}
+  else if(decimals!==undefined){if(decimals.length>=2)return nudgeAmount();value+=key;}
+  else{
+    const next=whole==='0'?key:whole+key;
+    if(next.length>TX_KEYPAD_MAX_INTEGER)return nudgeAmount();
+    value=next;
+  }
+  if(navigator.userActivation?.isActive)navigator.vibrate?.(6);
+  setKeypadAmount(value);
+}
+function eraseKeypad(){const value=$('#fAmount').value;if(!value)return nudgeAmount();setKeypadAmount(value.slice(0,-1));}
+mobileTxKeypad.addEventListener('click',event=>{const key=event.target.closest('[data-key]');if(key)pressKeypad(key.dataset.key);});
+mobileTxBackspace.onclick=eraseKeypad;
+// Mantener pulsado borrar vacía el monto.
+let txEraseHold=0;
+mobileTxBackspace.addEventListener('pointerdown',()=>{clearTimeout(txEraseHold);txEraseHold=setTimeout(()=>{txEraseHold=-1;setKeypadAmount('');},550);});
+for(const type of ['pointerup','pointerleave','pointercancel'])mobileTxBackspace.addEventListener(type,()=>{if(txEraseHold>0)clearTimeout(txEraseHold);});
+mobileTxBackspace.addEventListener('click',event=>{if(txEraseHold===-1){txEraseHold=0;event.stopImmediatePropagation();}},true);
+// Teclado físico o lector de pantalla: dígitos, punto/coma, retroceso y Enter.
+txDialog.addEventListener('keydown',event=>{
+  if(!txDialog.classList.contains('tx-mobile-simple')||event.ctrlKey||event.metaKey||event.altKey)return;
+  if(event.target.matches('input:not(#fAmount),textarea,select')||txDialog.matches('.category-open,.options-open'))return;
+  if(/^[0-9]$/.test(event.key)){event.preventDefault();pressKeypad(event.key);}
+  else if(event.key==='.'||event.key===','){event.preventDefault();pressKeypad('.');}
+  else if(event.key==='Backspace'){event.preventDefault();eraseKeypad();}
+});
+// Como en Dime: sin monto o sin categoría, el campo que falta tiembla.
+$('#txForm').addEventListener('submit',()=>{
+  if(!txDialog.classList.contains('tx-mobile-simple'))return;
+  if(!(parseFloat($('#fAmount').value)>0))nudgeAmount();
+  else if(!selCat){mobileTxCategory.classList.remove('tx-shake');void mobileTxCategory.offsetWidth;mobileTxCategory.classList.add('tx-shake');}
+},true);
+for(const node of [$('#fAmount').closest('.tx-amount'),mobileTxCategory])node.addEventListener('animationend',()=>node.classList.remove('tx-shake'));
 function positionMobileTx(){
   txDialog.classList.toggle('tx-mobile-simple',mobileLayout.matches);
+  const amount=$('#fAmount'),value=amount.value;
+  if(mobileLayout.matches){amount.type='text';amount.readOnly=true;amount.inputMode='none';amount.placeholder='0';}
+  else{amount.type='number';amount.readOnly=false;amount.inputMode='decimal';amount.placeholder='0.00';amount.value=parseFloat(value)>0?String(parseFloat(value)):'';}
   for(const {node,parent,anchor} of txNodes){if(mobileLayout.matches)parent.append(node);else anchor.after(node);}
   if(mobileLayout.matches)mobileTxViewport.append(txCategoryField,mobileTxExtras);else txCategoryAnchor.after(txCategoryField);
   if(!mobileLayout.matches){
@@ -135,13 +195,22 @@ function positionMobileTx(){
 }
 function syncMobileTxUI(){
   if(!mobileLayout.matches)return;
-  const category=getCat(selCat);
-  mobileTxCategory.innerHTML=`${iconHTML(category.icon,category.color)}<span>${selCat?esc(category.name):'Categoría'}</span>${ic('chevron-down')}`;
-  mobileTxCategory.setAttribute('aria-label','Categoría: '+(selCat?category.name:'Elegir'));
-  txDialog.querySelector('[type=submit]').textContent=editingId?'Guardar cambios':txType==='income'?'Guardar ingreso':'Guardar gasto';
-  $('#fAmount').style.setProperty('--amount-characters',String(Math.max(4,($('#fAmount').value||'0.00').length)));
+  const category=getCat(selCat),picking=txDialog.classList.contains('category-open');
+  // Como en Dime: la píldora toma el color de la categoría y, con el selector abierto, se convierte en «Cerrar».
+  mobileTxCategory.innerHTML=picking?'<span>Cerrar</span>':`${iconHTML(category.icon,category.color)}<span>${selCat?esc(category.name):'Categoría'}</span>`;
+  mobileTxCategory.classList.toggle('closing',picking);
+  mobileTxCategory.style.setProperty('--cat-bg',selCat&&!picking?soft(category.color):'');
+  mobileTxCategory.style.setProperty('--cat-ink',selCat&&!picking?strokeOn(category.color):'');
+  mobileTxCategory.setAttribute('aria-label',picking?'Cerrar categorías':'Categoría: '+(selCat?category.name:'Elegir'));
+  txDialog.querySelector('.dlg-foot [type=submit]').textContent=editingId?'Guardar cambios':txType==='income'?'Guardar ingreso':'Guardar gasto';
+  const amountField=$('#fAmount'),characters=Math.max(1,(amountField.value||'0').length),amountBox=amountField.closest('.tx-amount');
+  amountField.style.setProperty('--amount-characters',String(characters));
+  // El importe se reduce para caber en una línea, como el escalado mínimo de Dime.
+  const room=Math.max(120,amountBox.clientWidth-130);
+  amountField.style.fontSize=amountBox.clientWidth?Math.round(Math.max(26,Math.min(60,room/(characters*.62))))+'px':'';
   const date=$('#fDate').value;
-  const dateLabel=date===todayISO()?'Hoy':fmtDate(date),trigger=$('#fDateField .dp-trigger');
+  const shortDate=date?Number(date.slice(8,10))+' '+MONTHS_ES[Number(date.slice(5,7))-1].toLowerCase()+(date.slice(0,4)===todayISO().slice(0,4)?'':' '+date.slice(0,4)):'';
+  const dateLabel=date===todayISO()?'Hoy, '+shortDate:shortDate,trigger=$('#fDateField .dp-trigger');
   if(trigger.querySelector('.dp-l')?.textContent!==dateLabel)trigger.innerHTML=ic('calendar')+`<span class="dp-l">${esc(dateLabel)}</span>`;
   mobileTxNote.hidden=txDialog.classList.contains('note-open');
 }
@@ -156,14 +225,18 @@ function prepareMobileTxUI(){
 function setMobileTxPanel(panel,{focus=true}={}){
   const amount=$('#fAmount');
   if(focus&&(!panel||document.activeElement.matches('input,textarea')&&document.activeElement!==amount))amount.focus({preventScroll:true});
-  if(panel){mobileTxViewport.style.top=txBody.scrollTop+'px';mobileTxViewport.style.bottom=-txBody.scrollTop+'px';}
+  // El selector ocupa el lugar del teclado propio. Con el teclado del sistema abierto (búsqueda) usa todo el cuerpo y se cierra con Listo.
+  if(panel){mobileTxViewport.style.top=(mobileTxKeypad.offsetParent?mobileTxKeypad.offsetTop:txBody.scrollTop)+'px';mobileTxViewport.style.bottom=-txBody.scrollTop+'px';}
   txDialog.classList.toggle('category-open',panel==='category');
   txDialog.classList.toggle('options-open',panel==='options');
   txCategoryField.inert=panel!=='category';mobileTxExtras.inert=panel!=='options';
   mobileTxCategory.setAttribute('aria-expanded',String(panel==='category'));
   mobileTxOptions.setAttribute('aria-expanded',String(panel==='options'));
   amount.tabIndex=panel?-1:0;
-  txNoteField.inert=!!panel;mobileTxNote.inert=!!panel;mobileTxMeta.inert=!!panel;
+  mobileTxKeypad.inert=!!panel;
+  // Como en Dime, el selector muestra todas las categorías en la cuadrícula.
+  if(panel==='category'&&!txCategoryExpanded){txCategoryExpanded=true;renderTxChips();}
+  syncMobileTxUI();
   txDialog.classList.toggle('tx-panel-instant',reduceMotion());
   dpClose();
   // El selector ocupa el cuerpo desde arriba; su capa recortada evita cambiar el ancho útil al aparecer o desaparecer.
@@ -171,7 +244,7 @@ function setMobileTxPanel(panel,{focus=true}={}){
   if(focus&&panel&&reduceMotion())(panel==='category'&&!$('#txAllCategories').hidden?$('#txAllCategories'):mobileTxOptions).focus({preventScroll:true});
 }
 // Cancelar el foco automático del botón evita el ciclo de ocultar y abrir el teclado al tocar selectores.
-const txKeepKeyboardButtons='#mobileTxCategory,#mobileTxOptions,#mobileTxDone,#txAllCategories,#txNewCategory,#txCancelCategory,#txCreateCategory,#txSeg button,#fCatChips [data-cat],#fMethodChips [data-method],#fGoalChips [data-goal],#txQuick button';
+const txKeepKeyboardButtons='#mobileTxKeypad button,#mobileTxBackspace,#mobileTxCategory,#mobileTxOptions,#mobileTxDone,#txAllCategories,#txNewCategory,#txCancelCategory,#txCreateCategory,#txSeg button,#fCatChips [data-cat],#fMethodChips [data-method],#fGoalChips [data-goal],#txQuick button';
 txDialog.addEventListener('mousedown',event=>{
   if(!mobileLayout.matches||event.button>0||!event.target.closest(txKeepKeyboardButtons))return;
   if(txDialog.contains(document.activeElement)&&document.activeElement.matches('input:not([type=hidden]),textarea'))event.preventDefault();
@@ -186,6 +259,8 @@ $('#fCatChips').addEventListener('click',event=>{
   syncMobileTxUI();setMobileTxPanel(null);
 });
 $('#fAmount').addEventListener('input',syncMobileTxUI);
+$('#fAmount').addEventListener('focus',syncMobileTxUI); // ya abierta la hoja, se mide el ancho real del importe
+window.addEventListener('resize',()=>{if(txDialog.open)syncMobileTxUI();});
 $('#fDate').addEventListener('change',syncMobileTxUI);
 mobileLayout.addEventListener('change',positionMobileTx);
 positionMobileTx();

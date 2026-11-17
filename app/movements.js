@@ -454,7 +454,7 @@ function txCategoryMarkup(cats){
  $('#txCategorySearchBox').hidden=!txCategoryExpanded;
  $('#txAllCategories').textContent=txCategoryExpanded?'Ver menos':`Ver todas (${cats.length})`;
  $('#txAllCategories').setAttribute('aria-expanded',String(txCategoryExpanded));
- return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
+ return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}" style="--chip-tint:${soft(c.color)};--chip-ink:${strokeOn(c.color)}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
 }
 function resetTxCategoryUI(){
  txCategoryExpanded=false;$('#txCategorySearch').value='';$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');
@@ -591,7 +591,7 @@ document.addEventListener('click', e => {
   renderTxChips(); q.classList.add('picked'); setTimeout(() => q.classList.remove('picked'), 400);
   if(txDialog.classList.contains('tx-mobile-simple')){
     txDialog.classList.toggle('note-open',!!$('#fDesc').value);syncMobileTxUI();setMobileTxPanel(null);
-  }else $('#txForm button[type=submit]').focus();
+  }else $('#txForm .dlg-foot button[type=submit]').focus();
 });
 function openTx(id, preset){
   if(localTabChanged)return toast('⚠️ Hay cambios en otra pestaña. Recarga antes de editar.');

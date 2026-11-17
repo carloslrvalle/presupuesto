@@ -1758,23 +1758,27 @@ button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:v
  #tab-budget .bud-table th.c-real{width:19%!important}
  #tab-budget .bud-table th.c-diff{width:18%!important}
  #tab-budget .bud-table th.c-av{width:15%!important}
- /* Avance visible en escritorio: barra + porcentaje, y S/ junto al monto editable. */
- #tab-budget .bud-table td.av{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
- #tab-budget .bud-table td.av .av-pct{grid-column:2;grid-row:1;display:inline-flex;align-items:center;gap:3px}
+ /* La celda de avance sigue siendo celda de tabla (bordes y centrado alineados); % fijo a la derecha, barra al lado. */
+ #tab-budget .bud-table td.av{white-space:nowrap}
+ #tab-budget .bud-table td.av .av-pct{float:right;width:58px;line-height:20px;display:inline-flex;align-items:center;justify-content:flex-end;gap:3px}
  #tab-budget .bud-table td.av .av-pct .vi{width:13px;height:13px}
- #tab-budget .budget-row-progress{display:block;grid-column:1;grid-row:1;height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden}
+ #tab-budget .budget-row-progress{display:block;margin:7px 66px 7px 0;height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden}
  #tab-budget .budget-row-progress i{display:block;height:100%;border-radius:inherit}
- #tab-budget .budget-plan-field{display:flex;align-items:center;gap:6px;max-width:150px;margin-left:auto}
+ /* S/ dentro del mismo campo que el monto. */
+ #tab-budget .budget-plan-field{display:flex;align-items:center;gap:6px;width:100%;max-width:140px;height:42px;margin-left:auto;padding:0 12px;box-sizing:border-box;border:1px solid var(--border);border-radius:var(--radius-sm,10px);background:var(--surface-2)}
+ #tab-budget .budget-plan-field:focus-within{outline:2px solid var(--ring,var(--primary));outline-offset:1px}
  #tab-budget .budget-currency{display:block;flex:none;color:var(--muted)}
- #tab-budget .bud-table .budget-input{flex:1 1 auto;min-width:0}
+ #tab-budget .bud-table .budget-input{flex:1 1 auto;min-width:0;max-width:none;height:100%;min-height:0;padding:0!important;border:0;background:transparent;box-shadow:none;outline:none}
+ #tab-budget .bud-table .bud-total td:nth-child(2){padding-right:21px}
+ #tab-budget .bud-table .bud-total td.av{text-align:right}
+ #tab-budget .bud-table .bud-total td.av .av-pct{float:none;display:inline-flex}
  #tab-budget .bud-table th,#tab-budget .bud-table td{padding:8px;vertical-align:middle}
  #tab-budget .bud-table th:first-child,#tab-budget .bud-table td:first-child{padding-left:0}
  #tab-budget .bud-table th:last-child,#tab-budget .bud-table td:last-child{padding-right:0}
  #tab-budget .bud-table .catcell{align-items:center;gap:10px}
  #tab-budget .bud-table .cname,#tab-budget .bud-table.wide-values .cname{display:block;max-width:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.45}
- #tab-budget .bud-table .budget-input{width:100%;max-width:140px;min-width:0;min-height:42px;height:42px;padding:8px 10px!important}
  #tab-budget .bud-table .plan-line,#tab-budget .bud-table.wide-values td.num{white-space:normal;overflow-wrap:anywhere}
- #tab-budget .bud-table.wide-values .budget-input{max-width:none}
+ #tab-budget .bud-table.wide-values .budget-plan-field{max-width:none}
 }
 @media(min-width:1201px){
  #tab-budget .bud-grid{grid-template-columns:minmax(0,1fr) 340px;gap:18px}
@@ -3387,3 +3391,64 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
 
 /* Gastos sobre el presupuesto: el aviso del indicador no depende solo del texto gris. */
 #tab-dashboard .metric-preview.neg{color:var(--expense)}
+
+/* 1.10.133: alta móvil con teclado propio, inspirada en Dime (github.com/rafsoh/dimeApp).
+   Importe grande al centro, nota debajo, fecha y categoría en una fila y teclado 3×4 con ✓ para guardar. */
+@media (max-width:600px), (max-width:960px) and (max-height:500px) and (pointer:coarse){
+ html #txDialog.tx-mobile-simple{height:var(--tx-viewport,calc(100dvh - 12px))}
+ html #txDialog.tx-mobile-simple .dlg-body{gap:10px;padding:4px 16px max(14px,env(safe-area-inset-bottom));overflow:hidden}
+ /* El ✓ del teclado guarda; el pie solo aparece con Opciones (Listo) o con el teclado del sistema abierto (Guardar). */
+ html #txDialog.tx-mobile-simple:not(.options-open):not(.kb-open) .dlg-foot{display:none}
+ html #txDialog.tx-mobile-simple .dlg-head>[data-close],html #txDialog.tx-mobile-simple #mobileTxOptions{width:44px;height:44px;border-radius:50%;background:var(--surface-2);color:var(--muted)}
+ html #txDialog.tx-mobile-simple.options-open #mobileTxOptions{background:var(--primary-soft);color:var(--primary)}
+ html #txDialog.tx-mobile-simple #txSeg{justify-self:center;flex:none;width:auto}
+ html #txDialog.tx-mobile-simple #txSeg>button{flex:none;min-height:40px;padding:0 16px;font-size:14px;font-weight:600}
+ /* Importe y nota ocupan el espacio libre y quedan centrados, como en Dime. */
+ html #txDialog.tx-mobile-simple .tx-amount{position:relative;align-items:baseline;margin:auto 0 0;padding:0 48px;min-height:72px}
+ #txDialog.tx-mobile-simple .tx-amount::before{font-size:24px;color:var(--muted);align-self:flex-start;margin-top:10px}
+ html #txDialog.tx-mobile-simple #fAmount{font-size:clamp(40px,14vw,60px);font-weight:600;letter-spacing:-.02em;text-align:center;caret-color:transparent;cursor:default;user-select:none;-webkit-user-select:none}
+ html #txDialog.tx-mobile-simple #fAmount:focus{outline:none;box-shadow:none}
+ #txDialog.tx-mobile-simple #mobileTxBackspace{position:absolute;right:0;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--surface-2);color:var(--muted)}
+ #txDialog.tx-mobile-simple #mobileTxBackspace .vi{width:20px;height:20px}
+ html #txDialog.tx-mobile-simple #mobileTxNote{min-height:40px;padding:0 14px;border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-weight:500}
+ html #txDialog.tx-mobile-simple .tx-note-field{justify-content:center}
+ html #txDialog.tx-mobile-simple #fDesc{max-width:280px;min-height:40px;border:1px solid var(--border);border-radius:12px;background:transparent}
+ /* Fecha a la izquierda, categoría con su color a la derecha. */
+ html #txDialog.tx-mobile-simple .mobile-tx-meta{display:flex;gap:8px;order:2;margin-top:auto}
+ html #txDialog.tx-mobile-simple #fDateField{flex:1;min-width:0}
+ html #txDialog.tx-mobile-simple #fDateField .dp-trigger{justify-content:flex-start;padding:0 12px;border:1.5px solid var(--border);border-radius:12px;background:transparent;font-size:15px;font-weight:600}
+ html #txDialog.tx-mobile-simple #fDateField .dp-trigger .vi{color:var(--muted);width:16px;height:16px}
+ html #txDialog.tx-mobile-simple #fDateField .dp-trigger .dp-l{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ html #txDialog.tx-mobile-simple #mobileTxCategory{flex:none;width:auto;max-width:55%;padding:0 14px;border:1.5px solid var(--cat-bg,var(--border));border-radius:12px;background:var(--cat-bg,transparent);color:var(--cat-ink,var(--text));font-size:15px;font-weight:600}
+ html #txDialog.tx-mobile-simple #mobileTxCategory>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ html #txDialog.tx-mobile-simple #mobileTxCategory .vi{width:16px;height:16px}
+ html #txDialog.tx-mobile-simple #mobileTxCategory.closing{border-color:transparent;background:var(--expense-soft);color:var(--expense)}
+ /* Teclado 3×4: el panel de categorías u opciones ocupa este mismo espacio. */
+ .tx-mobile-simple .mobile-tx-keypad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:10px;order:3;flex:none;height:clamp(232px,40dvh,330px)}
+ .tx-mobile-simple .mobile-tx-keypad button{display:grid;place-items:center;min-height:44px;padding:0;border:0;border-radius:12px;background:var(--surface-2);color:var(--text);font:inherit;font-size:28px;font-weight:400;font-variant-numeric:tabular-nums;touch-action:manipulation;transition:transform 90ms var(--motion-ease),filter 90ms}
+ .tx-mobile-simple .mobile-tx-keypad button:active{transform:scale(.96);filter:brightness(1.15)}
+ .tx-mobile-simple .mobile-tx-keypad .keypad-submit{background:var(--primary-fill,var(--primary));color:var(--on-primary)}
+ .tx-mobile-simple .mobile-tx-keypad .keypad-submit .vi{width:28px;height:28px}
+ .tx-mobile-simple .mobile-tx-keypad button:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:2px}
+ html #txDialog.tx-mobile-simple .tx-category-panel,html #txDialog.tx-mobile-simple .mobile-tx-extras{padding:0 16px 12px}
+ /* Categorías con su color, como en Dime; al elegir una, las demás se atenúan. */
+ html #txDialog.tx-mobile-simple .tx-category-panel #fCatChips .chip{border:2px solid transparent;background:var(--chip-tint,var(--surface-2));color:var(--chip-ink,var(--text));font-weight:600;box-shadow:none}
+ html #txDialog.tx-mobile-simple .tx-category-panel #fCatChips .chip .cico{background:transparent!important}
+ html #txDialog.tx-mobile-simple .tx-category-panel #fCatChips .chip.active{border-color:var(--chip-ink,var(--primary))}
+ html #txDialog.tx-mobile-simple .tx-category-panel #fCatChips:has(.chip.active) .chip:not(.active){opacity:.55}
+ /* Escribiendo la nota o buscando, el teclado del sistema reemplaza al propio. */
+ html #txDialog.tx-mobile-simple.kb-open .mobile-tx-keypad{display:none}
+ /* Aviso de campo faltante. */
+ .tx-mobile-simple .tx-shake{animation:tx-shake 320ms ease}
+ @keyframes tx-shake{20%,60%{translate:-5px 0}40%,80%{translate:5px 0}}
+ @media(prefers-reduced-motion:reduce){.tx-mobile-simple .tx-shake{animation:none}.tx-mobile-simple .mobile-tx-keypad button{transition:none}}
+ @media(max-height:640px){.tx-mobile-simple .mobile-tx-keypad{height:clamp(200px,36dvh,260px);gap:8px}html #txDialog.tx-mobile-simple .tx-amount{min-height:56px}}
+}
+/* Pantalla apaisada de teléfono: teclado a la derecha del importe (no aplica a un retrato con el teclado del sistema abierto). */
+@media (min-width:601px) and (max-width:960px) and (max-height:500px) and (pointer:coarse){
+ html #txDialog.tx-mobile-simple .dlg-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:1fr auto auto;column-gap:16px}
+ html #txDialog.tx-mobile-simple .tx-amount{grid-column:1;grid-row:1}
+ html #txDialog.tx-mobile-simple :is(#mobileTxNote,.tx-note-field){grid-column:1;grid-row:2}
+ html #txDialog.tx-mobile-simple .mobile-tx-meta{grid-column:1;grid-row:3}
+ .tx-mobile-simple .mobile-tx-keypad{grid-column:2;grid-row:1/4;height:auto}
+}

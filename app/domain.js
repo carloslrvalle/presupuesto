@@ -137,6 +137,17 @@ function pendingPays(m){
 }
 const isSavingCat = id => { const c = state.categories.find(x => x.id === id); return !!c && c.type === 'expense' && roleOf(c) === 'save'; };
 const activeSavingCats = () => catsActive('expense').filter(c => roleOf(c) === 'save');
+// Separar dinero (categoría de ahorro o aporte a meta) no es gasto: mismo criterio que BudgetFinance.savings.
+const isSavingTx = t => t.type === 'expense' && (isSavingCat(t.catId) || !!t.goalId);
+const spendSum = txs => sum(txs.filter(t => t.type === 'expense' && !isSavingTx(t)));
+const saveSum = txs => sum(txs.filter(isSavingTx));
+// Presupuesto de gasto sin las categorías de ahorro (mismo filtro de archivadas que planTotal)
+function planSpendTotal(m, cycle = cycleView()){
+  const cats = catsOf('expense').filter(c => !isSavingCat(c.id));
+  if (!cycle) return cats.reduce((s, c) => s + getBudget(m, c.id), 0);
+  const start = cyclePeriod(m).start.slice(0, 7);
+  return cats.filter(c => !isArch(c, start) || cycleReal(m, c.id)).reduce((s, c) => s + cycleBudget(m, c.id), 0);
+}
 
 function balanceOfMonth(month,data=state,today=todayISO()){return BudgetFinance.balance(data.transactions||[],month+'-01',dateFor(month,31),today);}
 /* ---------- Proyección del mes en curso ---------- */

@@ -48,9 +48,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;padding-bottom:6px;flex-wrap:wrap}
 /* Marca minimalista: título editable; logo y favicon ya cubren la identidad visual. */
 .brand{display:flex;align-items:center;font-weight:700;font-size:21px;letter-spacing:-.5px;min-height:42px}
-#appName{outline:none;padding:2px 6px;margin-left:-6px;border-radius:6px;cursor:text}
-#appName:hover{background:var(--surface-2)}
-#appName:focus{background:var(--surface);box-shadow:0 0 0 2px var(--primary)}
+#appName{padding:2px 6px;margin-left:-6px;border-radius:6px}
+.app-name-field{max-width:360px;margin:0 0 16px}
 .month-nav{position:relative;display:flex;align-items:center;gap:2px;height:42px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 4px}
 .month-nav button{border:0;background:transparent;height:32px;min-width:32px;border-radius:6px;cursor:pointer;font-size:18px;color:var(--muted);display:grid;place-items:center}
 .month-nav button .vi,.year-nav button .vi{width:18px;height:18px}
@@ -355,6 +354,8 @@ button.prow.link:focus-visible{outline:2px solid var(--ring,var(--primary));outl
 .cd-n{font-size:12px;align-self:flex-start;line-height:1.5}
 .cd-e{font-size:clamp(10px,20cqi,12px);font-weight:700;white-space:nowrap;color:var(--text)}
 .xp{color:var(--text);font-weight:700}
+/* Ahorro separado: transferencia neutra, no gasto. */
+.sv{color:var(--text)}
 
 .cd-r{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:99px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary)}
 .cd-r .vi{width:11px;height:11px}
@@ -649,12 +650,13 @@ dialog{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contai
 .bud-table td.num{white-space:nowrap}.bud-table td.av{text-align:right}
 .bud-table th,.bud-table td{padding:10px 8px}
 .bud-table thead th{font-size:11.5px;letter-spacing:.04em}
-.bud-table tfoot td{font-weight:700;font-size:14px;border-top:1px solid var(--border);padding-top:14px}
+.bud-table tfoot td,.bud-table .bud-total td{font-weight:700;font-size:14px;border-top:1px solid var(--border);padding-top:14px}
 .bud-table th:first-child,.bud-table td:first-child{padding-left:0}.bud-table .catcell .ico{width:30px;height:30px;font-size:14px}
 .bud-table .catcell{gap:9px;min-width:0}.bud-table .cname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .av-pct{font-size:12px;font-weight:700;color:var(--muted);min-width:34px;text-align:right}
 .av-pct.good{color:var(--income)}.av-pct.warn{color:var(--warn-ink,#854d0e)}.av-pct.over{color:var(--expense)}
-.bud-table tfoot td.av{text-align:right}
+.bud-table tfoot td.av,.bud-table .bud-total td.av{text-align:right}
+.bud-table .bud-group-head th{padding:22px 0 6px;text-align:left;font-size:11.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 tfoot td{font-weight:700;border-top:2px solid var(--border)}
 
 /* Categories editor */
@@ -1271,7 +1273,7 @@ html .history-category,html .bud-table .cname,html .catcell,html .cat-row input[
   font-size:var(--type-item);font-weight:600;line-height:1.5;
 }
 html .history-amount,html .bud-table td.num,html .bud-table .budget-input,
-html .bud-table tfoot td{font-size:var(--type-item);font-variant-numeric:tabular-nums;line-height:1.5}
+html .bud-table tfoot td,html .bud-table .bud-total td{font-size:var(--type-item);font-variant-numeric:tabular-nums;line-height:1.5}
 html .history-description,html .history-detail,html .history-day-date .history-day-title,
 html .history-day-date>span:not(.plan-pill),html .history-day-totals,
 html .small,html .sv-hint,html .sv-tip,html .pr-meta,html .pr-meta .delta,
@@ -1754,8 +1756,17 @@ button.sync-badge{font-family:inherit;cursor:pointer}.sync-badge.pending{color:v
  #tab-budget .bud-table,#tab-budget .bud-table.wide-values{width:100%;min-width:0;table-layout:fixed}
  #tab-budget .bud-table th.c-plan{width:19%!important}
  #tab-budget .bud-table th.c-real{width:19%!important}
- #tab-budget .bud-table th.c-diff{width:20%!important}
- #tab-budget .bud-table th.c-av{width:8%!important}
+ #tab-budget .bud-table th.c-diff{width:18%!important}
+ #tab-budget .bud-table th.c-av{width:15%!important}
+ /* Avance visible en escritorio: barra + porcentaje, y S/ junto al monto editable. */
+ #tab-budget .bud-table td.av{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+ #tab-budget .bud-table td.av .av-pct{grid-column:2;grid-row:1;display:inline-flex;align-items:center;gap:3px}
+ #tab-budget .bud-table td.av .av-pct .vi{width:13px;height:13px}
+ #tab-budget .budget-row-progress{display:block;grid-column:1;grid-row:1;height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden}
+ #tab-budget .budget-row-progress i{display:block;height:100%;border-radius:inherit}
+ #tab-budget .budget-plan-field{display:flex;align-items:center;gap:6px;max-width:150px;margin-left:auto}
+ #tab-budget .budget-currency{display:block;flex:none;color:var(--muted)}
+ #tab-budget .bud-table .budget-input{flex:1 1 auto;min-width:0}
  #tab-budget .bud-table th,#tab-budget .bud-table td{padding:8px;vertical-align:middle}
  #tab-budget .bud-table th:first-child,#tab-budget .bud-table td:first-child{padding-left:0}
  #tab-budget .bud-table th:last-child,#tab-budget .bud-table td:last-child{padding-right:0}
@@ -2163,7 +2174,9 @@ dialog::before{flex-shrink:0}
 @media(max-width:700px){
  #tab-budget .bud-table{display:block;min-width:0;width:100%}
  #tab-budget .bud-table thead{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%)}
- #tab-budget .bud-table tfoot{display:none}
+ #tab-budget .bud-table tfoot,#tab-budget .bud-table .bud-total{display:none}
+ #tab-budget .bud-table .bud-group-head{display:block;padding:16px 0 4px;border-bottom:0}
+ #tab-budget .bud-table .bud-group-head th{display:block;padding:0}
  #tab-budget .bud-table tbody{display:grid}
  #tab-budget .bud-table tbody tr{
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 14px;
@@ -3371,3 +3384,6 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
 .topbar .month-nav>button:focus-visible,#desktopLayoutToggle:focus-visible{
  outline:2px solid var(--primary);outline-offset:-2px
 }
+
+/* Gastos sobre el presupuesto: el aviso del indicador no depende solo del texto gris. */
+#tab-dashboard .metric-preview.neg{color:var(--expense)}

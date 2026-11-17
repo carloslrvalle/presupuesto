@@ -256,8 +256,8 @@ const THEMES = [
   }];
 const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
 const MOBILE_PALETTE = {
-  light:{bg:'#f2f5fa',surface:'#ffffff',s2:'#e9eef5',border:'#dce4ee',text:'#152235',muted:'#526278',accent:'#005ecb',income:'#16764e',expense:'#b93349',savings:'#916000'},
-  dark:{bg:'#10141c',surface:'#1b2330',s2:'#253143',border:'#334056',text:'#eff4fc',muted:'#adbed3',accent:'#83bcff',income:'#6dd5a3',expense:'#ff899b',savings:'#f7c66c'}
+  light:{bg:'#f2f5fa',surface:'#ffffff',s2:'#e9eef5',border:'#dce4ee',text:'#152235',muted:'#526278',accent:'#005ecb'},
+  dark:{bg:'#10141c',surface:'#1b2330',s2:'#253143',border:'#334056',text:'#eff4fc',muted:'#adbed3',accent:'#83bcff'}
 };
 function mobilePalette(t, dark){
   return mobileLayout.matches && t.id === 'vercel' ? MOBILE_PALETTE[dark ? 'dark' : 'light'] : null;
@@ -383,7 +383,7 @@ function renderThemes(){
     const dark=t.mode==='dark'||(!t.mode&&matchMedia('(prefers-color-scheme: dark)').matches), ui=themeUi(t,dark), surface=ui?.surface||(dark?'#101114':'#ffffff');
     const bg=ui?.bg||(dark?'#060708':'#f4f5f8'), series=themeSeries(t,surface,dark), cols=themeColors(t);
     const categories=[0,1,2,3,4].map(i=>fitThemeColor(cols[i],surface,3));
-    const description=mobilePalette(t,dark)?'Azul, verde y coral, sigue el modo del sistema':t.desc;
+    const description=t.desc;
     return `<div class="theme-option"><button type="button" class="theme-card${t.id===cur?' active':''}" data-theme="${t.id}" aria-pressed="${t.id===cur}" title="${esc(description)}">
       <div class="theme-preview" style="--preview-bg:${bg};--preview-surface:${surface};--preview-income:${series.income};--preview-expense:${series.expense};--preview-saving:${series.savings}">
         <div class="theme-preview-bars">${[40,65,53,82,68,92].map((v,i)=>`<i style="height:${v}%"></i><i class="out" style="height:${v*.67}%"></i>`).join('')}</div>
@@ -434,13 +434,14 @@ $('#applyColor').onclick=()=>{if($('#applyColor').disabled)return;const cb=color
 $('#colorHex').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#applyColor').click();}});
 
 /* ---------- Nombre de la app ---------- */
-const nameEl = $('#appName');
+const nameEl = $('#appName'), nameInput = $('#appNameInput');
 function applyBrand(){
   const mode = curTheme().mode;
   document.documentElement.dataset.theme = curTheme().id;
   if (mode) document.documentElement.dataset.mode = mode; else delete document.documentElement.dataset.mode;
   const n = state.settings.appName || 'Presupuesto';
-  if (document.activeElement !== nameEl) nameEl.textContent = n;
+  nameEl.textContent = n;
+  if (document.activeElement !== nameInput) nameInput.value = n;
   document.title = n;
   applyUiIcons(); applyThemeVars(); applyAccent(); applyAppFont(); applyBrowserChrome();cacheBootAppearance();
 }
@@ -473,11 +474,12 @@ function fitThemeColor(color, background, minimum=3){
   return target;
 }
 function themeSeries(t, surface, dark = isDarkUI()){
-  const p = themePalette(t, dark), mobile = mobilePalette(t, dark);
+  // Ingresos, gastos y ahorro conservan el mismo color en móvil y escritorio: el móvil solo cambia superficies.
+  const p = themePalette(t, dark);
   return {
-    income:fitThemeColor(mobile?.income || p?.['chart-2'] || t.inc || '#329477',surface),
-    expense:fitThemeColor(mobile?.expense || p?.['chart-1'] || t.exp || '#d7657b',surface),
-    savings:fitThemeColor(mobile?.savings || p?.['chart-5'] || t.sav || '#8b7aca',surface)
+    income:fitThemeColor(p?.['chart-2'] || t.inc || '#329477',surface),
+    expense:fitThemeColor(p?.['chart-1'] || t.exp || '#d7657b',surface),
+    savings:fitThemeColor(p?.['chart-5'] || t.sav || '#8b7aca',surface)
   };
 }
 function applyThemeVars(){
@@ -542,12 +544,13 @@ function applyAccent(){
   r.setProperty('--primary-fill', fill); r.setProperty('--on-primary', contrast('#111113',fill)>contrast('#ffffff',fill)?'#111113':'#ffffff');
   r.setProperty('--accent', fill); r.setProperty('--accent-bg', bg); r.setProperty('--accent-ink', ink);
 }
-nameEl.addEventListener('keydown', e => {
-  if (e.key === 'Enter'){ e.preventDefault(); nameEl.blur(); }
-  if (e.key === 'Escape'){ nameEl.textContent = state.settings.appName || 'Presupuesto'; nameEl.blur(); }
+// El nombre se edita en Ajustes: en la cabecera era fácil cambiarlo por accidente.
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); nameInput.blur(); }
+  if (e.key === 'Escape'){ nameInput.value = state.settings.appName || 'Presupuesto'; nameInput.blur(); }
 });
-nameEl.addEventListener('blur', () => {
-  const v = nameEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 40) || 'Presupuesto';
+nameInput.addEventListener('change', () => {
+  const v = nameInput.value.replace(/\s+/g, ' ').trim().slice(0, 40) || 'Presupuesto';
   if (v !== (state.settings.appName || 'Presupuesto')){ state.settings.appName = v; save(); toast('Nombre actualizado'); }
   applyBrand();
 });

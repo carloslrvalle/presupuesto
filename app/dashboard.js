@@ -96,14 +96,16 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
  const row=(label,value,cls='')=>`<div class="metric-detail-row"><span>${label}</span><b class="${cls}">${value}</b></div>`;
  const incomeRemaining=Math.max(0,bInc-inc),expenseRemaining=bExp-exp;
  $('#kIncomePreview').textContent=inc?'Ingresos recibidos':'Aún sin ingresos';
- $('#kExpensePreview').textContent=!bExp?'Sin presupuesto':expenseRemaining<-.005?'Presupuesto superado':'Dentro del presupuesto';
+ const expensePreview=$('#kExpensePreview'),overBudget=bExp&&expenseRemaining<-.005;
+ expensePreview.textContent=!bExp?'Sin presupuesto':overBudget?`Te pasaste ${fmt(-expenseRemaining)} del presupuesto`:`Quedan ${fmt(expenseRemaining)} de ${fmt(bExp)}`;
+ expensePreview.classList.toggle('neg',!!overBudget);
  $('#kBalancePreview').textContent='Al cierre del período';
  $('#kSavingsPreview').textContent='Sobre tus ingresos';
  $('#kIncomeSub').innerHTML=row('Esperado',bInc?fmt(bInc):'Sin definir')+row(!bInc&&inc?'No previsto':inc>bInc&&bInc?'Adicional':'Por recibir',bInc?fmt(inc>bInc?inc-bInc:incomeRemaining):inc?fmt(inc):'—');
  const incomeFoot=$('#kIncomeFoot');
  incomeFoot.innerHTML=bInc?`${Math.round(inc/bInc*100)}% de lo esperado`:pInc?`${fmt(pInc)} programados`:'Sin expectativa de ingresos';
  incomeFoot.title=pp.length?pp.map(x=>`${x.c.name}: ${payRange(x.a,x.b,m)}`).join('\n'):pInc?`${fmt(pInc)} con fecha futura`:'';
- $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso':'Disponible',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'')+(sv.sep>.005?row('Incluye ahorro',fmt(sv.sep)):'');
+ $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso':'Disponible',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'')+(sv.sep>.005?row('Ahorro aparte',fmt(sv.sep)):'');
  const expenseFoot=$('#kExpenseFoot');expenseFoot.innerHTML=!bExp?'Define un presupuesto':budgetStatus(exp,bExp)==='complete'?'Presupuesto completo':expenseRemaining<0?'Presupuesto superado':pace||pExp?pace||`${fmt(pExp)} programados`:`${Math.round(exp/bExp*100)}% del presupuesto usado`;
  $('#balanceParts').innerHTML=row('Saldo anterior',fmt(cash.previous))+row(cycleView()?'Resultado del ciclo':'Resultado del mes',fmt(cash.result),cash.result<0?'neg':'');
  $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';
@@ -118,20 +120,20 @@ function renderDashboard(){
   $('#firstConnect').hidden = syncOn();
   const cy=cycleView();ensureCyclePlan(currentMonth);renderPeriodControls();
   const m = currentMonth, txs = planTx(m);
-  const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense'));
-  const bInc = planTotal(m,'income'), bExp = planTotal(m,'expense');
+  const inc = sum(txs.filter(t => t.type === 'income')), exp = spendSum(txs);
+  // Gastos y su presupuesto excluyen lo separado como ahorro: ahorrar más no es gastar de más.
+  const bInc = planTotal(m,'income'), bExp = planSpendTotal(m);
   countUp($('#kIncome'), inc);
-  const pInc = planPlanned(m, 'income'), pExp = planPlanned(m, 'expense');
+  const pInc = planPlanned(m, 'income'), pExp = spendSum(planTxAll(m).filter(isPlanned));
   const pp = cy ? [] : pendingPays(m);
   countUp($('#kExpense'), exp);
-  // Cuánto puedes gastar por día hasta fin de mes (sin contar lo que es para ahorrar ni lo ya programado)
+  // Cuánto puedes gastar por día hasta fin de mes (bExp ya excluye el ahorro; se descuenta lo programado)
   // Gastos: lo que el presupuesto aún permite gastar (no es dinero disponible, es el plan)
   let pace = '';
   if (m === planCurrentMonth() && bExp > exp){
     const daysLeft = cy ? Math.max(1, Math.round((Date.parse(cyclePeriod(m).end)-Date.parse(todayISO()))/864e5)+1) : daysIn(m)-new Date().getDate()+1;
-    const savLeft = catsOf('expense').filter(c => isSavingCat(c.id)).reduce((a, c) => a + Math.max(0, planBudget(m, c.id) - planReal(m, c.id)), 0);
-    const free = bExp - exp - pExp - savLeft;
-    const how = [`Gastos pendientes según tu presupuesto: ${fmt(bExp - exp)}`, pExp ? `− ${fmt(pExp)} ya programados` : '', savLeft ? `− ${fmt(savLeft)} reservados para ahorro` : '', `= ${fmt(free)} para el día a día ÷ ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} que quedan`, 'Es un tope para no pasarte del presupuesto, no dinero disponible en tu cuenta.'].filter(Boolean).join('\n');
+    const free = bExp - exp - pExp;
+    const how = [`Gastos pendientes según tu presupuesto: ${fmt(bExp - exp)}`, pExp ? `− ${fmt(pExp)} ya programados` : '', `= ${fmt(free)} para el día a día ÷ ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} que quedan`, 'Es un tope para no pasarte del presupuesto, no dinero disponible en tu cuenta.'].filter(Boolean).join('\n');
     if (free > 0) pace = `<span class="per-day" title="${how}">Para no pasarte: máx. <b>${fmt(free / daysLeft)}</b>/día</span>`;
   }
   const cash=planBalance(m);
@@ -142,7 +144,7 @@ function renderDashboard(){
   const incEnd = closed ? inc : prj.projInc, expEnd = closed ? exp : prj.projExp, freeEnd = incEnd - expEnd;
   const closing=cash.previous+freeEnd;
   const sv = planSavings(m);
-  if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value' + (sv.pct ? (sv.saved >= sv.target ? ' pos' : '') : '')); else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
+  if (sv.rate != null) countUp($('#kSavings'), sv.rate, 'pct', 'value'); // la meta cumplida se indica en el pie, no con el color de Ingresos else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
   renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv});
 
 
@@ -168,7 +170,7 @@ function renderDashboard(){
   $('#bvaExpense').innerHTML = rows('expense');
   animateBars($('#tab-dashboard'));
 
-  const top = txs.filter(t => t.type === 'expense').sort((a,b) => b.date.localeCompare(a.date) || (Number(b.created)||0)-(Number(a.created)||0)).slice(0,5);
+  const top = txs.filter(t => t.type === 'expense' && !isSavingTx(t)).sort((a,b) => b.date.localeCompare(a.date) || (Number(b.created)||0)-(Number(a.created)||0)).slice(0,5);
   $('#topExp').innerHTML = top.length ? top.map(t => { const c = getCat(t.catId); return `<button type="button" class="prow link" data-go-tx="${esc(t.id)}" title="Editar movimiento">
     <span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span>
     <span class="top-exp-copy"><span class="name">${esc(t.desc || c.name)}</span><span class="small muted">${t.desc ? esc(c.name) + ' · ' : ''}${t.method ? `<span class="recent-method">${esc(t.method)} · </span>` : ''}${fmtDate(t.date)}</span></span>
@@ -186,7 +188,7 @@ function renderSparks(m){
   const end = m > thisMonth() ? thisMonth() : m;
   const ms = Array.from({length:6}, (_, i) => shiftMonth(end, i - 5));
   const inc = ms.map(x => sum(txOfMonth(x).filter(t => t.type === 'income')));
-  const exp = ms.map(x => sum(txOfMonth(x).filter(t => t.type === 'expense')));
+  const exp = ms.map(x => spendSum(txOfMonth(x)));
   const bal = ms.map(month=>balanceOfMonth(month).total);
   const show = ms.filter((_, i) => inc[i] || exp[i]).length >= 2;
   [['spIncome', inc, 'var(--income)'], ['spExpense', exp, 'var(--expense)'], ['spBalance', bal, 'var(--primary)']].forEach(([id, v, col]) => {
@@ -241,8 +243,9 @@ function sliceCols(data, bump){
 function renderCharts(){
   // Distribución horizontal: cada categoría se lee una vez, sin repetir el total del indicador.
   const m = currentMonth;
-  let data = catsOf('expense').map(c => ({c, v: planReal(m,c.id)})).filter(x => x.v > 0).sort((a,b) => b.v - a.v);
-  const orphan = sum(planTx(m).filter(t => t.type === 'expense' && !state.categories.some(c => c.id === t.catId)));
+  const spendTx = planTx(m).filter(t => t.type === 'expense' && !isSavingTx(t));
+  let data = catsOf('expense').map(c => ({c, v: sum(spendTx.filter(t => t.catId === c.id))})).filter(x => x.v > 0).sort((a,b) => b.v - a.v);
+  const orphan = sum(spendTx.filter(t => !state.categories.some(c => c.id === t.catId)));
   if (orphan) data.push({c:getCat(null), v:orphan});
   data.sort((a,b)=>b.v-a.v);
   const dw = $('#donutWrap'), totalD = data.reduce((a,x)=>a+x.v,0);
@@ -263,7 +266,7 @@ function renderCharts(){
   const first = availableMonths.findIndex(mm => planTx(mm).some(t=>t.type==='income'||t.type==='expense'));
   const months = first<0 ? availableMonths : availableMonths.slice(first);
   const incs = months.map(x => sum(planTx(x).filter(t => t.type === 'income')));
-  const exps = months.map(x => sum(planTx(x).filter(t => t.type === 'expense')));
+  const exps = months.map(x => spendSum(planTx(x)));
   const bw = $('#barsWrap');
   $('#dashboardEvolutionPeriod').textContent=months.length===1?'Este '+(cycleView()?'ciclo':'mes'):'Últimos '+months.length+' '+(cycleView()?'ciclos':'meses');
   const labels=months.map(mm=>innerWidth<=700?monthAbbr(mm):cycleView()?'Cic. '+monthAbbr(mm):monthShort(mm));

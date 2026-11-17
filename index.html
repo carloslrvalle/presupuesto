@@ -78,7 +78,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 <header class="topbar">
   <div class="wrap">
     <div class="brand">
-      <span id="appName" contenteditable="true" spellcheck="false" title="Clic para cambiar el nombre">Presupuesto</span>
+      <span id="appName">Presupuesto</span>
     </div>
     <div class="head-right">
       <div class="top-pair"><button type="button" class="prof-chip" id="profChip" aria-haspopup="true" aria-expanded="false" title="Cambiar de usuario"><span class="prof-av" id="profAv"></span><span class="prof-nm" id="profNm"></span><span class="prof-cv" id="profCv"></span></button><button type="button" class="sync-badge" id="syncBadge" aria-label="Estado del guardado" hidden></button></div>
@@ -117,15 +117,16 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <details class="card kpi metric-disclosure"><summary><div class="label"><span class="dot ui-ic" data-e="⚖️" style="--k:var(--k-blue)"></span>Saldo acumulado</div><div class="value" id="kBalance"></div><div class="metric-preview small muted" id="kBalancePreview"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="balanceParts"></div><div class="metric-footer small muted" id="kBalanceSub"></div><button type="button" class="metric-action" data-metric-go="all">Ver movimientos<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
       <details class="card kpi metric-disclosure"><summary><div class="label"><span class="dot ui-ic" data-e="🐷" style="--k:var(--k-violet)"></span>Tasa de ahorro</div><div class="value" id="kSavings"></div><div class="metric-preview small muted" id="kSavingsPreview"></div><span class="metric-chevron" aria-hidden="true"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary><div class="metric-expanded"><div class="metric-details" id="kSavingsSub"></div><div class="metric-footer small muted" id="kSavingsFoot"></div><button type="button" class="metric-action" data-metric-go="budget">Ver presupuesto<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></details>
       </div>
-    <div class="grid2 dashboard-charts">
-      <div class="card"><div class="dashboard-chart-heading"><h3>Gastos por categoría</h3><p>Distribución del período</p></div><div id="donutWrap"></div></div>
-      <div class="card"><div class="dashboard-chart-heading"><h3>Evolución de ingresos y gastos</h3><p id="dashboardEvolutionPeriod">Últimos 6 meses</p></div><div class="chart-wrap" id="barsWrap"><canvas id="chBars"></canvas></div></div>
-    </div>
+    <!-- El estado del presupuesto va antes de los gráficos: responde «¿cómo voy?» primero. -->
     <div class="grid2 top">
-      <details class="card section-disclosure dashboard-secondary"><summary><h3>Presupuesto vs real · Gastos</h3></summary><div class="disclosure-body"><div id="bvaExpense"></div></div></details>
+      <details class="card section-disclosure dashboard-secondary" open><summary><h3>Presupuesto vs real · Gastos</h3></summary><div class="disclosure-body"><div id="bvaExpense"></div></div></details>
       <div>
-        <details class="card section-disclosure dashboard-secondary"><summary><h3>Gastos recientes</h3></summary><div class="disclosure-body"><div id="topExp"></div></div></details>
+        <details class="card section-disclosure dashboard-secondary" open><summary><h3>Gastos recientes</h3></summary><div class="disclosure-body"><div id="topExp"></div></div></details>
       </div>
+    </div>
+    <div class="grid2 dashboard-charts">
+      <div class="card"><div class="dashboard-chart-heading"><h3>Gastos por categoría</h3><p>Distribución del período, sin ahorro</p></div><div id="donutWrap"></div></div>
+      <div class="card"><div class="dashboard-chart-heading"><h3>Evolución de ingresos y gastos</h3><p id="dashboardEvolutionPeriod">Últimos 6 meses</p></div><div class="chart-wrap" id="barsWrap"><canvas id="chBars"></canvas></div></div>
     </div>
   </section>
 
@@ -233,6 +234,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     </div>
     <div class="card" style="margin-bottom:16px">
       <h3><span class="ui-ic" data-e="🎨"></span>Personalización · Tema de colores</h3>
+      <div class="field app-name-field"><label for="appNameInput">Nombre de la app</label><input type="text" id="appNameInput" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="done"></div>
       <p class="small muted" id="themeNote" style="margin:-4px 0 12px"></p>
       <div class="theme-grid" id="themeGrid"></div>
     </div>

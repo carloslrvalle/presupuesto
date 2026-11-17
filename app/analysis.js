@@ -8,7 +8,7 @@ const fmt0 = n => n ? Math.round(n).toLocaleString('es-PE') : '–';
 const alphaHex = a => Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, '0');
 const ANALYSIS_METRICS={
   income:{label:'Ingresos',title:'Ingresos mes a mes',color:'--income-chart',help:'Ingresos registrados; no incluye cobros programados.'},
-  expense:{label:'Gastos',title:'Gastos mes a mes',color:'--expense-chart',help:'Gastos registrados, incluido lo que separas en categorías de ahorro; no incluye pagos programados.'},
+  expense:{label:'Gastos',title:'Gastos mes a mes',color:'--expense-chart',help:'Gastos registrados, sin contar lo que separas como ahorro; no incluye pagos programados.'},
   savings:{label:'Ahorro',title:'Ahorro mes a mes',color:'--k-violet',help:'Ahorro de cada mes según la forma de ahorro que elegiste.'},
   rate:{label:'Tasa de ahorro',title:'Tasa de ahorro mes a mes',color:'--primary',help:'Ahorro sobre los ingresos del mes. Sin ingresos, no hay tasa.'}
 };
@@ -31,7 +31,7 @@ function analysisMonthlyValue(month){
   const d=analysisData,index=d?.months.indexOf(month)??-1;
   if(index>=0)return analysisMetric==='income'?d.tot[index].inc:analysisMetric==='expense'?d.tot[index].exp:analysisMetric==='rate'?d.rates[index]:d.bal[index];
   const tx=txOfMonth(month),income=sum(tx.filter(t=>t.type==='income'));
-  return analysisMetric==='income'?income:analysisMetric==='expense'?sum(tx.filter(t=>t.type==='expense')):analysisMetric==='rate'?(income?savingsOf(month).saved/income*100:null):savingsOf(month).saved;
+  return analysisMetric==='income'?income:analysisMetric==='expense'?spendSum(tx):analysisMetric==='rate'?(income?savingsOf(month).saved/income*100:null):savingsOf(month).saved;
 }
 function analysisDisplayValue(month){
   if (analysisChartMode !== 'total') return analysisMonthlyValue(month);
@@ -67,7 +67,8 @@ function analysisChange(current,previous){
 }
 function analysisThrough(month,day){
   const end=dateFor(month,day), tx=txOfMonth(month).filter(t=>t.date<=end);
-  if(analysisMetric==='income'||analysisMetric==='expense')return sum(tx.filter(t=>t.type===analysisMetric));
+  if(analysisMetric==='income')return sum(tx.filter(t=>t.type==='income'));
+  if(analysisMetric==='expense')return spendSum(tx);
   const savings=BudgetFinance.savings(tx,{
     savingIds:state.categories.filter(c=>isSavingCat(c.id)).map(c=>c.id),
     mode:saveMode(),pct:savePctOf(month)
@@ -278,6 +279,7 @@ function renderAnalysis(){
   const yearTx = state.transactions.filter(t => t.date.slice(0,4) === y && !isPlanned(t));
   const grid = {};
   yearTx.forEach(t => {
+    if (isSavingTx(t)) return; // el ahorro separado no es gasto: queda en la métrica Ahorro
     const known = state.categories.some(c => c.id === t.catId);
     const k = t.type + ':' + (known ? t.catId : '_none');
     (grid[k] = grid[k] || Array(12).fill(0))[Number(t.date.slice(5,7)) - 1] += Number(t.amount) || 0;

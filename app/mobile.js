@@ -265,7 +265,9 @@ function renderMobileBudget(){
   const m = currentMonth;
   const rows = catsOf('expense').filter(c => !isArch(c,cycleView()?cyclePeriod(m).start.slice(0,7):m) || planReal(m,c.id))
     .map(c => ({c, budget:planBudget(m,c.id), real:planReal(m,c.id)}));
-  const budget = rows.reduce((total,row) => total+row.budget,0), real = rows.reduce((total,row) => total+row.real,0);
+  // El indicador mide solo gasto: las categorías de ahorro no lo empujan a «exceso».
+  const spendRows = rows.filter(row => !isSavingCat(row.c.id));
+  const budget = spendRows.reduce((total,row) => total+row.budget,0), real = spendRows.reduce((total,row) => total+row.real,0);
   const left = budget-real, used = budget>0 ? Math.max(0,real/budget*100) : 0;
   $('#mobileBudgetRange').textContent = cycleView() ? 'Por ciclo de sueldo' : 'Por mes';
   $('#mobileBudgetGauge').innerHTML = `<div class="mobile-budget-gauge"><svg viewBox="0 0 240 140" aria-hidden="true"><path class="gauge-track" d="M24 120 A96 96 0 0 1 216 120" pathLength="100"/><path class="gauge-fill${left<0?' over':''}" d="M24 120 A96 96 0 0 1 216 120" pathLength="100" stroke-dasharray="${Math.min(100,used)} 100"/></svg><div class="mobile-gauge-copy"><span>${budget>0?(left<0?'Exceso del presupuesto':'Por gastar del presupuesto'):'Presupuesto de gastos'}</span><strong class="${budget>0&&left<0?'neg':''}">${budget>0?fmt(Math.abs(left)):'Sin definir'}</strong><small>${budget>0?`${pctTxt(used)} usado`:'Asigna un monto por categoría'}</small></div></div><p class="mobile-gauge-totals"><span>Gastado <b>${fmt(real)}</b></span><span>Plan <b>${fmt(budget)}</b></span></p>`;
@@ -331,7 +333,7 @@ function renderMobileMovements(scope, filtered){
   $('#mobileMovementReset').hidden = !filtered;
   const cycle = scope === 'cycle';
   const period = cycle ? cyclePeriod(currentMonth) : {start:dateFor(currentMonth,1),end:dateFor(currentMonth,daysIn(currentMonth))};
-  const expenses = (cycle ? cycleTx(currentMonth) : txOfMonth(currentMonth)).filter(t => t.type === 'expense');
+  const expenses = (cycle ? cycleTx(currentMonth) : txOfMonth(currentMonth)).filter(t => t.type === 'expense' && !isSavingTx(t));
   const weeks = [];
   // Las semanas terminan en domingo y se recortan al período visible.
   for(let start=period.start;start<=period.end;){

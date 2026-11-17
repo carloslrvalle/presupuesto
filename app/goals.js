@@ -56,13 +56,14 @@ function renderGoals(){
       const r3 = [0, 1, 2].map(k => shiftMonth(tm, -k)).map(mm => sum(gx.filter(x => x.t.date.slice(0, 7) === mm).map(x => x.t)));
       const pace = r3.reduce((a, v) => a + v, 0) / 3;
       let eta = '';
-      if (pace > 0){
+      if (pace > 0 && rem <= pace) eta = `<div class="goal-eta ok">${ic('check')} Casi lista: con un aporte de ${fmt(rem)} la completas</div>`;
+      else if (pace > 0){
         const n = Math.ceil(rem / pace), when = shiftMonth(tm, n), w = monthLong(when).toLowerCase();
         const late = g.deadline && when > g.deadline.slice(0, 7) ? monthsBetween(g.deadline.slice(0, 7), when) : 0;
         eta = late ? `<div class="goal-eta warn">${ic('clock')} Si mantienes tu promedio, llegarías en ${w}, después de la fecha objetivo</div>`
                    : `<div class="goal-eta ok">${ic('trending-up')} Si mantienes tu promedio, llegarías en ${w}</div>`;
       } else eta = `<div class="goal-eta">${ic('clock')} Sin aportes en los últimos 3 meses</div>`;
-      stats = eta + `<div class="goal-stats">${stat('Faltan', fmt(rem))}${g.deadline ? (ml > 0 ? stat('Ahorra al mes', fmt(rem / ml)) : stat('Plazo', 'Vencido', 'neg')) : stat('Plazo', 'Libre')}${stat('Este mes', fmt(monthAmt), monthAmt ? 'pos' : '')}</div>`;
+      stats = eta + `<div class="goal-stats">${stat('Faltan', fmt(rem))}${g.deadline ? (ml > 0 ? stat('Ahorra al mes', fmt(rem / ml)) : stat('Plazo', 'Vencido', 'neg')) : stat('Plazo', 'Libre')}${stat('Este mes', fmt(monthAmt))}</div>`;
     }
     // Compartida: quién la creó y cuánto aportó cada uno
     const owner = profOf(goalOwner(g)), other = profOf(goalOwner(g) === 'p1' ? 'p2' : 'p1'), sp = goalSplit(g), spT = sp.p1 + sp.p2;
@@ -175,7 +176,7 @@ function maybeMonthClose(){
   const cy=cycleEnabled(),tm = cy?cycleMonthForDate():thisMonth(), pm = shiftMonth(tm, -1), dialog = $('#closeDialog'),closeKey=cy?cycleBudgetKey(tm):tm;
   if (bothMode || document.querySelector('dialog[open]') || state.settings.lastClose === closeKey || !state.settings.onboarded && !state.transactions.length) return;
   const txs = cy?cycleTx(pm):txOfMonth(pm); if (!txs.length){ state.settings.lastClose = closeKey; return save(); }
-  const inc = sum(txs.filter(t => t.type === 'income')), exp = sum(txs.filter(t => t.type === 'expense')), bExp = cy?cycleTotal(pm,'expense'):totalBudget(pm, 'expense'), sv = cy?cycleSavings(pm):savingsOf(pm), cash = cy?cycleBalance(pm):balanceOfMonth(pm);
+  const inc = sum(txs.filter(t => t.type === 'income')), exp = spendSum(txs), bExp = planSpendTotal(pm, cy), sv = cy?cycleSavings(pm):savingsOf(pm), cash = cy?cycleBalance(pm):balanceOfMonth(pm);
   const result = cash.result, positive = result > .005;
   $('#clTitle').textContent = cy?'Cierre del ciclo':'Cierre de ' + monthLong(pm).toLowerCase();
   const k = (l,v,cls='',tone='neutral') => `<div data-tone="${tone}"><span>${l}</span><b class="${cls}">${v}</b></div>`;

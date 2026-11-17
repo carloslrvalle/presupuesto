@@ -3,9 +3,9 @@
 function budgetTable(type){
   const m = currentMonth, cats = catsOf(type).filter(c => !isArch(c, cycleView()?cyclePeriod(m).start.slice(0,7):m) || planReal(m, c.id)), isE = type === 'expense';
   let tb = 0, tr = 0;
-  const body = cats.map(c => {
-    const b = planBudget(m,c.id), r = planReal(m,c.id); tb += b; tr += r;
+  const row = c => {
     const sav = isE && isSavingCat(c.id); // en la categoría de ahorro, pasarse del plan es bueno
+    const b = planBudget(m,c.id), r = planReal(m,c.id); if (!sav){ tb += b; tr += r; } // el ahorro no suma al total de gastos
     const diff = isE && !sav ? b - r : r - b, raw = b > 0 ? r / b * 100 : 0, pct = Math.min(raw, 100);
     const status=budgetStatus(r,b),alert=isE&&!sav?(status==='over'?'over':status==='near'?'warn':status==='complete'?'complete':''):'';
     const usageHint = alert === 'warn' ? ' title="Cerca del límite"' : alert === 'over' ? ' title="Presupuesto superado"' : '';
@@ -17,16 +17,19 @@ function budgetTable(type){
       <td class="num" data-mobile-label="Plan">${(cycleView() || payActive(c, m)) ? `<label class="budget-plan-field"><span class="budget-currency" aria-hidden="true">S/</span><input type="number" inputmode="decimal" class="budget-input" min="0" step="0.01" data-bud="${esc(c.id)}" aria-label="${isE?'Presupuesto':'Ingreso esperado'} de ${esc(c.name)}" value="${b || ''}" placeholder="0"></label>` : `<span class="off-month" title="Según su día de pago no llega en ${monthLong(m).split(' ')[0].toLowerCase()}">${ic('calendar-x')}${payLabel(c.pay)}</span>`}</td>
       <td class="num${r ? '' : ' muted'}" data-mobile-label="Real"><span class="budget-real">${fmt(r)}</span>${planPlanned(m, type, c.id) ? `<div class="plan-line">+ ${fmt(planPlanned(m, type, c.id))} prog.</div>` : ''}</td>
       <td class="num" data-mobile-label="${isE?(sav?(diff>=0?'Ahorro adicional':'Por ahorrar'):'Disponible'):incomeLabel}">${!b && !r ? '<span class="muted">—</span>' : isE ? (sav ? (diff >= 0 ? `<b class="pos">${diff > .005 ? '+' : ''}${fmt(diff)}</b>` : `<span class="muted">${fmt(-diff)}</span>`) : `<b class="${diff > .005 ? 'pos' : diff < -.005 ? 'neg' : 'muted'}">${fmt(diff)}</b>${b > 0 && diff >= 0 && diff - planPlanned(m, type, c.id) < -.005 ? `<div class="plan-line neg" title="Con lo programado (${fmt(planPlanned(m, type, c.id))}) te pasarías del presupuesto">→ ${fmt(diff - planPlanned(m, type, c.id))}</div>` : ''}`) : `${incomeDiff}${!b && r ? '<small class="income-unplanned">No previsto</small>' : ''}`}</td>
-      <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}"${usageHint}>${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
+      <td class="av"><span class="av-pct ${alert}${sav && raw >= 100 ? ' good' : ''}"${usageHint}>${alert === 'over' ? ic('triangle-alert') : ''}${b > 0 ? pctTxt(raw) : '—'}</span><span class="budget-row-progress" aria-hidden="true"><i style="width:${pct}%;background:${barFill(c.color,alert)}"></i></span></td>
     </tr>`;
-  }).join('');
+  };
+  const body = cats.filter(c => !(isE && isSavingCat(c.id))).map(row).join('');
+  const saveCats = isE ? cats.filter(c => isSavingCat(c.id)) : [];
+  const saveBody = saveCats.length ? `<tbody class="bud-save-group"><tr class="bud-group-head"><th colspan="5" scope="rowgroup">Ahorro · no cuenta como gasto</th></tr>${saveCats.map(row).join('')}</tbody>` : '';
   const td = isE ? tb - tr : tr - tb;
   const tdCell = isE ? `<td class="num ${td > .005 ? 'pos' : td < -.005 ? 'neg' : 'muted'}">${fmt(td)}</td>` : `<td class="num ${td > .005 ? 'pos' : 'muted'}">${td > .005 ? '+' : td < -.005 ? '−' : ''}${fmt(Math.abs(td))}</td>`;
   const wideValues = [tb,tr,td,...cats.map(c=>planBudget(m,c.id)),...cats.map(c=>planReal(m,c.id))].some(v=>Math.abs(v)>=100000);
-  const mobileTotal = `<div class="budget-mobile-total" aria-label="Totales de ${isE?'gastos':'ingresos'}"><strong>Total de ${isE?'gastos':'ingresos'}</strong><div><span>Plan</span><b data-budget-total="plan">${fmt(tb)}</b></div><div><span>Real</span><b data-budget-total="real">${fmt(tr)}</b></div><div><span>${isE?(td<0?'Excedido':'Disponible'):(tb<=0?(tr>0?'No previsto':'Sin plan'):td>.005?'Adicional':td<-.005?'Por recibir':'Completo')}</span><b data-budget-total="remaining" class="${isE?(td>=0?'pos':'neg'):(td>0?'pos':'muted')}">${fmt(Math.abs(td))}</b></div><div><span>Avance</span><b>${tb ? pctTxt(tr / tb * 100) : '—'}</b></div></div>`;
+  const mobileTotal = `<div class="budget-mobile-total" aria-label="Totales de ${isE?'gastos':'ingresos'}"><strong>Total de ${isE?'gastos (sin ahorro)':'ingresos'}</strong><div><span>Plan</span><b data-budget-total="plan">${fmt(tb)}</b></div><div><span>Real</span><b data-budget-total="real">${fmt(tr)}</b></div><div><span>${isE?(td<0?'Excedido':'Disponible'):(tb<=0?(tr>0?'No previsto':'Sin plan'):td>.005?'Adicional':td<-.005?'Por recibir':'Completo')}</span><b data-budget-total="remaining" class="${isE?(td>=0?'pos':'neg'):(td>0?'pos':'muted')}">${fmt(Math.abs(td))}</b></div><div><span>Avance</span><b>${tb ? pctTxt(tr / tb * 100) : '—'}</b></div></div>`;
   return mobileTotal + `<table class="bud-table${wideValues?' wide-values':''}">
     <thead><tr><th>Categoría</th><th class="num c-plan"><span class="hide-m">${isE ? 'Presupuesto' : 'Esperado'}</span><span class="show-m">Plan</span></th><th class="num c-real">Real</th><th class="num c-diff"><span class="hide-m">${isE ? 'Disponible' : 'Variación'}</span><span class="show-m">${isE ? 'Queda' : 'Variación'}</span></th><th class="num c-av" title="Avance">%</th></tr></thead>
-    <tbody>${body}</tbody><tfoot><tr><td>Total</td><td class="num">${fmt(tb)}</td><td class="num">${fmt(tr)}</td>${tdCell}<td class="av"><span class="av-pct${isE && tr > tb ? ' over' : ''}">${tb ? pctTxt(tr / tb * 100) : '—'}</span></td></tr></tfoot></table>`;
+    <tbody>${body}</tbody><tbody class="bud-total"><tr><td>${isE ? 'Total gastos' : 'Total'}</td><td class="num">${fmt(tb)}</td><td class="num">${fmt(tr)}</td>${tdCell}<td class="av"><span class="av-pct${isE && tr > tb ? ' over' : ''}">${tb ? pctTxt(tr / tb * 100) : '—'}</span></td></tr></tbody>${saveBody}</table>`;
 }
 function renderSaveCard(){
   if(cycleView())return renderCycleSaveCard();
@@ -286,7 +289,7 @@ function renderCats(){
       <span class="grip" role="button" tabindex="0" title="Arrastra o usa las flechas para ordenar" aria-keyshortcuts="ArrowUp ArrowDown" aria-label="Ordenar ${esc(c.name)} con flecha arriba o abajo">${GRIP}</span>
       <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}">${iconHTML(c.icon, c.color)}</button>
       <input type="text" data-act="name" aria-label="Nombre de la categoría ${esc(c.name)}" value="${esc(c.name)}">
-      ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="${c.pay ? esc(payHumanCfg(payCfg(c.pay))) : 'Día de pago'}">${ic('calendar-days')}<span>${c.pay ? payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
+      ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="${c.pay ? esc(payHumanCfg(payCfg(c.pay))) : 'Día de pago'}">${ic('calendar-days')}<span>${c.pay ? 'Cobro: ' + payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
       <div class="row-acts"><details class="cat-actions"><summary class="iconbtn" aria-label="Acciones de ${esc(c.name)}" title="Acciones de categoría">⋯</summary><div class="cat-actions-menu"><button type="button" data-act="arch">${ic('archive')} Archivar</button><button type="button" data-act="del">${ic('trash-2')} Eliminar</button></div></details></div>
     </div>`).join('') || '<div class="muted small" style="padding:10px 0">Sin categorías.</div>';
     if (arch.length) $(type === 'income' ? '#catsIncome' : '#catsExpense').insertAdjacentHTML('beforeend', `<details class="arch-group"><summary>${CHEV_D}${arch.length} ${arch.length === 1 ? 'categoría archivada' : 'categorías archivadas'}</summary>${arch.map(c => `<div class="arch-row" data-id="${esc(c.id)}"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span>${esc(c.name)}<small>desde ${monthLong(c.archived).toLowerCase()}</small></span><button class="btn sm" data-unarch="${esc(c.id)}">${ic('archive-restore')} Restaurar</button></div>`).join('')}</details>`);

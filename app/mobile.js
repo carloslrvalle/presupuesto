@@ -223,6 +223,7 @@ function prepareMobileTxUI(){
   syncMobileTxUI();
 }
 function setMobileTxPanel(panel,{focus=true}={}){
+  if(!mobileLayout.matches){positionMobileTx();return;}
   const amount=$('#fAmount');
   if(focus&&(!panel||document.activeElement.matches('input,textarea')&&document.activeElement!==amount))amount.focus({preventScroll:true});
   // El selector ocupa el lugar del teclado propio. Con el teclado del sistema abierto (búsqueda) usa todo el cuerpo y se cierra con Listo.

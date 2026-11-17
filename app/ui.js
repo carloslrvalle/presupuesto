@@ -42,15 +42,18 @@ document.addEventListener('click',e=>{
  const mode=e.target.closest('[data-period-mode]'),day=e.target.closest('[data-period-day]');
  if(mode){periodDraft.enabled=mode.dataset.periodMode==='cycle';renderPeriodEditor();$('#periodDialog [data-period-mode="'+mode.dataset.periodMode+'"]').focus();}
  if(day){periodDraft.day=Number(day.dataset.periodDay);renderPeriodEditor();$('#periodDialog [data-period-day="'+periodDraft.day+'"]').focus();}
- if(e.target.closest('#periodApply')){const draft=periodDraft;$('#periodDialog').close();setPlanningMode(draft.enabled,draft.day);document.querySelector('.tab.active [data-period-open]')?.focus({preventScroll:true});}
+ if(e.target.closest('#periodApply')){const draft=periodDraft;if(!setPlanningMode(draft.enabled,draft.day))return;$('#periodDialog').close();document.querySelector('.tab.active [data-period-open]')?.focus({preventScroll:true});}
 });
 function setPlanningMode(enabled,day=cycleDay()){
- const wasEnabled=cycleEnabled(),previousDay=cycleDay(),was=cycleView();if(was)cycleSelectedMonths[activeProfile]=currentMonth;else cycleCalendarMonths[activeProfile]=currentMonth;
- state.settings.budgetCycle={...cycleConfig(),enabled,day};
- if(wasEnabled!==enabled||day!==previousDay)state.settings.lastClose=enabled?cycleBudgetKey(cycleMonthForDate()):thisMonth();
+ const wasEnabled=cycleEnabled(),previousDay=cycleDay(),was=cycleView();
+ if(!saveChange(()=>{
+  state.settings.budgetCycle={...cycleConfig(),enabled,day};
+  if(wasEnabled!==enabled||day!==previousDay)state.settings.lastClose=enabled?cycleBudgetKey(cycleMonthForDate()):thisMonth();
+ },$('#periodDialog')))return false;
+ if(was)cycleSelectedMonths[activeProfile]=currentMonth;else cycleCalendarMonths[activeProfile]=currentMonth;
  currentMonth=enabled?cycleMonthForDate():cycleCalendarMonths[activeProfile]||thisMonth();
  cycleSelectedMonths[activeProfile]=enabled?currentMonth:cycleSelectedMonths[activeProfile];monthInput.value=currentMonth;
- save();renderAll();toast(enabled?'Ciclo activo: '+cycleLabel(currentMonth):'Vista por mes calendario');
+ renderAll();toast(enabled?'Ciclo activo: '+cycleLabel(currentMonth):'Vista por mes calendario');return true;
 }
 let planningToday=todayISO();
 function refreshPlanningDate(){

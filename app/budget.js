@@ -298,8 +298,13 @@ function renderCats(){
 $('#tab-cats').addEventListener('change', e => {
   const row = e.target.closest('.cat-row'); if (!row) return;
   const c = state.categories.find(x => x.id === row.dataset.id), act = e.target.dataset.act;
-  if (act === 'name') c.name = e.target.value.trim() || 'Sin nombre';
-  save(); keepFocus(renderAll); toast('Categoría actualizada');
+  if (act !== 'name') return;
+  const name = e.target.value.trim() || 'Sin nombre';
+  if(!saveChange(()=>{c.name=name;})){
+    e.target.value=state.categories.find(item=>item.id===c.id).name;
+    return;
+  }
+  keepFocus(renderAll); toast('Categoría actualizada');
 });
 $('#tab-cats').addEventListener('click', async e => {
   const pb = e.target.closest('.pay-btn'); if (pb){ openPayPicker(pb, pb.closest('.cat-row').dataset.id); return; }

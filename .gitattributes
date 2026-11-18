@@ -1,0 +1,4 @@
+# Saltos de línea LF en el repo y en disco: las subidas web y los commits locales coinciden.
+* text=auto eol=lf
+*.png binary
+*.woff2 binary

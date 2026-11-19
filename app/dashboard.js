@@ -59,7 +59,7 @@ function prowMeta(real, budget, type, saving){
   if (saving){ const d = budget - real; return d > .005 ? `Faltan ${fmt(d)} por separar` : d < -.005 ? `<span class="pos">${fmt(-d)} más de lo planeado</span>` : '<span class="pos">Completo</span>'; }
   const d = budget - real;
   if (type === 'income') return d > .005 ? `Por recibir: ${fmt(d)}` : d < -.005 ? `<span class="pos">${fmt(-d)} más de lo esperado</span>` : '<span class="pos">Ingreso completo</span>';
-  return Math.round(real*100)===Math.round(budget*100) ? 'Presupuesto completo · sin excedente' : d > 0 ? `Disponible: ${fmt(d)}` : `<span class="neg">Exceso: ${fmt(-d)}</span>`;
+  return Math.round(real*100)===Math.round(budget*100) ? 'Presupuesto completo · sin excedente' : d > 0 ? `Disponible del presupuesto: ${fmt(d)}` : `<span class="neg">Exceso: ${fmt(-d)}</span>`;
 }
 function budgetStatus(real,budget){
  const r=Math.round((Number(real)||0)*100),b=Math.round((Number(budget)||0)*100);
@@ -85,7 +85,7 @@ function progressRow(c, real, budget, type, prev, prevM){
     <span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span>
     <span class="pr-main">
       <span class="pr-top"><span class="name">${esc(c.name)}</span>${tag}<span class="pr-amt"><b>${fmt(real)}</b>${budget > 0 ? `<span class="muted"> de ${fmt(budget)}</span>` : ''}</span></span>
-      <span class="bar"${barDescription ? ` role="img" aria-label="${esc(barDescription)}" title="${esc(barDescription)}"` : ''}><span data-k="dash:${type}:${esc(c.id)}" data-w="${coveredWidth.toFixed(2)}" style="width:${coveredWidth}%;background:${color}"></span>${alert==='over'?`<i class="budget-overrun" aria-hidden="true" style="width:${excessWidth.toFixed(2)}%"></i><i class="budget-limit" aria-hidden="true" style="left:${coveredWidth.toFixed(2)}%"></i>`:''}</span>
+      <span class="bar"${barDescription ? ` role="img" aria-label="${esc(barDescription)}" title="${esc(barDescription)}"` : ''}><span style="width:${coveredWidth}%;background:${color}"></span>${alert==='over'?`<i class="budget-overrun" aria-hidden="true" style="width:${excessWidth.toFixed(2)}%"></i><i class="budget-limit" aria-hidden="true" style="left:${coveredWidth.toFixed(2)}%"></i>`:''}</span>
       <span class="pr-meta"><span>${status==='complete'||(saving&&tag)?'':prowMeta(real, budget, type, saving)}</span>${prevM && prev && Math.abs(real - prev) / prev >= .01 ? deltaTxt(real, prev, type, prevM) : ''}</span>
     </span>
   </${tagName}>`;
@@ -97,7 +97,7 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
  const incomeRemaining=Math.max(0,bInc-inc),expenseRemaining=bExp-exp;
  $('#kIncomePreview').textContent=inc?'Ingresos recibidos':'Aún sin ingresos';
  const expensePreview=$('#kExpensePreview'),overBudget=bExp&&expenseRemaining<-.005;
- expensePreview.textContent=!bExp?'Sin presupuesto':overBudget?`Te pasaste ${fmt(-expenseRemaining)} del presupuesto`:`Quedan ${fmt(expenseRemaining)} de ${fmt(bExp)}`;
+ expensePreview.textContent=!bExp?'Sin presupuesto':overBudget?`Te pasaste ${fmt(-expenseRemaining)} del presupuesto`:`Disponible del presupuesto: ${fmt(expenseRemaining)}`;
  expensePreview.classList.toggle('neg',!!overBudget);
  $('#kBalancePreview').textContent='Al cierre del período';
  $('#kSavingsPreview').textContent='Sobre tus ingresos';
@@ -105,7 +105,7 @@ function renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing
  const incomeFoot=$('#kIncomeFoot');
  incomeFoot.innerHTML=bInc?`${Math.round(inc/bInc*100)}% de lo esperado`:pInc?`${fmt(pInc)} programados`:'Sin expectativa de ingresos';
  incomeFoot.title=pp.length?pp.map(x=>`${x.c.name}: ${payRange(x.a,x.b,m)}`).join('\n'):pInc?`${fmt(pInc)} con fecha futura`:'';
- $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso':'Disponible',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'')+(sv.sep>.005?row('Ahorro aparte',fmt(sv.sep)):'');
+ $('#kExpenseSub').innerHTML=row('Presupuesto',bExp?fmt(bExp):'Sin definir')+row(expenseRemaining<0&&bExp?'Exceso del presupuesto':'Disponible del presupuesto',bExp?fmt(Math.abs(expenseRemaining)):'—',expenseRemaining<0&&bExp?'neg':'')+(sv.sep>.005?row('Ahorro aparte',fmt(sv.sep)):'');
  const expenseFoot=$('#kExpenseFoot');expenseFoot.innerHTML=!bExp?'Define un presupuesto':budgetStatus(exp,bExp)==='complete'?'Presupuesto completo':expenseRemaining<0?'Presupuesto superado':pace||pExp?pace||`${fmt(pExp)} programados`:`${Math.round(exp/bExp*100)}% del presupuesto usado`;
  $('#balanceParts').innerHTML=row('Saldo anterior',fmt(cash.previous))+row(cycleView()?'Resultado del ciclo':'Resultado del mes',fmt(cash.result),cash.result<0?'neg':'');
  $('#balanceParts').title=cash.provisional?'Saldo previo registrado hasta hoy; el mes anterior aún puede cambiar.':'Calculado desde tus movimientos reales registrados. No incluye movimientos programados.';
@@ -169,7 +169,6 @@ function renderDashboard(){
       + zeroGroup(zero.map(row), `categoría${zero.length > 1 ? 's' : ''} sin movimientos aún · ${fmt(zero.reduce((a, x) => a + x.budget, 0))} ${type === 'income' ? 'esperado' : 'presupuestado'}`);
   };
   $('#bvaExpense').innerHTML = rows('expense');
-  animateBars($('#tab-dashboard'));
 
   $('#topExp').innerHTML = recentExpenseRows(txs, 5);
 

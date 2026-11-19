@@ -26,15 +26,9 @@ function movementHistory(list,dayLbl,filtered){
  }).join('');
 }
 function toggleMovementFilters(){
- const el=$('#movExtraFilters'),old=el._filterState,open=old?!old.open:!el.classList.contains('expanded'),from=motionHeight(el);
- const style=getComputedStyle(el),margin=from?style.marginTop:'0px',opacity=old?style.opacity:from?1:0;
- if(old)old.animation.cancel();el.classList.add('expanded');el.style.overflow='hidden';
+ const filters=$('#movExtraFilters'),open=filters.classList.toggle('expanded');
  $('#movFilterToggle').setAttribute('aria-expanded',String(open));
- el.inert=!open;
- const to=open?motionHeight(el):0,finish=()=>{el.classList.toggle('expanded',open);el.style.overflow='';el._filterState=null;};
- if(reduceMotion()){finish();return;}
- const animation=el.animate([{height:from+'px',marginTop:margin,opacity},{height:to+'px',marginTop:open?'12px':'0px',opacity:open?1:0}],{duration:MOTION.panel,easing:MOTION.ease});
- el._filterState={animation,open};animation.onfinish=finish;
+ filters.inert=!open;
 }
 
 function defaultMovementScope(){return mobileLayout.matches ? 'all' : 'month';}
@@ -237,7 +231,6 @@ function setMovView(v){
   moveViewInd();
   if (movView === 'cal') renderCalendar();
   else if (previous !== movView) renderMovs();
-  if(previous!==movView)revealContent($('#view-'+movView));
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
 window.addEventListener('resize', moveViewInd);
@@ -334,8 +327,7 @@ $('#calGrid').addEventListener('click', e => { const b = e.target.closest('[data
     x.setAttribute('aria-pressed',String(selected));
     x.tabIndex=selected?0:-1;
   });
-  motionResize($('#calDay'),renderCalDay);
-  revealContent($('#calDay .cal-day-scroll'));
+  renderCalDay();
   if(innerWidth<=700&&e.detail)requestAnimationFrame(()=>{const el=$('#calDay'),header=document.querySelector('.topbar'),gap=getComputedStyle(header).position==='sticky'?header.getBoundingClientRect().height:0;window.scrollTo({top:scrollY+el.getBoundingClientRect().top-gap-12,behavior:reduceMotion()?'instant':'smooth'});});
 });
 $('#calGrid').addEventListener('keydown', e => {
@@ -497,7 +489,7 @@ function createTxCategory(){
  if(txDialog.classList.contains('tx-mobile-simple'))setMobileTxPanel(null);
  toast('Categoría creada y seleccionada',{icon:'check'});$('#fAmount').focus({preventScroll:true});
 }
-$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';if(txDialog.classList.contains('tx-mobile-simple'))renderTxChips();else motionResize($('#fCatChips'),renderTxChips);if(txCategoryExpanded&&!txPhone.matches)$('#txCategorySearch').focus();};
+$('#txAllCategories').onclick=()=>{txCategoryExpanded=!txCategoryExpanded;$('#txCategorySearch').value='';renderTxChips();if(txCategoryExpanded&&!txPhone.matches)$('#txCategorySearch').focus();};
 $('#txCategorySearch').addEventListener('input',renderTxChips);
 $('#txNewCategory').onclick=openTxCategoryEditor;
 $('#txCancelCategory').onclick=()=>{$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txNewCategory').focus();};
@@ -594,7 +586,7 @@ function renderQuick(){
   el.innerHTML = list.length ? `<div class="quick-head"><span class="q-l">Frecuentes</span>${list.length>3?`<button type="button" class="quick-toggle" data-quick-toggle aria-controls="txQuickItems" aria-expanded="${quickExpanded}">${quickExpanded?'Ver menos':'Ver más'}</button>`:''}</div><div class="quick-items" id="txQuickItems">` + (quickExpanded?list:list.slice(0,3)).map(t => { const c = getCat(t.catId);
     return `<button type="button" class="q-chip" data-quick="${esc(t.id)}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span><span class="q-copy">${esc(t.desc || c.name)}<small>${esc(t.method||'Sin especificar')}</small></span><b>${fmt(t.amount)}</b></button>`; }).join('')+'</div>' : '';
 }
-document.addEventListener('click',e=>{if(!e.target.closest('[data-quick-toggle]'))return;motionResize($('#txQuick'),()=>{quickExpanded=!quickExpanded;renderQuick();});$('#txQuick [data-quick-toggle]')?.focus({preventScroll:true});});
+document.addEventListener('click',e=>{if(!e.target.closest('[data-quick-toggle]'))return;quickExpanded=!quickExpanded;renderQuick();$('#txQuick [data-quick-toggle]')?.focus({preventScroll:true});});
 
 document.addEventListener('click', e => {
   const q = e.target.closest('[data-quick]'); if (!q) return;
@@ -639,39 +631,16 @@ function txDetailsLabel(){
   $('#txMore').classList.toggle('has-desc', !!desc);
 }
 function setTxDetails(open){
-  const details=$('#txDetails');
-  details._motion?.cancel();
-  details._motion=null;
-  details.style.overflow='';
-  txDialog.classList.remove('details-closing');
-  details.inert=false;
   txDialog.classList.toggle('details-open', open);
   $('#txMore').setAttribute('aria-expanded', String(open));
   txDetailsLabel();
 }
 $('#txMore').onclick = () => {
   const details=$('#txDetails'),body=txDialog.querySelector('.dlg-body'),open=$('#txMore').getAttribute('aria-expanded')!=='true';
-  const from=motionHeight(details);
-  const style=getComputedStyle(details),opacity=from?style.opacity:0;
-  const gap=parseFloat(getComputedStyle(body).rowGap)||0;
-  const margin=from?style.marginTop:-gap+'px';
   setTxDetails(open);
-  if(!open)dpClose();
-  if(!reduceMotion()){
-    txDialog.classList.toggle('details-closing',!open);
-    details.inert=!open;
-    const to=open?motionHeight(details):0;
-    details.style.overflow='hidden';
-    const animation=motionAnimate(details,[{height:from+'px',opacity,marginTop:margin},{height:to+'px',opacity:open?1:0,marginTop:open?'0px':-gap+'px'}],'panel');
-    animation.onfinish=()=>{
-      setTxDetails(open);
-      if(open)keepTxFieldVisible(details.offsetHeight+16<=body.clientHeight?details:document.activeElement);
-    };
-  }
-  if(open){
-    $('#fDateField .dp-trigger').focus({preventScroll:true});
-    if(reduceMotion())keepTxFieldVisible(details.offsetHeight+16<=body.clientHeight?details:document.activeElement);
-  }
+  if(!open){dpClose();return;}
+  $('#fDateField .dp-trigger').focus({preventScroll:true});
+  keepTxFieldVisible(details.offsetHeight+16<=body.clientHeight?details:document.activeElement);
 };
 for (const ev of ['input','change']){ $('#fDate').addEventListener(ev, txDetailsLabel); $('#fDesc').addEventListener(ev, txDetailsLabel); }
 // Borra con opción de deshacer (sin pedir confirmación)

@@ -10,6 +10,7 @@ function syncPlanningNavigation(name){
 }
 function planningHeader(){
  const bothCycles=bothMode&&bothUsesCycles();
+ $('#monthLabel').closest('.month-nav').hidden=['analysis','cats','settings'].includes(activeTab());
  const cy=cycleView(),headerCycle=cy||(document.querySelector('#tab-movs.active')&&typeof movView!=='undefined'&&movView==='list'&&$('#fltScope').value==='cycle');
  $('#monthLabel').textContent=bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
  $('#monthLabel').title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
@@ -246,18 +247,21 @@ if(!CSS.supports('overlay','auto')){
  document.addEventListener('beforetoggle',e=>{
   const d=e.target;if(!(d instanceof HTMLDialogElement))return;
   if(e.newState==='open'){d._exit?.cancel();d._exit=null;d.inert=false;return;}
-  const style=getComputedStyle(d),from={opacity:style.opacity,transform:style.transform,visibility:'visible'};
+  const style=getComputedStyle(d),from={opacity:style.opacity,transform:style.transform,translate:style.translate,visibility:'visible'};
   qMicro(()=>{
    if(d.open||reduceMotion())return;
    d._exit?.cancel();d.getAnimations().filter(a=>a instanceof CSSTransition).forEach(a=>a.cancel());
-   const end=getComputedStyle(d),to={opacity:end.opacity,transform:end.transform,visibility:'visible'};
+   const end=getComputedStyle(d),to={opacity:end.opacity,transform:end.transform,translate:end.translate,visibility:'visible'};
    const animation=d.animate([from,to],{duration:MOTION.panel,easing:MOTION.ease});d._exit=animation;
    animation.onfinish=()=>{if(d._exit===animation)d._exit=null;};
   });
  },true);
 }
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
-const MOTION={fast:180,move:280,popup:200,tab:250,panel:320,data:420,trace:650,signal:800,dataEasing:'easeOutQuart',ease:'cubic-bezier(.22,1,.36,1)',enter:'cubic-bezier(.22,1,.36,1)'};
+const MOTION={
+ ...Object.fromEntries(['fast','move','popup','tab','panel','data','trace','signal'].map(kind=>[kind,parseFloat(cssVar('--motion-'+kind))])),
+ dataEasing:'easeOutQuart',ease:cssVar('--motion-ease')
+};
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
 const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
@@ -269,42 +273,13 @@ function motionAnimate(el,frames,kind='move'){
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
 function revealContent(el,kind='fast'){
- if(el?.matches('.tab,.mview')&&matchMedia('(max-width:700px)').matches)return;
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
 }
-function revealSection(el){
- if(mobileLayout.matches)return motionAnimate(el,[{opacity:.9},{opacity:1}],'fast');
- if(floatingTabs.matches||matchMedia('(max-width:700px)').matches)return;
- return motionAnimate(el,[{opacity:.72,transform:'translateY(6px)'},{opacity:1,transform:'none'}],'fast');
-}
-function motionHeight(el){
- return el.getBoundingClientRect().height/(Number(getComputedStyle(document.documentElement).zoom)||1);
-}
-function motionResize(el,update,clip=true){
- const from=motionHeight(el);el._resize?.cancel();el._resize=null;el.style.overflow='';update();const to=motionHeight(el);
- if(reduceMotion()||Math.abs(from-to)<1)return;
- if(clip)el.style.overflow='hidden';const animation=el.animate([{height:from+'px'},{height:to+'px'}],{duration:MOTION.panel,easing:MOTION.ease});el._resize=animation;
- animation.onfinish=()=>{el.style.overflow='';el._resize=null;};
-}
-function toggleDisclosure(details,summary,wanted,animate=true){
- const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=motionHeight(details);
+function toggleDisclosure(details,summary,open=!details.open){
  const content=summary.nextElementSibling;
- const previousOpacity=current&&content?getComputedStyle(content).opacity:null;
- const previousTransform=current&&content?getComputedStyle(content).transform:null;
- if(current){current.animation.cancel();current.contentAnimation?.cancel();}
  if(!open&&content?.contains(document.activeElement))summary.focus({preventScroll:true});
  if(content)content.inert=!open;
- details.style.overflow='hidden';
  details.open=open;
- const to=motionHeight(details);
- const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
- if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
- details.open=true;
- const distribution=details.matches('.expense-distribution-more'),duration=distribution?360:MOTION.panel;
- const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:[{opacity:previousOpacity??(open?0:1),transform:previousTransform??(open?'translateY(-5px)':'none')},{opacity:open?1:0,transform:'none'}];
- const contentAnimation=content?.animate(frames,{duration,easing:MOTION.ease});
- const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});
- details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
 }
 function menuDisclosureOpen(details){
  return details.open && !details.hasAttribute('data-menu-closing');
@@ -386,30 +361,11 @@ function countUp(el, to, kind = 'money', cls){
   if(el.textContent!==target||el.childElementCount)el.textContent=target;
   fitMetricValue(el);
 }
-// Barras que crecen: desde cero al entrar a la pestaña o cambiar de mes; desde su valor anterior en el resto de cambios
-let barMemo = {};
-function animateBars(root){
-  if (!root) return;
-  const spans = [...root.querySelectorAll('.bar>span[data-w]')], fresh = [];
-  spans.forEach(sp => { const k = sp.dataset.k, to = sp.dataset.w; const from = barMemo[k]; if (from === undefined) fresh.push(sp);
-    sp.style.transition = 'none'; sp.style.width = (from ?? 0) + '%'; barMemo[k] = to; });
-  if (!spans.length) return;
-  void root.offsetWidth;
-  // Primera aparición escalonada (máx. 6 pasos) con leve rebote; los cambios de valor no se escalonan.
-  const step = innerWidth <= 700 ? 60 : 120, calm = reduceMotion(); let i = 0;
-  spans.forEach(sp => { const enter = fresh.includes(sp) && !calm; sp.style.transition = ''; sp.style.transitionDelay = enter ? Math.min(i++, 6) * step + 'ms' : '0ms'; sp.style.transitionTimingFunction = enter ? MOTION.enter : ''; sp.style.width = sp.dataset.w + '%'; });
-}
-const resetBars = sec => Object.keys(barMemo).forEach(k => { if (!sec || k.startsWith(sec + ':')) delete barMemo[k]; });
 // Desvanece una fila antes de quitarla
 const fadeOut = el => {
  if(!el||reduceMotion())return Promise.resolve();
  if(el._leaving)return el._leaving;
- const style=getComputedStyle(el),from={opacity:1,transform:'none'},to={opacity:0,transform:'translateY(-3px)'};
- // Las filas de tabla conservan su geometría nativa; las demás cierran también el espacio ocupado.
- if(el.tagName!=='TR'){
-  Object.assign(from,{height:el.getBoundingClientRect().height+'px',minHeight:style.minHeight,paddingTop:style.paddingTop,paddingBottom:style.paddingBottom,marginTop:style.marginTop,marginBottom:style.marginBottom,borderTopWidth:style.borderTopWidth,borderBottomWidth:style.borderBottomWidth});
-  Object.assign(to,{height:'0px',minHeight:'0px',paddingTop:'0px',paddingBottom:'0px',marginTop:'0px',marginBottom:'0px',borderTopWidth:'0px',borderBottomWidth:'0px'});
- }
+ const from={opacity:1,transform:'none'},to={opacity:0,transform:'translateY(-3px)'};
  el.classList.add('leaving');el.style.overflow='hidden';
  const animation=el.animate([from,to],{duration:MOTION.panel,easing:MOTION.ease,fill:'forwards'});
  el._leaving=animation.finished.catch(()=>{});return el._leaving;
@@ -475,8 +431,6 @@ function showTab(name, scrollTop = 0){
     s.classList.toggle('active', s.id === 'tab-' + name);
     if(!s.classList.contains('active')&&s._motion){s._motion.cancel();s._motion=null;}
   });
-  const SEC = {dashboard:'dash', budget:'bud', goals:'goal'}[name];
-  if (SEC) resetBars(SEC);
   // Al volver a Resumen, cada indicador conserva el último valor dibujado.
   if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
   if (name === 'analysis' && currentMonth !== analysisSelectedMonth) dirty.add(name);
@@ -489,15 +443,12 @@ function showTab(name, scrollTop = 0){
     tabBar.scrollTo({left:Math.max(0, left), behavior:reduceMotion() ? 'instant' : 'smooth'});
   }
   if (resumeAnalysis && chYear){ chYear.resize(); chYear.update('none'); }
-  if (name === 'budget') animateBars($('#tab-budget'));
-  if (name === 'goals'){ animateBars($('#goalsGrid')); refreshOther(); }
+  if (name === 'goals') refreshOther();
   if (name === 'movs') moveViewInd();
   updateCreationControls();
   if (typeof updateMobileNavigation === 'function') updateMobileNavigation();
   if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
   if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
-  // La vista entra después del render y de restaurar su posición.
-  if(prevTab!==name)revealSection($('#tab-'+name));
 }
 // Entrada escalonada: las tarjetas visibles aparecen una tras otra
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
@@ -744,6 +695,6 @@ monthInput.value = currentMonth;
 monthInput.addEventListener('change', () => goMonth(monthInput.value));
 // El período cambia en el sitio, sin mover horizontalmente toda la vista.
 let chartMorph = false;
-function goMonth(v, animate = true){ if (!v || v === currentMonth) return; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } if (animate) revealContent(document.querySelector('.tab.active')); }
+function goMonth(v){ if (!v || v === currentMonth) return; currentMonth = v; monthInput.value = v; chartMorph = true; try { renderAll(); } finally { chartMorph = false; } }
 $('#prevM').onclick = () => goMonth(shiftMonth(currentMonth, -1));
 $('#nextM').onclick = () => goMonth(shiftMonth(currentMonth, 1));

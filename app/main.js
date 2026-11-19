@@ -1,6 +1,5 @@
 // Presupuesto: main.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Render ---------- */
-let lastRenderMonth = null;
 const VIEWS = {dashboard:() => renderDashboard(), movs:() => { if (movView === 'cal') renderCalendar(); else renderMovs(); },
   budget:() => renderBudget(), goals:() => renderGoals(), analysis:() => renderAnalysis(), cats:() => renderCats(), settings:() => renderProfEdit(), both:() => renderBoth()};
 let dirty = new Set(Object.keys(VIEWS));
@@ -77,7 +76,6 @@ document.addEventListener('click', e => {
 });
 function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n); VIEWS[n](); enhanceAccessibility(); requestAnimationFrame(fitMetricValues); }
 function renderAll(){
-  if (lastRenderMonth !== currentMonth){ resetBars(); lastRenderMonth = currentMonth; }
   planningHeader();
   applyBrand(); renderThemes();
   methodsInput.value = (state.settings.methods||[]).join(', '); renderSettingsOverview();

@@ -141,9 +141,8 @@ async function switchProfile(id){
     currentMonth = cycleView() ? cycleSelectedMonths[id] || cycleMonthForDate() : calendarMonth;
     monthInput.value = currentMonth;
     if (bothMode){ bothMode = false; document.body.classList.remove('both-on'); }
-    Object.keys(numMemo).forEach(k => delete numMemo[k]); resetBars();
+    Object.keys(numMemo).forEach(k => delete numMemo[k]);
     renderProfileUI(); if (activeTab() === 'both') showTab('dashboard'); renderAll(); updateSyncInfo();
-    revealContent(document.querySelector('.tab.active'));
     if (syncOn()) setBadge('busy', '☁️ Conectando…'); else {setBadge();updateSyncInfo();}
     toast(`Ahora ves: ${profOf(id).name}`, {icon:'user'});
   } finally { switching = false; }
@@ -274,8 +273,9 @@ function renderBoth(){
   const perProfile=(key,total,percentage=false)=>rows.map(r=>`<div class="metric-detail-row"><span>${esc(r.pr.name)}</span><b>${fmt(r[key]||0)}${percentage&&total>0?` <small>${((r[key]||0)/total*100).toFixed(1)}%</small>`:''}</b></div>`).join('');
   const kpi = (lbl, icon, val, sub, cls) => `<details class="card kpi metric-disclosure ${cls}" data-both-metric="${esc(lbl)}"${opened.has(lbl)?' open':''}><summary><div class="label"><span class="dot">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><span class="metric-chevron" aria-hidden="true">${ic('chevron-down')}</span></summary><div class="metric-expanded"><div class="metric-details">${sub}</div></div></details>`;
   const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5), shared = sharedGoalsCard();
+  const profilePeriods=cycles?`<dl class="both-period-list" aria-label="Períodos por usuario">${rows.map(({pr,period})=>`<div><dt>${esc(pr.name)}</dt><dd>${period?esc(period.label):'Sin datos disponibles'}</dd></div>`).join('')}</dl>`:'';
   box.innerHTML = `<div class="both-head"><h2>Ambos · ${cycles?'cierre de ':''}${monthLong(m)}</h2><div class="both-access"><span class="small muted">Solo lectura</span><button type="button" class="btn sm" data-choose-profile>Elegir perfil</button></div></div>
-    ${hasCycles?`<div class="both-period-controls"><div class="seg" role="group" aria-label="Períodos de Ambos"><button type="button" data-both-period="profiles" aria-pressed="${bothPeriodMode==='profiles'}" class="${bothPeriodMode==='profiles'?'active':''}">Según cada usuario</button><button type="button" data-both-period="calendar" aria-pressed="${bothPeriodMode==='calendar'}" class="${bothPeriodMode==='calendar'?'active':''}">Mes calendario</button></div><p class="small muted">${cycles?'Se suman los períodos indicados debajo de cada usuario; sus fechas pueden ser distintas.':'Ambos usuarios se comparan del primer al último día del mes.'} Solo cuentan movimientos realizados.</p></div>`:''}
+    ${hasCycles?`<div class="both-period-controls"><div class="seg" role="group" aria-label="Períodos de Ambos"><button type="button" data-both-period="profiles" aria-pressed="${bothPeriodMode==='profiles'}" class="${bothPeriodMode==='profiles'?'active':''}">Según cada usuario</button><button type="button" data-both-period="calendar" aria-pressed="${bothPeriodMode==='calendar'}" class="${bothPeriodMode==='calendar'?'active':''}">Mes calendario</button></div><p class="small muted">${cycles?'Se suman los períodos de cada usuario.':'Ambos usuarios se comparan del primer al último día del mes.'} Solo cuentan movimientos realizados.</p>${profilePeriods}</div>`:''}
     <div class="period-overview"><div><span>Resultado conjunto ${cycles?'de los períodos':'del mes'}</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong><small>Ingresos menos gastos registrados</small></div></div>
     <div class="kpis dashboard-kpis both-kpis">
       ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), perProfile('inc',inc,true), 'k-inc')}

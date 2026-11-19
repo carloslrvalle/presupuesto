@@ -81,11 +81,11 @@ function setupSettings(){
   const details=document.createElement('details');details.className='settings-disclosure '+extra;
   const summary=document.createElement('summary');summary.textContent=title;details.append(summary);
   const body=document.createElement('div');body.className='settings-disclosure-body';body.append(card);details.append(body);
-  details.setExpanded=(open,animate=true)=>{
+  details.setExpanded=open=>{
    if(details.id==='settingsConnectionConfig'&&!settingsConnectionReady())open=true;
-   toggleDisclosure(details,summary,open,animate);
+   toggleDisclosure(details,summary,open);
   };
-  summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(details._disclosure?!details._disclosure.open:!details.open);});
+  summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(!details.open);});
   return details;
  }
  users.querySelector('p').textContent='Cada usuario conserva sus propios datos y preferencias. Toca su nombre, avatar o foto para editarlo.';
@@ -149,7 +149,7 @@ function setupSettings(){
    status.textContent=saved?message:'No se pudieron guardar los colores. Vuelve a intentarlo.';
  }
  financePanel.querySelector('summary').addEventListener('click',()=>{
-   if(!(financePanel._disclosure?.open??financePanel.open))return;
+   if(!financePanel.open)return;
    fillFinanceForm();
    status.hidden=true;
  });
@@ -214,7 +214,7 @@ function setupSettings(){
  new MutationObserver(()=>renderSettingsStatus()).observe($('#syncInfo'),{childList:true,characterData:true,subtree:true});
  new MutationObserver(()=>renderSettingsOverview()).observe($('#themeGrid'),{childList:true});
  // La primera conexión debe mantener visibles los campos que reciben el foco.
- if(!settingsConnectionReady())configDetails.setExpanded(true,false);
+ if(!settingsConnectionReady())configDetails.setExpanded(true);
 }
 let settingsVerifiedConnection=syncOn()&&sync.lastSync?sync.url+'|'+sync.token:'';
 function settingsConnectionReady(){return syncOn()&&settingsVerifiedConnection===sync.url+'|'+sync.token;}

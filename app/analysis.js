@@ -88,8 +88,8 @@ function renderYearReadout(){
 }
 function selectAnalysisMonth(month){
   if (!month) return;
-  if (month !== currentMonth) goMonth(month, false);
-  else renderAnalysisSelection(true);
+  if (month !== currentMonth) goMonth(month);
+  else renderAnalysisSelection();
 }
 function finishAnalysisTrace(chart){
   const trace=chart.$analysisTrace;
@@ -262,7 +262,7 @@ $('#anKpis').addEventListener('click', e => {
     metric.setAttribute('aria-pressed', String(selected));
     metric.querySelector('.metric-selection').innerHTML = ic(selected ? 'check' : 'chevron-down');
   }
-  renderAnalysisSelection(true);
+  renderAnalysisSelection();
   enhanceAccessibility();
 });
 document.addEventListener('click',e=>{const link=e.target.closest('[data-analysis-movements]');if(link)openMovs({scope:'year',type:link.dataset.analysisMovements});});
@@ -270,7 +270,7 @@ $('#yearChartModes').addEventListener('click', e => {
   const button = e.target.closest('[data-year-mode]');
   if (!button || button.dataset.yearMode === analysisChartMode) return;
   analysisChartMode = button.dataset.yearMode;
-  renderAnalysisSelection(true);
+  renderAnalysisSelection();
   enhanceAccessibility();
 });
 document.addEventListener('change',e=>{
@@ -365,32 +365,24 @@ function renderAnalysis(){
   analysisData={months,bal,balC,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData,cumulative:analysisCumulativeSeries(tot,bal,cum)};
   analysisSelectedMonth=currentMonth;
   if(analysisDetailPeriod!=='year')analysisDetailPeriod=currentMonth;
-  renderAnalysisSelection(chartMorph);
+  renderAnalysisSelection();
 }
 
-function renderAnalysisSelection(animate=false){
+function renderAnalysisSelection(){
   const hasData = analysisData.first >= 0;
   const metric=analysisChartMode==='total'?ANALYSIS_ACCUMULATED[analysisMetric]:ANALYSIS_METRICS[analysisMetric];
   $('#analysisChartTitle').textContent=metric.title;
   $('#yearChartHelp').dataset.tip=metric.help;
   $('#yearChartDescription').textContent=metric.help;
   $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.yearMode===analysisChartMode)));
-  const update = () => {
-    $('#yearChartModes').hidden=!hasData;
-    const readout=$('#yearReadout'), pickerFocused=readout.contains(document.activeElement);
-    renderYearReadout();
-    if(pickerFocused)$('#analysisMonthTrigger')?.focus({preventScroll:true});
-    if (chYear && !hasData){ chYear.destroy(); chYear = null; }
-    if (!hasData){ $('#yearWrap').innerHTML = emptyBox('chart-line', `Aún no hay movimientos registrados en ${currentMonth.slice(0,4)}. Los programados aparecerán aquí cuando llegue su fecha.`); }
-    else renderAnalysisChart();
-  };
-  if(animate){
-    motionResize($('#yearChartCard'),update,false);
-    motionResize($('.analysis-details'),renderAnalysisDetails);
-  }else{
-    update();
-    renderAnalysisDetails();
-  }
+  $('#yearChartModes').hidden=!hasData;
+  const readout=$('#yearReadout'), pickerFocused=readout.contains(document.activeElement);
+  renderYearReadout();
+  if(pickerFocused)$('#analysisMonthTrigger')?.focus({preventScroll:true});
+  if (chYear && !hasData){ chYear.destroy(); chYear = null; }
+  if (!hasData){ $('#yearWrap').innerHTML = emptyBox('chart-line', `Aún no hay movimientos registrados en ${currentMonth.slice(0,4)}. Los programados aparecerán aquí cuando llegue su fecha.`); }
+  else renderAnalysisChart();
+  renderAnalysisDetails();
 }
-$('#yearPrev').onclick = () => goMonth(shiftMonth(currentMonth, -12),false);
-$('#yearNext').onclick = () => goMonth(shiftMonth(currentMonth, 12),false);
+$('#yearPrev').onclick = () => goMonth(shiftMonth(currentMonth, -12));
+$('#yearNext').onclick = () => goMonth(shiftMonth(currentMonth, 12));

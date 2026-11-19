@@ -81,7 +81,6 @@ function renderBudget(){
   $('#budExpense').innerHTML = budgetTable('expense');
   $('#budIncome').innerHTML = budgetTable('income');
   if (before.length) document.querySelectorAll('#tab-budget tfoot td').forEach((t, i) => { if (before[i] !== undefined && before[i] !== t.textContent && !reduceMotion()) motionAnimate(t,[{opacity:.55},{opacity:1}],'fast'); });
-  animateBars($('#tab-budget'));
   if (typeof renderMobileBudget === 'function') renderMobileBudget();
 }
 function saveBudgetAmount(id, value){

@@ -43,14 +43,15 @@ function renderGoals(){
     return;
   }
   const tm = thisMonth(), sorted = goalsSorted(), doneOpen = grid.querySelector('.goal-done-group')?.open;
+  const openDetails=new Set([...grid.querySelectorAll('.goal-detail[open]')].map(detail=>detail.dataset.goalDetail));
   const cards = sorted.map((g, index) => {
     const saved = goalSaved(g), target = Number(g.target) || 0, pct = target ? Math.min(saved / target * 100, 100) : 0, rem = Math.max(0, target - saved);
+    const completed=goalDone(g);
     const gx = goalTxs(g), monthAmt = sum(gx.filter(x => x.t.date.slice(0, 7) === tm).map(x => x.t));
-    // Datos clave en tres bloques, en lugar de una frase larga
+    // Los datos de planificación quedan disponibles en el detalle de la meta.
     const stat = (k, v, cls = '') => `<div class="gs"><span>${k}</span><b class="${cls}">${v}</b></div>`;
-    let stats;
-    if (goalDone(g)) stats = `<div class="goal-done">${ic('check')} Meta lograda</div>`;
-    else {
+    let stats = '';
+    if (!completed) {
       const expired=g.deadline&&g.deadline<todayISO(),ml=g.deadline&&!expired?monthsBetween(tm,g.deadline.slice(0,7))+1:0;
       // Ritmo: promedio de aportes de los últimos 3 meses (incluye este)
       const r3 = [0, 1, 2].map(k => shiftMonth(tm, -k)).map(mm => sum(gx.filter(x => x.t.date.slice(0, 7) === mm).map(x => x.t)));
@@ -63,31 +64,32 @@ function renderGoals(){
         eta = late ? `<div class="goal-eta warn">${ic('clock')} Si mantienes tu promedio, llegarías en ${w}, después de la fecha objetivo</div>`
                    : `<div class="goal-eta ok">${ic('trending-up')} Si mantienes tu promedio, llegarías en ${w}</div>`;
       } else eta = `<div class="goal-eta">${ic('clock')} Sin aportes en los últimos 3 meses</div>`;
-      stats = eta + `<div class="goal-stats">${stat('Faltan', fmt(rem))}${g.deadline ? (ml > 0 ? stat('Ahorra al mes', fmt(rem / ml)) : stat('Plazo', 'Vencido', 'neg')) : stat('Plazo', 'Libre')}${stat('Este mes', fmt(monthAmt))}</div>`;
+      stats = eta + `<div class="goal-stats">${g.deadline ? (ml > 0 ? stat('Ahorra al mes', fmt(rem / ml)) : stat('Plazo', 'Vencido', 'neg')) : stat('Plazo', 'Libre')}${stat('Este mes', fmt(monthAmt))}</div>`;
     }
     // Compartida: quién la creó y cuánto aportó cada uno
     const owner = profOf(goalOwner(g)), other = profOf(goalOwner(g) === 'p1' ? 'p2' : 'p1'), sp = goalSplit(g), spT = sp.p1 + sp.p2;
     const share = g.shared ? `<div class="goal-split"><div class="gsp-leg">${profiles.list.map(pr => `<span>${avatarBox(pr, 'xs')}${esc(pr.name)} <b>${fmt(sp[pr.id])}</b>${spT > 0 ? ` <em>${Math.round(sp[pr.id] / spT * 100)}%</em>` : ''}</span>`).join('')}</div></div>` : '';
     const shareTag = g.shared ? `<span class="share-tag">${ic('users')}${g._foreign ? 'De ' + esc(owner.name) : 'Con ' + esc(other.name)}</span>` : '';
+    const withdrawn=goalOut(g),withdrawal=withdrawn?`<div class="goal-out">${ic('hand-coins')} ${g._foreign?esc(owner.name)+' retiró':'Retiraste'} ${fmt(withdrawn)} en total</div>`:'';
     const help = index === 0 && !goalDone(g) ? `<button type="button" class="info-tip" aria-label="Ayuda sobre aportes" data-tip="Aporta con «Aportar», o elige la meta al registrar un ingreso o un gasto en tu categoría de ahorro.">${ic('info')}</button>` : '';
     return `<div class="card goal-card${goalDone(g)?' completed':''}${goalDone(g) ? '' : ' p-' + prioOf(g)}${g.shared ? ' shared' : ''}">
       <div class="goal-head"><div class="ico" style="background:${soft(g.color)}">${iconHTML(g.icon, g.color)}</div>
         <div style="flex:1;min-width:0"><div class="goal-title"><div class="name">${esc(g.name)}</div>${help}</div><div class="small muted g-sub">${shareTag}${prioBadge(g)}${g.deadline ? 'Hasta el ' + fmtDateLong(g.deadline) + (goalDone(g) ? '' : (() => { const ml = monthsBetween(tm, g.deadline.slice(0,7)) + 1; return g.deadline >= todayISO() && ml > 0 ? ` · ${ml} ${ml === 1 ? 'mes' : 'meses'}` : ''; })()) : 'Sin fecha límite'}</div></div>
         ${g._foreign ? '' : `<button class="iconbtn" data-goal-edit="${esc(g.id)}" title="Editar">${ic('pencil')}</button>`}</div>
       <div class="goal-value"><div class="goal-amt"><b>${fmt(saved)}</b><span class="muted small">de ${fmt(target)}</span>${goalDone(g)?'':`<span class="goal-pct" style="color:var(--accent-ink,var(--primary))">${pct.toFixed(0)}%</span>`}</div>
-      ${goalDone(g)?'':g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span data-k="goal:${esc(g.id)}:${esc(pr.id)}" data-w="${w.toFixed(2)}" style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
-        : `<div class="bar big"><span data-k="goal:${esc(g.id)}" data-w="${pct.toFixed(2)}" style="width:${pct}%;background:${barFill(g.color)}"></span></div>`}
+      ${goalDone(g)?'':g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
+        : `<div class="bar big"><span style="width:${pct}%;background:${barFill(g.color)}"></span></div>`}
       </div>
-      <div class="goal-status">${stats}${goalOut(g)?`<div class="goal-out">${ic('hand-coins')} ${g._foreign?esc(owner.name)+' retiró':'Retiraste'} ${fmt(goalOut(g))} en total</div>`:''}</div>
-      <div class="goal-sharing">${g.shared?`<details class="goal-contributions"><summary>Ver aportes</summary>${share}</details>`:share}</div>
-      <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn sm" data-goal-add="${esc(g.id)}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn sm ghost" data-goal-out="${esc(g.id)}">${ic('hand-coins')} Retirar</button>` : ''}</div>
+      ${completed?`<div class="goal-status"><div class="goal-done">${ic('check')} Meta lograda</div></div>`:`<p class="goal-remaining">Faltan <b>${fmt(rem)}</b></p>`}
+      <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn sm primary" data-goal-add="${esc(g.id)}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn sm ghost" data-goal-out="${esc(g.id)}">${ic('hand-coins')} Retirar</button>` : ''}</div>
+      <div class="goal-more">${stats||withdrawal?`<details class="goal-detail" data-goal-detail="${esc(g.id)}"${openDetails.has(g.id)?' open':''}><summary>Detalle de la meta ${ic('chevron-down')}</summary><div class="goal-status">${stats}${withdrawal}</div></details>`:''}
+        ${g.shared?`<details class="goal-contributions"><summary>Ver aportes</summary>${share}</details>`:share}</div>
     </div>`;
   });
   const activeCount = sorted.findIndex(goalDone), split = activeCount < 0 ? sorted.length : activeCount;
   newGoal.hidden = split !== 0;
   if (activeTab() === 'goals') updateCreationControls();
   grid.innerHTML = cards.slice(0, split).join('') + (split < cards.length ? `<details class="goal-done-group"${doneOpen?' open':''}><summary>${ic('check')} ${split===0?'Todas tus metas están logradas':'Metas logradas'} <span>${cards.length-split}</span>${ic('chevron-down')}</summary><div class="goals-grid">${cards.slice(split).join('')}</div></details>` : '');
-  animateBars(grid);
 }
 const goalDialog = $('#goalDialog'); let goalEdit = null, gIcon = 'svg:target', gColor = '#10b981', gPrio = 'norm';
 function paintPrio(){ $('#gPrio').innerHTML = Object.entries(PRIO).map(([k, v]) => `<button type="button" data-prio="${k}" class="${k === gPrio ? 'active' : ''}" style="--pc:${v.c}">${ic(v.i)}${v.n}</button>`).join(''); $('#gPrioHint').textContent = PRIO[gPrio].h; }

@@ -75,7 +75,6 @@ function navigateMobile(tab) {
       return;
     }
     if(from!==tab)tabScroll[from]=window.scrollY;
-    setMobileMovementTools(false);
     if(completeList)showTab('movs',tabScroll.movs || 0);
     else openMovs({scope:'all'});
     return;
@@ -115,7 +114,7 @@ const mobileTxDone=document.createElement('button');mobileTxDone.type='button';m
 txDialog.querySelector('.dlg-foot').append(mobileTxDone);
 const txCategoryField=$('#fCatChips').closest('.field'),txNoteField=$('#fDesc').closest('.field');
 const txCategoryAnchor=document.createComment('Posición del selector de categorías en escritorio');txCategoryField.before(txCategoryAnchor);
-const mobileTxViewport=document.createElement('div');mobileTxViewport.className='mobile-only mobile-tx-panel-viewport';txBody.append(mobileTxViewport);
+const mobileTxViewport=document.createElement('div');mobileTxViewport.className='mobile-tx-panel-viewport';
 txCategoryField.classList.add('tx-category-panel');txNoteField.classList.add('tx-note-field');
 txCategoryField.id='mobileTxCategoryPanel';mobileTxCategory.setAttribute('aria-controls',txCategoryField.id);
 const txMethodField=$('#fMethodChips').closest('.field');
@@ -125,11 +124,14 @@ const txNodes=[[$('#txSeg'),txHeader],[$('#fDateField'),mobileTxMeta],[txNoteFie
 // Teclado del monto inspirado en Dime (github.com/rafsoh/dimeApp, NumberPad): 1–9, punto, 0 y ✓ para guardar.
 // El importe se escribe sin el teclado del sistema; el campo sigue siendo #fAmount, así el guardado no cambia.
 const mobileTxKeypad=document.createElement('div');
-mobileTxKeypad.id='mobileTxKeypad';mobileTxKeypad.className='mobile-only mobile-tx-keypad';
+mobileTxKeypad.id='mobileTxKeypad';mobileTxKeypad.className='mobile-tx-keypad';
 mobileTxKeypad.setAttribute('role','group');mobileTxKeypad.setAttribute('aria-label','Teclado del monto');
 mobileTxKeypad.innerHTML=['1','2','3','4','5','6','7','8','9','.','0'].map(k=>`<button type="button" data-key="${k}"${k==='.'?' aria-label="Punto decimal"':''}>${k}</button>`).join('')
   +`<button type="submit" class="keypad-submit" aria-label="Guardar">${ic('check')}</button>`;
-txBody.append(mobileTxKeypad);
+const mobileTxKeypadSlot=document.createElement('div');
+mobileTxKeypadSlot.className='mobile-only mobile-tx-keypad-slot';
+mobileTxKeypadSlot.append(mobileTxKeypad,mobileTxViewport);
+txBody.append(mobileTxKeypadSlot);
 const mobileTxBackspace=document.createElement('button');
 mobileTxBackspace.type='button';mobileTxBackspace.id='mobileTxBackspace';mobileTxBackspace.className='mobile-only';
 mobileTxBackspace.setAttribute('aria-label','Borrar último dígito');
@@ -140,9 +142,12 @@ function setKeypadAmount(value){
   const amount=$('#fAmount');amount.value=value;
   amount.dispatchEvent(new Event('input',{bubbles:true}));
 }
-function nudgeAmount(){
-  const box=$('#fAmount').closest('.tx-amount');box.classList.remove('tx-shake');void box.offsetWidth;box.classList.add('tx-shake');
+function markTxInvalid(field){
+  clearTimeout(field._invalidTimer);
+  field.classList.add('tx-invalid');
+  field._invalidTimer=setTimeout(()=>field.classList.remove('tx-invalid'),MOTION.signal);
 }
+function nudgeAmount(){markTxInvalid($('#fAmount').closest('.tx-amount'));}
 function pressKeypad(key){
   let value=$('#fAmount').value;
   const [whole,decimals]=value.split('.');
@@ -172,13 +177,13 @@ txDialog.addEventListener('keydown',event=>{
   else if(event.key==='.'||event.key===','){event.preventDefault();pressKeypad('.');}
   else if(event.key==='Backspace'){event.preventDefault();eraseKeypad();}
 });
-// Como en Dime: sin monto o sin categoría, el campo que falta tiembla.
+// Señala el campo que falta y conserva el aviso del formulario.
 $('#txForm').addEventListener('submit',()=>{
   if(!txDialog.classList.contains('tx-mobile-simple'))return;
   if(!(parseFloat($('#fAmount').value)>0))nudgeAmount();
-  else if(!selCat){mobileTxCategory.classList.remove('tx-shake');void mobileTxCategory.offsetWidth;mobileTxCategory.classList.add('tx-shake');}
+  else if(!selCat)markTxInvalid(mobileTxCategory);
 },true);
-for(const node of [$('#fAmount').closest('.tx-amount'),mobileTxCategory])node.addEventListener('animationend',()=>node.classList.remove('tx-shake'));
+$('#fAmount').addEventListener('input',event=>event.target.closest('.tx-amount').classList.remove('tx-invalid'));
 function positionMobileTx(){
   txDialog.classList.toggle('tx-mobile-simple',mobileLayout.matches);
   const amount=$('#fAmount'),value=amount.value;
@@ -195,6 +200,7 @@ function positionMobileTx(){
 }
 function syncMobileTxUI(){
   if(!mobileLayout.matches)return;
+  if(selCat)mobileTxCategory.classList.remove('tx-invalid');
   const category=getCat(selCat),picking=txDialog.classList.contains('category-open');
   // Como en Dime: la píldora toma el color de la categoría y, con el selector abierto, se convierte en «Cerrar».
   mobileTxCategory.innerHTML=picking?'<span>Cerrar</span>':`${iconHTML(category.icon,category.color)}<span>${selCat?esc(category.name):'Categoría'}</span>`;
@@ -215,6 +221,7 @@ function syncMobileTxUI(){
   mobileTxNote.hidden=txDialog.classList.contains('note-open');
 }
 function prepareMobileTxUI(){
+  for(const field of txDialog.querySelectorAll('.tx-invalid'))field.classList.remove('tx-invalid');
   txDialog.classList.remove('category-open','options-open');
   txDialog.classList.toggle('note-open',!!$('#fDesc').value);
   mobileTxOptions.setAttribute('aria-expanded','false');mobileTxCategory.setAttribute('aria-expanded','false');
@@ -229,8 +236,7 @@ function setMobileTxPanel(panel,{focus=true}={}){
   // El selector ocupa el lugar del teclado propio. Con el teclado del sistema abierto (búsqueda) usa todo el cuerpo y se cierra con Listo.
   txDialog.classList.toggle('category-open',panel==='category');
   txDialog.classList.toggle('options-open',panel==='options');
-  // Se mide después de cambiar de estado: así el panel cubre exactamente el teclado y nunca queda una fila de teclas encima.
-  if(panel){mobileTxViewport.style.top=(mobileTxKeypad.offsetParent?mobileTxKeypad.offsetTop:txBody.scrollTop)+'px';mobileTxViewport.style.bottom=-txBody.scrollTop+'px';}
+  // El panel comparte la caja del teclado y sigue sus cambios de tamaño.
   txCategoryField.inert=panel!=='category';mobileTxExtras.inert=panel!=='options';
   mobileTxCategory.setAttribute('aria-expanded',String(panel==='category'));
   mobileTxOptions.setAttribute('aria-expanded',String(panel==='options'));
@@ -324,7 +330,7 @@ function renderMobileHome(txs = planTx(currentMonth), totals){
   card.style.setProperty('--spent-progress',red);
   card.innerHTML = `<div class="mobile-spent-head"><span class="mobile-spent-label">Gastado de tus ingresos</span><b class="mobile-spent-pct">${pct == null ? '—' : pctTxt(pct)}</b></div>
     <div class="mobile-spent-bar" role="img" aria-label="${pct == null ? 'Sin ingresos en el período' : esc(`${fmt(exp)} gastados de ${fmt(inc)} de ingresos, ${pctTxt(pct)}`)}"><span style="width:${(share*100).toFixed(1)}%"></span></div>
-    <p class="mobile-spent-meta">${pct == null ? 'Aún sin ingresos en este período.' : `${left >= 0 ? 'Quedan' : 'Exceso de'} <b>${fmt(Math.abs(left))}</b>`}</p>`;
+    <p class="mobile-spent-meta">${pct == null ? 'Aún sin ingresos en este período.' : `${left >= 0 ? 'Queda de tus ingresos:' : 'Gasto por encima de tus ingresos:'} <b>${fmt(Math.abs(left))}</b>`}</p>`;
   $('#mobileHomeTopRows').innerHTML = recentExpenseRows(txs, MOBILE_RECENT_LIMIT);
 }
 $('#mobileRecentAll').onclick=()=>openMovs({type:'expense',scope:cycleView()?'cycle':'month',month:currentMonth});
@@ -365,7 +371,7 @@ function renderMobileBudget(){
   const budget = spendRows.reduce((total,row) => total+row.budget,0), real = spendRows.reduce((total,row) => total+row.real,0);
   const left = budget-real, used = budget>0 ? Math.max(0,real/budget*100) : 0;
   $('#mobileBudgetRange').textContent = cycleView() ? 'Por ciclo de sueldo' : 'Por mes';
-  $('#mobileBudgetGauge').innerHTML = `<div class="mobile-budget-gauge"><svg viewBox="0 0 240 140" aria-hidden="true"><path class="gauge-track" d="M24 120 A96 96 0 0 1 216 120" pathLength="100"/><path class="gauge-fill${left<0?' over':''}" d="M24 120 A96 96 0 0 1 216 120" pathLength="100" stroke-dasharray="${Math.min(100,used)} 100"/></svg><div class="mobile-gauge-copy"><span>${budget>0?(left<0?'Exceso del presupuesto':'Por gastar del presupuesto'):'Presupuesto de gastos'}</span><strong class="${budget>0&&left<0?'neg':''}">${budget>0?fmt(Math.abs(left)):'Sin definir'}</strong><small>${budget>0?`${pctTxt(used)} usado`:'Asigna un monto por categoría'}</small></div></div><p class="mobile-gauge-totals"><span>Gastado <b>${fmt(real)}</b></span><span>Plan <b>${fmt(budget)}</b></span></p>`;
+  $('#mobileBudgetGauge').innerHTML = `<div class="mobile-budget-gauge"><svg viewBox="0 0 240 140" aria-hidden="true"><path class="gauge-track" d="M24 120 A96 96 0 0 1 216 120" pathLength="100"/><path class="gauge-fill${left<0?' over':''}" d="M24 120 A96 96 0 0 1 216 120" pathLength="100" stroke-dasharray="${Math.min(100,used)} 100"/></svg><div class="mobile-gauge-copy"><span>${budget>0?(left<0?'Exceso del presupuesto':'Disponible del presupuesto'):'Presupuesto de gastos'}</span><strong class="${budget>0&&left<0?'neg':''}">${budget>0?fmt(Math.abs(left)):'Sin definir'}</strong><small>${budget>0?`${pctTxt(used)} usado`:'Asigna un monto por categoría'}</small></div></div><p class="mobile-gauge-totals"><span>Gastado <b>${fmt(real)}</b></span><span>Plan <b>${fmt(budget)}</b></span></p>`;
   $('#mobileBudgetCategories').innerHTML = rows.length ? rows.map(({c,budget,real}) => {
     const saving = isSavingCat(c.id), left = budget-real, pct = budget>0?real/budget*100:0;
     const over = !saving && budget>0 && left<-.005;
@@ -412,16 +418,12 @@ mobileWeeklySpending.className = 'mobile-only';
 mobileWeeklySpending.setAttribute('aria-labelledby','mobileWeeklyTitle');
 const mobileMovementHeader = document.createElement('header');
 mobileMovementHeader.className = 'mobile-only mobile-movement-header';
-mobileMovementHeader.innerHTML = `<h2>Movimientos</h2><button type="button" id="mobileMovementReset" class="btn sm" hidden>Ver todo</button><button type="button" id="mobileMovementTools" class="iconbtn" aria-label="Opciones de movimientos" aria-expanded="false" aria-controls="movementToolbar movementFilters">${ic('settings')}</button>`;
-$('#tab-movs .toolbar').before(mobileWeeklySpending,mobileMovementHeader);
+mobileMovementHeader.innerHTML = `<h2>Movimientos</h2><button type="button" id="mobileMovementReset" class="btn sm" hidden>Ver todo</button>`;
+$('#tab-movs .toolbar').before(mobileMovementHeader,mobileWeeklySpending);
 
-function setMobileMovementTools(open){
-  $('#mobileMovementTools').setAttribute('aria-expanded',String(open));
-}
-$('#mobileMovementTools').onclick = event => setMobileMovementTools(event.currentTarget.getAttribute('aria-expanded') !== 'true');
 $('#mobileMovementReset').onclick = () => {
   openMovs({scope:'all'});
-  $('#mobileMovementTools').focus({preventScroll:true});
+  $('#fltText').focus({preventScroll:true});
 };
 
 function renderMobileMovements(scope, filtered){

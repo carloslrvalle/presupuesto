@@ -49,7 +49,7 @@ function renderSaveCard(){
       <div class="bar"><span style="width:${w}%;background:${barFill(cssVar('--primary'), done ? 'income' : '')}"></span></div>
       <div class="sv-tip">${tip}</div></div>`;
   } else status = '<div class="sv-tip">Escribe qué porcentaje de tus ingresos quieres ahorrar y te diremos si vas bien.</div>';
-  $('#budSave').innerHTML = `<h3>${ic('piggy-bank')} Meta de ahorro</h3>
+  $('#budSave').innerHTML = `<h2 class="section-title">${ic('piggy-bank')} Meta de ahorro</h2>
     <div class="sv-form">
       <span class="sv-l">Meta</span>
       <div class="sv-c"><span class="sv-in"><input type="number" id="svPct" min="0" max="100" step="1" inputmode="numeric" value="${sv.pct || ''}" placeholder="20"><i>%</i></span><span class="sv-hint">de tus ingresos</span></div>
@@ -83,15 +83,34 @@ function renderBudget(){
   if (before.length) document.querySelectorAll('#tab-budget tfoot td').forEach((t, i) => { if (before[i] !== undefined && before[i] !== t.textContent && !reduceMotion()) motionAnimate(t,[{opacity:.55},{opacity:1}],'fast'); });
   if (typeof renderMobileBudget === 'function') renderMobileBudget();
 }
-function saveBudgetAmount(id, value){
-  const m = currentMonth;
-  state.budgets[m] = state.budgets[m] || {};
-  state.budgets[m][cycleView()?cycleBudgetKey(id):id] = Math.max(0, parseFloat(value) || 0);
-  return save();
+function saveBudgetAmount(id, value, dialog){
+  const month = currentMonth;
+  const key = cycleView() ? cycleBudgetKey(id) : id;
+  return saveChange(() => {
+    state.budgets[month] ??= {};
+    state.budgets[month][key] = Math.max(0, parseFloat(value) || 0);
+  }, dialog);
 }
 $('#tab-budget').addEventListener('change', e => {
   const inp = e.target.closest('[data-bud]'); if (!inp) return;
-  saveBudgetAmount(inp.dataset.bud, inp.value); keepFocus(() => tickChanges($('#tab-budget'), 'td.num:not([data-mobile-label="Plan"]),td.av,#budSave .sv-tip b', () => { renderBudget(); renderDashboard(); }));
+  const id = inp.dataset.bud;
+  if (!saveBudgetAmount(id, inp.value)){
+    inp.value = planBudget(currentMonth,id) || '';
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+    const cell = inp.closest('td');
+    let error = cell.querySelector('.budget-save-error');
+    if (!error){
+      error = document.createElement('p');
+      error.className = 'budget-save-error';
+      error.id = 'budget-save-error-' + id;
+      error.setAttribute('role','alert');
+      cell.append(error);
+      inp.setAttribute('aria-describedby',error.id);
+    }
+    error.textContent = 'No se guardó. Vuelve a ingresar el importe para reintentar.';
+    return;
+  }
+  keepFocus(() => tickChanges($('#tab-budget'), 'td.num:not([data-mobile-label="Plan"]),td.av,#budSave .sv-tip b', () => { renderBudget(); renderDashboard(); }));
 });
 $('#tab-budget').addEventListener('input', e => {
   const inp = e.target.closest('.budget-input'); if (!inp) return;

@@ -12,16 +12,19 @@ function fillMethodFilter(){
   sel.innerHTML = '<option value="">Todos los métodos</option>' + ms.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
   sel.value = v; if (sel.selectedIndex < 0) sel.value = '';
 }
-function movementHistory(list,dayLbl,filtered){
+function movementHistory(list,dayLbl,filtered,allMatches){
  if(!list.length)return filtered?emptyBox('search','Ningún movimiento coincide con tu búsqueda o filtros.'):emptyBox('receipt','Aún no hay movimientos en este período.','tx','Nuevo movimiento');
  const groups=new Map();for(const t of list){if(!groups.has(t.date))groups.set(t.date,[]);groups.get(t.date).push(t);}
+ const dayTotals = new Map([...groups.keys()].map(day => [day, []]));
+ for (const transaction of allMatches) dayTotals.get(transaction.date)?.push(transaction);
  return [...groups].map(([day,items])=>{
-  const [label,date]=dayLbl(day),expense=spendSum(items),saved=saveSum(items),income=sum(items.filter(t=>t.type==='income')),planned=isPlanned(items[0]);
+  const dayItems = dayTotals.get(day);
+  const [label,date]=dayLbl(day),expense=spendSum(dayItems),saved=saveSum(dayItems),income=sum(dayItems.filter(t=>t.type==='income')),planned=isPlanned(items[0]);
   const totals=[expense?`<span class="xp">− ${fmt(expense)}</span>`:'',saved?`<span class="sv" title="Separado como ahorro">↗ ${fmt(saved)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
   return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h2 class="history-day-title" id="history-day-${day}">${label}</h2>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div><div class="history-day-totals" aria-label="Totales del día">${totals}</div></header><ul class="history-items">${items.map(t=>{
    const c=getCat(t.catId),isI=t.type==='income',isS=isSavingTx(t);
-   const actionLabel=[(selMode?'Seleccionar ':'Editar ')+(t.desc||c.name),t.desc?c.name:'',isI?'Ingreso':isS?'Ahorro':'Gasto',fmt(t.amount)].filter(Boolean).join(', ');
-   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-label="${esc(actionLabel)}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-mobile-title">${esc(t.desc||c.name)}</span><span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-mobile-category">${esc(c.name)}</span>`:''}${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+   const action = `${selMode?'Seleccionar':'Editar'} ${isI?'ingreso':isS?'ahorro':'gasto'}`;
+   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-mobile-title">${esc(t.desc||c.name)}</span><span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-mobile-category">${esc(c.name)}</span>`:''}${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
   }).join('')}</ul></section>`;
  }).join('');
 }
@@ -32,8 +35,11 @@ function toggleMovementFilters(){
 }
 
 function defaultMovementScope(){return mobileLayout.matches ? 'all' : 'month';}
+const MOV_PAGE_SIZE = 40;
+let movPage = 0, movQuery = '', movMatches = [], movFiltered = false, movSearchFrame = 0;
 function renderMovs(refreshFilters = true){
-  closeMovActionMenu(false);
+  cancelAnimationFrame(movSearchFrame);
+  movSearchFrame = 0;
   if (refreshFilters){ fillCatFilter(); fillMethodFilter(); }
   const ft = $('#fltType').value, fc = $('#fltCat').value, fm = $('#fltMethod').value, scope = $('#fltScope').value, q = $('#fltText').value.trim().toLowerCase();
   const extraCount = Number(!!fc) + Number(!!fm) + Number(!!ft) + Number(scope !== defaultMovementScope());
@@ -45,22 +51,50 @@ function renderMovs(refreshFilters = true){
     .some(text => text.toLowerCase().includes(q)) || fmt(t.amount).toLowerCase().includes(q);
   const list = base.filter(t => (!ft || t.type === ft) && (!fc || t.catId === fc) && (!fm || t.method === fm) && match(t))
     .sort((a,b) => b.date.localeCompare(a.date) || (b.created||0) - (a.created||0));
+  const query = JSON.stringify([activeProfile,currentMonth,scope,ft,fc,fm,q]);
+  if (query !== movQuery) movPage = 0;
+  movQuery = query;
+  movMatches = list;
+  movFiltered = Boolean(q || extraCount);
   const pl = list.filter(isPlanned);
   const real = list.filter(t => !isPlanned(t)); // los programados se cuentan aparte, igual que en el Resumen
   const inc = sum(real.filter(t => t.type === 'income')), exp = spendSum(real), saved = saveSum(real);
   $('#movSummary').innerHTML='<span class="mov-count">'+plural(list.length,'movimiento')+' '+(scope==='all'?'en total':'en '+(scope==='year'?y:scope==='cycle'?cycleLabel(currentMonth):monthLong(currentMonth)))+'</span><span class="mov-total"><span>Ingresos</span><b class="pos">'+fmt(inc)+'</b></span><span class="mov-total"><span>Gastos</span><b class="xp">'+fmt(exp)+'</b></span>'+(saved?'<span class="mov-total"><span>Ahorro</span><b class="sv">'+fmt(saved)+'</b></span>':'')+(pl.length?'<span class="mov-planned-total">'+plural(pl.length,'programado')+' · '+fmt(sum(pl))+'</span>':'');
 
-  // Agrupados por día, con el total del día en el encabezado
+  renderMovementPage(movPage);
+  planningHeader();
+  if (mobileLayout.matches) renderMobileMovements(scope, movFiltered);
+}
+
+function renderMovementPage(index){
+  closeMovActionMenu(false);
+  const pageCount = Math.ceil(movMatches.length / MOV_PAGE_SIZE);
+  movPage = Math.max(0,Math.min(index,pageCount-1));
+  const start = movPage * MOV_PAGE_SIZE;
+  const list = movMatches.slice(start,start+MOV_PAGE_SIZE);
+  const pager = $('#movPages');
+  pager.hidden = pageCount <= 1;
+  if (!pager.hidden){
+    const previous = pager.querySelector('[data-mov-page="-1"]');
+    const next = pager.querySelector('[data-mov-page="1"]');
+    previous.disabled = movPage === 0;
+    next.disabled = movPage === pageCount-1;
+    $('#movPageRange').textContent = `${start+1}–${start+list.length} de ${movMatches.length}`;
+  }
   const t0 = new Date(); t0.setHours(0, 0, 0, 0);
   const dayLbl = iso => { const [Y, M, D] = iso.split('-').map(Number), d = new Date(Y, M - 1, D);
     const diff = Math.round((d - t0) / 864e5), wd = movementWeekday.format(d);
     const long = `${wd.charAt(0).toUpperCase() + wd.slice(1)} ${D} ${MONTHS_ES[M - 1].toLowerCase()}${Y !== t0.getFullYear() ? ' ' + Y : ''}`;
     return diff === 0 ? ['Hoy', long] : diff === -1 ? ['Ayer', long] : diff === 1 ? ['Mañana', long] : [long, '']; };
   $('#movBody').classList.toggle('selecting',selMode);
-  $('#movBody').innerHTML=movementHistory(list,dayLbl,!!(q||ft||fc||fm));
-  planningHeader();
-  if (mobileLayout.matches) renderMobileMovements(scope, !!(q || extraCount));
+  $('#movBody').innerHTML=movementHistory(list,dayLbl,movFiltered,movMatches);
 }
+$('#movPages').addEventListener('click', event => {
+  const button = event.target.closest('[data-mov-page]');
+  if (!button) return;
+  renderMovementPage(movPage + Number(button.dataset.movPage));
+  if (button.disabled) $('#movPages button:not(:disabled)')?.focus({preventScroll:true});
+});
 const movementWeekday = new Intl.DateTimeFormat('es-PE', {weekday:'long'});
 ['#fltType','#fltCat'].forEach(s => $(s).addEventListener('change', () => renderMovs(false)));
 
@@ -303,7 +337,7 @@ function renderCalDay(){
   const [y, mo, d] = iso.split('-').map(Number), label = new Date(y, mo - 1, d).toLocaleDateString('es-PE', {weekday:'long', day:'numeric', month:'long'});
   $('#calDay').innerHTML = `<header class="cal-day-head">
       <div class="cal-day-summary">
-        <h3 id="calDayTitle"><time datetime="${iso}">${label[0].toUpperCase() + label.slice(1)}</time></h3>
+        <h2 id="calDayTitle" class="section-title"><time datetime="${iso}">${label[0].toUpperCase() + label.slice(1)}</time></h2>
         ${list.length ? `<span class="small muted">${plural(list.length, 'movimiento')}</span>` : ''}
       </div>
       ${list.length ? `<dl class="cal-day-totals">
@@ -347,7 +381,13 @@ $('#calDay').addEventListener('click', async e => {
   if (dl){ await fadeOut(dl.closest('.prow')); delTxUndo(dl.dataset.del); }
 });
 
-$('#fltText').addEventListener('input', () => renderMovs(false));
+$('#fltText').addEventListener('input', () => {
+  if (movSearchFrame) return;
+  movSearchFrame = requestAnimationFrame(() => {
+    movSearchFrame = 0;
+    if (activeTab() === 'movs' && movView === 'list') renderMovs(false);
+  });
+});
 // Modo selección: tocar filas para marcarlas y borrarlas juntas (con deshacer)
 let selMode = false; const selSet = new Set();
 const selBar = document.createElement('div'); selBar.className = 'sel-bar'; selBar.hidden = true; document.body.appendChild(selBar);
@@ -366,7 +406,15 @@ function renderSelUI(){
 $('#btnSelect').onclick = () => setSelMode(!selMode);
 selBar.addEventListener('click', async e => {
   const b = e.target.closest('[data-sel]'); if (!b) return;
-  if (b.dataset.sel === 'all'){ const rows = [...document.querySelectorAll('#movBody [data-row]')].map(r => r.dataset.row); const all = rows.every(id => selSet.has(id)); rows.forEach(id => all ? selSet.delete(id) : selSet.add(id)); renderSelUI(); renderMovs(); return; }
+  if (b.dataset.sel === 'all'){
+    if (movSearchFrame) renderMovs(false);
+    const all = movMatches.every(transaction => selSet.has(transaction.id));
+    movMatches.forEach(({id}) => all ? selSet.delete(id) : selSet.add(id));
+    renderSelUI();
+    renderMovementPage(movPage);
+    selBar.querySelector('[data-sel="all"]').focus({preventScroll:true});
+    return;
+  }
   const ids = [...selSet], profile = activeProfile; if (!ids.length) return;
   if (!(await ask({title:`¿Borrar ${plural(ids.length, 'movimiento')}?`, msg:'Podrás deshacerlo desde el aviso de abajo.'}))) return;
   if(activeProfile !== profile)return;
@@ -458,7 +506,7 @@ function txCategoryMarkup(cats){
  $('#txCategorySearchBox').hidden=!txCategoryExpanded;
  $('#txAllCategories').textContent=txCategoryExpanded?'Ver menos':`Ver todas (${cats.length})`;
  $('#txAllCategories').setAttribute('aria-expanded',String(txCategoryExpanded));
- return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}" style="--chip-tint:${soft(c.color)};--chip-ink:${strokeOn(c.color)}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
+ return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}" style="--chip-tint:${soft(c.color)}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
 }
 function resetTxCategoryUI(){
  txCategoryExpanded=false;$('#txCategorySearch').value='';$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');
@@ -662,14 +710,23 @@ function delTxUndo(id){
   }});
   return true;
 }
+function revealMovementRow(id){
+  if (activeTab() === 'movs' && movView === 'list'){
+    const index = movMatches.findIndex(transaction => transaction.id === id);
+    const page = Math.floor(index / MOV_PAGE_SIZE);
+    if (index >= 0 && page !== movPage) renderMovementPage(page);
+  }
+  return document.querySelector(`#movBody [data-row="${id}"]`);
+}
 // Resalta brevemente una fila de la tabla de movimientos
 function highlightSaved(id){
+  const row = revealMovementRow(id);
   if (reduceMotion()) return;
-  const el = document.querySelector(`#movBody [data-row="${id}"]`) || document.querySelector(`[data-go-tx="${id}"]`) || document.querySelector(`#calDay [data-edit="${id}"]`)?.closest('.prow');
+  const el = row || document.querySelector(`[data-go-tx="${id}"]`) || document.querySelector(`#calDay [data-edit="${id}"]`)?.closest('.prow');
   if (!el) return; el.classList.remove('just'); void el.offsetWidth; el.classList.add('just');
   if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
 }
-function flashRow(id){const tr=document.querySelector(`#movBody [data-row="${id}"]`);motionAnimate(tr,[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
+function flashRow(id){motionAnimate(revealMovementRow(id),[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
 function removeTransactions(ids){
   const profile = activeProfile, selected = new Set(ids), removed = [];
   state.transactions = state.transactions.filter((transaction, index) => {

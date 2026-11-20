@@ -206,7 +206,6 @@ function syncMobileTxUI(){
   mobileTxCategory.innerHTML=picking?'<span>Cerrar</span>':`${iconHTML(category.icon,category.color)}<span>${selCat?esc(category.name):'Categoría'}</span>`;
   mobileTxCategory.classList.toggle('closing',picking);
   mobileTxCategory.style.setProperty('--cat-bg',selCat&&!picking?soft(category.color):'');
-  mobileTxCategory.style.setProperty('--cat-ink',selCat&&!picking?strokeOn(category.color):'');
   mobileTxCategory.setAttribute('aria-label',picking?'Cerrar categorías':'Categoría: '+(selCat?category.name:'Elegir'));
   txDialog.querySelector('.dlg-foot [type=submit]').textContent=editingId?'Guardar cambios':txType==='income'?'Guardar ingreso':'Guardar gasto';
   const amountField=$('#fAmount'),characters=Math.max(1,(amountField.value||'0').length),amountBox=amountField.closest('.tx-amount');
@@ -339,7 +338,7 @@ const mobileBudgetView = document.createElement('section');
 mobileBudgetView.id = 'mobileBudgetView';
 mobileBudgetView.className = 'mobile-only';
 mobileBudgetView.setAttribute('aria-labelledby', 'mobileBudgetTitle');
-mobileBudgetView.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileBudgetTitle">Presupuestos</h2><span id="mobileBudgetRange"></span></div><div id="mobileBudgetGauge"></div><div class="mobile-budget-categories" id="mobileBudgetCategories"></div>`;
+mobileBudgetView.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileBudgetTitle" aria-hidden="true">Presupuestos</h2><span id="mobileBudgetRange"></span></div><div id="mobileBudgetGauge"></div><div class="mobile-budget-categories" id="mobileBudgetCategories"></div>`;
 $('#tab-budget .bud-grid').before(mobileBudgetView);
 
 // Las herramientas existentes se despliegan debajo de las tarjetas y vuelven a su sitio en escritorio.
@@ -376,7 +375,7 @@ function renderMobileBudget(){
     const saving = isSavingCat(c.id), left = budget-real, pct = budget>0?real/budget*100:0;
     const over = !saving && budget>0 && left<-.005;
     const caption = !budget ? (real?'Gastado sin presupuesto':'Toca para asignar') : saving ? (left>0?'Por ahorrar':'Ahorro adicional') : left<-.005?'Exceso':'Por gastar';
-    return `<button type="button" class="mobile-budget-tile${over?' over':''}" data-mobile-budget-edit="${esc(c.id)}" aria-label="Editar presupuesto de ${esc(c.name)}"><span class="mobile-budget-tile-name"><span class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><b>${esc(c.name)}</b></span><span class="mobile-budget-tile-status">${budget?`${pctTxt(pct)} ${saving?'ahorrado':'usado'}`:'Sin presupuesto'}</span><strong>${budget?fmt(Math.abs(left)):real?fmt(real):'Sin definir'}</strong><span class="mobile-budget-tile-caption">${caption}</span><span class="mobile-budget-tile-track" aria-hidden="true"><i style="width:${Math.min(100,Math.max(0,pct))}%;background:${over?'var(--expense)':esc(c.color)}"></i></span><span class="mobile-budget-tile-plan">Plan ${fmt(budget)} ${ic('pencil')}</span></button>`;
+    return `<button type="button" class="mobile-budget-tile${over?' over':''}" data-mobile-budget-edit="${esc(c.id)}" aria-description="Editar presupuesto"><span class="mobile-budget-tile-name"><span class="ico" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><b>${esc(c.name)}</b></span><span class="mobile-budget-tile-status">${budget?`${pctTxt(pct)} ${saving?'ahorrado':'usado'}`:'Sin presupuesto'}</span><strong>${budget?fmt(Math.abs(left)):real?fmt(real):'Sin definir'}</strong><span class="mobile-budget-tile-caption">${caption}</span><span class="mobile-budget-tile-track" aria-hidden="true"><i style="width:${Math.min(100,Math.max(0,pct))}%;background:${over?'var(--expense)':esc(c.color)}"></i></span><span class="mobile-budget-tile-plan">Plan ${fmt(budget)} ${ic('pencil')}</span></button>`;
   }).join('') : '<p class="small muted">Crea categorías de gasto para distribuir tu presupuesto.</p>';
 }
 
@@ -403,7 +402,7 @@ mobileBudgetEditor.querySelector('form').onsubmit = event => {
   if (!draft || draft.profile!==activeProfile || draft.month!==currentMonth || draft.cycle!==(cycleView()?cycleDay():null) || !state.categories.some(c=>c.id===draft.id)){
     mobileBudgetEditor.close();toast('El período o perfil cambió. Abre el presupuesto de nuevo.');return;
   }
-  if (!saveBudgetAmount(draft.id,$('#mobileBudgetAmount').value)) return;
+  if (!saveBudgetAmount(draft.id,$('#mobileBudgetAmount').value,mobileBudgetEditor)) return;
   mobileBudgetEditor.close();renderAll();
 };
 mobileBudgetEditor.addEventListener('close', () => {
@@ -418,7 +417,7 @@ mobileWeeklySpending.className = 'mobile-only';
 mobileWeeklySpending.setAttribute('aria-labelledby','mobileWeeklyTitle');
 const mobileMovementHeader = document.createElement('header');
 mobileMovementHeader.className = 'mobile-only mobile-movement-header';
-mobileMovementHeader.innerHTML = `<h2>Movimientos</h2><button type="button" id="mobileMovementReset" class="btn sm" hidden>Ver todo</button>`;
+mobileMovementHeader.innerHTML = `<h2 aria-hidden="true">Movimientos</h2><button type="button" id="mobileMovementReset" class="btn sm" hidden>Ver todo</button>`;
 $('#tab-movs .toolbar').before(mobileMovementHeader,mobileWeeklySpending);
 
 $('#mobileMovementReset').onclick = () => {

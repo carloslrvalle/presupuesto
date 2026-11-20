@@ -17,8 +17,8 @@ function planningHeader(){
  $('#prevM').title=bothCycles?'Cierre anterior':headerCycle?'Ciclo anterior':'Mes anterior';$('#nextM').title=bothCycles?'Cierre siguiente':headerCycle?'Ciclo siguiente':'Mes siguiente';
  const labels=document.querySelectorAll('#tab-dashboard .kpi .label');
  [cy?'Ingresos del ciclo':'Ingresos del mes',cy?'Gastos del ciclo':'Gastos del mes','Saldo acumulado','Tasa de ahorro'].forEach((text,i)=>{if(!labels[i])return;for(const node of labels[i].childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){node.textContent=text;break;}});
- $('#topExp').closest('.card').querySelector('h3').textContent='Gastos recientes';
- $('#barsWrap').closest('.card').querySelector('h3').textContent='Evolución de ingresos y gastos';
+ $('#topExp').closest('.card').querySelector('.section-title').textContent='Gastos recientes';
+ $('#barsWrap').closest('.card').querySelector('.section-title').textContent='Evolución de ingresos y gastos';
  const copy=$('#btnCopyPrev span');if(copy)copy.textContent=cy?'Copiar ciclo anterior':'Copiar mes anterior';
 }
 function shortPeriodLabel(m){const p=cyclePeriod(m);return p.start.slice(0,4)!==p.end.slice(0,4)?cycleLabel(m):[p.start,p.end].map(d=>fmtDateLong(d).replace(/\s+\d{4}$/,'')).join(' – ');}
@@ -74,7 +74,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-plan-mode]
 document.addEventListener('change',e=>{if(e.target.matches('[data-cycle-day]'))setPlanningMode(true,Number(e.target.value));});
 function renderCycleSaveCard(){
  const m=currentMonth,sv=cycleSavings(m),own=(state.settings.savePctM||{})[cycleBudgetKey(m)]!=null,mode=saveMode();
- $('#budSave').innerHTML=`<h3>${ic('piggy-bank')} Meta de ahorro del ciclo</h3><div class="sv-form"><label class="sv-l" for="svPct">Meta</label><div class="sv-c"><span class="sv-in"><input type="number" id="svPct" min="0" max="100" step="1" value="${sv.pct||''}" placeholder="20"><i>%</i></span></div><span class="sv-l">Aplica a</span><label class="check sv-c"><input type="checkbox" id="svAll"${own?'':' checked'}><span>Meta general${own?' · excepción en este ciclo':''}</span></label><span class="sv-l">Cuenta como ahorro</span><div class="seg sv-c"><button type="button" data-svmode="set" class="${mode==='set'?'active':''}">Lo que separo</button><button type="button" data-svmode="left" class="${mode==='left'?'active':''}">Lo que sobra</button></div></div><div class="sv-tip"><b>${fmt(sv.saved)}</b> ${sv.pct?'de '+fmt(sv.target):'ahorrados en el ciclo'}${sv.rate!=null?' · '+sv.rate.toFixed(1)+'%':''}</div>`;
+ $('#budSave').innerHTML=`<h2 class="section-title">${ic('piggy-bank')} Meta de ahorro del ciclo</h2><div class="sv-form"><label class="sv-l" for="svPct">Meta</label><div class="sv-c"><span class="sv-in"><input type="number" id="svPct" min="0" max="100" step="1" value="${sv.pct||''}" placeholder="20"><i>%</i></span></div><span class="sv-l">Aplica a</span><label class="check sv-c"><input type="checkbox" id="svAll"${own?'':' checked'}><span>Meta general${own?' · excepción en este ciclo':''}</span></label><span class="sv-l">Cuenta como ahorro</span><div class="seg sv-c"><button type="button" data-svmode="set" class="${mode==='set'?'active':''}">Lo que separo</button><button type="button" data-svmode="left" class="${mode==='left'?'active':''}">Lo que sobra</button></div></div><div class="sv-tip"><b>${fmt(sv.saved)}</b> ${sv.pct?'de '+fmt(sv.target):'ahorrados en el ciclo'}${sv.rate!=null?' · '+sv.rate.toFixed(1)+'%':''}</div>`;
 }
 
 const hexLum = hex => { const h = String(hex || '').replace('#',''); if (h.length !== 6) return .4;

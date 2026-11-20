@@ -223,13 +223,17 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
   if (!_cv || k !== _cvKey){ _cv = new Map(); _cvKey = k; _cv.cs = getComputedStyle(de); qMicro(() => { _cv = null; }); }
   let v = _cv.get(n); if (v === undefined){ v = _cv.cs.getPropertyValue(n).trim(); _cv.set(n, v); } return v; };
 // El teclado responde de inmediato; el puntero conserva las transiciones del componente.
+const reducedMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+function finishNavigationMotion(){
+ for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active .mobile-weekly-cursor,#tab-movs.active :is(#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary)')){
+  el._motion?.finish();
+ }
+}
+reducedMotionPreference.addEventListener('change', event => { if(event.matches)finishNavigationMotion(); });
 document.addEventListener('keydown',event=>{
  if(['Shift','Control','Alt','Meta'].includes(event.key))return;
  document.documentElement.dataset.motionInput='keyboard';
- // El indicador y la sección terminan su recorrido antes de mover el foco.
- document.querySelectorAll('#tabInd,#mobileNavIndicator,.tab.active').forEach(el=>{
-  if(el._motion)el._motion.finish();
- });
+ finishNavigationMotion();
 },true);
 document.addEventListener('pointerdown',()=>{
  const root=document.documentElement;
@@ -240,7 +244,7 @@ document.addEventListener('pointerdown',()=>{
   if(animation instanceof CSSAnimation && animation.effect.getTiming().iterations !== Infinity)animation.finish();
  }
 },true);
-const reduceMotion = () => document.documentElement.dataset.motionInput === 'keyboard' || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const reduceMotion = () => document.documentElement.dataset.motionInput === 'keyboard' || reducedMotionPreference.matches;
 // El cierre visual de Safari no retiene controles accesibles ni retrasa el cierre nativo.
 if(!CSS.supports('overlay','auto')){
  document.addEventListener('close',e=>{if(e.target instanceof HTMLDialogElement&&!e.target.open)e.target.inert=true;},true);
@@ -274,6 +278,9 @@ function motionAnimate(el,frames,kind='move'){
 }
 function revealContent(el,kind='fast'){
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
+}
+function revealNavigationView(view){
+ return motionAnimate(view,[{opacity:.92},{opacity:1}],'fast');
 }
 function toggleDisclosure(details,summary,open=!details.open){
  const content=summary.nextElementSibling;
@@ -420,7 +427,8 @@ function showTab(name, scrollTop = 0){
     chYear.stop();
     finishAnalysisTrace(chYear);
   }
-  if(prevTab!==name)$('#tabInd')._navigationRect=$('#tabInd').getBoundingClientRect();
+  const section = $('#tab-' + name), tabIndicator = $('#tabInd');
+  if(prevTab!==name && tabBar.querySelector('button.active'))tabIndicator._navigationRect=tabIndicator.getBoundingClientRect();
   for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
     button.classList.toggle('active', button === b);
     if (button === b) button.setAttribute('aria-current', 'page');
@@ -428,8 +436,8 @@ function showTab(name, scrollTop = 0){
   }
   $('#btnSettings').classList.toggle('active', name === 'settings');
   document.querySelectorAll('.tab').forEach(s => {
-    s.classList.toggle('active', s.id === 'tab-' + name);
-    if(!s.classList.contains('active')&&s._motion){s._motion.cancel();s._motion=null;}
+    s.classList.toggle('active', s === section);
+    if(s !== section && s._motion){s._motion.cancel();s._motion=null;}
   });
   // Al volver a Resumen, cada indicador conserva el último valor dibujado.
   if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
@@ -449,8 +457,8 @@ function showTab(name, scrollTop = 0){
   if (typeof updateMobileNavigation === 'function') updateMobileNavigation();
   if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
   if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
+  if(prevTab !== name)revealNavigationView(section);
 }
-// Entrada escalonada: las tarjetas visibles aparecen una tras otra
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
 const tabScroll = {};
 const tabBar = $('#tabs');
@@ -659,7 +667,9 @@ function moveIndicator(indicator, geometry, previousRect, duration=MOTION.tab){
 function moveTabInd(animate=true){
   const b = $('#tabs button.active'), ind = $('#tabInd'), previous=ind._navigationRect;
   delete ind._navigationRect;
-  ind.style.opacity = b ? 1 : 0; if (!b) return;
+  const wasVisible = ind.style.opacity === '1';
+  ind.style.opacity = b ? 1 : 0;
+  if (!b) { ind._motion?.cancel();ind._motion=null;return; }
   // En el teléfono, el indicador abarca toda la pestaña, incluso al pasar a dos filas.
   // La misma pieza sigue la caja completa en la barra superior y en el menú lateral.
   const box=b.getBoundingClientRect(),nav=tabBar.getBoundingClientRect();
@@ -670,10 +680,9 @@ function moveTabInd(animate=true){
     top: ((box.top-nav.top)/zoom-tabBar.clientTop+tabBar.scrollTop) + 'px',
     height: box.height/zoom + 'px'
   };
-  if(animate===false){ind._motion?.cancel();ind._motion=null;Object.assign(ind.style,geometry);return;}
-  if (previous||Object.entries(geometry).some(([key, value]) => ind.style[key] !== value)) {
-    moveIndicator(ind, geometry, previous);
-  }
+  if(!previous && Object.entries(geometry).every(([key, value]) => ind.style[key] === value))return;
+  if(!animate || !wasVisible){ind._motion?.cancel();ind._motion=null;Object.assign(ind.style,geometry);return;}
+  moveIndicator(ind, geometry, previous);
 }
 moveTabInd();
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { moveTabInd(); requestAnimationFrame(() => $('#tabInd').classList.add('ready')); });

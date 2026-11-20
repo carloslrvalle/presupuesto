@@ -118,12 +118,12 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <!-- MOVIMIENTOS -->
   <section class="tab" id="tab-movs">
     <div class="toolbar" id="movementToolbar">
-      <div class="vseg" id="movView" role="group" aria-label="Vista de movimientos"><span class="vseg-ind" aria-hidden="true"></span><button type="button" data-view="list" aria-pressed="true" class="active"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Lista</button><button type="button" data-view="cal" aria-pressed="false"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg>Calendario</button></div>
-      <button class="btn" id="btnSelect" title="Seleccionar varios para borrarlos"><span class="sel-ic"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="sel-t">Seleccionar</span></button>
+      <div class="vseg" id="movView" role="group" aria-label="Vista de movimientos"><span class="vseg-ind" aria-hidden="true"></span><button type="button" data-view="list" aria-label="Lista" title="Lista" aria-pressed="true" class="active"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg><span class="mov-view-label">Lista</span></button><button type="button" data-view="cal" aria-label="Calendario" title="Calendario" aria-pressed="false"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></svg><span class="mov-view-label">Calendario</span></button></div>
+      <button class="btn" id="btnSelect" aria-label="Seleccionar movimientos" aria-pressed="false" title="Seleccionar varios para borrarlos"><span class="sel-ic"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="sel-t">Seleccionar</span></button>
     </div>
     <div class="mview" id="view-list">
       <div class="toolbar mov-filters" id="movementFilters">
-        <div class="search-box"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar movimientos"></div>
+        <div class="search-box" id="movementSearch"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input type="search" aria-label="Buscar movimientos" id="fltText" placeholder="Buscar movimientos"></div>
         <button type="button" class="btn mov-filter-toggle" id="movFilterToggle" aria-expanded="false" aria-controls="movExtraFilters">Más filtros</button>
         <button type="button" class="btn mov-filter-clear" id="movFilterClear" aria-label="Borrar filtros" title="Borrar filtros" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>Borrar filtros</span></button>
         <div class="mov-extra-filters" id="movExtraFilters"><select id="fltScope" aria-label="Período de movimientos"><option value="month">Este mes</option><option value="cycle">Ciclo de sueldo</option><option value="year">Todo el año</option><option value="all">Todo</option></select><select id="fltType" aria-label="Tipo de movimiento"><option value="">Todos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select><select id="fltCat" aria-label="Filtrar por categoría"></select>
@@ -132,9 +132,9 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <div class="card">
         <div class="small muted" id="movSummary"></div>
         <nav id="movPages" aria-label="Páginas de movimientos" hidden>
-          <button type="button" class="btn" data-mov-page="-1" aria-controls="movBody">Anterior</button>
+          <button type="button" class="btn" data-mov-page="-1" aria-label="Página anterior" title="Página anterior" aria-controls="movBody"><span class="mov-page-icon" aria-hidden="true"></span><span>Anterior</span></button>
           <span class="small muted" id="movPageRange" role="status"></span>
-          <button type="button" class="btn" data-mov-page="1" aria-controls="movBody">Siguiente</button>
+          <button type="button" class="btn" data-mov-page="1" aria-label="Página siguiente" title="Página siguiente" aria-controls="movBody"><span class="mov-page-icon" aria-hidden="true"></span><span>Siguiente</span></button>
         </nav>
         <div id="movBody" class="mov-history"></div>
       </div>
@@ -144,7 +144,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
         <div class="card"><div class="cal" id="calGrid" role="group" aria-label="Días del mes"></div></div>
         <div class="card" id="calDay"></div>
       </div>
-      <details class="analysis-detail cal-summary" id="calSummary"><summary><span>Ver resumen</span><small id="calSummaryMonth"></small></summary><div class="analysis-detail-body"><div class="cal-stats" id="calStats"></div><h2 class="section-title" class="cal-week-heading">Gastos por semana</h2><dl class="cal-week-totals" id="calWeekTotals"></dl></div></details>
+      <details class="analysis-detail cal-summary" id="calSummary"><summary><span>Ver resumen</span><small id="calSummaryMonth"></small></summary><div class="analysis-detail-body"><div class="cal-stats" id="calStats"></div><h2 class="section-title cal-week-heading">Gastos por semana</h2><dl class="cal-week-totals" id="calWeekTotals"></dl></div></details>
     </div>
   </section>
 

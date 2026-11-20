@@ -29,7 +29,11 @@ function movementHistory(list,dayLbl,filtered,allMatches){
  }).join('');
 }
 function toggleMovementFilters(){
- const filters=$('#movExtraFilters'),open=filters.classList.toggle('expanded');
+ setMovementFiltersOpen(!$('#movExtraFilters').classList.contains('expanded'));
+}
+function setMovementFiltersOpen(open){
+ const filters=$('#movExtraFilters');
+ filters.classList.toggle('expanded',open);
  $('#movFilterToggle').setAttribute('aria-expanded',String(open));
  filters.inert=!open;
 }
@@ -63,7 +67,7 @@ function renderMovs(refreshFilters = true){
 
   renderMovementPage(movPage);
   planningHeader();
-  if (mobileLayout.matches) renderMobileMovements(scope, movFiltered);
+  if (mobileLayout.matches) renderMobileMovements(scope, extraCount);
 }
 
 function renderMovementPage(index){
@@ -93,6 +97,14 @@ $('#movPages').addEventListener('click', event => {
   const button = event.target.closest('[data-mov-page]');
   if (!button) return;
   renderMovementPage(movPage + Number(button.dataset.movPage));
+  if (mobileLayout.matches){
+    const firstDay = $('#movBody .history-day-title');
+    if (firstDay){
+      firstDay.tabIndex = -1;
+      firstDay.focus();
+    }
+    return;
+  }
   if (button.disabled) $('#movPages button:not(:disabled)')?.focus({preventScroll:true});
 });
 const movementWeekday = new Intl.DateTimeFormat('es-PE', {weekday:'long'});
@@ -258,13 +270,20 @@ function setMovView(v){
     b.classList.toggle('active', selected);
     b.setAttribute('aria-pressed', String(selected));
   });
-  document.querySelectorAll('#tab-movs .mview').forEach(el => el.hidden = el.id !== 'view-' + movView);
+  const view = $('#view-' + movView);
+  document.querySelectorAll('#tab-movs .mview').forEach(el => {
+    el.hidden = el !== view;
+    if(el.hidden && el._motion){el._motion.cancel();el._motion=null;}
+  });
   $('#btnSelect').hidden = movView !== 'list';
+  if (typeof syncMobileMovementTools === 'function') syncMobileMovementTools();
   planningHeader();
   updateCreationControls();
   moveViewInd();
   if (movView === 'cal') renderCalendar();
   else if (previous !== movView) renderMovs();
+  const section = $('#tab-movs');
+  if(previous !== movView && section.classList.contains('active') && !section._motion)revealNavigationView(view);
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
 window.addEventListener('resize', moveViewInd);
@@ -390,15 +409,18 @@ $('#fltText').addEventListener('input', () => {
 });
 // Modo selección: tocar filas para marcarlas y borrarlas juntas (con deshacer)
 let selMode = false; const selSet = new Set();
-const selBar = document.createElement('div'); selBar.className = 'sel-bar'; selBar.hidden = true; document.body.appendChild(selBar);
+const selBar = document.createElement('div'); selBar.className = 'sel-bar'; selBar.hidden = true; selBar.inert = true; document.body.appendChild(selBar);
 function setSelMode(on){
   selMode = on; selSet.clear(); renderSelUI(); renderMovs();
 }
 function renderSelUI(){
   $('#btnSelect').setAttribute('aria-label',selMode?'Cancelar selección':'Seleccionar movimientos');
+  $('#btnSelect').setAttribute('aria-pressed',String(selMode));
   $('#btnSelect').classList.toggle('on', selMode);
   $('#btnSelect .sel-ic').innerHTML = ic(selMode ? 'x' : 'list-checks'); $('#btnSelect .sel-t').textContent = selMode ? 'Cancelar' : 'Seleccionar';
-  selBar.hidden = !selMode; document.body.classList.toggle('sel-on', selMode);
+  selBar.hidden = !selMode; selBar.inert = !selMode; document.body.classList.toggle('sel-on', selMode);
+  // Mantén la cifra visible hasta terminar el cierre.
+  if (!selMode) return;
   const selTot = selSet.size ? ' · ' + fmt(sum(state.transactions.filter(t => selSet.has(t.id)))) : '';
   selBar.innerHTML = `<span><b>${selSet.size}</b> ${selSet.size === 1 ? 'seleccionado' : 'seleccionados'}${selTot}</span>` +
     `<button class="btn sm" data-sel="all" title="Seleccionar todos">${ic('check-check')}<span class="hide-m"> Todos</span></button><button class="btn sm danger" data-sel="del"${selSet.size ? '' : ' disabled'}>${ic('trash-2')} Borrar</button>`;
@@ -488,7 +510,8 @@ $('#movFilterClear').onclick = () => {
   $('#fltScope').value = defaultMovementScope();
   for (const id of ['#fltType', '#fltCat', '#fltMethod']) $(id).value = '';
   renderMovs(false);
-  $('#movFilterToggle').focus({preventScroll:true});
+  const trigger = mobileLayout.matches ? $('.mobile-movement-tools [aria-expanded=true]') : $('#movFilterToggle');
+  trigger?.focus({preventScroll:true});
 };
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');

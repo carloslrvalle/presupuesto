@@ -3,12 +3,12 @@ const mobileLayout = matchMedia('(max-width:600px), (max-width:960px) and (max-h
 const mobileNav = document.createElement('nav');
 mobileNav.id = 'mobileNav';
 mobileNav.setAttribute('aria-label', 'Navegación móvil');
-const mobileNavItem = (tab, label, icon) => `<button type="button" data-mobile-tab="${tab}"><span class="mobile-nav-glyph">${ic(icon)}</span><span class="mobile-nav-label">${label}</span></button>`;
+const mobileNavItem = (tab, label, icon) => `<button type="button" data-mobile-tab="${tab}" aria-label="${label}" title="${label}"><span class="mobile-nav-glyph">${ic(icon)}</span></button>`;
 mobileNav.innerHTML = mobileNavItem('dashboard', 'Inicio', 'house')
   + mobileNavItem('movs', 'Movimientos', 'receipt-text')
-  + `<button type="button" id="mobileNew" aria-label="Nuevo movimiento"><span class="mobile-nav-glyph">${ic('plus')}</span><span class="mobile-nav-label">Nuevo</span></button>`
+  + `<button type="button" id="mobileNew" aria-label="Nuevo movimiento"><span class="mobile-nav-glyph">${ic('plus')}</span></button>`
   + mobileNavItem('budget', 'Presupuesto', 'wallet')
-  + `<button type="button" id="mobileMoreButton" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileMore"><span class="mobile-nav-glyph">${ic('list')}</span><span class="mobile-nav-label">Más</span></button>`;
+  + `<button type="button" id="mobileMoreButton" aria-label="Más opciones" title="Más opciones" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileMore"><span class="mobile-nav-glyph">${ic('list')}</span></button>`;
 document.body.append(mobileNav);
 const mobileNavIndicator=document.createElement('span');
 mobileNavIndicator.id='mobileNavIndicator';mobileNavIndicator.className='mobile-nav-indicator';
@@ -21,13 +21,21 @@ function moveMobileNavIndicator(animate=true){
   mobileNavIndicator._placed=false;mobileNavIndicator.style.opacity='0';return;
  }
  // Mide la posición sin la escala del gesto de presión.
- const button=glyph.parentElement;
- const geometry={left:(button.offsetLeft+glyph.offsetLeft)+'px',top:(button.offsetTop+glyph.offsetTop)+'px',width:glyph.offsetWidth+'px',height:glyph.offsetHeight+'px'};
+ const button=glyph.parentElement.getBoundingClientRect(),dock=mobileNav.getBoundingClientRect();
+ const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
+ const width=glyph.offsetWidth,height=glyph.offsetHeight;
+ const geometry={
+  left:((button.left-dock.left+button.width/2)/zoom-mobileNav.clientLeft-width/2)+'px',
+  top:((button.top-dock.top+button.height/2)/zoom-mobileNav.clientTop-height/2)+'px',
+  width:width+'px',height:height+'px'
+ };
  mobileNavIndicator.style.opacity='1';
- if(animate===false||!mobileNavIndicator._placed||reduceMotion()){
+ // Las notificaciones de tamaño sin un nuevo destino no interrumpen el recorrido.
+ if(mobileNavIndicator._placed && Object.entries(geometry).every(([key,value])=>Math.abs(parseFloat(mobileNavIndicator.style[key])-parseFloat(value))<.05))return;
+ if(!animate||!mobileNavIndicator._placed||reduceMotion()){
   mobileNavIndicator._motion?.cancel();mobileNavIndicator._motion=null;Object.assign(mobileNavIndicator.style,geometry);
- }else if(Object.entries(geometry).some(([key,value])=>mobileNavIndicator.style[key]!==value)){
-  moveIndicator(mobileNavIndicator,geometry,undefined,MOTION.popup);
+ }else{
+  moveIndicator(mobileNavIndicator,geometry,undefined,MOTION.panel);
  }
  mobileNavIndicator._placed=true;
 }
@@ -46,6 +54,7 @@ document.body.append(mobileMore);
 
 function updateMobileNavigation() {
   const current = activeTab();
+  if (current !== 'movs' && mobileMovementPanel) setMobileMovementPanel('');
   mobileNav.querySelectorAll('[data-mobile-tab]').forEach(button => {
     const active = button.dataset.mobileTab === current;
     button.classList.toggle('active', active);
@@ -61,15 +70,17 @@ function updateMobileNavigation() {
     if (button.dataset.mobileDestination === current) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   });
-  $('#mobileNew').disabled = bothMode;
-  $('#mobileNew').title = bothMode ? 'Elige un perfil para registrar movimientos' : 'Nuevo movimiento';
+  const add = $('#mobileNew');
+  add.disabled = bothMode;
+  add.title = bothMode ? 'Elige un perfil para registrar movimientos' : 'Nuevo movimiento';
+  add.setAttribute('aria-label',add.title);
   moveMobileNavIndicator();
 }
 
 function navigateMobile(tab) {
   const from = activeTab();
   if(tab==='movs'){
-    const completeList = movView === 'list' && $('#fltScope').value === 'all' && $('#mobileMovementReset').hidden;
+    const completeList = movView === 'list' && $('#fltScope').value === 'all' && !movFiltered;
     if(from===tab && completeList){
       window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'});
       return;
@@ -296,6 +307,7 @@ mobileMore.addEventListener('click', event => {
   navigateMobile(button.dataset.mobileDestination);
 });
 mobileMore.addEventListener('close', () => {
+  if (mobileMore.open) return;
   $('#mobileMoreButton').setAttribute('aria-expanded', 'false');
   if (mobileLayout.matches) $('#mobileMoreButton').focus({preventScroll:true});
 });
@@ -320,16 +332,15 @@ mobileHomeSpent.after(mobileHomeTop);
 const MOBILE_RECENT_LIMIT = 12;
 function renderMobileHome(txs = planTx(currentMonth), totals){
   const inc = totals ? totals.inc : sum(txs.filter(t => t.type === 'income')), exp = totals ? totals.exp : spendSum(txs);
-  const pct = inc > 0 ? exp / inc * 100 : null, left = inc - exp;
-  const tone = pct == null ? '' : pct > 100 ? 'over' : pct >= 85 ? 'near' : '';
+  const pct = inc > 0 ? exp / inc * 100 : null;
   const card = $('#mobileHomeSpent');
-  card.dataset.tone = tone;
+  card.dataset.tone = pct > 100 ? 'over' : '';
   const share=pct==null?0:Math.max(0,Math.min(1,pct/100));
   const red=fitThemeColor(mixHex(cssVar('--expense'),cssVar('--surface'),.5*(1-share)),[cssVar('--surface'),cssVar('--surface-2')],3.1);
   card.style.setProperty('--spent-progress',red);
-  card.innerHTML = `<div class="mobile-spent-head"><span class="mobile-spent-label">Gastado de tus ingresos</span><b class="mobile-spent-pct">${pct == null ? '—' : pctTxt(pct)}</b></div>
-    <div class="mobile-spent-bar" role="img" aria-label="${pct == null ? 'Sin ingresos en el período' : esc(`${fmt(exp)} gastados de ${fmt(inc)} de ingresos, ${pctTxt(pct)}`)}"><span style="width:${(share*100).toFixed(1)}%"></span></div>
-    <p class="mobile-spent-meta">${pct == null ? 'Aún sin ingresos en este período.' : `${left >= 0 ? 'Queda de tus ingresos:' : 'Gasto por encima de tus ingresos:'} <b>${fmt(Math.abs(left))}</b>`}</p>`;
+  const value = pct == null ? 'Sin ingresos' : pctTxt(pct);
+  card.innerHTML = `<div class="mobile-spent-head"><span class="mobile-spent-label">Gastado de tus ingresos</span><b class="mobile-spent-pct">${value}</b></div>
+    <div class="mobile-spent-bar" aria-hidden="true"><span style="width:${(share*100).toFixed(1)}%"></span></div>`;
   $('#mobileHomeTopRows').innerHTML = recentExpenseRows(txs, MOBILE_RECENT_LIMIT);
 }
 $('#mobileRecentAll').onclick=()=>openMovs({type:'expense',scope:cycleView()?'cycle':'month',month:currentMonth});
@@ -415,37 +426,214 @@ const mobileWeeklySpending = document.createElement('section');
 mobileWeeklySpending.id = 'mobileWeeklySpending';
 mobileWeeklySpending.className = 'mobile-only';
 mobileWeeklySpending.setAttribute('aria-labelledby','mobileWeeklyTitle');
-const mobileMovementHeader = document.createElement('header');
-mobileMovementHeader.className = 'mobile-only mobile-movement-header';
-mobileMovementHeader.innerHTML = `<h2 aria-hidden="true">Movimientos</h2><button type="button" id="mobileMovementReset" class="btn sm" hidden>Ver todo</button>`;
-$('#tab-movs .toolbar').before(mobileMovementHeader,mobileWeeklySpending);
+$('#movementFilters').after(mobileWeeklySpending);
+VICONS['sliders-horizontal'] = '<path d="M3 7h6m4 0h8M3 17h10m4 0h4M9 4v6m8 4v6"/>';
+const mobileMovementTools = document.createElement('div');
+mobileMovementTools.className = 'mobile-only mobile-movement-tools';
+mobileMovementTools.setAttribute('role','group');
+mobileMovementTools.setAttribute('aria-label','Opciones de la lista');
+mobileMovementTools.innerHTML = [
+  ['search','Buscar movimientos','movementSearch','search'],
+  ['filters','Filtros','movExtraFilters','sliders-horizontal'],
+  ['details','Resumen de movimientos','movSummary','info']
+].map(([panel,label,controlled,icon]) => `<button type="button" class="iconbtn" data-movement-tool="${panel}" title="${label}" aria-label="${label}" aria-expanded="false" aria-controls="${controlled}">${ic(icon)}</button>`).join('');
+$('#btnSelect').before(mobileMovementTools);
+$('#movPages [data-mov-page="-1"] .mov-page-icon').innerHTML = ic('chevron-left');
+$('#movPages [data-mov-page="1"] .mov-page-icon').innerHTML = ic('chevron-right');
+let mobileMovementPanel = '';
+const movementPanels = {search:$('#movementSearch'), filters:$('#movExtraFilters'), details:$('#movSummary')};
+const movementFilters = $('#movementFilters');
+const movementSummaryHome = movementPanels.details.parentElement;
+const movementPanelRegion = document.createElement('div');
+movementPanelRegion.id = 'mobileMovementPanels';
 
-$('#mobileMovementReset').onclick = () => {
-  openMovs({scope:'all'});
-  $('#fltText').focus({preventScroll:true});
-};
+function setMobileMovementPanel(panel, animate = false){
+  const compact = mobileLayout.matches;
+  const smooth = compact && animate && !reduceMotion();
+  const previousHeight = smooth ? movementPanelRegion.offsetHeight : 0;
+  movementPanelRegion._motion?.cancel();
+  movementPanelRegion._motion = null;
+  const previous = movementPanels[mobileMovementPanel];
+  if (previous?._motion){previous._motion.cancel();previous._motion=null;}
+  mobileMovementPanel = panel;
+  movementFilters.hidden = compact && !['search','filters'].includes(panel);
+  movementFilters.dataset.panel = panel;
+  movementPanels.search.hidden = compact && panel !== 'search';
+  movementPanels.details.hidden = compact && panel !== 'details';
+  setMovementFiltersOpen(panel === 'filters');
+  mobileMovementTools.querySelectorAll('button').forEach(button => {
+    button.setAttribute('aria-expanded',String(button.dataset.movementTool === panel));
+  });
+  if (smooth){
+    const height = movementPanelRegion.offsetHeight;
+    if (height !== previousHeight){
+      // Solo esta región cambia de altura. La gráfica y las filas avanzan en el flujo.
+      motionAnimate(movementPanelRegion, [
+        {height:previousHeight+'px', overflow:'clip'},
+        {height:height+'px', overflow:'clip'}
+      ], 'popup');
+    }
+    if (panel) revealContent(movementPanels[panel], 'popup');
+  }
+}
 
-function renderMobileMovements(scope, filtered){
-  $('#mobileMovementReset').hidden = !filtered;
+function syncMobileMovementTools(){
+  mobileMovementTools.hidden = movView !== 'list';
+  if (mobileLayout.matches && movView !== 'list') setMobileMovementPanel('');
+}
+function positionMovementPanels(){
+  if (mobileLayout.matches){
+    movementFilters.before(movementPanelRegion);
+    movementPanelRegion.append(movementFilters, movementPanels.details);
+    $('#movBody').after($('#movPages'));
+  }else{
+    movementPanelRegion.before(movementFilters);
+    movementPanelRegion.remove();
+    movementSummaryHome.prepend(movementPanels.details);
+    movementPanels.details.after($('#movPages'));
+  }
+  setMobileMovementPanel('');
+  syncMobileMovementTools();
+}
+if (mobileLayout.matches) positionMovementPanels();
+mobileLayout.addEventListener('change', positionMovementPanels);
+mobileMovementTools.addEventListener('click', event => {
+  const button = event.target.closest('[data-movement-tool]');
+  if (!button) return;
+  const panel = button.dataset.movementTool;
+  setMobileMovementPanel(mobileMovementPanel === panel ? '' : panel, true);
+  if (mobileMovementPanel === 'search') $('#fltText').focus();
+  if (mobileMovementPanel === 'filters') $('#movExtraFilters .fsel-btn')?.focus();
+});
+$('#tab-movs').addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || event.defaultPrevented || !mobileMovementPanel) return;
+  const button = mobileMovementTools.querySelector('[aria-expanded=true]');
+  event.preventDefault();
+  setMobileMovementPanel('');
+  button?.focus({preventScroll:true});
+});
+let mobileWeeks = [], mobileWeekIndex = 0, mobileWeekPeriod = '', mobileWeekData = '';
+const weekDate = date => date.slice(8,10)+'/'+date.slice(5,7);
+const weekRange = ({start,end}) => start === end ? weekDate(start) : weekDate(start)+'–'+weekDate(end);
+
+function renderMobileMovements(scope, filterCount){
+  mobileMovementTools.querySelector('[data-movement-tool=search]').classList.toggle('has-value',Boolean($('#fltText').value.trim()));
+  const filters = mobileMovementTools.querySelector('[data-movement-tool=filters]');
+  filters.classList.toggle('has-value',filterCount > 0);
+  filters.setAttribute('aria-label',filterCount ? `Filtros, ${plural(filterCount,'activo')}` : 'Filtros');
   const cycle = scope === 'cycle';
   const period = cycle ? cyclePeriod(currentMonth) : {start:dateFor(currentMonth,1),end:dateFor(currentMonth,daysIn(currentMonth))};
   const expenses = (cycle ? cycleTx(currentMonth) : txOfMonth(currentMonth)).filter(t => t.type === 'expense' && !isSavingTx(t));
+  const today = todayISO();
+  const lastDate = today < period.end ? today : period.end;
   const weeks = [];
-  // Las semanas terminan en domingo y se recortan al período visible.
-  for(let start=period.start;start<=period.end;){
+  // Las semanas terminan en domingo. La parte futura del período no pertenece a la serie realizada.
+  for (let start = period.start; start <= lastDate;){
     const weekday = new Date(start+'T00:00:00Z').getUTCDay();
     const sunday = dateOffset(start,(7-weekday)%7);
-    const end = sunday < period.end ? sunday : period.end;
+    const end = sunday < lastDate ? sunday : lastDate;
     weeks.push({start,end,amount:sum(expenses.filter(t=>t.date>=start&&t.date<=end))});
-    start=dateOffset(end,1);
+    start = dateOffset(end,1);
   }
-  const max = Math.max(...weeks.map(week=>week.amount),0);
-  const dateLabel = date => date.slice(8,10)+'/'+date.slice(5,7);
-  mobileWeeklySpending.innerHTML = `<div class="mobile-weekly-head"><h2 id="mobileWeeklyTitle">Gastos por semana</h2><p>${esc(cycle ? shortPeriodLabel(currentMonth) : monthLong(currentMonth))}</p></div>${
-    max ? `<dl class="mobile-weekly-chart">${weeks.map(({start,end,amount}) => `<div>
-      <dt><time datetime="${start}">${dateLabel(start)}</time>${end!==start?`–<time datetime="${end}">${dateLabel(end)}</time>`:''}</dt>
-      <dd><span class="mobile-weekly-track" aria-hidden="true"><i style="--weekly-share:${amount/max*100}%"></i></span><b>${fmt(amount)}</b></dd>
-    </div>`).join('')}</dl>` : '<p class="mobile-weekly-empty">Sin gastos registrados en este período.</p>'
-  }`;
+  const periodKey = [activeProfile,period.start,period.end,cycle].join('|');
+  const dataKey = JSON.stringify([periodKey,weeks]);
+  if (dataKey === mobileWeekData) return;
+  const newPeriod = periodKey !== mobileWeekPeriod;
+  mobileWeekPeriod = periodKey;
+  mobileWeekData = dataKey;
+  const max = Math.max(0,...weeks.map(week => week.amount));
+  const title = `<div class="mobile-weekly-head"><h2 id="mobileWeeklyTitle">Gastos por semana</h2>${cycle ? `<p>${esc(shortPeriodLabel(currentMonth))}</p>` : ''}</div>`;
+  if (!max){
+    mobileWeeks = [];
+    mobileWeeklySpending.innerHTML = title + '<p class="mobile-weekly-empty">Sin gastos registrados en este período.</p>';
+    return;
+  }
+  const focused = document.activeElement?.closest('[data-mobile-week]');
+  const reselect = newPeriod || !mobileWeeks.length;
+  const width = 360, height = 96;
+  mobileWeeks = weeks.map((week,index) => ({
+    ...week,
+    x:(index+.5)*width/weeks.length,
+    y:height-8-(height-20)*week.amount/max
+  }));
+  const line = mobileWeeks.map(({x,y},index) => {
+    if (!index) return `M0 ${y} H${x}`;
+    const prev = mobileWeeks[index-1], mid = (prev.x+x)/2;
+    return `C${mid} ${prev.y} ${mid} ${y} ${x} ${y}`;
+  }).join(' ') + ` H${width}`;
+  const area = `${line} V${height} H0 Z`;
+  mobileWeeklySpending.innerHTML = title + `
+    <div class="mobile-weekly-readout" role="status"><strong></strong><span></span></div>
+    <div class="mobile-weekly-chart" style="--week-count:${weeks.length}">
+      <div class="mobile-weekly-plot" aria-hidden="true">
+        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+          <defs><linearGradient id="mobileWeeklyFade" x1="0" x2="0" y1="0" y2="${height}" gradientUnits="userSpaceOnUse">
+            <stop stop-color="currentColor" stop-opacity=".24"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path class="mobile-weekly-area" d="${area}" fill="url(#mobileWeeklyFade)"/>
+          <path class="mobile-weekly-line" d="${line}" fill="none" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <div class="mobile-weekly-cursor"><span></span></div>
+      </div>
+      <div class="mobile-weekly-weeks" role="group" aria-label="Gastos realizados por semana">${weeks.map((week,index) =>
+        `<button type="button" data-mobile-week="${index}" aria-label="${weekRange(week)} · ${fmt(week.amount)}"><span><time datetime="${week.start}">${weekDate(week.start)}</time></span></button>`
+      ).join('')}</div>
+    </div>`;
+  const index = reselect ? weeks.findLastIndex(week => week.amount > 0) : Math.min(mobileWeekIndex,weeks.length-1);
+  selectMobileWeek(index,false);
+  if (focused) mobileWeeklySpending.querySelector(`[data-mobile-week="${Math.min(Number(focused.dataset.mobileWeek),weeks.length-1)}"]`)?.focus({preventScroll:true});
 }
+
+function moveMobileWeekCursor(week, animate){
+  const plot = mobileWeeklySpending.querySelector('.mobile-weekly-plot');
+  const cursor = plot.querySelector('.mobile-weekly-cursor');
+  const line = plot.querySelector('.mobile-weekly-line');
+  const {width,height} = line.ownerSVGElement.viewBox.baseVal;
+  const transform = ({x,y}) => `translate(${x/width*100}%,${y/height*100}%)`;
+  if (!animate || reduceMotion() || !plot.clientWidth){
+    cursor._motion?.cancel();cursor._motion=null;
+    cursor.style.transform = transform(week);
+    return;
+  }
+
+  const matrix = new DOMMatrixReadOnly(getComputedStyle(cursor).transform);
+  const startX = matrix.m41 / plot.clientWidth * width;
+  const total = line.getTotalLength();
+  // El trazo avanza en X. Busca los puntos de inicio y destino sobre la curva que ya se dibuja.
+  const distanceAt = x => {
+    let low = 0, high = total;
+    for (let step = 0; step < 16; step++){
+      const mid = (low+high)/2;
+      if (line.getPointAtLength(mid).x < x) low = mid;
+      else high = mid;
+    }
+    return (low+high)/2;
+  };
+  const start = distanceAt(startX), end = distanceAt(week.x);
+  const frames = [{transform:`translate(${startX/width*100}%,${matrix.m42/plot.clientHeight*100}%)`}];
+  for (let sample = 1; sample < 24; sample++){
+    const point = line.getPointAtLength(start+(end-start)*sample/24);
+    frames.push({transform:transform(point)});
+  }
+  cursor.style.transform = transform(week);
+  frames.push({transform:cursor.style.transform});
+  motionAnimate(cursor,frames,'popup');
+}
+
+function selectMobileWeek(index, animate = true){
+  const week = mobileWeeks[index];
+  if (!week) return;
+  mobileWeekIndex = index;
+  moveMobileWeekCursor(week,animate);
+  const readout = mobileWeeklySpending.querySelector('.mobile-weekly-readout');
+  readout.querySelector('strong').textContent = fmt(week.amount);
+  readout.querySelector('span').textContent = weekRange(week);
+  mobileWeeklySpending.querySelectorAll('[data-mobile-week]').forEach(button => {
+    button.setAttribute('aria-pressed',String(Number(button.dataset.mobileWeek) === index));
+  });
+}
+mobileWeeklySpending.addEventListener('click', event => {
+  const button = event.target.closest('[data-mobile-week]');
+  if (button && Number(button.dataset.mobileWeek) !== mobileWeekIndex) selectMobileWeek(Number(button.dataset.mobileWeek));
+});
 

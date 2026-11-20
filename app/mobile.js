@@ -115,10 +115,10 @@ mobileTxOptions.setAttribute('aria-label','Más opciones del movimiento');mobile
 mobileTxOptions.setAttribute('aria-controls','mobileTxExtras');
 mobileTxOptions.innerHTML=ic('settings');txHeader.append(mobileTxOptions);
 const mobileTxNote=document.createElement('button');
-mobileTxNote.id='mobileTxNote';mobileTxNote.type='button';mobileTxNote.className='mobile-only';
+mobileTxNote.id='mobileTxNote';mobileTxNote.type='button';mobileTxNote.className='mobile-only btn';
 mobileTxNote.innerHTML=ic('pencil')+'<span>Agregar nota</span>';txBody.append(mobileTxNote);
 const mobileTxMeta=document.createElement('div');mobileTxMeta.className='mobile-only mobile-tx-meta';
-const mobileTxCategory=document.createElement('button');mobileTxCategory.type='button';mobileTxCategory.id='mobileTxCategory';mobileTxCategory.setAttribute('aria-expanded','false');
+const mobileTxCategory=document.createElement('button');mobileTxCategory.type='button';mobileTxCategory.id='mobileTxCategory';mobileTxCategory.className='btn';mobileTxCategory.setAttribute('aria-expanded','false');
 mobileTxMeta.append(mobileTxCategory);txBody.append(mobileTxMeta);
 const mobileTxExtras=document.createElement('div');mobileTxExtras.id='mobileTxExtras';mobileTxExtras.className='mobile-only mobile-tx-extras';txBody.append(mobileTxExtras);
 const mobileTxDone=document.createElement('button');mobileTxDone.type='button';mobileTxDone.id='mobileTxDone';mobileTxDone.className='mobile-only btn';mobileTxDone.textContent='Listo';
@@ -138,13 +138,13 @@ const mobileTxKeypad=document.createElement('div');
 mobileTxKeypad.id='mobileTxKeypad';mobileTxKeypad.className='mobile-tx-keypad';
 mobileTxKeypad.setAttribute('role','group');mobileTxKeypad.setAttribute('aria-label','Teclado del monto');
 mobileTxKeypad.innerHTML=['1','2','3','4','5','6','7','8','9','.','0'].map(k=>`<button type="button" data-key="${k}"${k==='.'?' aria-label="Punto decimal"':''}>${k}</button>`).join('')
-  +`<button type="submit" class="keypad-submit" aria-label="Guardar">${ic('check')}</button>`;
+  +`<button type="submit" class="keypad-submit btn primary" aria-label="Guardar">${ic('check')}</button>`;
 const mobileTxKeypadSlot=document.createElement('div');
 mobileTxKeypadSlot.className='mobile-only mobile-tx-keypad-slot';
 mobileTxKeypadSlot.append(mobileTxKeypad,mobileTxViewport);
 txBody.append(mobileTxKeypadSlot);
 const mobileTxBackspace=document.createElement('button');
-mobileTxBackspace.type='button';mobileTxBackspace.id='mobileTxBackspace';mobileTxBackspace.className='mobile-only';
+mobileTxBackspace.type='button';mobileTxBackspace.id='mobileTxBackspace';mobileTxBackspace.className='mobile-only iconbtn';
 mobileTxBackspace.setAttribute('aria-label','Borrar último dígito');
 mobileTxBackspace.innerHTML='<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H9l-7 7 7 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m18 9-6 6"/><path d="m12 9 6 6"/></svg>';
 $('#fAmount').closest('.tx-amount').append(mobileTxBackspace);
@@ -250,6 +250,7 @@ function setMobileTxPanel(panel,{focus=true}={}){
   txCategoryField.inert=panel!=='category';mobileTxExtras.inert=panel!=='options';
   mobileTxCategory.setAttribute('aria-expanded',String(panel==='category'));
   mobileTxOptions.setAttribute('aria-expanded',String(panel==='options'));
+  mobileTxDone.inert=!panel;
   amount.tabIndex=panel?-1:0;
   mobileTxKeypad.inert=!!panel;
   // Como en Dime, el selector muestra todas las categorías en la cuadrícula.
@@ -268,7 +269,7 @@ txDialog.addEventListener('mousedown',event=>{
   if(txDialog.contains(document.activeElement)&&document.activeElement.matches('input:not([type=hidden]),textarea'))event.preventDefault();
 });
 mobileTxDone.onclick=()=>setMobileTxPanel(null);
-txDialog.addEventListener('close',()=>{if(mobileLayout.matches)setMobileTxPanel(null,{focus:false});});
+txDialog.addEventListener('close',()=>{if(mobileLayout.matches)dpClose();});
 mobileTxNote.onclick=()=>{txDialog.classList.add('note-open');syncMobileTxUI();$('#fDesc').focus({preventScroll:true});};
 mobileTxOptions.onclick=()=>setMobileTxPanel(txDialog.classList.contains('options-open')?null:'options');
 mobileTxCategory.onclick=()=>setMobileTxPanel(txDialog.classList.contains('category-open')?null:'category');
@@ -568,7 +569,7 @@ function renderMobileMovements(scope, filterCount){
       <div class="mobile-weekly-plot" aria-hidden="true">
         <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
           <defs><linearGradient id="mobileWeeklyFade" x1="0" x2="0" y1="0" y2="${height}" gradientUnits="userSpaceOnUse">
-            <stop stop-color="currentColor" stop-opacity=".24"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>
+            <stop stop-color="currentColor" stop-opacity=".18"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>
           </linearGradient></defs>
           <path class="mobile-weekly-area" d="${area}" fill="url(#mobileWeeklyFade)"/>
           <path class="mobile-weekly-line" d="${line}" fill="none" vector-effect="non-scaling-stroke"/>

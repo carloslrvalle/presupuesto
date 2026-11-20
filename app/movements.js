@@ -12,16 +12,12 @@ function fillMethodFilter(){
   sel.innerHTML = '<option value="">Todos los métodos</option>' + ms.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
   sel.value = v; if (sel.selectedIndex < 0) sel.value = '';
 }
-function movementHistory(list,dayLbl,filtered,allMatches){
+function movementHistory(list,dayLbl,filtered){
  if(!list.length)return filtered?emptyBox('search','Ningún movimiento coincide con tu búsqueda o filtros.'):emptyBox('receipt','Aún no hay movimientos en este período.','tx','Nuevo movimiento');
  const groups=new Map();for(const t of list){if(!groups.has(t.date))groups.set(t.date,[]);groups.get(t.date).push(t);}
- const dayTotals = new Map([...groups.keys()].map(day => [day, []]));
- for (const transaction of allMatches) dayTotals.get(transaction.date)?.push(transaction);
  return [...groups].map(([day,items])=>{
-  const dayItems = dayTotals.get(day);
-  const [label,date]=dayLbl(day),expense=spendSum(dayItems),saved=saveSum(dayItems),income=sum(dayItems.filter(t=>t.type==='income')),planned=isPlanned(items[0]);
-  const totals=[expense?`<span class="xp">− ${fmt(expense)}</span>`:'',saved?`<span class="sv" title="Separado como ahorro">↗ ${fmt(saved)}</span>`:'',income?`<span class="pos">+ ${fmt(income)}</span>`:''].filter(Boolean).join('');
-  return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h2 class="history-day-title" id="history-day-${day}">${label}</h2>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div><div class="history-day-totals" aria-label="Totales del día">${totals}</div></header><ul class="history-items">${items.map(t=>{
+  const [label,date]=dayLbl(day),planned=isPlanned(items[0]);
+  return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h2 class="history-day-title" id="history-day-${day}">${label}</h2>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div></header><ul class="history-items">${items.map(t=>{
    const c=getCat(t.catId),isI=t.type==='income',isS=isSavingTx(t);
    const action = `${selMode?'Seleccionar':'Editar'} ${isI?'ingreso':isS?'ahorro':'gasto'}`;
    return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-mobile-title">${esc(t.desc||c.name)}</span><span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-mobile-category">${esc(c.name)}</span>`:''}${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
@@ -91,7 +87,7 @@ function renderMovementPage(index){
     const long = `${wd.charAt(0).toUpperCase() + wd.slice(1)} ${D} ${MONTHS_ES[M - 1].toLowerCase()}${Y !== t0.getFullYear() ? ' ' + Y : ''}`;
     return diff === 0 ? ['Hoy', long] : diff === -1 ? ['Ayer', long] : diff === 1 ? ['Mañana', long] : [long, '']; };
   $('#movBody').classList.toggle('selecting',selMode);
-  $('#movBody').innerHTML=movementHistory(list,dayLbl,movFiltered,movMatches);
+  $('#movBody').innerHTML=movementHistory(list,dayLbl,movFiltered);
 }
 $('#movPages').addEventListener('click', event => {
   const button = event.target.closest('[data-mov-page]');

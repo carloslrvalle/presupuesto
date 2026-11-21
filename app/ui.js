@@ -282,11 +282,30 @@ function revealContent(el,kind='fast'){
 function revealNavigationView(view){
  return motionAnimate(view,[{opacity:.92},{opacity:1}],'fast');
 }
-function toggleDisclosure(details,summary,open=!details.open){
+function motionHeight(el){
+ return el.getBoundingClientRect().height/(Number(getComputedStyle(document.documentElement).zoom)||1);
+}
+// Desplegables: la altura y el contenido acompañan la apertura y el cierre; invertir parte del estado visible.
+// Restaurado en 1.10.156 (se había retirado en 22d1c2e). Movimiento reducido y teclado cambian al instante.
+function toggleDisclosure(details,summary,wanted,animate=true){
+ const current=details._disclosure,open=wanted??(current?!current.open:!details.open),from=motionHeight(details);
  const content=summary.nextElementSibling;
+ const previousOpacity=current&&content?getComputedStyle(content).opacity:null;
+ const previousTransform=current&&content?getComputedStyle(content).transform:null;
+ if(current){current.animation.cancel();current.contentAnimation?.cancel();}
  if(!open&&content?.contains(document.activeElement))summary.focus({preventScroll:true});
  if(content)content.inert=!open;
+ details.style.overflow='hidden';
  details.open=open;
+ const to=motionHeight(details);
+ const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
+ if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
+ details.open=true;
+ const distribution=details.matches('.expense-distribution-more'),duration=distribution?360:MOTION.panel;
+ const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:[{opacity:previousOpacity??(open?0:1),transform:previousTransform??(open?'translateY(-5px)':'none')},{opacity:open?1:0,transform:'none'}];
+ const contentAnimation=content?.animate(frames,{duration,easing:MOTION.ease});
+ const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});
+ details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
 }
 function menuDisclosureOpen(details){
  return details.open && !details.hasAttribute('data-menu-closing');

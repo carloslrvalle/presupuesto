@@ -6,7 +6,7 @@
 <title>Presupuesto</title>
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png">
-<meta name="theme-color" content="#fafafa">
+<meta name="theme-color" content="#f7f7f8">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
 <meta name="apple-mobile-web-app-title" content="Presupuesto">
@@ -14,14 +14,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preload" as="image" href="logo.png">
 <link rel="preload" as="font" type="font/woff2" href="fonts/geist/geist-latin-variable.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/inter/inter-latin-variable.woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css">
 <style>
 /* Entrada crítica: visible antes de descargar estilos, fuentes o gráficas. */
-:root{--boot-bg:#f5f6fa;--boot-text:#1b2232;--boot-muted:#60697c}
-@media(prefers-color-scheme:dark){:root{--boot-bg:#000000;--boot-text:#e9ebf0;--boot-muted:#8f96a6}}
+:root{--boot-bg:#f7f7f8;--boot-text:#18181b;--boot-muted:#52525b}
+@media(prefers-color-scheme:dark){:root{--boot-bg:#09090b;--boot-text:#ededef;--boot-muted:#a1a1aa}}
 html[data-booting],html[data-booting] body{margin:0;background:var(--boot-bg)}
 html[data-booting] body>:not(#boot):not(script):not(link){visibility:hidden}
-#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;box-sizing:border-box;padding:24px;background:var(--boot-bg);color:var(--boot-text);font:14px/1.5 "Geist",system-ui,sans-serif;text-align:center}
+#boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;align-content:center;gap:12px;box-sizing:border-box;padding:24px;background:var(--boot-bg);color:var(--boot-text);font:14px/1.5 "Inter",system-ui,sans-serif;text-align:center}
 #boot .boot-mark{width:clamp(176px,22vw,220px);height:auto;display:block;margin-bottom:8px;animation:boot-mark-in 600ms ease-out both}
 #boot strong{font-size:24px;font-weight:650;letter-spacing:-.4px}
 #boot .boot-caption{color:var(--boot-muted);font-size:13px}
@@ -40,7 +41,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   const storage=window.localStorage,systemDark=matchMedia('(prefers-color-scheme: dark)').matches;
   const preference=storage.getItem('budgetPlanner.colorScheme');
   const mode=preference==='light'?'light':preference==='dark'?'dark':systemDark?'dark':'light';
-  const bg=mode==='dark'?'#000000':'#fafafa',text=mode==='dark'?'#ededed':'#171717',muted=mode==='dark'?'#a4a4a4':'#525252';
+  const bg=mode==='dark'?'#09090b':'#f7f7f8',text=mode==='dark'?'#ededef':'#18181b',muted=mode==='dark'?'#a1a1aa':'#52525b';
   if(mode)root.dataset.mode=mode;
   for(const [key,value] of Object.entries({bg,text,muted}))root.style.setProperty('--boot-'+key,value);
   document.querySelector('meta[name=theme-color]').content=bg;

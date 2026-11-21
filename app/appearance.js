@@ -33,10 +33,10 @@ function roleOf(c){
 const R = (...c) => c;
 // Historial: seis temas desde 1.10.86, con Vercel como base. Desde 1.10.138 solo se exponen Claro y Oscuro.
 function neutralPalette(dark){
- const bg=dark?'#000000':'#fafafa',surface=dark?'#0a0a0a':'#ffffff',text=dark?'#ededed':'#171717',muted=dark?'#a4a4a4':'#525252',secondary=dark?'#1d1d1d':'#f5f5f5',border=dark?'#292929':'#e4e4e4';
+ const bg=dark?'#09090b':'#f7f7f8',surface=dark?'#121214':'#ffffff',text=dark?'#ededef':'#18181b',muted=dark?'#a1a1aa':'#52525b',secondary=dark?'#1f1f23':'#f3f3f5',border=dark?'#27272a':'#e4e4e7';
  return {background:bg,foreground:text,card:surface,'card-foreground':text,popover:surface,'popover-foreground':text,primary:text,'primary-foreground':bg,secondary,'secondary-foreground':text,muted:secondary,'muted-foreground':muted,accent:secondary,'accent-foreground':text,destructive:dark?'#f07a8e':'#be123c','destructive-foreground':'#ffffff',border,input:border,ring:muted,'chart-1':dark?'#ff9b9b':'#db666a','chart-2':dark?'#77ddb1':'#319e77','chart-3':dark?'#91c5ff':'#528dce','chart-4':text,'chart-5':dark?'#c3abff':'#9670d1',radius:'0.5rem',sidebar:bg,'sidebar-foreground':text,'sidebar-primary':text,'sidebar-primary-foreground':bg,'sidebar-accent':secondary,'sidebar-accent-foreground':text,'sidebar-border':border,'sidebar-ring':muted,'shadow-opacity':'.08','shadow-blur':'3px','shadow-spread':'0px','shadow-offset-x':'0px','shadow-offset-y':'1px'};
 }
-const THEMES=['light','dark'].map(mode=>({id:mode,name:mode==='dark'?'Oscuro':'Claro',mode,accent:mode==='dark'?'#ededed':'#171717',c:R('#8b829c','#b67a65','#6398a6','#ad4056','#698a73','#b0966b','#8f819d','#82755f','#b44c60','#6d7d91','#8b8b8b','#5b8c71','#9b875d','#8a7994','#688898','#798595'),palette:{light:neutralPalette(false),dark:neutralPalette(true)}}));
+const THEMES=['light','dark'].map(mode=>({id:mode,name:mode==='dark'?'Oscuro':'Claro',mode,accent:mode==='dark'?'#ededef':'#18181b',c:R('#8b829c','#b67a65','#6398a6','#ad4056','#698a73','#b0966b','#8f819d','#82755f','#b44c60','#6d7d91','#8b8b8b','#5b8c71','#9b875d','#8a7994','#688898','#798595'),palette:{light:neutralPalette(false),dark:neutralPalette(true)}}));
 const PALETTE_KEYS = [...new Set(THEMES.flatMap(t => Object.keys(t.palette?.light || {})))];
 function themeName(t){return t.name;}
 function themePalette(t, dark = isDarkUI()){ return t.palette?.[dark ? 'dark' : 'light']; }
@@ -80,7 +80,8 @@ function applyTheme(id){
  renderAll();toast(id==='system'?'Se sigue el modo del equipo':'Modo '+themeName(curTheme()).toLowerCase()+' aplicado');
 }
 // ---- Tipografía ----
-const INTERFACE_FONT={id:'geist',name:'Geist Sans',body:'"Geist"'};
+// Desde 1.10.156: Geist Sans en títulos; Inter en texto, cifras y etiquetas pequeñas (mejor lectura a 11–14 px).
+const INTERFACE_FONT={id:'geist',name:'Geist Sans · Inter',body:'"Inter"'};
 function availableFonts(){return [INTERFACE_FONT];}
 function currentFont(){return INTERFACE_FONT;}
 function refreshFontLayout(){
@@ -97,11 +98,11 @@ function refreshFontLayout(){
 let activeFontId;
 function applyAppFont(){
  const root=document.documentElement;
- root.style.setProperty('--font-body','"Geist", system-ui, sans-serif');
- root.style.setProperty('--font-head','var(--font-body)');
+ root.style.setProperty('--font-body','"Inter", system-ui, sans-serif');
+ root.style.setProperty('--font-head','"Geist", "Inter", system-ui, sans-serif');
  if(activeFontId==='geist')return;
  activeFontId='geist';requestAnimationFrame(refreshFontLayout);
- if(document.fonts)Promise.all([document.fonts.load('400 14px Geist','Presupuesto Áéñ S/ 1,250.90'),document.fonts.load('600 24px Geist')]).then(()=>requestAnimationFrame(refreshFontLayout)).catch(()=>toast('No se pudo cargar Geist Sans. Se usa temporalmente la fuente del dispositivo.'));
+ if(document.fonts)Promise.all([document.fonts.load('400 14px Inter','Presupuesto Áéñ S/ 1,250.90'),document.fonts.load('600 24px Inter'),document.fonts.load('600 24px Geist')]).then(()=>requestAnimationFrame(refreshFontLayout)).catch(()=>toast('No se pudieron cargar las fuentes. Se usa temporalmente la fuente del dispositivo.'));
 }
 
 // ---- Temas ----

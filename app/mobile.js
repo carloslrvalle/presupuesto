@@ -357,7 +357,7 @@ $('#tab-budget .bud-grid').before(mobileBudgetView);
 const mobileBudgetOptions = document.createElement('details');
 mobileBudgetOptions.id = 'mobileBudgetOptions';
 mobileBudgetOptions.className = 'mobile-only mobile-budget-options';
-mobileBudgetOptions.innerHTML = '<summary>Ingresos, ahorro y opciones</summary><div class="mobile-budget-options-body"></div>';
+mobileBudgetOptions.innerHTML = '<summary>Ingresos, ahorro y opciones'+ic('chevron-down')+'</summary><div class="mobile-budget-options-body"></div>';
 $('#tab-budget').append(mobileBudgetOptions);
 const mobileBudgetTools = [$('#tab-budget .bud-side'), $('#tab-budget .budget-actions .btn-row')].map(node => {
   const anchor = document.createComment('Posición de las opciones de presupuesto en escritorio');

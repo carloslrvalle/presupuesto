@@ -85,7 +85,7 @@ function setupSettings(){
    if(details.id==='settingsConnectionConfig'&&!settingsConnectionReady())open=true;
    toggleDisclosure(details,summary,open);
   };
-  summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(!details.open);});
+  summary.addEventListener('click',e=>{e.preventDefault();details.setExpanded(details._disclosure?!details._disclosure.open:!details.open);});
   return details;
  }
  users.querySelector('p').textContent='Cada usuario conserva sus propios datos y preferencias. Toca su nombre, avatar o foto para editarlo.';
@@ -93,7 +93,7 @@ function setupSettings(){
  const themeDetails=disclosure('Modo de apariencia',themes);
  themeDetails.querySelector('summary').insertAdjacentHTML('beforeend','<small id="settingsThemeName"></small>');
  const fontField=document.createElement('div');fontField.id='settingsFont';fontField.className='settings-font-field';
- fontField.innerHTML='<h3>Fuente de la interfaz</h3><p id="settingsFontName">Geist Sans</p><p class="small muted">Una sola familia para títulos, texto e importes, disponible sin conexión.</p><div class="settings-font-sample"><strong>Resumen del período</strong><span>Alimentación · S/ 1,250.90</span></div>';
+ fontField.innerHTML='<h3>Fuente de la interfaz</h3><p id="settingsFontName">Geist Sans · Inter</p><p class="small muted">Geist en títulos; Inter en texto, importes y etiquetas. Disponibles sin conexión.</p><div class="settings-font-sample"><strong>Resumen del período</strong><span>Alimentación · S/ 1,250.90</span></div>';
  const financeForm=document.createElement('form');
  financeForm.className='settings-finance-colors';
  financeForm.innerHTML='<p class="small muted">Personaliza las series y las cifras destacadas de este dispositivo.</p>'+

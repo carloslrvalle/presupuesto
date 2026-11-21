@@ -1,2 +1,3 @@
-/* Geist Sans variable, distribución local con SIL Open Font License (fonts/geist/OFL.txt). */
+/* Fuentes locales con SIL Open Font License: Geist Sans para títulos (fonts/geist/OFL.txt) e Inter para texto, cifras y etiquetas (fonts/inter/OFL.txt). */
 @font-face{font-family:"Geist";font-style:normal;font-weight:100 900;font-display:swap;src:url("./fonts/geist/geist-latin-variable.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("./fonts/inter/inter-latin-variable.woff2") format("woff2")}

@@ -52,7 +52,7 @@ function renderSaveCard(){
   $('#budSave').innerHTML = `<h2 class="section-title">${ic('piggy-bank')} Meta de ahorro</h2>
     <div class="sv-form">
       <span class="sv-l">Meta</span>
-      <div class="sv-c"><span class="sv-in"><input type="number" id="svPct" min="0" max="100" step="1" inputmode="numeric" value="${sv.pct || ''}" placeholder="20"><i>%</i></span><span class="sv-hint">de tus ingresos</span></div>
+      <div class="sv-c"><span class="sv-in"><input type="number" id="svPct" aria-label="Meta de ahorro (%)" min="0" max="100" step="1" inputmode="numeric" value="${sv.pct || ''}" placeholder="20"><i>%</i></span><span class="sv-hint">de tus ingresos</span></div>
       <span class="sv-l">Aplica a</span>
       <label class="check sv-c"><input type="checkbox" id="svAll" ${own ? '' : 'checked'}><span>Todos los meses${own ? ` <span class="muted">· ahora solo ${mes}</span>` : ''}</span></label>
       <span class="sv-l">Cuenta como ahorro</span>

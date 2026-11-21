@@ -81,7 +81,7 @@ function renderGoals(){
         : `<div class="bar big"><span style="width:${pct}%;background:${barFill(g.color)}"></span></div>`}
       </div>
       ${completed?`<div class="goal-status"><div class="goal-done">${ic('check')} Meta lograda</div></div>`:`<p class="goal-remaining">Faltan <b>${fmt(rem)}</b></p>`}
-      <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn primary" data-goal-add="${esc(g.id)}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn ghost" data-goal-out="${esc(g.id)}">${ic('hand-coins')} Retirar</button>` : ''}</div>
+      <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn" data-goal-add="${esc(g.id)}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn ghost" data-goal-out="${esc(g.id)}">${ic('hand-coins')} Retirar</button>` : ''}</div>
       <div class="goal-more">${stats||withdrawal?`<details class="goal-detail" data-goal-detail="${esc(g.id)}"${openDetails.has(g.id)?' open':''}><summary>Detalle de la meta ${ic('chevron-down')}</summary><div class="goal-status">${stats}${withdrawal}</div></details>`:''}
         ${g.shared?`<details class="goal-contributions"><summary>Ver aportes</summary>${share}</details>`:share}</div>
     </div>`;

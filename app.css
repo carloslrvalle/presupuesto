@@ -1,5 +1,5 @@
 /* Estilos de Presupuesto, ordenados por componente.
-   Los controles usan --radius-sm (6px), --radius (8px) y --radius-lg (12px); las tarjetas comparten --radius-card (20px).
+   Botones y campos usan --radius (8px); pestañas laterales --radius-sm (6px); iconos y «+» --radius-lg (12px); las tarjetas comparten --radius-card (20px).
    El orden respeta la cascada: una regla solo se adelanta a otra con la que no compite. */
 
 /* ==================== Tokens y temas ==================== */
@@ -15,7 +15,7 @@ html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%
 }
 /* Sistema de movimiento: respuesta, navegación, paneles y datos. */
 /* Escala compartida por función: igual contenido, igual tipografía en todas las vistas. */
-:root{--bg:#f7f7f8;--surface:#ffffff;--surface-2:#f3f3f5;--text:#18181b;--muted:#52525b;--border:#e4e4e7;--primary:#18181b;--primary-soft:#ececee;--on-primary:#ffffff;--income:#217053;--income-soft:#e6f3ed;--income-chart:#319e77;--expense:#a43c42;--expense-soft:#fbecec;--expense-chart:#db666a;--savings:#6945a7;--savings-soft:#f2edfa;--savings-chart:#9670d1;--balance:#34659b;--balance-soft:#eaf1f9;--balance-chart:#528dce;--on-expense:#fff;--warn:#f59e0b;color-scheme:light dark;--font-body:"Inter",system-ui,sans-serif;--font-head:"Geist",var(--font-body);--type-body:.875rem;--motion-fast:140ms;--motion-move:var(--motion-panel);--motion-popup:180ms;--motion-panel:240ms;--motion-data:420ms;--motion-trace:650ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.22,1,.36,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:var(--motion-ease);--type-title:1.5rem;--type-section:1rem;--type-item:.875rem;--type-control:.875rem;--type-meta:.75rem;--content-width:960px;--page-gutter:16px;--section-gap:16px;--report-gap:clamp(16px,2.5vw,24px);--creation-size:56px;--metric-title-size:.8125rem;--metric-value-size:1.625rem;--metric-meta-size:.75rem;--metric-padding:1.125rem;--metric-label-height:2.4375rem;--metric-icon-size:1.875rem;--control-height:40px;--control-height-compact:32px;--control-height-touch:44px;--control-radius:10px;--control-gap:8px;--icon-action-size:36px;--shadow-xs:0 1px 2px 0 rgba(0,0,0,.05);--shadow-sm:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--ring:color-mix(in srgb,var(--text) 40%,transparent);--motion-tab:var(--motion-fast);--motion-tab-ease:cubic-bezier(.65,0,.35,1);--radius:8px;--radius-sm:6px;--radius-lg:12px;--radius-card:20px;--shadow:var(--shadow-sm,0 1px 3px rgba(30,40,120,.15))}
+:root{--bg:#f7f7f8;--surface:#ffffff;--surface-2:#f3f3f5;--text:#18181b;--muted:#52525b;--border:#e4e4e7;--primary:#18181b;--primary-soft:#ececee;--on-primary:#ffffff;--income:#217053;--income-soft:#e6f3ed;--income-chart:#319e77;--expense:#a43c42;--expense-soft:#fbecec;--expense-chart:#db666a;--savings:#6945a7;--savings-soft:#f2edfa;--savings-chart:#9670d1;--balance:#34659b;--balance-soft:#eaf1f9;--balance-chart:#528dce;--on-expense:#fff;--warn:#f59e0b;color-scheme:light dark;--font-body:"Inter",system-ui,sans-serif;--font-head:"Geist",var(--font-body);--type-body:.875rem;--motion-fast:140ms;--motion-move:var(--motion-panel);--motion-popup:180ms;--motion-panel:240ms;--motion-data:420ms;--motion-trace:650ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.22,1,.36,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:var(--motion-ease);--type-title:1.5rem;--type-section:1rem;--type-item:.875rem;--type-control:.875rem;--type-meta:.75rem;--content-width:960px;--page-gutter:16px;--section-gap:16px;--report-gap:clamp(16px,2.5vw,24px);--creation-size:56px;--metric-title-size:.8125rem;--metric-value-size:1.625rem;--metric-meta-size:.75rem;--metric-padding:1.125rem;--metric-label-height:2.4375rem;--metric-icon-size:1.875rem;--control-height:40px;--control-height-compact:32px;--control-height-touch:44px;--control-gap:8px;--icon-action-size:36px;--shadow-xs:0 1px 2px 0 rgba(0,0,0,.05);--shadow-sm:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--ring:color-mix(in srgb,var(--text) 40%,transparent);--motion-tab:var(--motion-fast);--motion-tab-ease:cubic-bezier(.65,0,.35,1);--radius:8px;--radius-sm:6px;--radius-lg:12px;--radius-card:20px;--shadow:var(--shadow-sm,0 1px 3px rgba(30,40,120,.15))}
 @media(max-width:600px){
  :root{--metric-title-size:.75rem;--metric-value-size:1.5rem;--metric-meta-size:.75rem;--metric-padding:.875rem}
 }
@@ -1276,7 +1276,7 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  .mobile-budget-tile:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
  #tab-budget .mobile-budget-options .bud-side{display:grid;gap:16px}
  #tab-budget .mobile-budget-options .btn-row{display:flex;flex-wrap:wrap;gap:8px}
- #tab-budget .mobile-budget-options .btn-row>.btn{flex:1;min-height:44px;font-size:12px;white-space:normal}
+ #tab-budget .mobile-budget-options .btn-row>.btn{flex:1;min-height:44px;font-size:var(--type-control);white-space:normal}
 }
 @media(min-width:601px) and (min-height:501px),(min-width:961px),(min-width:601px) and (pointer:fine){
  #tab-budget .bud-grid{gap:24px}
@@ -1337,7 +1337,6 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
 .goal-more{min-width:0}
 .goal-more>.goal-contributions{margin:8px 0 0}
 .goal-card>.goal-btns{margin:0;padding-top:14px;align-self:end;flex-wrap:wrap}
-.goal-card>.goal-btns .btn{min-height:44px}
 @supports not (grid-template-rows:subgrid){
  .goal-card>.goal-btns{margin-top:auto}
 }
@@ -1599,13 +1598,13 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
  *,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 #txDialog .check input{flex-shrink:0;margin-top:2px}
-#txDialog .dlg-foot{border-top:1px solid var(--border);background:var(--surface);padding-top:12px}
+#txDialog .dlg-foot{border-top:1px solid var(--border);background:var(--surface);padding-top:16px}
 #closeDialog .dlg-head,#closeDialog .dlg-foot{flex-shrink:0}
 #closeDialog .dlg-head{gap:12px;padding-bottom:12px}
 #closeDialog .dlg-head h3{min-width:0;font-size:var(--type-section);overflow-wrap:anywhere}
 #closeDialog .dlg-head .iconbtn{flex-shrink:0}
 #closeDialog .dlg-body{overflow-y:auto;min-height:0;gap:16px}
-#closeDialog .dlg-foot{padding-top:12px;border-top:1px solid var(--border)}
+#closeDialog .dlg-foot{padding-top:16px;border-top:1px solid var(--border)}
 @media(max-width:380px){
  #closeDialog .dlg-foot{flex-wrap:wrap}
  #closeDialog .dlg-foot .btn{flex:1;white-space:normal}
@@ -1613,7 +1612,7 @@ dialog[open] .dlg-body>*{animation:none!important;animation-delay:0ms!important}
 #periodDialog .dlg-head{gap:12px}
 #periodDialog .dlg-head h3{font-size:var(--type-section)}
 #periodDialog .dlg-body{gap:14px}
-#periodDialog .dlg-foot{padding-top:12px;border-top:1px solid var(--border)}
+#periodDialog .dlg-foot{padding-top:16px;border-top:1px solid var(--border)}
 #syncConflictDialog .dlg-body{display:block;padding-inline:2px}
 #syncConflictDialog .dlg-actions{background:var(--surface);display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:16px 0 6px;border-top:1px solid var(--border);margin-top:16px}
 #txDialog #fCatChips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch}
@@ -2686,7 +2685,7 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
 .prio-seg button.active{background:var(--surface);box-shadow:var(--shadow);color:var(--text)}
 .prio{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:1px 7px 1px 5px;border-radius:99px;vertical-align:1px;margin-right:6px;white-space:nowrap;color:var(--text);background:color-mix(in srgb,var(--pc) 14%,transparent)}
 .prio .vi{width:12px;height:12px}
-.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--muted)}
 .goal-out{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .goal-out .vi{width:15px;height:15px}
 .goal-head .ico{width:44px;height:44px;font-size:22px;border-radius:var(--radius)}
@@ -2951,7 +2950,7 @@ button,.btn,.chip,.iconbtn,.seg button,.month-nav button,.year-nav button,.emoji
 .history-items{margin:0;padding:0;list-style:none}
 .history-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:10px;align-items:center;border-bottom:1px solid var(--border);border-radius:0;transition:background-color var(--motion-fast) var(--motion-ease)}
 .history-row:hover{background:color-mix(in srgb,var(--primary) 3%,var(--surface))}
-.history-amount{font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.5;letter-spacing:-.15px}
+.history-amount{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.5;letter-spacing:-.15px}
 .mov-history.selecting .picked{background:var(--primary-soft);border-radius:7px}
 .history-edit{display:grid;align-items:center;width:100%;min-width:0;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer;min-height:54px;padding:8px 0;grid-template-columns:32px minmax(0,1fr) auto;gap:11px}
 .history-icon{display:grid;place-items:center;flex-shrink:0;width:32px;height:32px;border-radius:7px}
@@ -3125,6 +3124,10 @@ html .bud-table .cname{line-height:1.5}
 }
 @media(max-width:700px){
  .chart-modes button{border:0;background:transparent;border-radius:var(--radius-sm);font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;min-height:44px}
+}
+/* Teléfono en horizontal también usa áreas táctiles de 44 px en Del mes / Acumulado. */
+@media(pointer:coarse){
+ .chart-modes button,#yearChartModes button{min-height:44px}
 }
 @media(max-width:380px){
  .goal-stats,.cd-stats{grid-template-columns:minmax(0,1fr)}
@@ -3406,7 +3409,7 @@ button[aria-disabled=true]{cursor:not-allowed}
 /* Cabecera: perfil, guardado, ajustes y mes con la misma altura y forma. */
 .gear-btn{height:var(--control-height);min-height:var(--control-height);box-shadow:var(--shadow-xs);font-weight:500}
 /* Campos: transparentes sobre la superficie, borde 1 px. En teléfono 16 px evita el zoom automático de iPhone. */
-input:is([type=text],[type=search],[type=date],[type=url],[type=password]),select,textarea,.dp-trigger,.fsel-btn{min-height:var(--control-height);border-radius:var(--radius-sm);box-shadow:var(--shadow-xs);font-size:var(--type-control)}
+input:is([type=text],[type=search],[type=date],[type=url],[type=password]),select,textarea,.dp-trigger,.fsel-btn{min-height:var(--control-height);border-radius:var(--radius);box-shadow:var(--shadow-xs);font-size:var(--type-control)}
 @media(max-width:700px){
  input:is([type=text],[type=search],[type=date],[type=url],[type=password],[type=number]),select,textarea,html .cat-row input[data-act=name],html .mov-filters .search-box input{font-size:16px}
 }

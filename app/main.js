@@ -94,6 +94,7 @@ matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>{
  renderAll();
 });
 setupSettings();
+positionDesktopNavigation();
 $('#firstConnect').onclick = () => {
   showTab('settings');
   openSettingsSection('data', true);

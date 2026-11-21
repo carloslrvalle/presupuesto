@@ -51,7 +51,11 @@ function setBadge(kind='local',text='Guardado en este dispositivo'){
  else if(!syncOn()){kind='local';text='Guardado en este dispositivo';}
  else if(navigator.onLine===false){kind='pending';text=sync.pending?'Guardado aquí · Sin conexión':'Sin conexión';}
  else if(sync.pending&&kind!=='busy'&&kind!=='err'){kind='pending';text='Pendiente de sincronizar';}
- text=text.replace(/^(☁️|⚠️)\s*/,'');b.hidden=false;b.className='sync-badge '+kind;b.title=text;b.setAttribute('aria-label',text+'. Ver estado del guardado');b.innerHTML='<span class="sb-t">'+esc(text)+'</span>';
+ text=text.replace(/^(☁️|⚠️)\s*/,'');
+ // En teléfono el estado vive en Ajustes: un error nuevo se avisa una vez para que no pase inadvertido.
+ if(kind==='err'&&b.dataset.alerted!==text&&typeof mobileLayout!=='undefined'&&mobileLayout.matches)toast('⚠ '+text+'. Revisa Ajustes.');
+ b.dataset.alerted=kind==='err'?text:'';
+ b.hidden=false;b.className='sync-badge '+kind;b.title=text;b.setAttribute('aria-label',text+'. Ver estado del guardado');b.innerHTML='<span class="sb-t">'+esc(text)+'</span>';
 }
 function updateSyncInfo(err, phase){
  if (err === null) syncIssue = null;

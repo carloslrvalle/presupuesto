@@ -289,6 +289,7 @@ button:disabled{transform:none!important}
 }
 @media(prefers-reduced-motion:reduce){
  .tab-ind.ready,.seg::before,.to-top,.to-top.show{transition:none!important}
+ html #txDialog.tx-mobile-simple .mobile-tx-keypad button:active{transform:none}
 }
 @media(prefers-contrast:more){
  input,select,textarea,.fsel-btn,.dp-trigger{border-color:var(--text)!important}
@@ -789,9 +790,14 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #tab-dashboard .dashboard-kpis>.kpi>summary .value{min-height:0;margin:0;align-self:center;text-align:left;white-space:nowrap;line-height:1.3;font-size:clamp(20px,6.6vw,26px);letter-spacing:-.5px;overflow-wrap:anywhere}
  #tab-dashboard .dashboard-kpis>.kpi>summary .metric-preview{min-height:0;grid-row:auto;display:block;font-size:12px;line-height:1.4;color:var(--muted)}
  #tab-dashboard .dashboard-kpis>.kpi>summary .metric-chevron{display:grid;top:18px;right:12px}
+ /* Análisis y Ambos usan la misma tarjeta de cifra que Inicio: icono arriba, etiqueta en una línea, misma cifra. */
+ #anKpis .analysis-metric .label,#bothBody .both-kpis .metric-disclosure>summary .label{flex-direction:column;align-items:flex-start;gap:8px;min-height:0;padding-right:0;font-size:13px;font-weight:500;color:var(--muted);line-height:1.35;overflow-wrap:normal}
+ #anKpis .analysis-metric .dot,#bothBody .both-kpis .metric-disclosure .dot{width:26px;height:26px;border-radius:var(--radius)}
+ #anKpis .analysis-metric .dot .vi,#bothBody .both-kpis .metric-disclosure .dot .vi{width:16px;height:16px}
+ #anKpis .analysis-metric .value,#bothBody .both-kpis .metric-disclosure>summary .value{font-size:clamp(20px,6.6vw,26px);font-weight:600;line-height:1.3;letter-spacing:-.5px;white-space:nowrap}
  .mobile-spent[data-tone=over] .mobile-spent-pct{color:var(--expense)}
 }
-:is(.card,.tab .card,#tab-dashboard .dashboard-kpis>.kpi,.mobile-spent,#mobileBudgetGauge,.mobile-budget-tile){box-shadow:var(--shadow)}
+:is(.card,.tab .card,#tab-dashboard .dashboard-kpis>.kpi,.mobile-spent,#mobileBudgetGauge){box-shadow:var(--shadow)}
 
 /* ==================== Movimientos ==================== */
 @media(max-width:380px){
@@ -1272,7 +1278,7 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  #tab-budget #mobileBudgetView{margin-bottom:24px}
  #mobileBudgetRange{font-size:12px;color:var(--muted);white-space:nowrap}
  .mobile-budget-gauge path{fill:none;stroke-width:12;stroke-linecap:round}
- .mobile-budget-tile-name>.ico .vi{width:17px;height:17px}
+ .mobile-budget-tile>.ico .vi{width:17px;height:17px}
  .mobile-budget-tile:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
  #tab-budget .mobile-budget-options .bud-side{display:grid;gap:16px}
  #tab-budget .mobile-budget-options .btn-row{display:flex;flex-wrap:wrap;gap:8px}
@@ -1529,8 +1535,16 @@ h2,.both-head h2{font-size:var(--type-title)}
 }
 
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- html :is(#catsIncome,#catsExpense) .cat-row{grid-template-columns:repeat(2,var(--control-height-touch)) minmax(0,1fr) var(--control-height-touch)!important;column-gap:4px}
- html #tab-cats .cat-row>.grip{min-width:var(--control-height-touch);min-height:var(--control-height-touch)}
+ /* El asa conserva 44 px de alto y cede ancho al nombre: a 320 px los nombres habituales caben sin cortarse. */
+ html :is(#catsIncome,#catsExpense) .cat-row{grid-template-columns:28px var(--control-height-touch) minmax(0,1fr) var(--control-height-touch)!important;column-gap:4px}
+ html #tab-cats .cat-row>.grip{min-width:28px;min-height:var(--control-height-touch)}
+ html #tab-cats .cat-row input[data-act=name]{padding-inline:6px}
+ @media(max-width:360px){
+  /* Pantallas de 320–360 px: icono de 36 px de ancho (44 px de alto) y tarjeta con 12 px para que quepan los nombres largos. */
+  html :is(#catsIncome,#catsExpense) .cat-row{grid-template-columns:28px 36px minmax(0,1fr) var(--control-height-touch)!important}
+  html #tab-cats .card{padding-inline:12px}
+  html #tab-cats .cat-row>.ico{width:36px;min-width:36px}
+ }
  html #catsIncome .cat-row>.pay-btn{grid-column:3/-1;grid-row:2;width:auto}
 }
 
@@ -1866,7 +1880,7 @@ html dialog.sheet-dismissed{opacity:0!important;transition:none!important}
   }
  }
 }
-:is(.card,.analysis-detail,.settings-disclosure,.settings-home,.settings-status,.mobile-budget-tile,#mobileBudgetGauge,.mobile-spent,.period-overview,.finance-color-option,.goal-done-group>summary,.both-extra>summary){border-radius:var(--radius-card)}
+:is(.card,.analysis-detail,.settings-disclosure,.settings-home,.settings-status,.mobile-budget-categories,#mobileBudgetGauge,.mobile-spent,.period-overview,.finance-color-option,.goal-done-group>summary,.both-extra>summary){border-radius:var(--radius-card)}
 :is(.section-disclosure,.metric-disclosure) > summary{border-radius:inherit}
 :is(.section-disclosure,.metric-disclosure)[open] > summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
 #movSummary{border-radius:var(--radius-card) var(--radius-card) 0 0}
@@ -2391,7 +2405,9 @@ html[data-large-text] .plan-period{flex-wrap:wrap}
 #yearChartCard{margin-top:var(--section-gap)}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  .gauge-track{stroke:var(--surface-2)}
- .gauge-fill{stroke:var(--expense-chart)}
+ /* Arco en el tono de saldo; ámbar desde 85 % y coral solo al exceder (The Ink Not Alarm Rule). */
+ .gauge-fill{stroke:var(--balance-chart)}
+ .gauge-fill.warn{stroke:color-mix(in srgb,var(--warn) 75%,var(--surface))}
  .gauge-fill.over{stroke:var(--expense)}
 }
 #monthLabel::before,#monthLabel::after{content:none}
@@ -3559,6 +3575,62 @@ html[data-large-text] .month-nav{height:auto}
  .topbar .month-nav{grid-column:1/-1;grid-row:2;width:auto}
  .topbar .month-label{flex:1;min-width:0}
  .topbar .brand,.topbar:has(.sync-badge:not([hidden])) .brand{grid-column:1;grid-row:1;font-size:20px;letter-spacing:-.5px}
+ /* Cabecera solo con el período: nombre de la app, perfil y guardado pasan a Ajustes (perfil y estado al inicio). */
+ .topbar .brand{display:none}
+ .topbar>.wrap:first-child{grid-template-columns:minmax(0,1fr);padding-block:12px 4px;row-gap:12px}
+ /* Encabezado común: el título de la vista va primero y el período debajo; los títulos dentro del contenido se retiran. */
+ html:not([data-desktop-nav=side]) #desktopSectionTitle{position:static;grid-column:1;grid-row:1;width:auto;height:auto;margin:0;overflow:visible;clip-path:none;white-space:normal;font-size:22px;font-weight:700;line-height:1.25;letter-spacing:-.45px}
+ .topbar .month-nav{grid-row:2}
+ .settings-intro,#mobileBudgetView>.mobile-section-heading,#bothBody .both-head h2{display:none}
+ .mobile-profile-host{margin:0 0 12px}
+ .mobile-profile-host .top-pair{width:100%;box-sizing:border-box}
+ .mobile-profile-host .sync-badge{display:none}
+ /* Calendario sereno: el día conserva su superficie y una barra fina indica gasto (coral), ingreso (salvia) o ambos. */
+ .cal-d:is(.has-exp,.has-inc,.both){background:var(--surface);border-color:var(--border)}
+ .cal-d:is(.has-exp,.has-inc,.both)::after{content:"";position:absolute;inset:auto 6px 5px;height:3px;border-radius:2px;background:var(--expense-chart);pointer-events:none}
+ .cal-d.has-inc::after{background:var(--income-chart)}
+ .cal-d.both::after{background:linear-gradient(90deg,var(--income-chart) 50%,var(--expense-chart) 50%)}
+ /* Barras de progreso sólidas: el degradado se estira para mostrar solo su color final. */
+ .goal-card .bar:not(.split)>span,.mobile-spent-bar>span{background-size:5000% 100%!important;background-position:100% 0!important}
+ /* Un solo lenguaje de desplegable: chevrón que rota (en lugar de + y −). */
+ :is(.section-disclosure,.goal-contributions,.analysis-detail,.settings-disclosure)>summary::after,.cd-exact>summary::before{content:"";flex:none;width:16px;height:16px;font-size:0;background:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E") center/16px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E") center/16px no-repeat;transition:transform var(--motion-panel) var(--motion-ease)}
+ :is(.section-disclosure,.goal-contributions,.analysis-detail,.settings-disclosure)[open]>summary::after,.cd-exact[open]>summary::before{content:"";transform:rotate(180deg)}
+ /* Ambos: filas por usuario sin caja dentro de la tarjeta; el resultado conjunto usa la superficie común. */
+ #bothBody .bu-row{padding:12px 0;border-radius:0;background:transparent}
+ #bothBody .bu-row+.bu-row{border-top:1px solid var(--border)}
+ #bothBody .both-users{gap:0}
+ #bothBody>.period-overview{background:var(--surface);box-shadow:var(--shadow)}
+ /* Movimientos: el resumen semanal habla como las tarjetas de cifra (etiqueta discreta, cifra de 26 px). */
+ #tab-movs .mobile-weekly-head h2{color:var(--muted);font-size:13px;font-weight:500;letter-spacing:0}
+ #tab-movs .mobile-weekly-readout strong{font-size:clamp(20px,6.6vw,26px);font-weight:600;letter-spacing:-.5px;line-height:1.3}
+ /* Cifras secundarias (Calendario, Metas) sin cajas grises: etiqueta y valor sobre la superficie de la tarjeta. */
+ .cal-day-totals>div,.gs{padding:0;border-radius:0;background:transparent}
+ /* Menos ruido: sin borrar en la fila del día (se borra desde el movimiento), sin ayuda en la meta, sin instrucciones de Categorías ni ficha de fuente fija. */
+ #calDay .cal-transaction [data-del],.goal-title .info-tip,.category-instructions,#settingsFont{display:none}
+ /* Análisis: el año usa el mismo selector a todo el ancho que el mes. */
+ #tab-analysis .year-nav{width:100%;box-sizing:border-box}
+ #tab-analysis #yearLabel{flex:1;text-align:center}
+ /* Ajustes: dentro de una sección solo queda esa sección; perfil y estado vuelven al salir. */
+ #tab-settings[data-settings-view] :is(.mobile-profile-host,.settings-status){display:none}
+ #tab-settings [id^=settings-heading-]:focus{outline:none}
+ .card .settings-disclosure{margin:0;border:0;border-top:1px solid var(--border);border-radius:0;box-shadow:none;background:transparent}
+ .card .settings-disclosure>summary{padding-inline:0;min-height:56px}
+ .card .settings-disclosure .settings-disclosure-body{padding-inline:0}
+ /* Categorías: «Agregar» discreto en la misma fila del título; la ayuda sobra junto al asa y el nombre editable. */
+ #tab-cats .toolbar>.info-tip{display:none}
+ /* Alta y hojas: esquinas del mismo radio que las tarjetas; controles de 12 px como el resto del móvil; teclas de 14 px que responden al toque. */
+ html dialog,.mobile-more[open],html #txDialog.tx-mobile-simple{border-radius:var(--radius-card) var(--radius-card) 0 0!important}
+ html #txDialog.tx-mobile-simple :is(#txSeg,#mobileTxNote,#fDateField .dp-trigger,#mobileTxCategory,.iconbtn){border-radius:var(--radius-lg)!important}
+ html #txDialog.tx-mobile-simple #txSeg>button{border-radius:10px!important}
+ html #txDialog.tx-mobile-simple .mobile-tx-keypad button{border-radius:14px!important;transition:background-color var(--motion-fast) var(--motion-ease),transform var(--motion-fast) var(--motion-ease)}
+ html #txDialog.tx-mobile-simple .mobile-tx-keypad button:active{transform:scale(.96);transition-duration:0s}
+ /* Categorías del alta: fondo neutro y el color solo en su icono; la elegida se marca con contorno de tinta. */
+ html #txDialog.tx-mobile-simple .tx-category-panel #fCatChips .chip{background:var(--surface-2);border-radius:var(--radius-lg)!important}
+ html #txDialog.tx-mobile-simple .tx-category-panel #fCatChips .chip[aria-pressed=true]{background:var(--surface);border-color:var(--text)}
+ html #txDialog.tx-mobile-simple #txCategorySearch{border-radius:var(--radius-lg)}
+ #tab-cats .toolbar>[data-addcat]{grid-column:2;grid-row:1;justify-self:end;border-color:transparent;background:transparent;box-shadow:none;padding-inline:8px;color:var(--text)}
+ .mobile-profile-host .prof-chip{flex:1;justify-content:flex-start;gap:10px}
+ .mobile-profile-host .prof-nm{display:block;max-width:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-size:14px;font-weight:600;color:var(--text)}
  .plan-period .period-trigger{border:0;background:transparent;box-shadow:none;min-height:44px;padding:6px 0;font-size:12px;color:var(--muted);gap:6px}
  .tab :is(.btn,.search-box,.vseg,.seg,.fsel-btn){border-radius:var(--radius-lg)}
  html #mobileMore{position:fixed;inset:auto 0 0;margin:0;width:100%;max-width:100%;max-height:85dvh;overflow:hidden;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px);opacity:1;transform:translateY(100%);transition:transform var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete,display var(--motion-panel) allow-discrete,visibility 0s linear var(--motion-panel)}
@@ -3592,19 +3664,20 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-gauge-copy>small{font-size:11px;line-height:1.4;color:var(--muted)}
  .mobile-gauge-totals{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 24px;color:var(--muted);font-size:11px}
  .mobile-gauge-totals b{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
- .mobile-budget-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--mobile-grid-gap);align-items:stretch}
- .mobile-budget-tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;min-height:202px;padding:var(--mobile-panel-padding);border:1px solid var(--border);background:var(--surface);color:var(--text);text-align:left;cursor:pointer;font-variant-numeric:tabular-nums;transition:background 140ms,transform 140ms}
- .mobile-budget-tile-name{display:flex;align-items:center;gap:6px;min-width:0;min-height:36px;margin-bottom:8px}
- .mobile-budget-tile-name>.ico{width:28px;height:28px;border-radius:9px;flex:none}
- .mobile-budget-tile-name>b{font-size:12px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
- .mobile-budget-tile-status{font-size:11px;color:var(--muted)}
- .mobile-budget-tile>strong{font-size:clamp(20px,5.9vw,26px);line-height:1.2;font-weight:600;letter-spacing:-.8px;overflow-wrap:anywhere}
- .mobile-budget-tile.over>strong{color:var(--expense)}
- .mobile-budget-tile-caption{font-size:11px;color:var(--muted);margin-bottom:8px}
- .mobile-budget-tile-track{display:block;height:7px;margin-top:auto;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+ /* Categorías en filas compactas, como Gastos recientes: el medidor resume arriba y cada fila se lee de un vistazo. */
+ .mobile-budget-categories{display:grid;grid-template-columns:minmax(0,1fr);gap:0;padding:0 var(--mobile-panel-padding);border:1px solid var(--border);border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow)}
+ .mobile-budget-tile{display:grid;grid-template-columns:32px minmax(0,1fr) auto;grid-template-areas:"ico copy amount" ". track track";align-items:center;column-gap:12px;row-gap:8px;min-width:0;min-height:44px;padding:14px 0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+ .mobile-budget-tile+.mobile-budget-tile{border-top:1px solid var(--border)}
+ .mobile-budget-tile>.ico{grid-area:ico;display:grid;place-items:center;width:32px;height:32px;border-radius:9px}
+ .mobile-budget-tile-copy{grid-area:copy;display:grid;gap:2px;min-width:0}
+ .mobile-budget-tile-copy>b{font-size:14px;font-weight:600;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .mobile-budget-tile-meta{font-size:12px;line-height:1.4;color:var(--muted);text-wrap:pretty}
+ .mobile-budget-tile-amount{grid-area:amount;display:grid;justify-items:end;gap:2px;text-align:right}
+ .mobile-budget-tile-amount>strong{font-size:14px;font-weight:600;line-height:1.35;white-space:nowrap}
+ .mobile-budget-tile.over .mobile-budget-tile-amount>strong{color:var(--expense)}
+ .mobile-budget-tile-caption{font-size:12px;line-height:1.4;color:var(--muted)}
+ .mobile-budget-tile-track{grid-area:track;display:block;height:4px;border-radius:4px;overflow:hidden;background:var(--surface-2)}
  .mobile-budget-tile-track>i{display:block;height:100%;border-radius:inherit}
- .mobile-budget-tile-plan{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
- .mobile-budget-tile-plan .vi{width:13px;height:13px;flex:none}
  .mobile-budget-tile:active{background:var(--surface-2);transform:scale(.99)}
  .mobile-budget-options{border-top:1px solid var(--border);margin-top:24px;padding-top:8px}
  .mobile-budget-options>summary{min-height:56px;padding:14px 0;font-size:14px;font-weight:600;cursor:pointer}
@@ -3615,9 +3688,6 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-budget-options[open]>summary .vi{transform:rotate(180deg)}
  .mobile-budget-options-body{display:grid;gap:16px;padding-top:12px}
  @media(max-width:360px){
-  .mobile-budget-tile{padding:var(--metric-padding)}
-  .mobile-budget-tile-name{gap:5px}
-  .mobile-budget-tile-name>b{font-size:11px}
   .mobile-gauge-copy>strong{font-size:26px}
  }
  @media(prefers-reduced-motion:reduce){
@@ -3742,7 +3812,6 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-more-list>button>.vi:first-child,.settings-home-icon{border-radius:10px;background:var(--primary-soft);color:var(--primary)}
  .mobile-more-list>button{min-height:62px;padding-inline:8px}
  #mobileRecentAll,.tx-mobile-simple #mobileTxNote{color:var(--primary)}
- .mobile-view-title{margin:0 0 12px;font-size:22px;line-height:1.25;letter-spacing:-.45px}
  @media(prefers-reduced-transparency:no-preference) and (prefers-contrast:no-preference) and (forced-colors:none){
   #mobileNav{background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:saturate(1.15) blur(8px);backdrop-filter:saturate(1.15) blur(8px)}
  }

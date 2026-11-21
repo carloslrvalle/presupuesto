@@ -23,6 +23,8 @@ const desktopSectionNames={settings:'Ajustes',both:'Ambos'};
 const desktopNodes=[[$('#tabs'),desktopSidebar.querySelector('.desktop-navigation-host')],[$('.top-pair'),desktopSidebar.querySelector('.desktop-profile-host')],[$('.topbar .brand'),desktopSidebar.querySelector('.desktop-brand-host')]].map(([node,parent])=>{
  const anchor=document.createComment('Posición de la navegación superior');node.before(anchor);return {node,parent,anchor};
 });
+// En teléfono, perfil y estado de guardado viven al inicio de Ajustes: la cabecera queda solo con el período.
+const mobileProfileHost=document.createElement('div');mobileProfileHost.className='mobile-profile-host';
 let desktopPreferredLayout='side';
 const desktopMotionNodes=[$('.topbar'),$('main.wrap'),$('#fab')];
 function stopDesktopMotion(){
@@ -32,7 +34,7 @@ function updateDesktopNavigation(){
  const active=activeTab()==='settings';desktopSettings.classList.toggle('active',active);
  if(active)desktopSettings.setAttribute('aria-current','page');else desktopSettings.removeAttribute('aria-current');
  const tab=activeTab();
- desktopSectionTitle.textContent=desktopSectionNames[tab]||$(`#tabs [data-tab="${tab}"]`)?.getAttribute('aria-label')||'';
+ desktopSectionTitle.textContent=(mobileLayout.matches&&tab==='dashboard'?'Inicio':'')||desktopSectionNames[tab]||$(`#tabs [data-tab="${tab}"]`)?.getAttribute('aria-label')||'';
 }
 function positionDesktopNavigation(animate=false){
  const side=desktopSurface.matches&&desktopSidebarSpace.matches&&desktopPreferredLayout==='side';
@@ -47,6 +49,10 @@ function positionDesktopNavigation(animate=false){
  const focused=document.activeElement;
  for(const {node,parent,anchor} of desktopNodes){
   if(side){if(node.parentElement!==parent)parent.append(node);}
+  else if(mobileLayout.matches&&node.matches('.top-pair')){
+   if(!mobileProfileHost.isConnected)$('#tab-settings .settings-intro')?.after(mobileProfileHost);
+   if(mobileProfileHost.isConnected&&node.parentElement!==mobileProfileHost)mobileProfileHost.append(node);
+  }
   else if(node.previousSibling!==anchor)anchor.after(node);
  }
  if(focused!==document.activeElement&&focused instanceof HTMLElement)focused.focus({preventScroll:true});
@@ -73,6 +79,7 @@ function positionDesktopNavigation(animate=false){
 desktopToggle.onclick=()=>{desktopPreferredLayout=document.documentElement.dataset.desktopNav==='side'?'top':'side';positionDesktopNavigation(true);};
 desktopSurface.addEventListener('change',positionDesktopNavigation);
 desktopSidebarSpace.addEventListener('change',positionDesktopNavigation);
+mobileLayout.addEventListener('change',()=>{positionDesktopNavigation();updateDesktopNavigation();});
 window.addEventListener('resize',stopDesktopMotion);
 document.addEventListener('keydown',event=>{if(!['Shift','Control','Alt','Meta'].includes(event.key))stopDesktopMotion();},true);
 matchMedia('(prefers-reduced-motion:reduce)').addEventListener('change',stopDesktopMotion);

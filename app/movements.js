@@ -19,9 +19,9 @@ function movementHistory(list,dayLbl,filtered){
    const c=getCat(t.catId),isI=t.type==='income',isS=isSavingTx(t),planned=isPlanned(t);
    const action = `${selMode?'Seleccionar':'Editar'} ${isI?'ingreso':isS?'ahorro':'gasto'}`;
    const meta = mobile
-     ? `<span class="history-secondary"><span class="history-row-meta">${t.desc?`${esc(c.name)} · `:''}<time datetime="${esc(t.date)}">${fmtDate(t.date)}</time></span>${planned?'<span class="plan-pill">Programado</span>':''}</span>`
+     ? `<span class="history-secondary"><span class="history-row-meta">${t.desc?`${esc(c.name)} · `:''}<time datetime="${esc(t.date)}">${fmtDate(t.date)}</time></span></span>`
      : t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:'';
-   return `<li class="history-row${planned?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary">${mobile?`<span class="history-mobile-title">${esc(t.desc||c.name)}</span>`:`<span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span>`}</span>${meta}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+   return `<li class="history-row${planned?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary">${mobile?`<span class="history-mobile-title">${esc(t.desc||c.name)}</span>`:`<span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span>`}</span>${meta}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}${mobile&&planned?'<span class="plan-pill">Programado</span>':''}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
  };
  if (mobile) return `<ul class="history-items">${list.map(row).join('')}</ul>`;
  const groups=new Map();for(const t of list){if(!groups.has(t.date))groups.set(t.date,[]);groups.get(t.date).push(t);}
@@ -40,7 +40,7 @@ function setMovementFiltersOpen(open){
  filters.inert=!open;
 }
 
-function defaultMovementScope(){return mobileLayout.matches ? 'all' : 'month';}
+function defaultMovementScope(){return mobileLayout.matches && cycleView('dashboard') ? 'cycle' : 'month';}
 function movementsVisible(){return activeTab() === (mobileLayout.matches ? 'dashboard' : 'movs');}
 const MOV_PAGE_SIZE = 40;
 let movPage = 0, movQuery = '', movMatches = [], movFiltered = false, movSearchFrame = 0;
@@ -49,14 +49,16 @@ function renderMovs(refreshFilters = true){
   movSearchFrame = 0;
   if (refreshFilters){ fillCatFilter(); fillMethodFilter(); }
   const ft = $('#fltType').value, fc = $('#fltCat').value, fm = $('#fltMethod').value, scope = $('#fltScope').value, q = $('#fltText').value.trim().toLowerCase();
-  const extraCount = Number(!!fc) + Number(!!fm) + Number(!!ft) + Number(scope !== defaultMovementScope());
+  const extraCount = Number(!!fc) + Number(!!fm) + Number(!!ft && !mobileLayout.matches) + Number(scope !== defaultMovementScope());
   $('#movFilterToggle').textContent = extraCount ? `Filtros (${extraCount})` : 'Filtros';
   $('#movFilterClear').hidden = !$('#fltText').value && !extraCount;
   const y = currentMonth.slice(0, 4);
   const base = scope === 'cycle' ? cycleTx(currentMonth,true) : scope === 'all' ? state.transactions : scope === 'year' ? state.transactions.filter(t => t.date.slice(0, 4) === y) : txOfMonthAll(currentMonth);
   const match = t => !q || [t.desc || '', getCat(t.catId).name, t.method || '', String(t.amount)]
     .some(text => text.toLowerCase().includes(q)) || fmt(t.amount).toLowerCase().includes(q);
-  const list = base.filter(t => (!ft || t.type === ft) && (!fc || t.catId === fc) && (!fm || t.method === fm) && match(t))
+  // En móvil «Gastos» muestra solo gastos: ahorro y aportes no son gasto (van en Ambos).
+  const onlySpend = ft === 'expense' && mobileLayout.matches;
+  const list = base.filter(t => (!ft || t.type === ft) && !(onlySpend && isSavingTx(t)) && (!fc || t.catId === fc) && (!fm || t.method === fm) && match(t))
     .sort((a,b) => b.date.localeCompare(a.date) || (b.created||0) - (a.created||0));
   const query = JSON.stringify([activeProfile,currentMonth,scope,ft,fc,fm,q]);
   if (query !== movQuery) movPage = 0;
@@ -513,7 +515,8 @@ $('#movFilterToggle').onclick=toggleMovementFilters;
 $('#movFilterClear').onclick = () => {
   $('#fltText').value = '';
   $('#fltScope').value = defaultMovementScope();
-  for (const id of ['#fltType', '#fltCat', '#fltMethod']) $(id).value = '';
+  // En móvil el tipo pertenece al selector de Resumen; Limpiar no lo cambia.
+  for (const id of mobileLayout.matches ? ['#fltCat', '#fltMethod'] : ['#fltType', '#fltCat', '#fltMethod']) $(id).value = '';
   renderMovs(false);
   const trigger = mobileLayout.matches ? $('.mobile-movement-tools [aria-expanded=true]') : $('#movFilterToggle');
   trigger?.focus({preventScroll:true});
@@ -521,7 +524,7 @@ $('#movFilterClear').onclick = () => {
 /* ---------- Diálogo movimiento ---------- */
 const txDialog = $('#txDialog');
 let txType = 'expense', editingId = null, selCat = null, selMethod = null, txMethodExplicit = false, selGoal = null, contributionGoal = null;
-let txCategoryExpanded=false,txNewCategoryIcon='svg:tag';
+let txCategoryExpanded=false,txCategorySearchOpen=false,txNewCategoryIcon='svg:tag';
 function txCategoryOrder(cats){
  const count={};state.transactions.filter(t=>t.type===txType).forEach(t=>count[t.catId]=(count[t.catId]||0)+1);
  return cats.slice().sort((a,b)=>(count[b.id]||0)-(count[a.id]||0));
@@ -531,13 +534,14 @@ function txCategoryMarkup(cats){
  let list=txCategoryOrder(cats);
  if(txCategoryExpanded&&q)list=list.filter(c=>c.name.toLocaleLowerCase().includes(q));
  if(!txCategoryExpanded){list=list.slice(0,4);const selected=cats.find(c=>c.id===selCat);if(selected&&!list.some(c=>c.id===selected.id)){if(list.length===4)list.pop();list.push(selected);}}
- $('#txCategorySearchBox').hidden=!txCategoryExpanded;
+ // En el alta móvil la búsqueda aparece solo con la lupa, así la cuadrícula no baja.
+ $('#txCategorySearchBox').hidden=!txCategoryExpanded||(txDialog.classList.contains('tx-mobile-simple')&&!txCategorySearchOpen&&!q);
  $('#txAllCategories').textContent=txCategoryExpanded?'Ver menos':`Ver todas (${cats.length})`;
  $('#txAllCategories').setAttribute('aria-expanded',String(txCategoryExpanded));
  return list.map(c=>`<button type="button" class="chip${c.id===selCat?' active':''}" data-cat="${esc(c.id)}" aria-pressed="${c.id===selCat}" style="--chip-tint:${soft(c.color)}"><span class="cico" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="cn">${esc(c.name)}</span></button>`).join('')||'<span class="small muted">No hay categorías que coincidan.</span>';
 }
 function resetTxCategoryUI(){
- txCategoryExpanded=false;$('#txCategorySearch').value='';$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');
+ txCategoryExpanded=false;txCategorySearchOpen=false;$('#txCategorySearch').value='';$('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');
 }
 function openTxCategoryEditor(){
  const box=$('#txCategoryEditor');box.hidden=false;$('#txNewCategory').setAttribute('aria-expanded','true');$('#txCategoryError').textContent='';
@@ -599,7 +603,7 @@ function renderTxChips(){
   $('#txCategoryNote').textContent = needsSavingCategory ? 'Crea una categoría de ahorro para aportar.' : contributionGoal ? 'Categorías de ahorro activas' : 'Tus categorías más usadas';
   if(selMethod==null)selMethod=suggestedTxMethod(selCat,txType);
   const ms=[...new Set([...(state.settings.methods||[]),...(selMethod?[selMethod]:[]),''])];
-  $('#fMethodChips').innerHTML=ms.map(m=>`<button type="button" class="chip${m===selMethod?' active':''}" aria-pressed="${m===selMethod}" data-method="${esc(m)}">${esc(m||'Sin especificar')}</button>`).join('');
+  $('#fMethodChips').innerHTML=ms.map(m=>`<button type="button" class="chip${(m||'')===(selMethod||'')?' active':''}" aria-pressed="${(m||'')===(selMethod||'')}" data-method="${esc(m)}">${esc(m||'Sin especificar')}</button>`).join('');
   if(typeof syncMobileTxUI==='function')syncMobileTxUI();
 }
 function setTxType(type){

@@ -782,6 +782,47 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #tab-dashboard .mobile-home-selector{display:grid;order:-1;justify-self:start;background:var(--surface-2);max-width:100%}
  #tab-dashboard .mobile-home-selector.seg,#tab-dashboard .mobile-home-selector button,#tab-dashboard .mobile-home-selector::before{--control-radius:var(--radius-pill);border-radius:var(--radius-pill)}
  #tab-dashboard .mobile-home-selector button{min-height:var(--control-height-touch);padding:4px 16px;white-space:normal}
+ /* Ambos · Gastos · Ingresos: tres columnas iguales para que el indicador se deslice parejo. */
+ #tab-dashboard .mobile-home-selector{grid-template-columns:repeat(3,auto);grid-column:1/-1;width:fit-content;padding:2px}
+ #tab-dashboard .mobile-home-selector{position:relative}
+ #tab-dashboard .mobile-home-selector::before{display:none}
+ .home-seg-ind{position:absolute;z-index:0;top:2px;bottom:2px;left:0;width:0;border-radius:var(--radius-pill);background:var(--surface);box-shadow:0 1px 3px 0 rgb(0 0 0 / .08);transform-origin:top left;pointer-events:none}
+ #tab-dashboard .mobile-home-selector>button{position:relative;z-index:1;font-weight:600;transition:color var(--motion-panel) var(--motion-ease)}
+ /* Mismo peso activo e inactivo: el ancho no cambia y nada se corre al elegir. */
+ #tab-dashboard .mobile-home-selector>.home-seg-ind{grid-area:1/1}
+ .home-scope{display:block;color:var(--muted);font-size:var(--type-meta);line-height:1.4}
+ /* Cifras como en la versión original, iguales en Gastos, Ingresos y Ambos: alcance («Del mes» / «Del ciclo»)
+    arriba, cifra con su icono y chevrón, y la línea de contexto debajo (Disponible del presupuesto, etc.).
+    Filas de alto fijo: cambiar de modo o encoger la cifra no mueve nada de lo que sigue. */
+ #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary{grid-template-columns:auto minmax(0,auto) auto 1fr;grid-template-rows:17px 34px 17px;justify-content:start;align-items:center;column-gap:6px;row-gap:4px;padding:8px 0;container-type:normal}
+ #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .home-scope{grid-row:1;grid-column:1/-1;line-height:17px}
+ #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .home-kind-ic{display:grid;place-items:center;grid-row:2;grid-column:1;width:24px;height:24px;border-radius:50%}
+ #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .value{grid-row:2;grid-column:2;line-height:34px;text-align:left}
+ #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .metric-chevron{position:static;grid-row:2;grid-column:3;translate:none}
+ #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .metric-preview{position:static;grid-row:3;grid-column:1/-1;width:auto;height:auto;overflow:hidden;clip-path:none;white-space:nowrap;text-overflow:ellipsis;line-height:17px}
+ /* Ambos: las dos tarjetas lado a lado con la misma plantilla y el mismo tamaño de cifra. */
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>:is(.mobile-home-selector,.mobile-home-trend){grid-column:1/-1}
+ /* En Ambos el icono sube a la fila del alcance (16 px): la cifra gana ese ancho y no se encoge en 320 px. */
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .home-kind-ic{grid-row:1;width:17px;height:17px}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .home-kind-ic>.vi{width:11px;height:11px}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary{grid-template-columns:17px minmax(0,auto) auto 1fr}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .home-scope{grid-column:2/-1;white-space:nowrap}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .value{grid-column:1/3}
+ .home-kind-ic>.vi{width:14px;height:14px;stroke-width:2.5}
+ #tab-dashboard .k-inc .home-kind-ic{background:var(--income-figure-soft,var(--income-soft));color:var(--income)}
+ #tab-dashboard .k-exp .home-kind-ic{background:var(--expense-figure-soft,var(--expense-soft));color:var(--expense)}
+ /* Ambos: acumulados con líneas rectas, área en degradado, punto final y punto grande en la semana elegida. */
+ .mobile-linear-line{stroke-linejoin:round}
+ /* Gutter fijo: cambiar de modo (listas de distinto largo) no mueve el encabezado. */
+ html{scrollbar-gutter:stable}
+ #tab-dashboard .mobile-home-selector>[data-home-kind=both]{width:var(--control-height-touch);padding:0}
+ #tab-dashboard .mobile-home-selector button>.vi{width:20px;height:20px;margin-inline:auto}
+ #tab-dashboard .dashboard-kpis>.mobile-home-trend{grid-column:1/-1}
+ .mobile-home-series[data-kind=expense]{color:var(--expense-chart)}
+ .mobile-home-series[data-kind=income]{color:var(--income-chart)}
+ .mobile-home-readout strong{display:flex;gap:12px}
+ .mobile-home-readout strong>span:not(.pos){color:var(--text)}
  #tab-dashboard .mobile-home-selector button.active{color:var(--text);font-weight:600}
  #tab-dashboard .mobile-home-selector button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
  #tab-dashboard .dashboard-kpis>.kpi.metric-disclosure{border:0;border-radius:var(--radius);background:transparent;box-shadow:none}
@@ -797,16 +838,22 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  .mobile-home-plot{position:relative;height:var(--home-plot-height)}
  .mobile-home-empty{display:grid;align-items:center;min-height:var(--home-plot-height);margin:0;padding-inline:var(--page-gutter);color:var(--muted);font-size:var(--type-control)}
  .mobile-home-trend svg{display:block;width:100%;height:100%}
- .mobile-home-point{stroke:currentColor;stroke-width:5;stroke-linecap:round;transition:stroke-width var(--motion-fast) var(--motion-ease)}
+ /* Un punto por semana (como antes); la elegida crece a anillo. */
+ .mobile-home-point{stroke:currentColor;stroke-width:5;stroke-linecap:round;paint-order:stroke;transition:stroke-width var(--motion-fast) var(--motion-ease)}
  .mobile-home-point.active{stroke-width:10}
+ .mobile-home-core{stroke:var(--bg);stroke-width:0;stroke-linecap:round;transition:stroke-width var(--motion-fast) var(--motion-ease)}
+ .mobile-home-core.active{stroke-width:4}
+ .mobile-home-guide{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3;opacity:0;transition:opacity var(--motion-fast) var(--motion-ease)}
+ .mobile-home-guide.active{opacity:.45}
+ .mobile-weekly-line{stroke-width:2}
  .mobile-home-weeks{position:absolute;inset:0;display:grid;grid-template-columns:repeat(var(--week-count),minmax(0,1fr))}
  .mobile-home-weeks button{min-width:0;padding:0;border:0;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation}
  .mobile-home-weeks button:focus-visible{outline:2px solid currentColor;outline-offset:-4px;border-radius:var(--radius)}
  .mobile-home-readout{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 12px;padding-inline:var(--page-gutter);font-size:var(--type-meta);font-variant-numeric:tabular-nums}
  .mobile-home-readout span{color:var(--muted)}
  .mobile-home-readout strong{color:var(--text);font-weight:600}
- html[data-motion-input=keyboard] .mobile-home-point{transition:none}
- @media(prefers-reduced-motion:reduce){.mobile-home-point{transition:none}}
+ html[data-motion-input=keyboard] :is(.mobile-home-point,.mobile-home-core,.mobile-home-guide){transition:none}
+ @media(prefers-reduced-motion:reduce){:is(.mobile-home-point,.mobile-home-core,.mobile-home-guide){transition:none}}
  @media(min-width:601px) and (max-height:500px) and (pointer:coarse){
   #tab-dashboard>.dashboard-kpis{grid-template-columns:minmax(0,1fr) auto}
   #tab-dashboard .mobile-home-selector{grid-area:1/2;align-self:center}
@@ -1812,7 +1859,7 @@ html dialog.sheet-dismissed{opacity:0!important;transition:none!important}
  #txDialog.tx-mobile-simple:is(.category-open,.options-open,:not(.kb-open)) .dlg-foot>#mobileTxDone{display:block;flex:1;min-height:var(--control-height-touch);font-size:var(--type-control)}
  #txDialog.tx-mobile-simple #txDetails,#txDialog.tx-mobile-simple #txMore{display:none}
  html #txDialog.tx-mobile-simple .dlg-foot{display:flex;flex:none;gap:var(--control-gap);padding:8px var(--page-gutter) max(12px,env(safe-area-inset-bottom));border:0;background:var(--surface);box-shadow:none}
- html #txDialog.tx-mobile-simple .dlg-foot>[type=submit]{flex:1;min-height:44px;border-radius:var(--radius-lg);font-size:14px;font-weight:600;box-shadow:none}
+ html #txDialog.tx-mobile-simple .dlg-foot>[type=submit]{flex:1;min-height:44px;border-radius:var(--radius-pill);font-size:14px;font-weight:600;box-shadow:none}
  html #txDialog.tx-mobile-simple.kb-open .tx-amount{min-height:58px;margin-top:0;padding:0}
  html #txDialog.tx-mobile-simple.kb-open #txSeg>button{min-height:44px}
  html #txDialog.tx-mobile-simple.kb-open .dlg-foot{padding-bottom:8px}
@@ -1848,7 +1895,7 @@ html dialog.sheet-dismissed{opacity:0!important;transition:none!important}
  html #txDialog.tx-mobile-simple #mobileTxCategory{justify-content:flex-start;padding:0 12px;border-color:var(--cat-bg,var(--border));background:var(--cat-bg,transparent);font-weight:600}
  html #txDialog.tx-mobile-simple #mobileTxCategory>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  html #txDialog.tx-mobile-simple #mobileTxCategory .vi{width:16px;height:16px}
- html #txDialog.tx-mobile-simple #mobileTxCategory.closing{border-color:transparent;background:var(--expense-soft);color:var(--expense)}
+ html #txDialog.tx-mobile-simple #mobileTxCategory.closing{border-color:transparent;background:var(--surface-2);color:var(--text)}
  .tx-mobile-simple .mobile-tx-keypad button:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:2px}
  html #txDialog.tx-mobile-simple .tx-category-panel,html #txDialog.tx-mobile-simple .mobile-tx-extras{padding:0 16px 12px}
  /* Las categorías conservan su color y la selección se distingue por el borde. */
@@ -2389,6 +2436,14 @@ body.sel-on .toast{bottom:150px}
 @media(max-width:700px){
  .toolbar{align-content:center}
 }
+/* Dígitos que giran (recuperado de 0059a5b): cada columna desliza del 0 al 9 hasta su valor. */
+.nf-c{display:inline-block;vertical-align:top;height:1lh;white-space:pre}
+.nf-d{position:relative;overflow:hidden;font-variant-numeric:tabular-nums;-webkit-mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent)}
+.nf-g{color:transparent}
+.nf-d::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";position:absolute;inset:0 0 auto;text-align:center;white-space:pre;transform:translateY(calc(var(--n,0) * -1lh));transition:transform var(--nf-dur,0ms) cubic-bezier(.22,1,.36,1)}
+.nf-in{animation:nfIn var(--nf-dur,420ms) cubic-bezier(.22,1,.36,1) both}
+@keyframes nfIn{from{opacity:0;transform:translateY(.35lh) scale(.9)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.nf-d::before{transition:none}.nf-in{animation:none}}
 @keyframes valueTick{from{opacity:.35;transform:translateY(3px)}to{opacity:1;transform:none}}
 td.value-tick{animation-name:valueTickCell}
 @keyframes valueTickCell{from{opacity:.35}to{opacity:1}}
@@ -3563,7 +3618,7 @@ html[data-large-text] .month-nav{height:auto}
 .mobile-more-list>button:is(:hover,[aria-current=page]){background:var(--surface-2)}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  /* Navegación y controles compartidos con las vistas de detalle. */
- #mobileNav{position:fixed;z-index:30;isolation:isolate;inset:auto max(24px,env(safe-area-inset-right,0px)) var(--dock-inset) max(24px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;min-height:var(--dock-height);max-width:var(--dock-max-width);margin-inline:auto;padding:var(--dock-padding);border:var(--dock-border) solid var(--border);border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow-sm)}
+ #mobileNav{position:fixed;z-index:30;isolation:isolate;inset:auto max(24px,env(safe-area-inset-right,0px)) var(--dock-inset) max(24px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;min-height:var(--dock-height);max-width:var(--dock-max-width);margin-inline:auto;padding:var(--dock-padding);border:var(--dock-border) solid var(--border);border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow-sm)}
  #mobileNav>.mobile-nav-indicator,#mobileNav>#mobileNew .mobile-nav-glyph,#mobileNav .mobile-nav-glyph{border-radius:50%}
  #mobileNav>.mobile-nav-indicator{position:absolute;z-index:0;left:0;top:0;width:36px;height:36px;background:var(--surface-2);opacity:0;transform-origin:top left;pointer-events:none}
  .topbar .gear-btn{display:none}
@@ -3597,11 +3652,17 @@ html[data-large-text] .month-nav{height:auto}
  html:not([data-desktop-nav=side]) #desktopSectionTitle{position:static;grid-column:1;grid-row:1;width:auto;height:auto;margin:0;overflow:visible;clip-path:none;white-space:normal;font-size:22px;font-weight:600;line-height:1.25;letter-spacing:-.45px}
  .topbar .month-nav{grid-row:2}
  body:has(#tab-dashboard.active) .topbar>.wrap:first-child:has(#mobileHomeSync){grid-template-columns:var(--control-height-touch) minmax(0,1fr) auto var(--control-height-touch);gap:4px}
- body:has(#tab-dashboard.active) .topbar .month-nav{grid-area:1/3;padding:0;border:0;border-radius:var(--radius-pill);background:var(--surface-2)}
- body:has(#tab-dashboard.active) .topbar .month-nav :is(#prevM,#nextM){display:none}
- body:has(#tab-dashboard.active) .topbar #monthLabel{display:inline-flex;justify-content:center;gap:8px;min-height:var(--control-height-touch);padding:0 10px;border-radius:var(--radius-pill);font-size:var(--type-meta);white-space:nowrap}
- body:has(#tab-dashboard.active) .topbar #monthLabel::after{content:"";width:5px;height:5px;margin-block-start:-3px;border-inline-end:1.5px solid currentColor;border-block-end:1.5px solid currentColor;transform:rotate(45deg)}
- body:has(#tab-dashboard.active) #desktopSectionTitle{grid-column:2;font-size:var(--type-section);line-height:1.25;overflow-wrap:anywhere}
+ body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar .month-nav{grid-area:1/3;padding:0;border:0;border-radius:var(--radius-pill);background:var(--surface-2)}
+ body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar .month-nav :is(#prevM,#nextM){display:none}
+ /* Resumen: la etiqueta larga queda para lectores de pantalla (arriba se ve el alcance) y sin «Ver resumen» bajo el calendario. */
+ #tab-dashboard .dashboard-kpis>.kpi>summary .label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ #tab-dashboard #calSummary{display:none}
+ /* Presupuesto y Metas: título y píldora de período en una fila, como en Resumen. */
+ body:has(:is(#tab-budget,#tab-goals).active) .topbar>.wrap:first-child{grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px}
+ body:has(:is(#tab-budget,#tab-goals).active) .topbar .month-nav{grid-area:1/2;justify-self:end;width:auto;min-height:0;box-shadow:none}
+ body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar #monthLabel{display:inline-flex;justify-content:center;gap:8px;min-height:var(--control-height-touch);padding:0 10px;border-radius:var(--radius-pill);font-size:var(--type-meta);white-space:nowrap}
+ body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar #monthLabel::after{content:"";width:5px;height:5px;margin-block-start:-3px;border-inline-end:1.5px solid currentColor;border-block-end:1.5px solid currentColor;transform:rotate(45deg)}
+ body:has(#tab-dashboard.active) #desktopSectionTitle{grid-column:2;min-width:0;font-size:var(--type-section);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  body:has(#tab-dashboard.active) #mobileHomeProfile{display:grid;grid-area:1/1;width:var(--control-height-touch);height:var(--control-height-touch);padding:0;border:0;background:transparent;cursor:pointer}
  #mobileHomeProfile>.prof-av{width:34px;height:34px}
  body:has(#tab-dashboard.active) #mobileHomeSync{display:flex;grid-column:4;grid-row:1;justify-content:end;min-height:var(--control-height-touch);width:var(--control-height-touch);padding:0 4px;border:0;border-radius:var(--radius-pill);background:transparent;cursor:pointer}
@@ -3609,7 +3670,10 @@ html[data-large-text] .month-nav{height:auto}
  #tab-dashboard .mobile-history-header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin:8px 0 12px}
  #mobileHistoryHeading{margin:0;font-size:var(--type-section)}
  #tab-dashboard #tab-movs>.toolbar{width:fit-content;max-width:100%;justify-content:flex-start;margin:0 auto 12px 0;padding:2px;border-radius:var(--radius-pill);background:var(--surface-2)}
- #tab-dashboard #tab-movs :is(#movView .vseg-ind){display:none}
+ /* Lista/Calendario: el indicador en píldora se desliza como en el resto de selectores. */
+ #tab-dashboard #tab-movs #movView .vseg-ind{inset-block:0;height:auto;border-radius:var(--radius-pill);background:var(--surface);box-shadow:0 1px 3px 0 rgb(0 0 0 / .08)}
+ #tab-dashboard #tab-movs #movView .vseg-ind::after{display:none}
+ html #tab-dashboard #tab-movs #movView button.active{background:transparent!important;box-shadow:none!important}
  #tab-dashboard #tab-movs .mobile-movement-tools{margin-inline-start:0}
  #tab-dashboard #tab-movs #movView button,#tab-dashboard #tab-movs :is([data-movement-tool],#btnSelect){border-radius:var(--radius-pill)!important}
  #tab-dashboard #tab-movs :is(#movView button.active,[data-movement-tool][aria-expanded=true],#btnSelect[aria-pressed=true]){background:var(--surface);color:var(--text)}
@@ -3617,7 +3681,17 @@ html[data-large-text] .month-nav{height:auto}
  #tab-dashboard #movBody .history-row{--control-radius:0px}
  #tab-dashboard #movBody .history-row+.history-row{border-top:1px solid var(--border)}
  #tab-dashboard #movBody .history-row-meta{color:var(--muted);font-size:var(--type-meta);overflow-wrap:anywhere}
+ #movBody .history-amount>.plan-pill{display:table;margin:4px 0 0 auto}
  #mobileHomeSync.pending{color:var(--warn-ink,var(--warn))}
+ body:has(#tab-dashboard.active) #desktopSectionTitle{display:flex;flex-direction:column;justify-content:center;line-height:1.2}
+ #desktopSectionTitle>.home-hello{color:var(--muted);font-family:var(--font-body,inherit);font-size:var(--type-meta);font-weight:400;letter-spacing:0}
+ #desktopSectionTitle>.home-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body:has(#tab-dashboard.active) #mobileHomeSync{position:relative;justify-content:center;align-items:center;color:var(--muted)}
+ #mobileHomeSync>.vi{width:20px;height:20px}
+ #mobileHomeSync::before{position:absolute;top:13px;right:9px;width:7px;height:7px;box-shadow:0 0 0 2px var(--bg)}
+ #mobileHomeSync.ok::before{background:var(--income-chart)}
+ #mobileHomeSync.local::before{background:var(--muted)}
+ #mobileHomeSync.err::before{background:var(--expense)}
  #mobileHomeSync.busy::before{animation:none}
  .settings-intro,#mobileBudgetView>.mobile-section-heading,#bothBody .both-head h2{display:none}
  .mobile-profile-host{margin:0 0 12px}
@@ -3656,8 +3730,26 @@ html[data-large-text] .month-nav{height:auto}
  #tab-cats .toolbar>.info-tip{display:none}
  /* Alta y hojas: esquinas del mismo radio que las tarjetas; controles de 12 px como el resto del móvil; teclas de 14 px que responden al toque. */
  html dialog,.mobile-more[open],html #txDialog.tx-mobile-simple{border-radius:var(--radius-card) var(--radius-card) 0 0!important}
- html #txDialog.tx-mobile-simple :is(#txSeg,#mobileTxNote,#fDateField .dp-trigger,#mobileTxCategory,.iconbtn){border-radius:var(--radius-lg)!important}
- html #txDialog.tx-mobile-simple #txSeg>button{border-radius:var(--radius-lg)!important}
+ /* Alta con el lenguaje móvil de la app (como Resumen): píldoras sobre Niebla sin borde, iconos en círculo,
+    teclas y fichas de 12 px. Un solo estilo para segmentado, nota, fecha, categoría, opciones, Listo y búsqueda. */
+ html #txDialog.tx-mobile-simple #txSeg{padding:2px;border-radius:var(--radius-pill)!important;background:var(--surface-2)}
+ html #txDialog.tx-mobile-simple #txSeg>button,html #txDialog.tx-mobile-simple #txSeg::before{border-radius:var(--radius-pill)!important}
+ html #txDialog.tx-mobile-simple #txSeg>button{font-weight:600}
+ html #txDialog.tx-mobile-simple :is(#mobileTxNote,#fDateField .dp-trigger,#mobileTxCategory,#mobileTxDone,#txCategorySearch,.mobile-tx-extras .chip,#txQuick .quick-toggle){border:0!important;border-radius:var(--radius-pill)!important;background:var(--surface-2)!important;box-shadow:none!important}
+ html #txDialog.tx-mobile-simple #mobileTxExtras .chip:is(.active,[aria-pressed=true]){background:var(--surface)!important;box-shadow:inset 0 0 0 1px var(--text)!important;color:var(--text)}
+ html #txDialog.tx-mobile-simple #txQuick .q-chip{border:0!important;border-radius:var(--radius-lg)!important;background:var(--surface-2)!important;box-shadow:none!important}
+ html #txDialog.tx-mobile-simple .iconbtn{display:grid;place-items:center;width:var(--control-height-touch);height:var(--control-height-touch);padding:0;border:0;border-radius:50%!important;background:var(--surface-2);color:var(--text)}
+ html #txDialog.tx-mobile-simple .iconbtn>.vi{width:20px;height:20px;margin:0}
+ /* El icono de borrar es asimétrico (punta a la izquierda): se corrige su centro óptico. */
+ html #txDialog.tx-mobile-simple #mobileTxBackspace>.vi{translate:-1px 0}
+ html #txDialog.tx-mobile-simple .tx-category-panel .tx-category-head-tools .iconbtn{background:transparent;color:var(--muted)}
+ html #txDialog.tx-mobile-simple .tx-category-panel .tx-category-head-tools .iconbtn[aria-expanded=true]{background:var(--surface-2);color:var(--text)}
+ /* El visor del panel no se redondea: si no, asoma la tecla ✓ del teclado en sus esquinas. */
+ html #txDialog.tx-mobile-simple .mobile-tx-panel-viewport{border-radius:0}
+ /* Calendario en móvil: tarjeta de 20 px, días y flechas de 44 px en círculo, como el resto de controles táctiles. */
+ .dp{width:min(352px,calc(100vw - 32px));border-radius:var(--radius-card)}
+ .dp-nav{width:var(--control-height-touch);height:var(--control-height-touch);border-radius:50%}
+ .dp-c,.dp-g.days .dp-c{height:var(--control-height-touch);border-radius:var(--radius-pill)}
  html #txDialog.tx-mobile-simple .mobile-tx-keypad button{border-radius:var(--radius-lg)!important;transition:background-color var(--motion-fast) var(--motion-ease),transform var(--motion-fast) var(--motion-ease)}
  html #txDialog.tx-mobile-simple .mobile-tx-keypad button:active{transform:scale(.96);transition-duration:0s}
  /* Categorías del alta: fondo neutro y el color solo en su icono; la elegida se marca con contorno de tinta. */
@@ -3698,6 +3790,16 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-gauge-copy>small{font-size:12px;line-height:1.4;color:var(--muted)}
  .mobile-gauge-totals{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 24px;color:var(--muted);font-size:12px}
  .mobile-gauge-totals b{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+ /* Presupuesto compacto (1.10.165): cifra como en Resumen, barra de 8 px y totales en una fila. */
+ #mobileBudgetGauge{padding:var(--mobile-panel-padding)}
+ .mobile-budget-summary{display:grid;gap:4px}
+ .mbs-label{color:var(--muted);font-size:var(--type-meta);line-height:1.4}
+ .mbs-amount{color:var(--balance-figure);font-size:clamp(24px,8vw,30px);font-weight:600;letter-spacing:-.5px;line-height:1.2;font-variant-numeric:tabular-nums}
+ .mbs-amount.neg{color:var(--expense)}
+ .mobile-budget-tile-track.mbs-track{grid-area:auto;height:8px;margin-top:8px;border-radius:var(--radius-pill)}
+ .mbs-meta{display:flex;justify-content:space-between;gap:8px;margin:4px 0 0;color:var(--muted);font-size:var(--type-meta);font-variant-numeric:tabular-nums}
+ .mbs-meta b{color:var(--text);font-weight:600}
+ .mobile-budget-tile-amount:not(:has(.mobile-budget-tile-caption)){align-self:center}
  /* Categorías en filas compactas, como Gastos recientes: el medidor resume arriba y cada fila se lee de un vistazo. */
  .mobile-budget-categories{display:grid;grid-template-columns:minmax(0,1fr);gap:0;padding:0 var(--mobile-panel-padding);border:1px solid var(--border);border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow)}
  .mobile-budget-tile{display:grid;grid-template-columns:32px minmax(0,1fr) auto;grid-template-areas:"ico copy amount" ". track track";align-items:center;column-gap:12px;row-gap:8px;min-width:0;min-height:44px;padding:14px 0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--text);text-align:left;font:inherit;cursor:pointer}
@@ -3711,7 +3813,10 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-budget-tile.over .mobile-budget-tile-amount>strong{color:var(--expense)}
  .mobile-budget-tile-caption{font-size:12px;line-height:1.4;color:var(--muted)}
  .mobile-budget-tile-track{grid-area:track;display:block;height:4px;border-radius:4px;overflow:hidden;background:var(--surface-2)}
- .mobile-budget-tile-track>i{display:block;height:100%;border-radius:inherit}
+ .mobile-budget-tile-track>i{display:block;height:100%;border-radius:inherit;background:var(--balance-chart)}
+ .mobile-budget-tile-track.warn>i{background:color-mix(in srgb,var(--warn) 75%,var(--surface))}
+ .mobile-budget-tile-track.over>i{background:var(--expense)}
+ .mobile-budget-tile-track.saving>i{background:var(--savings-chart)}
  .mobile-budget-tile:active{background:var(--surface-2);transform:scale(.99)}
  .mobile-budget-options{border-top:1px solid var(--border);margin-top:24px;padding-top:8px}
  .mobile-budget-options>summary{min-height:56px;padding:14px 0;font-size:14px;font-weight:600;cursor:pointer}
@@ -3746,6 +3851,22 @@ html[data-large-text] .month-nav{height:auto}
  #txDialog.tx-mobile-simple #txQuick :is(.q-chip,.quick-toggle){min-height:var(--control-height-touch);border-radius:var(--radius)}
  #txDialog.tx-mobile-simple .tx-category-panel,#txDialog.tx-mobile-simple .mobile-tx-extras{position:absolute;inset:0;min-width:0;margin:0;padding:8px 20px 12px;border:0;background:var(--surface);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:8px;align-content:start;visibility:hidden;pointer-events:none;transform:translateY(100%);transition:transform var(--motion-popup) var(--motion-ease),visibility 0s var(--motion-popup) var(--motion-ease)}
  #txDialog.tx-mobile-simple .tx-category-panel{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ /* Cuadrícula de tres: icono sobre nombre, sin búsqueda fija ni fila de herramientas. */
+ #txDialog.tx-mobile-simple .tx-category-panel :is(#txAllCategories,.tx-category-tools){display:none}
+ .tx-category-head-tools{display:flex;gap:4px;margin-inline-start:auto}
+ #txDialog.tx-mobile-simple .tx-category-panel .tx-field-head{margin:0}
+ /* Paneles alineados a los bordes del teclado (sin sangría extra). */
+ #txDialog.tx-mobile-simple :is(#mobileTxCategoryPanel.tx-category-panel,#mobileTxExtras.mobile-tx-extras){padding-inline:0;scrollbar-width:none}
+ #mobileTxExtras::-webkit-scrollbar{display:none}
+ #mobileTxCategoryPanel::-webkit-scrollbar{display:none}
+ #txDialog.tx-mobile-simple .tx-category-head-tools .iconbtn{width:var(--control-height-touch);height:var(--control-height-touch);color:var(--muted)}
+ #txDialog.tx-mobile-simple .tx-category-head-tools .iconbtn[aria-expanded=true]{background:var(--surface-2);color:var(--text)}
+ html #txDialog.tx-mobile-simple #mobileTxCategoryPanel.tx-category-panel #fCatChips{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ html #txDialog.tx-mobile-simple #mobileTxCategoryPanel.tx-category-panel #fCatChips .chip{flex-direction:column;justify-content:flex-start;align-items:center;gap:4px;min-height:68px;padding:8px 4px 6px;border-width:1px;text-align:center;font-weight:500}
+ html #txDialog.tx-mobile-simple #mobileTxCategoryPanel.tx-category-panel #fCatChips .chip .cico{display:grid;place-items:center;width:28px;height:28px}
+ html #txDialog.tx-mobile-simple #mobileTxCategoryPanel.tx-category-panel #fCatChips .chip .cico>.vi{width:20px;height:20px}
+ html #txDialog.tx-mobile-simple #mobileTxCategoryPanel.tx-category-panel #fCatChips .cn{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:clamp(11px,3.1vw,12px);line-height:1.25;overflow-wrap:break-word;hyphens:auto;max-width:100%}
+ @media(max-width:389px){html #txDialog.tx-mobile-simple #mobileTxCategoryPanel.tx-category-panel #fCatChips{grid-template-columns:repeat(2,minmax(0,1fr))}}
  #txDialog.tx-mobile-simple .mobile-tx-extras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
  #txDialog.tx-mobile-simple:not(.kb-open) .mobile-tx-extras{padding-bottom:calc(var(--control-height-touch) + 28px)}
  .tx-mobile-simple .mobile-tx-extras .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -3828,8 +3949,14 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-more-list>button>.vi:first-child,.settings-home-icon{border-radius:var(--radius-lg);background:var(--primary-soft);color:var(--primary)}
  .mobile-more-list>button{min-height:62px;padding-inline:8px}
  #mobileRecentAll,.tx-mobile-simple #mobileTxNote{color:var(--primary)}
+ /* Vidrio estilo iOS en la barra inferior (pedido expreso; excepción documentada en DESIGN.md):
+    superficie translúcida, desenfoque con saturación, borde claro y brillo superior. Sin soporte, queda opaca. */
  @media(prefers-reduced-transparency:no-preference) and (prefers-contrast:no-preference) and (forced-colors:none){
-  #mobileNav{background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:saturate(1.15) blur(8px);backdrop-filter:saturate(1.15) blur(8px)}
+  @supports((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+   #mobileNav{background:color-mix(in srgb,var(--surface) 62%,transparent);border-color:rgb(255 255 255 / .55);-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);box-shadow:inset 0 1px 0 rgb(255 255 255 / .6),0 10px 30px -12px rgb(15 18 30 / .28),0 1px 3px rgb(15 18 30 / .08)}
+   html[data-mode=dark] #mobileNav{background:color-mix(in srgb,var(--surface) 58%,transparent);border-color:rgb(255 255 255 / .1);box-shadow:inset 0 1px 0 rgb(255 255 255 / .08),0 10px 30px -12px rgb(0 0 0 / .6)}
+   @media(prefers-color-scheme:dark){html:not([data-mode=light]) #mobileNav{background:color-mix(in srgb,var(--surface) 58%,transparent);border-color:rgb(255 255 255 / .1);box-shadow:inset 0 1px 0 rgb(255 255 255 / .08),0 10px 30px -12px rgb(0 0 0 / .6)}}
+  }
  }
  @media(prefers-reduced-motion:no-preference){
   :is(.mobile-more-list>button){transition:transform var(--motion-fast) var(--motion-ease)}

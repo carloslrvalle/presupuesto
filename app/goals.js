@@ -78,7 +78,7 @@ function renderGoals(){
         ${g._foreign ? '' : `<button class="iconbtn" data-goal-edit="${esc(g.id)}" title="Editar">${ic('pencil')}</button>`}</div>
       <div class="goal-value"><div class="goal-amt"><b>${fmt(saved)}</b><span class="muted small">de ${fmt(target)}</span>${goalDone(g)?'':`<span class="goal-pct" style="color:var(--accent-ink,var(--primary))">${pct.toFixed(0)}%</span>`}</div>
       ${goalDone(g)?'':g.shared ? `<div class="bar big split" title="Aporte de cada uno sobre el objetivo">${profiles.list.map(pr => { const w = target ? Math.max(0, Math.min(100, sp[pr.id] / Math.max(target, spT) * 100)) : 0; return `<span style="width:${w}%;background:${pr.color}"></span>`; }).join('')}</div>`
-        : `<div class="bar big"><span style="width:${pct}%;background:${barFill(g.color)}"></span></div>`}
+        : `<div class="bar big"><span style="width:${pct}%;background:${mobileLayout.matches?'var(--savings-chart)':barFill(g.color)}"></span></div>`}
       </div>
       ${completed?`<div class="goal-status"><div class="goal-done">${ic('check')} Meta lograda</div></div>`:`<p class="goal-remaining">Faltan <b>${fmt(rem)}</b></p>`}
       <div class="goal-btns">${goalDone(g) ? '' : `<button class="btn" data-goal-add="${esc(g.id)}">${ic('plus')} Aportar</button>`}${saved > 0 && !g._foreign ? `<button class="btn ghost" data-goal-out="${esc(g.id)}">${ic('hand-coins')} Retirar</button>` : ''}</div>

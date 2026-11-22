@@ -34,7 +34,9 @@ function updateDesktopNavigation(){
  const active=activeTab()==='settings';desktopSettings.classList.toggle('active',active);
  if(active)desktopSettings.setAttribute('aria-current','page');else desktopSettings.removeAttribute('aria-current');
  const tab=activeTab();
- desktopSectionTitle.textContent=mobileLayout.matches&&tab==='dashboard'?`Hola, ${profOf(activeProfile).name}`:desktopSectionNames[tab]||$(`#tabs [data-tab="${tab}"]`)?.getAttribute('aria-label')||'';
+ // En Resumen móvil el saludo va en dos líneas: «Hola,» pequeño y el nombre como título.
+ if(mobileLayout.matches&&tab==='dashboard')desktopSectionTitle.innerHTML=`<span class="home-hello">Hola,</span> <span class="home-name">${esc(profOf(activeProfile).name)}</span>`;
+ else desktopSectionTitle.textContent=desktopSectionNames[tab]||$(`#tabs [data-tab="${tab}"]`)?.getAttribute('aria-label')||'';
 }
 function positionDesktopNavigation(animate=false){
  const side=desktopSurface.matches&&desktopSidebarSpace.matches&&desktopPreferredLayout==='side';

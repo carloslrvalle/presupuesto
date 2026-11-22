@@ -303,7 +303,7 @@ document.addEventListener('click',e=>{
  const picker=$('.analysis-month-picker');if(picker?.open&&!picker.contains(e.target))setMenuDisclosure(picker,false);
 });
 document.addEventListener('keydown',e=>{
- const picker=e.target.closest('.analysis-month-picker');if(!picker)return;
+ const picker=e.target.closest?.('.analysis-month-picker');if(!picker)return;
  if(e.key==='Escape'&&menuDisclosureOpen(picker)){e.preventDefault();setMenuDisclosure(picker,false);$('#analysisMonthTrigger').focus();return;}
  if(!['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
  e.preventDefault();setMenuDisclosure(picker,true);

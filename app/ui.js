@@ -12,7 +12,7 @@ function planningHeader(){
  const bothCycles=bothMode&&bothUsesCycles();
  $('#monthLabel').closest('.month-nav').hidden=['analysis','cats','settings'].includes(activeTab());
  const cy=cycleView(),headerCycle=cy||(document.querySelector('#tab-movs.active')&&typeof movView!=='undefined'&&movView==='list'&&$('#fltScope').value==='cycle');
- const compact=mobileLayout.matches&&activeTab()==='dashboard';
+ const compact=mobileLayout.matches&&['dashboard','budget','goals'].includes(activeTab());
  const monthLabel=$('#monthLabel');
  monthLabel.textContent=compact?monthShort(currentMonth):bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
  monthLabel.title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
@@ -382,8 +382,52 @@ function fitMetricValues(){
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
 // Importes reales en un solo nodo: sin columnas, mascaras ni transformaciones de glifos.
+// Dígitos que giran en su columna (efecto recuperado de 0059a5b). En móvil, las cifras de Resumen lo usan
+// al cambiar de valor y al cambiar de modo; con movimiento reducido el valor aparece directo.
+function rollKeys(text){
+  const first = text.search(/\d/), last = text.length - 1 - [...text].reverse().join('').search(/\d/);
+  if (first < 0) return [...text].map((ch, i) => ['p' + i, ch]);
+  const core = text.slice(first, last + 1), dot = core.indexOf('.'), int = dot < 0 ? core : core.slice(0, dot), out = [];
+  [...text.slice(0, first)].forEach((ch, i) => out.push(['p' + i, ch]));
+  [...int].forEach((ch, i) => out.push(['i' + (int.length - 1 - i), ch]));
+  if (dot >= 0){ out.push(['dot', '.']); [...core.slice(dot + 1)].forEach((ch, i) => out.push(['f' + i, ch])); }
+  [...text.slice(last + 1)].forEach((ch, i) => out.push(['s' + i, ch]));
+  return out;
+}
+function rollDigits(el, text, dur){
+  const keys = rollKeys(text), old = el._rollKeys && el.firstElementChild?.classList.contains('nf-c') && el.textContent === el._rollText ? el._rollMap : null, map = new Map(), frag = [];
+  el.style.setProperty('--nf-dur', (dur || 0) + 'ms');
+  for (const [key, ch] of keys){
+    const digit = /\d/.test(ch); let span = old?.get(key);
+    if (!span || span._digit !== digit || (!digit && span.textContent !== ch)){
+      const fresh = !span; span = document.createElement('span'); span.className = digit ? 'nf-c nf-d' : 'nf-c'; span._digit = digit;
+      if (digit) span.style.setProperty('--n', '0');
+      if (fresh && old && dur) span.classList.add('nf-in');
+    }
+    if (digit){ const g = document.createElement('span'); g.className = 'nf-g'; g.textContent = ch; span.replaceChildren(g); } else span.textContent = ch;
+    span._target = digit ? ch : null;
+    map.set(key, span); frag.push(span);
+  }
+  el.replaceChildren(...frag);
+  if (dur) void el.offsetWidth; // las columnas nuevas se pintan en 0 antes de girar
+  for (const span of frag) if (span._digit) span.style.setProperty('--n', span._target);
+  el._rollKeys = keys; el._rollMap = map; el._rollText = el.textContent;
+}
+const rollsDigits = el => typeof mobileLayout !== 'undefined' && mobileLayout.matches && !!el.closest?.('#tab-dashboard .dashboard-kpis');
+// Gira la cifra desde ceros hasta su valor (al cambiar de modo en Resumen móvil).
+function spinValue(el){
+  if (!el || !rollsDigits(el) || reduceMotion()) return;
+  const text = el.textContent; rollDigits(el, text.replace(/\d/g, '0'), 0); void el.offsetWidth; rollDigits(el, text, MOTION.data);
+}
 function countUp(el, to, kind = 'money', cls){
   if (!el) return;
+  if (rollsDigits(el)){
+    const key = el.id || el.dataset.k, target = kind === 'pct' ? to.toFixed(1) + '%' : fmt(to), changed = key in numMemo && numMemo[key] !== to;
+    if (cls !== undefined) el.className = cls;
+    numMemo[key] = to; el._countValue = to; el._countTarget = to; el._fitTexts = [target];
+    if (el.textContent !== target || !el.firstElementChild) rollDigits(el, target, changed && !reduceMotion() ? MOTION.data : 0);
+    fitMetricValue(el); return;
+  }
   const key=el.id||el.dataset.k, target=kind==='pct'?to.toFixed(1)+'%':fmt(to);
   if(cls!==undefined)el.className=cls;
   cancelAnimationFrame(el._raf);el._raf=0;

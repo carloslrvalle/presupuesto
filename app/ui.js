@@ -413,11 +413,13 @@ function rollDigits(el, text, dur){
   for (const span of frag) if (span._digit) span.style.setProperty('--n', span._target);
   el._rollKeys = keys; el._rollMap = map; el._rollText = el.textContent;
 }
+// Giro lento y con frenado largo (900 ms, curva que desacelera suave al final).
+const SPIN_MS = 900;
 const rollsDigits = el => typeof mobileLayout !== 'undefined' && mobileLayout.matches && !!el.closest?.('#tab-dashboard .dashboard-kpis');
 // Gira la cifra desde ceros hasta su valor (al cambiar de modo en Resumen móvil).
 function spinValue(el){
   if (!el || !rollsDigits(el) || reduceMotion()) return;
-  const text = el.textContent; rollDigits(el, text.replace(/\d/g, '0'), 0); void el.offsetWidth; rollDigits(el, text, MOTION.data);
+  const text = el.textContent; rollDigits(el, text.replace(/\d/g, '0'), 0); void el.offsetWidth; rollDigits(el, text, SPIN_MS);
 }
 function countUp(el, to, kind = 'money', cls){
   if (!el) return;
@@ -425,7 +427,7 @@ function countUp(el, to, kind = 'money', cls){
     const key = el.id || el.dataset.k, target = kind === 'pct' ? to.toFixed(1) + '%' : fmt(to), changed = key in numMemo && numMemo[key] !== to;
     if (cls !== undefined) el.className = cls;
     numMemo[key] = to; el._countValue = to; el._countTarget = to; el._fitTexts = [target];
-    if (el.textContent !== target || !el.firstElementChild) rollDigits(el, target, changed && !reduceMotion() ? MOTION.data : 0);
+    if (el.textContent !== target || !el.firstElementChild) rollDigits(el, target, changed && !reduceMotion() ? SPIN_MS : 0);
     fitMetricValue(el); return;
   }
   const key=el.id||el.dataset.k, target=kind==='pct'?to.toFixed(1)+'%':fmt(to);

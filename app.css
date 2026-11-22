@@ -809,6 +809,9 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary{grid-template-columns:17px minmax(0,auto) auto 1fr}
  #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .home-scope{grid-column:2/-1;white-space:nowrap}
  #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .value{grid-column:1/3}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .home-ratio{display:none}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.k-exp>summary .metric-preview{display:none}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.k-exp>summary .home-ratio{display:block;grid-row:3;grid-column:1/-1;overflow:hidden;color:var(--muted);font-size:var(--type-meta);line-height:17px;white-space:nowrap;text-overflow:ellipsis}
  .home-kind-ic>.vi{width:14px;height:14px;stroke-width:2.5}
  #tab-dashboard .k-inc .home-kind-ic{background:var(--income-figure-soft,var(--income-soft));color:var(--income)}
  #tab-dashboard .k-exp .home-kind-ic{background:var(--expense-figure-soft,var(--expense-soft));color:var(--expense)}
@@ -2440,8 +2443,8 @@ body.sel-on .toast{bottom:150px}
 .nf-c{display:inline-block;vertical-align:top;height:1lh;white-space:pre}
 .nf-d{position:relative;overflow:hidden;font-variant-numeric:tabular-nums;-webkit-mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent)}
 .nf-g{color:transparent}
-.nf-d::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";position:absolute;inset:0 0 auto;text-align:center;white-space:pre;transform:translateY(calc(var(--n,0) * -1lh));transition:transform var(--nf-dur,0ms) cubic-bezier(.22,1,.36,1)}
-.nf-in{animation:nfIn var(--nf-dur,420ms) cubic-bezier(.22,1,.36,1) both}
+.nf-d::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";position:absolute;inset:0 0 auto;text-align:center;white-space:pre;transform:translateY(calc(var(--n,0) * -1lh));transition:transform var(--nf-dur,0ms) cubic-bezier(.16,1,.3,1)}
+.nf-in{animation:nfIn var(--nf-dur,900ms) cubic-bezier(.16,1,.3,1) both}
 @keyframes nfIn{from{opacity:0;transform:translateY(.35lh) scale(.9)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.nf-d::before{transition:none}.nf-in{animation:none}}
 @keyframes valueTick{from{opacity:.35;transform:translateY(3px)}to{opacity:1;transform:none}}
@@ -3858,6 +3861,20 @@ html[data-large-text] .month-nav{height:auto}
  /* Paneles alineados a los bordes del teclado (sin sangría extra). */
  #txDialog.tx-mobile-simple :is(#mobileTxCategoryPanel.tx-category-panel,#mobileTxExtras.mobile-tx-extras){padding-inline:0;scrollbar-width:none}
  #mobileTxExtras::-webkit-scrollbar{display:none}
+ /* Con el teclado del sistema abierto, los paneles conservan el margen lateral de la hoja. */
+ #txDialog.tx-mobile-simple.kb-open :is(#mobileTxCategoryPanel.tx-category-panel,#mobileTxExtras.mobile-tx-extras){padding-inline:20px}
+ /* Nueva categoría compacta: [icono y color] [nombre] en una fila y Cancelar / Crear debajo, en píldoras. */
+ html #txDialog.tx-mobile-simple #txCategoryEditor{display:grid;grid-template-columns:var(--control-height-touch) minmax(0,1fr);gap:8px;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+ html #txDialog.tx-mobile-simple #txCategoryEditor>h4,html #txDialog.tx-mobile-simple #txCategoryEditor>.field>label,html #txDialog.tx-mobile-simple #txCategoryIcon>span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ html #txDialog.tx-mobile-simple #txCategoryEditor>.field{grid-row:1;grid-column:2;margin:0}
+ html #txDialog.tx-mobile-simple #txCategoryName{height:var(--control-height-touch);padding:0 16px;border:0;border-radius:var(--radius-pill);background:var(--surface-2);box-shadow:none;font-size:16px}
+ html #txDialog.tx-mobile-simple #txCategoryEditor>.tx-category-style{grid-row:1;grid-column:1;margin:0}
+ html #txDialog.tx-mobile-simple #txCategoryIcon{display:grid;place-items:center;width:var(--control-height-touch);height:var(--control-height-touch);min-height:0;padding:0;border:0;border-radius:50%;background:var(--surface-2);box-shadow:none;color:var(--category-color,var(--text))}
+ html #txDialog.tx-mobile-simple #txCategoryError{grid-column:1/-1;margin:0}
+ html #txDialog.tx-mobile-simple #txCategoryError:empty{display:none}
+ html #txDialog.tx-mobile-simple #txCategoryEditor>.toolbar{grid-column:1/-1;display:grid;grid-template-columns:1fr 2fr;gap:8px;margin:0}
+ html #txDialog.tx-mobile-simple #txCategoryEditor>.toolbar>.btn{min-height:var(--control-height-touch);margin:0;border:0;border-radius:var(--radius-pill);box-shadow:none;font-size:14px}
+ html #txDialog.tx-mobile-simple #txCancelCategory{background:var(--surface-2)}
  #mobileTxCategoryPanel::-webkit-scrollbar{display:none}
  #txDialog.tx-mobile-simple .tx-category-head-tools .iconbtn{width:var(--control-height-touch);height:var(--control-height-touch);color:var(--muted)}
  #txDialog.tx-mobile-simple .tx-category-head-tools .iconbtn[aria-expanded=true]{background:var(--surface-2);color:var(--text)}

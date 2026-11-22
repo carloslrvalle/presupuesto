@@ -340,6 +340,8 @@ new ResizeObserver(() => requestAnimationFrame(() => { if (!homeSegIndicator._mo
 for (const [card, icon] of [['.k-exp','arrow-down'],['.k-inc','arrow-up']]){
   const value = $(`#tab-dashboard ${card}>summary .value`);
   value?.insertAdjacentHTML('afterend','<span class="home-scope mobile-only"></span>');
+  // En Ambos, Gastos muestra qué parte de los ingresos del período se gastó (sin ahorro ni aportes).
+  if (card === '.k-exp') value?.parentElement.insertAdjacentHTML('beforeend','<span class="home-ratio mobile-only"></span>');
   // Cada cifra lleva el icono de su rol: ↑ entra (ingreso), ↓ sale (gasto).
   value?.insertAdjacentHTML('beforebegin',`<span class="home-kind-ic mobile-only" aria-hidden="true">${ic(icon)}</span>`);
 }
@@ -424,6 +426,8 @@ function renderMobileHomeChart(txs){
     return;
   }
   for (const el of mobileHomeMetrics.querySelectorAll('.home-scope')) el.textContent = cycleView() ? 'Del ciclo' : 'Del mes';
+  const periodIncome = sum(txs.filter(t => t.type === 'income')), periodSpend = spendSum(txs);
+  mobileHomeMetrics.querySelector('.home-ratio').textContent = periodIncome > 0 ? `${pctTxt(periodSpend / periodIncome * 100)} de tus ingresos` : 'Sin ingresos en el período';
   // Alto real de la gráfica y franja superior reservada a las cifras superpuestas.
   const width = 360, height = parseFloat(getComputedStyle(mobileHomeChart).getPropertyValue('--home-plot-height')) || 144, band = 10;
   const lines = kinds.map((k, s) => ({kind:k, points: series.map(({values}, i) => ({

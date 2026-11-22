@@ -12,8 +12,12 @@ function planningHeader(){
  const bothCycles=bothMode&&bothUsesCycles();
  $('#monthLabel').closest('.month-nav').hidden=['analysis','cats','settings'].includes(activeTab());
  const cy=cycleView(),headerCycle=cy||(document.querySelector('#tab-movs.active')&&typeof movView!=='undefined'&&movView==='list'&&$('#fltScope').value==='cycle');
- $('#monthLabel').textContent=bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
- $('#monthLabel').title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
+ const compact=mobileLayout.matches&&activeTab()==='dashboard';
+ const monthLabel=$('#monthLabel');
+ monthLabel.textContent=compact?monthShort(currentMonth):bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
+ monthLabel.title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
+ if(compact)monthLabel.setAttribute('aria-label','Elegir período. '+(headerCycle?cycleLabel(currentMonth):monthLong(currentMonth)));
+ else monthLabel.removeAttribute('aria-label');
  $('#prevM').title=bothCycles?'Cierre anterior':headerCycle?'Ciclo anterior':'Mes anterior';$('#nextM').title=bothCycles?'Cierre siguiente':headerCycle?'Ciclo siguiente':'Mes siguiente';
  const labels=document.querySelectorAll('#tab-dashboard .kpi .label');
  [cy?'Ingresos del ciclo':'Ingresos del mes',cy?'Gastos del ciclo':'Gastos del mes','Saldo acumulado','Tasa de ahorro'].forEach((text,i)=>{if(!labels[i])return;for(const node of labels[i].childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){node.textContent=text;break;}});
@@ -225,7 +229,7 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
 // El teclado responde de inmediato; el puntero conserva las transiciones del componente.
 const reducedMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 function finishNavigationMotion(){
- for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active .mobile-weekly-cursor,#tab-movs.active :is(#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary)')){
+ for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.mobile-home-trend svg,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary)')){
   el._motion?.finish();
  }
 }
@@ -436,6 +440,8 @@ cfDialog.addEventListener('close', () => cfDone(null));
 
 /* ---------- Tabs y mes ---------- */
 function showTab(name, scrollTop = 0){
+  const embeddedMovements = name === 'movs' && mobileLayout.matches;
+  if (embeddedMovements) name = 'dashboard';
   closeHelp();
   syncPlanningNavigation(name);
   if (typeof selMode !== 'undefined' && selMode) setSelMode(false);
@@ -475,7 +481,8 @@ function showTab(name, scrollTop = 0){
   updateCreationControls();
   if (typeof updateMobileNavigation === 'function') updateMobileNavigation();
   if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
-  if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
+  if (embeddedMovements) focusMobileHistory();
+  else if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
   if(prevTab !== name)revealNavigationView(section);
 }
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.

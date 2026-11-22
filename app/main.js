@@ -1,6 +1,6 @@
 // Presupuesto: main.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Render ---------- */
-const VIEWS = {dashboard:() => renderDashboard(), movs:() => { if (movView === 'cal') renderCalendar(); else renderMovs(); },
+const VIEWS = {dashboard:() => {renderDashboard(); if (mobileLayout.matches) renderView('movs');}, movs:() => { if (movView === 'cal') renderCalendar(); else renderMovs(); },
   budget:() => renderBudget(), goals:() => renderGoals(), analysis:() => renderAnalysis(), cats:() => renderCats(), settings:() => renderProfEdit(), both:() => renderBoth()};
 let dirty = new Set(Object.keys(VIEWS));
 const activeTab = () => { const t = document.querySelector('.tab.active'); return t ? t.id.slice(4) : 'dashboard'; };

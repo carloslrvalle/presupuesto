@@ -724,9 +724,7 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
   #tab-dashboard .dashboard-kpis>.kpi:nth-child(4)>summary .value{font-size:30px}
  }
  #tab-dashboard .dashboard-kpis>.kpi:nth-child(3),#tab-dashboard .dashboard-kpis>.kpi:nth-child(4){display:none}
- #mobileHomeTop{order:2;min-width:0;margin-top:8px}
- #mobileHomeTopRows>.prow+.prow{border-top:1px solid var(--border)}
- #mobileHomeTopRows .amt{text-align:right;font-size:14px;overflow-wrap:anywhere;white-space:normal}
+ #tab-dashboard>#tab-movs{order:2;min-width:0;max-width:100%}
  body.app-enter #tab-dashboard .dashboard-kpis>.kpi{animation:none}
 }
 @media(min-width:601px) and (min-height:501px),(min-width:961px),(min-width:601px) and (pointer:fine){
@@ -760,7 +758,7 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  /* Inicio: cuatro tarjetas de resumen. */
  #tab-dashboard.active{display:flex;flex-direction:column;gap:12px}
  #tab-dashboard>.plan-period{order:0;justify-content:space-between;gap:8px;padding:0;display:none}
- #tab-dashboard:has(>#firstMovement:not([hidden]))>:is(.dashboard-kpis,#mobileHomeTop){display:none}
+ #tab-dashboard:has(>#firstMovement:not([hidden]))>:is(.dashboard-kpis,#tab-movs){display:none}
  #firstMovement{display:grid;gap:16px;padding:18px}
  #firstMovement p{font-size:.875rem;line-height:1.5}
  #firstMovement .first-movement-actions{display:grid}
@@ -770,35 +768,57 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #tab-dashboard .dashboard-kpis>.kpi>summary:focus-visible{outline:2px solid var(--primary);outline-offset:-3px;border-radius:inherit}
  #tab-dashboard .dashboard-kpis>.kpi[open]{border-color:var(--primary)}
  #tab-dashboard .metric-expanded{padding:0 var(--metric-padding) var(--metric-padding)}
- #mobileHomeTop .mobile-section-heading{margin-bottom:0}
- #mobileHomeTop .mobile-section-heading h2{font-size:16px;font-weight:600;letter-spacing:-.2px}
- #mobileHomeTopRows .ico{width:32px;height:32px;border-radius:var(--radius-lg)}
- #mobileHomeTopRows .top-exp-copy{display:grid;min-width:0;gap:2px}
- #mobileHomeTopRows .recent-method{display:none}
  #mobileBudgetGauge{margin-bottom:16px;padding:4px var(--mobile-panel-padding) var(--mobile-panel-padding);border:1px solid var(--border);background:var(--surface)}
  #mobileBudgetGauge .mobile-gauge-totals{margin:0;font-size:12px}
  #anKpis .analysis-metric[aria-pressed=true]{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}
 }
 /* Gastos sobre el presupuesto: el aviso del indicador no depende solo del texto gris. */
 #tab-dashboard .metric-preview.neg{color:var(--expense)}
+#mobileHomeSync,#mobileHomeProfile{display:none}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- #tab-dashboard>.dashboard-kpis{order:1;gap:var(--mobile-grid-gap)}
- /* Icono arriba y etiqueta en una línea debajo: el texto usa todo el ancho y los importes quedan alineados entre tarjetas. */
- #tab-dashboard .dashboard-kpis>.kpi>summary{gap:8px;min-height:118px;padding:var(--metric-padding);align-content:start;grid-template-rows:auto auto auto}
- #tab-dashboard .dashboard-kpis>.kpi>summary .label{color:var(--muted);font-weight:500;min-height:0;gap:8px;padding-right:0;font-size:13px;flex-direction:column;align-items:flex-start;line-height:1.35;overflow-wrap:normal;word-break:normal}
- #tab-dashboard .dashboard-kpis>.kpi>summary .dot{flex:none;width:26px;height:26px;border-radius:var(--radius)}
- #tab-dashboard .dashboard-kpis>.kpi>summary .dot .vi{width:16px;height:16px}
- #tab-dashboard .dashboard-kpis>.kpi>summary .value{min-height:0;margin:0;align-self:center;text-align:left;white-space:nowrap;line-height:1.3;font-size:clamp(20px,6.6vw,26px);letter-spacing:-.5px;overflow-wrap:anywhere}
+ :root{--radius-pill:999px}
+ #tab-dashboard>.dashboard-kpis{order:1;grid-template-columns:minmax(0,1fr);gap:8px}
+ #tab-dashboard .dashboard-kpis[data-home-kind=expense]>.k-inc,#tab-dashboard .dashboard-kpis[data-home-kind=income]>.k-exp{display:none}
+ #tab-dashboard .mobile-home-selector{display:grid;order:-1;justify-self:start;background:var(--surface-2);max-width:100%}
+ #tab-dashboard .mobile-home-selector.seg,#tab-dashboard .mobile-home-selector button,#tab-dashboard .mobile-home-selector::before{--control-radius:var(--radius-pill);border-radius:var(--radius-pill)}
+ #tab-dashboard .mobile-home-selector button{min-height:var(--control-height-touch);padding:4px 16px;white-space:normal}
+ #tab-dashboard .mobile-home-selector button.active{color:var(--text);font-weight:600}
+ #tab-dashboard .mobile-home-selector button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
+ #tab-dashboard .dashboard-kpis>.kpi.metric-disclosure{border:0;border-radius:var(--radius);background:transparent;box-shadow:none}
+ #tab-dashboard .dashboard-kpis>.kpi>summary{gap:4px;min-height:var(--control-height-touch);padding:8px 0;align-content:start;grid-template-rows:auto}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .label{color:var(--muted);font-weight:500;min-height:0;padding-right:16px;font-size:13px;line-height:1.35}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .dot{display:none}
+ #tab-dashboard .dashboard-kpis>.kpi>summary .value{min-height:0;margin:0;align-self:center;text-align:left;white-space:normal;line-height:1.3;font-size:clamp(20px,6.6vw,26px);letter-spacing:-.5px;overflow-wrap:anywhere}
  #tab-dashboard .dashboard-kpis>.kpi>summary .metric-preview{min-height:0;grid-row:auto;display:block;font-size:12px;line-height:1.4;color:var(--muted)}
- #tab-dashboard .dashboard-kpis>.kpi>summary .metric-chevron{display:grid;top:18px;right:12px}
- /* Análisis y Ambos usan la misma tarjeta de cifra que Inicio: icono arriba, etiqueta en una línea, misma cifra. */
+ #tab-dashboard .dashboard-kpis>.kpi>summary .metric-chevron{display:grid;top:10px;right:0}
+ #tab-dashboard .dashboard-kpis>.kpi .metric-expanded{padding-inline:0}
+ #tab-dashboard .mobile-home-trend{--home-plot-height:144px;display:block;margin-inline:calc(-1 * var(--page-gutter));color:var(--expense-chart)}
+ #tab-dashboard [data-home-kind=income]>.mobile-home-trend{color:var(--income-chart)}
+ .mobile-home-plot{position:relative;height:var(--home-plot-height)}
+ .mobile-home-empty{display:grid;align-items:center;min-height:var(--home-plot-height);margin:0;padding-inline:var(--page-gutter);color:var(--muted);font-size:var(--type-control)}
+ .mobile-home-trend svg{display:block;width:100%;height:100%}
+ .mobile-home-point{stroke:currentColor;stroke-width:5;stroke-linecap:round;transition:stroke-width var(--motion-fast) var(--motion-ease)}
+ .mobile-home-point.active{stroke-width:10}
+ .mobile-home-weeks{position:absolute;inset:0;display:grid;grid-template-columns:repeat(var(--week-count),minmax(0,1fr))}
+ .mobile-home-weeks button{min-width:0;padding:0;border:0;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation}
+ .mobile-home-weeks button:focus-visible{outline:2px solid currentColor;outline-offset:-4px;border-radius:var(--radius)}
+ .mobile-home-readout{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 12px;padding-inline:var(--page-gutter);font-size:var(--type-meta);font-variant-numeric:tabular-nums}
+ .mobile-home-readout span{color:var(--muted)}
+ .mobile-home-readout strong{color:var(--text);font-weight:600}
+ html[data-motion-input=keyboard] .mobile-home-point{transition:none}
+ @media(prefers-reduced-motion:reduce){.mobile-home-point{transition:none}}
+ @media(min-width:601px) and (max-height:500px) and (pointer:coarse){
+  #tab-dashboard>.dashboard-kpis{grid-template-columns:minmax(0,1fr) auto}
+  #tab-dashboard .mobile-home-selector{grid-area:1/2;align-self:center}
+  #tab-dashboard .mobile-home-trend{grid-column:1/-1;--home-plot-height:96px}
+ }
+ /* Análisis y Ambos conservan las tarjetas de cifra con icono y etiqueta. */
  #anKpis .analysis-metric .label,#bothBody .both-kpis .metric-disclosure>summary .label{flex-direction:column;align-items:flex-start;gap:8px;min-height:0;padding-right:0;font-size:13px;font-weight:500;color:var(--muted);line-height:1.35;overflow-wrap:normal}
  #anKpis .analysis-metric .dot,#bothBody .both-kpis .metric-disclosure .dot{width:26px;height:26px;border-radius:var(--radius)}
  #anKpis .analysis-metric .dot .vi,#bothBody .both-kpis .metric-disclosure .dot .vi{width:16px;height:16px}
  #anKpis .analysis-metric .value,#bothBody .both-kpis .metric-disclosure>summary .value{font-size:clamp(20px,6.6vw,26px);font-weight:600;line-height:1.3;letter-spacing:-.5px;white-space:nowrap}
- .mobile-spent[data-tone=over] .mobile-spent-pct{color:var(--expense)}
 }
-:is(.card,.tab .card,#tab-dashboard .dashboard-kpis>.kpi,.mobile-spent,#mobileBudgetGauge){box-shadow:var(--shadow)}
+:is(.card,.tab .card,#tab-dashboard .dashboard-kpis>.kpi,#mobileBudgetGauge){box-shadow:var(--shadow)}
 
 /* ==================== Movimientos ==================== */
 @media(max-width:380px){
@@ -1120,7 +1140,6 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
  #movBody .history-edit>.history-icon{border-radius:var(--radius-lg)}
 }
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- #mobileWeeklySpending{margin-inline:calc(-1 * var(--page-gutter));padding-block:var(--control-gap) 0}
  #fltText::placeholder{color:var(--muted);opacity:1}
  #mobileRecentAll:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
 }
@@ -1880,12 +1899,12 @@ html dialog.sheet-dismissed{opacity:0!important;transition:none!important}
   }
  }
 }
-:is(.card,.analysis-detail,.settings-disclosure,.settings-home,.settings-status,.mobile-budget-categories,#mobileBudgetGauge,.mobile-spent,.period-overview,.finance-color-option,.goal-done-group>summary,.both-extra>summary){border-radius:var(--radius-card)}
+:is(.card,.analysis-detail,.settings-disclosure,.settings-home,.settings-status,.mobile-budget-categories,#mobileBudgetGauge,.period-overview,.finance-color-option,.goal-done-group>summary,.both-extra>summary){border-radius:var(--radius-card)}
 :is(.section-disclosure,.metric-disclosure) > summary{border-radius:inherit}
 :is(.section-disclosure,.metric-disclosure)[open] > summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
 #movSummary{border-radius:var(--radius-card) var(--radius-card) 0 0}
 :is(.table-wrap,.prof-menu,dialog:not(.mobile-more):not(.tx-mobile-simple)){border-radius:var(--radius-lg)}
-:is(.gear-btn,.seg,.vseg,#tabs,.desktop-settings,#movBody.mov-history .history-row,.mobile-more-list>button,#txDialog .amount-input,.btn,.chip,.period-trigger,.mobile-tx-keypad button,#txSeg,#txSeg>button,#fDateField .dp-trigger,#mobileTxCategory,#mobileTxNote,#fDesc){border-radius:var(--radius)!important}
+:is(.gear-btn,.seg,.vseg,#tabs,.desktop-settings,#movBody.mov-history .history-row,.mobile-more-list>button,#txDialog .amount-input,.btn,.chip,.period-trigger,.mobile-tx-keypad button,#txSeg,#txSeg>button,#fDateField .dp-trigger,#mobileTxCategory,#mobileTxNote,#fDesc){border-radius:var(--control-radius,var(--radius))!important}
 .mobile-more[open],html #txDialog.tx-mobile-simple{border-radius:var(--radius-lg) var(--radius-lg) 0 0!important}
 
 /* ==================== Ajustes ==================== */
@@ -3544,8 +3563,9 @@ html[data-large-text] .month-nav{height:auto}
 .mobile-more-list>button:is(:hover,[aria-current=page]){background:var(--surface-2)}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  /* Navegación y controles compartidos con las vistas de detalle. */
- #mobileNav{position:fixed;z-index:30;isolation:isolate;inset:auto max(24px,env(safe-area-inset-right,0px)) var(--dock-inset) max(24px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;min-height:var(--dock-height);max-width:var(--dock-max-width);margin-inline:auto;padding:var(--dock-padding);border:var(--dock-border) solid var(--border);border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow-sm)}
- #mobileNav>.mobile-nav-indicator{position:absolute;z-index:0;left:0;top:0;width:36px;height:36px;border-radius:var(--radius-lg);background:var(--surface-2);opacity:0;transform-origin:top left;pointer-events:none}
+ #mobileNav{position:fixed;z-index:30;isolation:isolate;inset:auto max(24px,env(safe-area-inset-right,0px)) var(--dock-inset) max(24px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;min-height:var(--dock-height);max-width:var(--dock-max-width);margin-inline:auto;padding:var(--dock-padding);border:var(--dock-border) solid var(--border);border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow-sm)}
+ #mobileNav>.mobile-nav-indicator,#mobileNav>#mobileNew .mobile-nav-glyph,#mobileNav .mobile-nav-glyph{border-radius:50%}
+ #mobileNav>.mobile-nav-indicator{position:absolute;z-index:0;left:0;top:0;width:36px;height:36px;background:var(--surface-2);opacity:0;transform-origin:top left;pointer-events:none}
  .topbar .gear-btn{display:none}
  body:not(.sel-on):has(.fab:not([hidden])) .toast,.toast{bottom:calc(var(--dock-controls-bottom) + var(--visible-bottom,0px))}
  .sel-bar{width:calc(100% - 24px);max-width:440px;justify-content:space-between;bottom:var(--dock-controls-bottom)}
@@ -3570,12 +3590,35 @@ html[data-large-text] .month-nav{height:auto}
  .topbar .month-nav{grid-column:1/-1;grid-row:2;width:auto}
  .topbar .month-label{flex:1;min-width:0}
  .topbar .brand,.topbar:has(.sync-badge:not([hidden])) .brand{grid-column:1;grid-row:1;font-size:20px;letter-spacing:-.5px}
- /* Cabecera solo con el período: nombre de la app, perfil y guardado pasan a Ajustes (perfil y estado al inicio). */
+ /* Nombre de la app, perfil y guardado fuera de la cabecera móvil. */
  .topbar .brand{display:none}
  .topbar>.wrap:first-child{grid-template-columns:minmax(0,1fr);padding-block:12px 4px;row-gap:12px}
  /* Encabezado común: el título de la vista va primero y el período debajo; los títulos dentro del contenido se retiran. */
  html:not([data-desktop-nav=side]) #desktopSectionTitle{position:static;grid-column:1;grid-row:1;width:auto;height:auto;margin:0;overflow:visible;clip-path:none;white-space:normal;font-size:22px;font-weight:600;line-height:1.25;letter-spacing:-.45px}
  .topbar .month-nav{grid-row:2}
+ body:has(#tab-dashboard.active) .topbar>.wrap:first-child:has(#mobileHomeSync){grid-template-columns:var(--control-height-touch) minmax(0,1fr) auto var(--control-height-touch);gap:4px}
+ body:has(#tab-dashboard.active) .topbar .month-nav{grid-area:1/3;padding:0;border:0;border-radius:var(--radius-pill);background:var(--surface-2)}
+ body:has(#tab-dashboard.active) .topbar .month-nav :is(#prevM,#nextM){display:none}
+ body:has(#tab-dashboard.active) .topbar #monthLabel{display:inline-flex;justify-content:center;gap:8px;min-height:var(--control-height-touch);padding:0 10px;border-radius:var(--radius-pill);font-size:var(--type-meta);white-space:nowrap}
+ body:has(#tab-dashboard.active) .topbar #monthLabel::after{content:"";width:5px;height:5px;margin-block-start:-3px;border-inline-end:1.5px solid currentColor;border-block-end:1.5px solid currentColor;transform:rotate(45deg)}
+ body:has(#tab-dashboard.active) #desktopSectionTitle{grid-column:2;font-size:var(--type-section);line-height:1.25;overflow-wrap:anywhere}
+ body:has(#tab-dashboard.active) #mobileHomeProfile{display:grid;grid-area:1/1;width:var(--control-height-touch);height:var(--control-height-touch);padding:0;border:0;background:transparent;cursor:pointer}
+ #mobileHomeProfile>.prof-av{width:34px;height:34px}
+ body:has(#tab-dashboard.active) #mobileHomeSync{display:flex;grid-column:4;grid-row:1;justify-content:end;min-height:var(--control-height-touch);width:var(--control-height-touch);padding:0 4px;border:0;border-radius:var(--radius-pill);background:transparent;cursor:pointer}
+ :is(#mobileHomeSync,#mobileHomeProfile):focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+ #tab-dashboard .mobile-history-header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin:8px 0 12px}
+ #mobileHistoryHeading{margin:0;font-size:var(--type-section)}
+ #tab-dashboard #tab-movs>.toolbar{width:fit-content;max-width:100%;justify-content:flex-start;margin:0 auto 12px 0;padding:2px;border-radius:var(--radius-pill);background:var(--surface-2)}
+ #tab-dashboard #tab-movs :is(#movView .vseg-ind){display:none}
+ #tab-dashboard #tab-movs .mobile-movement-tools{margin-inline-start:0}
+ #tab-dashboard #tab-movs #movView button,#tab-dashboard #tab-movs :is([data-movement-tool],#btnSelect){border-radius:var(--radius-pill)!important}
+ #tab-dashboard #tab-movs :is(#movView button.active,[data-movement-tool][aria-expanded=true],#btnSelect[aria-pressed=true]){background:var(--surface);color:var(--text)}
+ #tab-dashboard #tab-movs :is(.search-box,.fsel-btn,#movFilterClear,#movPages .btn){--control-radius:var(--radius-pill);border-radius:var(--radius-pill)}
+ #tab-dashboard #movBody .history-row{--control-radius:0px}
+ #tab-dashboard #movBody .history-row+.history-row{border-top:1px solid var(--border)}
+ #tab-dashboard #movBody .history-row-meta{color:var(--muted);font-size:var(--type-meta);overflow-wrap:anywhere}
+ #mobileHomeSync.pending{color:var(--warn-ink,var(--warn))}
+ #mobileHomeSync.busy::before{animation:none}
  .settings-intro,#mobileBudgetView>.mobile-section-heading,#bothBody .both-head h2{display:none}
  .mobile-profile-host{margin:0 0 12px}
  .mobile-profile-host .top-pair{width:100%;box-sizing:border-box}
@@ -3586,7 +3629,7 @@ html[data-large-text] .month-nav{height:auto}
  .cal-d.has-inc::after{background:var(--income-chart)}
  .cal-d.both::after{background:linear-gradient(90deg,var(--income-chart) 50%,var(--expense-chart) 50%)}
  /* Barras de progreso sólidas: el degradado se estira para mostrar solo su color final. */
- .goal-card .bar:not(.split)>span,.mobile-spent-bar>span{background-size:5000% 100%!important;background-position:100% 0!important}
+ .goal-card .bar:not(.split)>span{background-size:5000% 100%!important;background-position:100% 0!important}
  /* Un solo lenguaje de desplegable: chevrón que rota (en lugar de + y −). */
  :is(.section-disclosure,.goal-contributions,.analysis-detail,.settings-disclosure)>summary::after,.cd-exact>summary::before{content:"";flex:none;width:16px;height:16px;font-size:0;background:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E") center/16px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E") center/16px no-repeat;transition:transform var(--motion-panel) var(--motion-ease)}
  :is(.section-disclosure,.goal-contributions,.analysis-detail,.settings-disclosure)[open]>summary::after,.cd-exact[open]>summary::before{content:"";transform:rotate(180deg)}
@@ -3596,8 +3639,6 @@ html[data-large-text] .month-nav{height:auto}
  #bothBody .both-users{gap:0}
  #bothBody>.period-overview{background:var(--surface);box-shadow:var(--shadow)}
  /* Movimientos: el resumen semanal habla como las tarjetas de cifra (etiqueta discreta, cifra de 26 px). */
- #tab-movs .mobile-weekly-head h2{color:var(--muted);font-size:13px;font-weight:500;letter-spacing:0}
- #tab-movs .mobile-weekly-readout strong{font-size:clamp(20px,6.6vw,26px);font-weight:600;letter-spacing:-.5px;line-height:1.3}
  /* Cifras secundarias (Calendario, Metas) sin cajas grises: etiqueta y valor sobre la superficie de la tarjeta. */
  .cal-day-totals>div,.gs{padding:0;border-radius:0;background:transparent}
  /* Menos ruido: sin borrar en la fila del día (se borra desde el movimiento), sin ayuda en la meta, sin instrucciones de Categorías ni ficha de fuente fija. */
@@ -3637,8 +3678,8 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-more .dlg-head{flex:none;padding:24px 24px 12px;touch-action:none}
  .mobile-more-list{min-height:0;overscroll-behavior:contain;padding:0 16px 24px}
  @media(min-width:601px) and (max-height:500px) and (pointer:coarse){
-  .topbar>.wrap:first-child:has(.month-nav:not([hidden])){grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
-  .topbar .month-nav{grid-column:3;grid-row:1}
+  html:not([data-large-text]) .topbar>.wrap:first-child:has(.month-nav:not([hidden])){grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+  html:not([data-large-text]) .topbar .month-nav{grid-column:3;grid-row:1}
  }
 }
 .mobile-only{display:none}
@@ -3648,8 +3689,6 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-section-heading h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.5px}
  .mobile-section-heading>button{display:flex;align-items:center;justify-content:center;gap:2px;min-width:44px;min-height:44px;border:0;background:transparent;color:var(--muted);padding:0;font-size:12px;cursor:pointer}
  .mobile-section-heading>button .vi{width:16px;height:16px}
- #mobileHomeTopRows .name{display:block;font-size:14px;font-weight:600;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
- #mobileHomeTopRows .small{display:block;font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
  .mobile-budget-gauge{position:relative;max-width:340px;margin:8px auto 0;min-width:0}
  .mobile-budget-gauge>svg{display:block;width:100%;height:auto;overflow:visible}
  .mobile-gauge-copy{position:absolute;inset:auto 16% 10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
@@ -3776,30 +3815,12 @@ html[data-large-text] .month-nav{height:auto}
  }
 }
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- #mobileHomeTopRows>.prow{display:grid;align-items:center;width:100%;margin:0;border:0;border-radius:0;background:transparent;text-align:left;color:var(--text);grid-template-columns:32px minmax(0,1fr) fit-content(38%);gap:10px;min-height:58px;padding:8px 0}
- .mobile-weekly-head,.mobile-weekly-readout{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;padding-inline:var(--page-gutter)}
- .mobile-weekly-head h2{margin:0;color:color-mix(in srgb,var(--expense) 82%,var(--text));font-size:var(--type-section);font-weight:600;letter-spacing:-.015em}
- .mobile-weekly-head p,.mobile-weekly-empty,.mobile-weekly-readout span{margin:0;color:var(--muted);font-size:var(--type-meta)}
- .mobile-weekly-empty{padding:8px var(--page-gutter) 12px}
- .mobile-weekly-readout{margin:4px 0 var(--control-gap);font-variant-numeric:tabular-nums}
- .mobile-weekly-readout strong{color:var(--expense-figure,var(--expense));font-size:var(--type-title);font-weight:600;line-height:1.2;overflow-wrap:anywhere}
- .mobile-weekly-chart{--week-plot-height:96px;position:relative}
  .mobile-weekly-plot{position:absolute;inset:0 0 auto;height:var(--week-plot-height);overflow:hidden;color:var(--expense-chart);pointer-events:none}
- .mobile-weekly-plot svg{display:block;width:100%;height:100%}
  .mobile-weekly-line{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
- .mobile-weekly-cursor{position:absolute;inset:0}
- .mobile-weekly-cursor>span{position:absolute;inset:0 auto 0 0;width:1px;background:linear-gradient(currentColor,transparent)}
- .mobile-weekly-cursor>span::before{content:"";position:absolute;top:0;left:50%;width:10px;height:10px;transform:translate(-50%,-50%);border:2px solid currentColor;border-radius:50%;background:var(--surface)}
- .mobile-weekly-weeks{position:relative;display:grid;grid-template-columns:repeat(var(--week-count),minmax(0,1fr))}
- .mobile-weekly-weeks button{display:grid;justify-items:center;align-content:end;min-width:0;min-height:calc(var(--week-plot-height) + var(--control-height-touch));padding:0;border:0;background:transparent;color:var(--muted);text-align:center;font:inherit;font-size:var(--type-meta);cursor:pointer;touch-action:manipulation}
- .mobile-weekly-weeks button span{display:grid;place-items:center;min-height:var(--control-height-touch);max-width:100%;padding-inline:2px;overflow-wrap:anywhere}
- .mobile-weekly-weeks button[aria-pressed=true]{color:var(--text);font-weight:600}
- .mobile-weekly-weeks button[aria-pressed=true] time{text-decoration:underline;text-underline-offset:4px}
- .mobile-weekly-weeks button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px;border-radius:var(--radius)}
  @media(forced-colors:active){
-  .mobile-weekly-plot{color:CanvasText}
+  #tab-dashboard .dashboard-kpis[data-home-kind]>.mobile-home-trend{color:CanvasText}
+  #mobileHomeSync::before{background:ButtonText}
   .mobile-weekly-area{display:none}
-  .mobile-weekly-cursor>span{background:CanvasText}
  }
  #mobileBudgetTitle{margin:0;font-size:var(--type-title);font-weight:600;line-height:1.3}
  #mobileNav>.mobile-nav-indicator{background:var(--primary-soft)}
@@ -3825,16 +3846,6 @@ html[data-large-text] .month-nav{height:auto}
  }
 }
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- .mobile-spent{order:1;display:grid;gap:4px;padding:8px var(--mobile-panel-padding);border:1px solid var(--border);background:var(--surface)}
- .mobile-spent-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
- .mobile-spent-label{min-width:0;color:var(--muted);font-size:var(--type-control);line-height:1.4}
- .mobile-spent-pct{flex:none;font-size:var(--type-section);font-weight:600;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--text)}
- .mobile-spent-bar{height:4px;border-radius:999px;background:var(--surface-2);overflow:hidden}
- .mobile-spent-bar>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--spent-progress,var(--expense)),var(--expense))}
- @media(forced-colors:active){
-  .mobile-spent-bar{outline:1px solid CanvasText}
-  .mobile-spent-bar>span{forced-color-adjust:none;background:Highlight}
- }
  html #txDialog.tx-mobile-simple{overflow:hidden;flex-direction:column;border:1px solid var(--border);opacity:1;transform:none;height:auto;max-height:var(--tx-viewport,calc(100dvh - 12px));translate:0 100%;transition:translate var(--motion-panel) var(--motion-ease),overlay var(--motion-panel) allow-discrete var(--motion-ease),display var(--motion-panel) allow-discrete var(--motion-ease)}
  .tx-mobile-simple .mobile-tx-keypad{height:clamp(208px,32dvh,256px);gap:8px}
  @media(prefers-reduced-motion:reduce){

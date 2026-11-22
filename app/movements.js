@@ -14,14 +14,20 @@ function fillMethodFilter(){
 }
 function movementHistory(list,dayLbl,filtered){
  if(!list.length)return filtered?emptyBox('search','Ningún movimiento coincide con tu búsqueda o filtros.'):emptyBox('receipt','Aún no hay movimientos en este período.','tx','Nuevo movimiento');
+ const mobile = mobileLayout.matches;
+ const row = t => {
+   const c=getCat(t.catId),isI=t.type==='income',isS=isSavingTx(t),planned=isPlanned(t);
+   const action = `${selMode?'Seleccionar':'Editar'} ${isI?'ingreso':isS?'ahorro':'gasto'}`;
+   const meta = mobile
+     ? `<span class="history-secondary"><span class="history-row-meta">${t.desc?`${esc(c.name)} · `:''}<time datetime="${esc(t.date)}">${fmtDate(t.date)}</time></span>${planned?'<span class="plan-pill">Programado</span>':''}</span>`
+     : t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:'';
+   return `<li class="history-row${planned?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary">${mobile?`<span class="history-mobile-title">${esc(t.desc||c.name)}</span>`:`<span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span>`}</span>${meta}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+ };
+ if (mobile) return `<ul class="history-items">${list.map(row).join('')}</ul>`;
  const groups=new Map();for(const t of list){if(!groups.has(t.date))groups.set(t.date,[]);groups.get(t.date).push(t);}
  return [...groups].map(([day,items])=>{
   const [label,date]=dayLbl(day),planned=isPlanned(items[0]);
-  return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h2 class="history-day-title" id="history-day-${day}">${label}</h2>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div></header><ul class="history-items">${items.map(t=>{
-   const c=getCat(t.catId),isI=t.type==='income',isS=isSavingTx(t);
-   const action = `${selMode?'Seleccionar':'Editar'} ${isI?'ingreso':isS?'ahorro':'gasto'}`;
-   return `<li class="history-row${isPlanned(t)?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary"><span class="history-mobile-title">${esc(t.desc||c.name)}</span><span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span></span>${t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-mobile-category">${esc(c.name)}</span>`:''}${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:''}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
-  }).join('')}</ul></section>`;
+  return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h2 class="history-day-title" id="history-day-${day}">${label}</h2>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div></header><ul class="history-items">${items.map(row).join('')}</ul></section>`;
  }).join('');
 }
 function toggleMovementFilters(){
@@ -35,6 +41,7 @@ function setMovementFiltersOpen(open){
 }
 
 function defaultMovementScope(){return mobileLayout.matches ? 'all' : 'month';}
+function movementsVisible(){return activeTab() === (mobileLayout.matches ? 'dashboard' : 'movs');}
 const MOV_PAGE_SIZE = 40;
 let movPage = 0, movQuery = '', movMatches = [], movFiltered = false, movSearchFrame = 0;
 function renderMovs(refreshFilters = true){
@@ -94,11 +101,7 @@ $('#movPages').addEventListener('click', event => {
   if (!button) return;
   renderMovementPage(movPage + Number(button.dataset.movPage));
   if (mobileLayout.matches){
-    const firstDay = $('#movBody .history-day-title');
-    if (firstDay){
-      firstDay.tabIndex = -1;
-      firstDay.focus();
-    }
+    focusMobileHistory();
     return;
   }
   if (button.disabled) $('#movPages button:not(:disabled)')?.focus({preventScroll:true});
@@ -228,7 +231,12 @@ $('#catDialog').addEventListener('click', e => {
   if (e.target.closest('[data-cd-add]')){ d.close(); return openTx(null, {type:c.type, catId:id}); }
 });
 function openMovs({type = '', cat = '', scope = 'month', view = 'list',month=null} = {}){
-  showTab('movs'); if(month){currentMonth=month;monthInput.value=month;planningHeader();} setMovView(view);
+  showTab('movs');
+  if(month && month !== currentMonth){
+    currentMonth=month;monthInput.value=month;planningHeader();
+    if(mobileLayout.matches)renderDashboard();
+  }
+  setMovView(view);
   if (view !== 'list') return;
   const set = (id, v) => { const el = $(id), changed = el.value !== v; el.value = v; if (changed){ const f = el.closest('.fsel'); f.classList.remove('flash'); void f.offsetWidth; f.classList.add('flash'); } };
   set('#fltScope', scope); set('#fltType', type); fillCatFilter(); set('#fltCat', cat); set('#fltMethod', ''); $('#fltText').value = '';
@@ -279,7 +287,7 @@ function setMovView(v){
   if (movView === 'cal') renderCalendar();
   else if (previous !== movView) renderMovs();
   const section = $('#tab-movs');
-  if(previous !== movView && section.classList.contains('active') && !section._motion)revealNavigationView(view);
+  if(previous !== movView && movementsVisible() && !section._motion)revealNavigationView(view);
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
 window.addEventListener('resize', moveViewInd);
@@ -295,6 +303,7 @@ function calendarAmount(n){
 }
 function renderCalendar(){
   const m = currentMonth, [y, mo] = m.split('-').map(Number), dim = daysIn(m), first = (new Date(y, mo - 1, 1).getDay() + 6) % 7;
+  if (mobileLayout.matches) mobileHistoryScope.textContent = monthLong(m);
   const tm = thisMonth(), today = m === tm ? new Date().getDate() : 0, byDay = {};
   txOfMonthAll(m).forEach(t => { const d = Number(t.date.slice(8, 10)), o = byDay[d] = byDay[d] || {exp:0, inc:0, n:0, plan:0}; if (isPlanned(t)) o.plan++; o[t.type === 'income' ? 'inc' : 'exp'] += Number(t.amount) || 0; o.n++; });
   const exps = Object.values(byDay).map(o => o.exp).filter(Boolean), max = Math.max(1, ...exps);
@@ -400,7 +409,7 @@ $('#fltText').addEventListener('input', () => {
   if (movSearchFrame) return;
   movSearchFrame = requestAnimationFrame(() => {
     movSearchFrame = 0;
-    if (activeTab() === 'movs' && movView === 'list') renderMovs(false);
+    if (movementsVisible() && movView === 'list') renderMovs(false);
   });
 });
 // Modo selección: tocar filas para marcarlas y borrarlas juntas (con deshacer)
@@ -730,7 +739,7 @@ function delTxUndo(id){
   return true;
 }
 function revealMovementRow(id){
-  if (activeTab() === 'movs' && movView === 'list'){
+  if (movementsVisible() && movView === 'list'){
     const index = movMatches.findIndex(transaction => transaction.id === id);
     const page = Math.floor(index / MOV_PAGE_SIZE);
     if (index >= 0 && page !== movPage) renderMovementPage(page);

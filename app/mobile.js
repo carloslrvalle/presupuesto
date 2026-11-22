@@ -4,8 +4,7 @@ const mobileNav = document.createElement('nav');
 mobileNav.id = 'mobileNav';
 mobileNav.setAttribute('aria-label', 'Navegación móvil');
 const mobileNavItem = (tab, label, icon) => `<button type="button" data-mobile-tab="${tab}" aria-label="${label}" title="${label}"><span class="mobile-nav-glyph">${ic(icon)}</span></button>`;
-mobileNav.innerHTML = mobileNavItem('dashboard', 'Inicio', 'house')
-  + mobileNavItem('movs', 'Movimientos', 'receipt-text')
+mobileNav.innerHTML = mobileNavItem('dashboard', 'Resumen', 'house')
   + `<button type="button" id="mobileNew" aria-label="Nuevo movimiento"><span class="mobile-nav-glyph">${ic('plus')}</span></button>`
   + mobileNavItem('budget', 'Presupuesto', 'wallet')
   + `<button type="button" id="mobileMoreButton" aria-label="Más opciones" title="Más opciones" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileMore"><span class="mobile-nav-glyph">${ic('list')}</span></button>`;
@@ -54,7 +53,7 @@ document.body.append(mobileMore);
 
 function updateMobileNavigation() {
   const current = activeTab();
-  if (current !== 'movs' && mobileMovementPanel) setMobileMovementPanel('');
+  if (current !== 'dashboard' && mobileMovementPanel) setMobileMovementPanel('');
   mobileNav.querySelectorAll('[data-mobile-tab]').forEach(button => {
     const active = button.dataset.mobileTab === current;
     button.classList.toggle('active', active);
@@ -79,17 +78,6 @@ function updateMobileNavigation() {
 
 function navigateMobile(tab) {
   const from = activeTab();
-  if(tab==='movs'){
-    const completeList = movView === 'list' && $('#fltScope').value === 'all' && !movFiltered;
-    if(from===tab && completeList){
-      window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'});
-      return;
-    }
-    if(from!==tab)tabScroll[from]=window.scrollY;
-    if(completeList)showTab('movs',tabScroll.movs || 0);
-    else openMovs({scope:'all'});
-    return;
-  }
   if (from === tab && !bothMode) {
     window.scrollTo({top:0, behavior:reduceMotion() ? 'instant' : 'smooth'});
     return;
@@ -289,7 +277,7 @@ mobileLayout.addEventListener('change', ({matches}) => {
   if(scope.value === (matches ? 'month' : 'all')) scope.value = defaultMovementScope();
 });
 $('#mobileNew').onclick = () => {
-  if (!bothMode) openTx(null, activeTab()==='movs' && movView==='cal' && calSel ? {date:calSel} : {});
+  if (!bothMode) openTx(null, movementsVisible() && movView==='cal' && calSel ? {date:calSel} : {});
 };
 $('#mobileMoreButton').onclick = () => {
   updateMobileNavigation();
@@ -316,35 +304,122 @@ mobileLayout.addEventListener('change', () => {
   if (!mobileLayout.matches && mobileMore.open) mobileMore.close();
 });
 
-// El inicio móvil reutiliza el ranking del Resumen para mantener el mismo período y orden.
-// El orden de Resumen es cronológico desde 1.10.127: los cinco gastos recientes del mes o ciclo.
-const mobileHomeTop = document.createElement('section');
-mobileHomeTop.id = 'mobileHomeTop';
-mobileHomeTop.className = 'mobile-only';
-mobileHomeTop.setAttribute('aria-labelledby', 'mobileHomeTopTitle');
-mobileHomeTop.innerHTML = `<div class="mobile-section-heading"><h2 id="mobileHomeTopTitle">Gastos recientes</h2><button type="button" id="mobileRecentAll">Ver todos ${ic('chevron-right')}</button></div><div id="mobileHomeTopRows"></div>`;
-const mobileHomeSpent = document.createElement('section');
-mobileHomeSpent.id = 'mobileHomeSpent';
-mobileHomeSpent.className = 'mobile-only mobile-spent';
-mobileHomeSpent.setAttribute('aria-label', 'Gastado de tus ingresos');
-$('#tab-dashboard .dashboard-kpis').after(mobileHomeSpent);
-mobileHomeSpent.after(mobileHomeTop);
-// Inicio móvil: cuánto de lo cobrado ya se gastó (sin contar ahorro) y una lista de recientes que llena la pantalla.
-const MOBILE_RECENT_LIMIT = 12;
-function renderMobileHome(txs = planTx(currentMonth), totals){
-  const inc = totals ? totals.inc : sum(txs.filter(t => t.type === 'income')), exp = totals ? totals.exp : spendSum(txs);
-  const pct = inc > 0 ? exp / inc * 100 : null;
-  const card = $('#mobileHomeSpent');
-  card.dataset.tone = pct > 100 ? 'over' : '';
-  const share=pct==null?0:Math.max(0,Math.min(1,pct/100));
-  const red=fitThemeColor(mixHex(cssVar('--expense'),cssVar('--surface'),.5*(1-share)),[cssVar('--surface'),cssVar('--surface-2')],3.1);
-  card.style.setProperty('--spent-progress',red);
-  const value = pct == null ? 'Sin ingresos' : pctTxt(pct);
-  card.innerHTML = `<div class="mobile-spent-head"><span class="mobile-spent-label">Gastado de tus ingresos</span><b class="mobile-spent-pct">${value}</b></div>
-    <div class="mobile-spent-bar" aria-hidden="true"><span style="width:${(share*100).toFixed(1)}%"></span></div>`;
-  $('#mobileHomeTopRows').innerHTML = recentExpenseRows(txs, MOBILE_RECENT_LIMIT);
+const mobileHomeMetrics = $('#tab-dashboard .dashboard-kpis');
+const mobileHomeSelector = document.createElement('div');
+mobileHomeSelector.className = 'seg mobile-only mobile-home-selector';
+mobileHomeSelector.setAttribute('role', 'group');
+mobileHomeSelector.setAttribute('aria-label', 'Serie de la gráfica semanal');
+mobileHomeSelector.innerHTML = `<button type="button" data-home-kind="expense" class="active" aria-pressed="true" aria-controls="mobileHomeChart">Gastos</button>
+  <button type="button" data-home-kind="income" aria-pressed="false" aria-controls="mobileHomeChart">Ingresos</button>`;
+const mobileHomeChart = document.createElement('div');
+mobileHomeChart.id = 'mobileHomeChart';
+mobileHomeChart.className = 'mobile-only mobile-home-trend';
+mobileHomeMetrics.dataset.homeKind = 'expense';
+mobileHomeMetrics.append(mobileHomeSelector, mobileHomeChart);
+$('#mobileHomeSync').onclick = () => $('#syncBadge').click();
+const mobileHistory = $('#tab-movs');
+const desktopHistoryAnchor = document.createComment('Posición de Movimientos en escritorio');
+mobileHistory.before(desktopHistoryAnchor);
+const mobileHistoryHeader = document.createElement('div');
+mobileHistoryHeader.className = 'mobile-only mobile-history-header';
+mobileHistoryHeader.innerHTML = '<h2 id="mobileHistoryHeading" class="section-title" tabindex="-1">Movimientos</h2><span class="small muted"></span>';
+mobileHistory.prepend(mobileHistoryHeader);
+const mobileHistoryHeading = mobileHistoryHeader.firstElementChild;
+const mobileHistoryScope = mobileHistoryHeader.lastElementChild;
+function positionMobileHistory(){
+  const embedded = mobileLayout.matches;
+  const wasActive = mobileHistory.classList.contains('active');
+  mobileHistory.classList.toggle('tab', !embedded);
+  if (embedded){
+    mobileHistory.classList.remove('active');
+    mobileHistory.setAttribute('aria-labelledby', mobileHistoryHeading.id);
+    mobileHomeMetrics.after(mobileHistory);
+    if (wasActive) showTab('movs');
+  }else{
+    mobileHistory.removeAttribute('aria-labelledby');
+    desktopHistoryAnchor.after(mobileHistory);
+  }
 }
-$('#mobileRecentAll').onclick=()=>openMovs({type:'expense',scope:cycleView()?'cycle':'month',month:currentMonth});
+function focusMobileHistory(){
+  mobileHistoryHeading.focus({preventScroll:true});
+  const top = mobileHistory.getBoundingClientRect().top + window.scrollY - $('.topbar').getBoundingClientRect().height - 8;
+  window.scrollTo({top, behavior:'instant'});
+}
+positionMobileHistory();
+mobileLayout.addEventListener('change', positionMobileHistory);
+let mobileHomeSeriesKey = '';
+let mobileHomeWeeks = [];
+function selectMobileHomeWeek(index){
+  const week = mobileHomeWeeks[index];
+  if (!week) return;
+  mobileHomeChart.querySelectorAll('[data-home-week]').forEach(button => {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.homeWeek) === index));
+  });
+  mobileHomeChart.querySelectorAll('.mobile-home-point').forEach((point, i) => {
+    point.classList.toggle('active', i === index);
+  });
+  const readout = mobileHomeChart.querySelector('.mobile-home-readout');
+  readout.querySelector('span').textContent = weekRange(week);
+  readout.querySelector('strong').textContent = fmt(week.amount);
+}
+function renderMobileHomeChart(txs){
+  const kind = mobileHomeMetrics.dataset.homeKind;
+  const income = kind === 'income';
+  const transactions = txs.filter(t => t.type === kind && (income || !isSavingTx(t)));
+  const series = mobilePeriodWeeks(cycleView()).map(week => ({...week, amount: weekTotal(transactions, week)}));
+  const key = JSON.stringify([kind, series]);
+  if (mobileHomeSeriesKey === key) return;
+  mobileHomeSeriesKey = key;
+  mobileHomeWeeks = series;
+  const focused = document.activeElement?.closest('[data-home-week]');
+  const max = Math.max(0, ...series.map(week => week.amount));
+  if (!max){
+    mobileHomeChart.innerHTML = `<p class="mobile-home-empty">Sin ${income ? 'ingresos' : 'gastos'} registrados en este período.</p>`;
+    if (focused) mobileHomeSelector.querySelector('.active').focus({preventScroll:true});
+    return;
+  }
+  const width = 360, height = 144;
+  const points = series.map(({amount}, i) => ({
+    x: (i + .5) * width / series.length,
+    y: height - 12 - (height - 28) * amount / max
+  }));
+  const label = `${income ? 'Ingresos' : 'Gastos'} por semana`;
+  mobileHomeChart.innerHTML = `<div class="mobile-home-plot">
+    ${mobileTrendSvg(width, height, points, label)}
+    <div class="mobile-home-weeks" role="group" aria-label="${label}" style="--week-count:${series.length}">
+      ${series.map((week,i) => `<button type="button" data-home-week="${i}" aria-label="${weekRange(week)}: ${fmt(week.amount)}"></button>`).join('')}
+    </div>
+  </div><div class="mobile-home-readout" role="status"><span></span><strong></strong></div>`;
+  const selected = focused ? Math.min(Number(focused.dataset.homeWeek),series.length-1) : series.findLastIndex(week => week.amount > 0);
+  selectMobileHomeWeek(selected);
+  if (focused) mobileHomeChart.querySelector(`[data-home-week="${selected}"]`).focus({preventScroll:true});
+  if (mobileLayout.matches && activeTab() === 'dashboard'){
+    motionAnimate(mobileHomeChart.querySelector('svg'), [{opacity:.65,clipPath:'inset(0 50% 0 0)'}, {opacity:1,clipPath:'inset(0)'}], 'data');
+  }
+}
+mobileHomeChart.addEventListener('click', event => {
+  const button = event.target.closest('[data-home-week]');
+  if (button) selectMobileHomeWeek(Number(button.dataset.homeWeek));
+});
+mobileHomeChart.addEventListener('keydown', event => {
+  const button = event.target.closest('[data-home-week]');
+  const direction = {ArrowLeft:-1, ArrowRight:1}[event.key];
+  if (!button || !direction) return;
+  event.preventDefault();
+  const index = Math.max(0,Math.min(mobileHomeWeeks.length-1,Number(button.dataset.homeWeek)+direction));
+  selectMobileHomeWeek(index);
+  mobileHomeChart.querySelector(`[data-home-week="${index}"]`).focus();
+});
+mobileHomeSelector.onclick = event => {
+  const button = event.target.closest('[data-home-kind]');
+  if (!button || button.classList.contains('active')) return;
+  mobileHomeMetrics.dataset.homeKind = button.dataset.homeKind;
+  for (const option of mobileHomeSelector.children){
+    option.classList.toggle('active', option === button);
+    option.setAttribute('aria-pressed', String(option === button));
+  }
+  renderMobileHomeChart(planTx(currentMonth));
+};
 
 const mobileBudgetView = document.createElement('section');
 mobileBudgetView.id = 'mobileBudgetView';
@@ -424,11 +499,6 @@ mobileBudgetEditor.addEventListener('close', () => {
   mobileBudgetDraft = null;
 });
 
-const mobileWeeklySpending = document.createElement('section');
-mobileWeeklySpending.id = 'mobileWeeklySpending';
-mobileWeeklySpending.className = 'mobile-only';
-mobileWeeklySpending.setAttribute('aria-labelledby','mobileWeeklyTitle');
-$('#movementFilters').after(mobileWeeklySpending);
 VICONS['sliders-horizontal'] = '<path d="M3 7h6m4 0h8M3 17h10m4 0h4M9 4v6m8 4v6"/>';
 const mobileMovementTools = document.createElement('div');
 mobileMovementTools.className = 'mobile-only mobile-movement-tools';
@@ -514,18 +584,12 @@ $('#tab-movs').addEventListener('keydown', event => {
   setMobileMovementPanel('');
   button?.focus({preventScroll:true});
 });
-let mobileWeeks = [], mobileWeekIndex = 0, mobileWeekPeriod = '', mobileWeekData = '';
 const weekDate = date => date.slice(8,10)+'/'+date.slice(5,7);
 const weekRange = ({start,end}) => start === end ? weekDate(start) : weekDate(start)+'–'+weekDate(end);
+const weekTotal = (transactions, {start,end}) => sum(transactions.filter(t => t.date >= start && t.date <= end));
 
-function renderMobileMovements(scope, filterCount){
-  mobileMovementTools.querySelector('[data-movement-tool=search]').classList.toggle('has-value',Boolean($('#fltText').value.trim()));
-  const filters = mobileMovementTools.querySelector('[data-movement-tool=filters]');
-  filters.classList.toggle('has-value',filterCount > 0);
-  filters.setAttribute('aria-label',filterCount ? `Filtros, ${plural(filterCount,'activo')}` : 'Filtros');
-  const cycle = scope === 'cycle';
+function mobilePeriodWeeks(cycle){
   const period = cycle ? cyclePeriod(currentMonth) : {start:dateFor(currentMonth,1),end:dateFor(currentMonth,daysIn(currentMonth))};
-  const expenses = (cycle ? cycleTx(currentMonth) : txOfMonth(currentMonth)).filter(t => t.type === 'expense' && !isSavingTx(t));
   const today = todayISO();
   const lastDate = today < period.end ? today : period.end;
   const weeks = [];
@@ -534,108 +598,36 @@ function renderMobileMovements(scope, filterCount){
     const weekday = new Date(start+'T00:00:00Z').getUTCDay();
     const sunday = dateOffset(start,(7-weekday)%7);
     const end = sunday < lastDate ? sunday : lastDate;
-    weeks.push({start,end,amount:sum(expenses.filter(t=>t.date>=start&&t.date<=end))});
+    weeks.push({start,end});
     start = dateOffset(end,1);
   }
-  const periodKey = [activeProfile,period.start,period.end,cycle].join('|');
-  const dataKey = JSON.stringify([periodKey,weeks]);
-  if (dataKey === mobileWeekData) return;
-  const newPeriod = periodKey !== mobileWeekPeriod;
-  mobileWeekPeriod = periodKey;
-  mobileWeekData = dataKey;
-  const max = Math.max(0,...weeks.map(week => week.amount));
-  const title = `<div class="mobile-weekly-head"><h2 id="mobileWeeklyTitle">Gastos por semana</h2>${cycle ? `<p>${esc(shortPeriodLabel(currentMonth))}</p>` : ''}</div>`;
-  if (!max){
-    mobileWeeks = [];
-    mobileWeeklySpending.innerHTML = title + '<p class="mobile-weekly-empty">Sin gastos registrados en este período.</p>';
-    return;
-  }
-  const focused = document.activeElement?.closest('[data-mobile-week]');
-  const reselect = newPeriod || !mobileWeeks.length;
-  const width = 360, height = 96;
-  mobileWeeks = weeks.map((week,index) => ({
-    ...week,
-    x:(index+.5)*width/weeks.length,
-    y:height-8-(height-20)*week.amount/max
-  }));
-  const line = mobileWeeks.map(({x,y},index) => {
+  return weeks;
+}
+
+function mobileTrendLine(points, end){
+  return points.map(({x,y},index) => {
     if (!index) return `M0 ${y} H${x}`;
-    const prev = mobileWeeks[index-1], mid = (prev.x+x)/2;
+    const prev = points[index-1], mid = (prev.x+x)/2;
     return `C${mid} ${prev.y} ${mid} ${y} ${x} ${y}`;
-  }).join(' ') + ` H${width}`;
-  const area = `${line} V${height} H0 Z`;
-  mobileWeeklySpending.innerHTML = title + `
-    <div class="mobile-weekly-readout" role="status"><strong></strong><span></span></div>
-    <div class="mobile-weekly-chart" style="--week-count:${weeks.length}">
-      <div class="mobile-weekly-plot" aria-hidden="true">
-        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-          <defs><linearGradient id="mobileWeeklyFade" x1="0" x2="0" y1="0" y2="${height}" gradientUnits="userSpaceOnUse">
-            <stop stop-color="currentColor" stop-opacity=".18"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>
-          </linearGradient></defs>
-          <path class="mobile-weekly-area" d="${area}" fill="url(#mobileWeeklyFade)"/>
-          <path class="mobile-weekly-line" d="${line}" fill="none" vector-effect="non-scaling-stroke"/>
-        </svg>
-        <div class="mobile-weekly-cursor"><span></span></div>
-      </div>
-      <div class="mobile-weekly-weeks" role="group" aria-label="Gastos realizados por semana">${weeks.map((week,index) =>
-        `<button type="button" data-mobile-week="${index}" aria-label="${weekRange(week)} · ${fmt(week.amount)}"><span><time datetime="${week.start}">${weekDate(week.start)}</time></span></button>`
-      ).join('')}</div>
-    </div>`;
-  const index = reselect ? weeks.findLastIndex(week => week.amount > 0) : Math.min(mobileWeekIndex,weeks.length-1);
-  selectMobileWeek(index,false);
-  if (focused) mobileWeeklySpending.querySelector(`[data-mobile-week="${Math.min(Number(focused.dataset.mobileWeek),weeks.length-1)}"]`)?.focus({preventScroll:true});
+  }).join(' ') + ` H${end}`;
 }
 
-function moveMobileWeekCursor(week, animate){
-  const plot = mobileWeeklySpending.querySelector('.mobile-weekly-plot');
-  const cursor = plot.querySelector('.mobile-weekly-cursor');
-  const line = plot.querySelector('.mobile-weekly-line');
-  const {width,height} = line.ownerSVGElement.viewBox.baseVal;
-  const transform = ({x,y}) => `translate(${x/width*100}%,${y/height*100}%)`;
-  if (!animate || reduceMotion() || !plot.clientWidth){
-    cursor._motion?.cancel();cursor._motion=null;
-    cursor.style.transform = transform(week);
-    return;
-  }
-
-  const matrix = new DOMMatrixReadOnly(getComputedStyle(cursor).transform);
-  const startX = matrix.m41 / plot.clientWidth * width;
-  const total = line.getTotalLength();
-  // El trazo avanza en X. Busca los puntos de inicio y destino sobre la curva que ya se dibuja.
-  const distanceAt = x => {
-    let low = 0, high = total;
-    for (let step = 0; step < 16; step++){
-      const mid = (low+high)/2;
-      if (line.getPointAtLength(mid).x < x) low = mid;
-      else high = mid;
-    }
-    return (low+high)/2;
-  };
-  const start = distanceAt(startX), end = distanceAt(week.x);
-  const frames = [{transform:`translate(${startX/width*100}%,${matrix.m42/plot.clientHeight*100}%)`}];
-  for (let sample = 1; sample < 24; sample++){
-    const point = line.getPointAtLength(start+(end-start)*sample/24);
-    frames.push({transform:transform(point)});
-  }
-  cursor.style.transform = transform(week);
-  frames.push({transform:cursor.style.transform});
-  motionAnimate(cursor,frames,'popup');
+function mobileTrendSvg(width, height, points, label){
+  const line = mobileTrendLine(points, width);
+  return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}">
+    <defs><linearGradient id="mobileHomeFade" x1="0" x2="0" y1="0" y2="${height}" gradientUnits="userSpaceOnUse">
+      <stop stop-color="currentColor" stop-opacity=".18"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path class="mobile-weekly-area" d="${line} V${height} H0 Z" fill="url(#mobileHomeFade)"/>
+    <path class="mobile-weekly-line" d="${line}" fill="none" vector-effect="non-scaling-stroke"/>
+    ${points.map(({x,y}) => `<path class="mobile-home-point" d="M${x} ${y}h.01" vector-effect="non-scaling-stroke"/>`).join('')}
+  </svg>`;
 }
 
-function selectMobileWeek(index, animate = true){
-  const week = mobileWeeks[index];
-  if (!week) return;
-  mobileWeekIndex = index;
-  moveMobileWeekCursor(week,animate);
-  const readout = mobileWeeklySpending.querySelector('.mobile-weekly-readout');
-  readout.querySelector('strong').textContent = fmt(week.amount);
-  readout.querySelector('span').textContent = weekRange(week);
-  mobileWeeklySpending.querySelectorAll('[data-mobile-week]').forEach(button => {
-    button.setAttribute('aria-pressed',String(Number(button.dataset.mobileWeek) === index));
-  });
+function renderMobileMovements(scope, filterCount){
+  mobileHistoryScope.textContent = scope === 'all' ? 'Todo el historial' : scope === 'cycle' ? 'Ciclo de sueldo' : scope === 'year' ? currentMonth.slice(0,4) : monthLong(currentMonth);
+  mobileMovementTools.querySelector('[data-movement-tool=search]').classList.toggle('has-value',Boolean($('#fltText').value.trim()));
+  const filters = mobileMovementTools.querySelector('[data-movement-tool=filters]');
+  filters.classList.toggle('has-value',filterCount > 0);
+  filters.setAttribute('aria-label',filterCount ? `Filtros, ${plural(filterCount,'activo')}` : 'Filtros');
 }
-mobileWeeklySpending.addEventListener('click', event => {
-  const button = event.target.closest('[data-mobile-week]');
-  if (button && Number(button.dataset.mobileWeek) !== mobileWeekIndex) selectMobileWeek(Number(button.dataset.mobileWeek));
-});
-

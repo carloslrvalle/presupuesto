@@ -278,7 +278,7 @@ nameInput.addEventListener('change', () => {
 /* ---------- Selector de mes y fecha propio ---------- */
 const DP_M = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const DP_W = ['L','M','M','J','V','S','D'];
-const dpEl = document.createElement('div'); dpEl.className = 'dp'; dpEl.setAttribute('role', 'dialog'); dpEl.setAttribute('aria-label', 'Elegir fecha');
+const dpEl = document.createElement('div'); dpEl.id = 'budgetDatePicker'; dpEl.className = 'dp'; dpEl.setAttribute('role', 'dialog');
 if ('popover' in HTMLElement.prototype) dpEl.setAttribute('popover', 'manual');
 document.body.appendChild(dpEl);
 let dpS = null;
@@ -291,6 +291,8 @@ function dpOpen(anchor, o){
   dpS = {anchor, ...o, view: o.mode === 'month' ? 'months' : 'days',
     y: Number((v || todayISO()).slice(0, 4)), m: Number((v || todayISO()).slice(5, 7))};
   anchor.classList.add('open');
+  if (anchor.hasAttribute('aria-expanded')) anchor.setAttribute('aria-expanded', 'true');
+  dpEl.setAttribute('aria-label', o.mode === 'month' ? 'Elegir mes' : 'Elegir fecha');
   // dentro de un diálogo modal el selector debe vivir en él (lo de afuera queda inactivo)
   const host = anchor.closest('dialog') || document.body; if (dpEl.parentNode !== host) host.appendChild(dpEl);
   dpRender();
@@ -305,6 +307,7 @@ function dpClose(restoreFocus=false){
   if (!dpS) return;
   const anchor=dpS.anchor;
   anchor.classList.remove('open'); dpS = null;
+  if (anchor.hasAttribute('aria-expanded')) anchor.setAttribute('aria-expanded', 'false');
   dpEl.classList.remove('show');
   if(restoreFocus&&anchor.isConnected)anchor.focus({preventScroll:true});
   dpEl.inert=true;

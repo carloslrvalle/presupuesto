@@ -23,7 +23,7 @@ const desktopSectionNames={settings:'Ajustes',both:'Ambos'};
 const desktopNodes=[[$('#tabs'),desktopSidebar.querySelector('.desktop-navigation-host')],[$('.top-pair'),desktopSidebar.querySelector('.desktop-profile-host')],[$('.topbar .brand'),desktopSidebar.querySelector('.desktop-brand-host')]].map(([node,parent])=>{
  const anchor=document.createComment('Posición de la navegación superior');node.before(anchor);return {node,parent,anchor};
 });
-// En teléfono, perfil y estado de guardado viven al inicio de Ajustes: la cabecera queda solo con el período.
+// En teléfono, perfil y estado de guardado viven al inicio de Ajustes.
 const mobileProfileHost=document.createElement('div');mobileProfileHost.className='mobile-profile-host';
 let desktopPreferredLayout='side';
 const desktopMotionNodes=[$('.topbar'),$('main.wrap'),$('#fab')];
@@ -34,7 +34,7 @@ function updateDesktopNavigation(){
  const active=activeTab()==='settings';desktopSettings.classList.toggle('active',active);
  if(active)desktopSettings.setAttribute('aria-current','page');else desktopSettings.removeAttribute('aria-current');
  const tab=activeTab();
- desktopSectionTitle.textContent=(mobileLayout.matches&&tab==='dashboard'?'Inicio':'')||desktopSectionNames[tab]||$(`#tabs [data-tab="${tab}"]`)?.getAttribute('aria-label')||'';
+ desktopSectionTitle.textContent=mobileLayout.matches&&tab==='dashboard'?`Hola, ${profOf(activeProfile).name}`:desktopSectionNames[tab]||$(`#tabs [data-tab="${tab}"]`)?.getAttribute('aria-label')||'';
 }
 function positionDesktopNavigation(animate=false){
  const side=desktopSurface.matches&&desktopSidebarSpace.matches&&desktopPreferredLayout==='side';

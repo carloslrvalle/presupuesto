@@ -67,12 +67,14 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     <div class="brand">
       <span id="appName">Presupuesto</span>
     </div>
+    <button type="button" id="mobileHomeProfile" class="prof-av" aria-label="Cambiar de usuario"></button>
+    <button type="button" id="mobileHomeSync" class="sync-badge local" aria-label="Ver estado del guardado"></button>
     <div class="head-right">
       <div class="top-pair"><button type="button" class="prof-chip" id="profChip" aria-haspopup="true" aria-expanded="false" title="Cambiar de usuario"><span class="prof-av" id="profAv"></span><span class="prof-nm" id="profNm"></span><span class="prof-cv" id="profCv"></span></button><button type="button" class="sync-badge" id="syncBadge" aria-label="Estado del guardado" hidden></button></div>
       <button class="gear-btn" id="btnSettings" title="Datos y ajustes" aria-label="Datos y ajustes"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button>
       <div class="month-nav">
         <button id="prevM" title="Mes anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-        <button class="month-label" id="monthLabel" title="Elegir mes"></button>
+        <button class="month-label" id="monthLabel" title="Elegir mes" aria-haspopup="dialog" aria-controls="budgetDatePicker" aria-expanded="false"></button>
         <input type="month" id="month" class="month-hidden" tabindex="-1" aria-label="Mes del presupuesto">
         <button id="nextM" title="Mes siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>

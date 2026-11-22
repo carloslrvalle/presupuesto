@@ -8,6 +8,10 @@ function renderProfileUI(){
   else { const pr = profOf(activeProfile); $('#profAv').className = 'prof-av'; $('#profAv').style.background = pr.photo ? 'transparent' : soft(pr.color); $('#profAv').innerHTML = avatarHTML(pr); $('#profNm').textContent = pr.name; }
   $('#profCv').innerHTML = ic('chevron-down'); chip.title = 'Usuario: ' + (bothMode ? 'Ambos' : profOf(activeProfile).name) + ' · tocar para cambiar';
   chip.setAttribute('aria-label','Cambiar de usuario. Actual: '+(bothMode?'Ambos':profOf(activeProfile).name));
+  const pr = profOf(activeProfile);
+  mobileProfileTrigger.innerHTML = avatarBox(pr);
+  mobileProfileTrigger.setAttribute('aria-label', 'Cambiar de usuario. Actual: ' + pr.name);
+  if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
   if ($('#tab-settings').classList.contains('active')) renderProfEdit();
 }
 const profMenu = document.createElement('div'); profMenu.className = 'prof-menu'; profMenu.hidden = true; profMenu.id = 'profileMenu'; profMenu.setAttribute('role', 'menu'); profMenu.setAttribute('aria-label', 'Cambiar de usuario'); document.body.appendChild(profMenu);
@@ -19,36 +23,38 @@ function renderProfMenu(){
     + `<button type="button" role="menuitem" tabindex="-1" data-prof="edit"><span class="prof-av plain">${ic('pencil')}</span><span class="prof-menu-copy"><span class="prof-menu-name">Editar usuarios</span></span></button>`;
 }
 const profileTrigger = $('#profChip');
-profileTrigger.setAttribute('aria-haspopup', 'menu');
-profileTrigger.setAttribute('aria-controls', profMenu.id);
+const mobileProfileTrigger = $('#mobileHomeProfile');
+let profileMenuAnchor = profileTrigger;
 let profilePositionFrame=0;
 function closeProfMenu(restoreFocus = false){
   cancelAnimationFrame(profilePositionFrame);profilePositionFrame=0;
   profMenu.hidden = true;
   profMenu.inert = true;
-  profileTrigger.setAttribute('aria-expanded', 'false');
-  if (restoreFocus) profileTrigger.focus({preventScroll:true});
+  profileMenuAnchor.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) profileMenuAnchor.focus({preventScroll:true});
 }
-function openProfMenu(last = false){
+function openProfMenu(last = false, anchor = profileTrigger){
+  if (!profMenu.hidden && profileMenuAnchor !== anchor) closeProfMenu();
+  profileMenuAnchor = anchor;
   renderProfMenu();
   profMenu.hidden = false;
   profMenu.inert = false;
   profMenu.scrollTop=0;
   positionProfMenu();
-  profileTrigger.setAttribute('aria-expanded', 'true');
+  anchor.setAttribute('aria-expanded', 'true');
   const items = profMenu.querySelectorAll('button');
   items[last ? items.length - 1 : 0]?.focus({preventScroll:true});
 }
 function positionProfMenu(){
   if(profMenu.hidden)return;
-  const zoom=Number(getComputedStyle(document.documentElement).zoom)||1,r=profileTrigger.getBoundingClientRect(),scrollTop=profMenu.scrollTop;
+  const zoom=Number(getComputedStyle(document.documentElement).zoom)||1,r=profileMenuAnchor.getBoundingClientRect(),scrollTop=profMenu.scrollTop;
   profMenu.style.width=Math.max(0,Math.min(288,(innerWidth-16)/zoom))+'px';
   profMenu.style.maxHeight='none';
   const w=profMenu.offsetWidth*zoom,h=profMenu.offsetHeight*zoom;
   const below=Math.max(0,innerHeight-r.bottom-16),above=Math.max(0,r.top-16),openAbove=h>below&&above>below;
   const available=openAbove?above:below;
   profMenu.style.maxHeight=available/zoom+'px';
-  const height=Math.min(h,available),targetLeft=profileTrigger.closest('#desktopSidebar')?r.left:r.right-w;
+  const height=Math.min(h,available),targetLeft=profileMenuAnchor===mobileProfileTrigger||profileMenuAnchor.closest('#desktopSidebar')?r.left:r.right-w;
   const left=Math.max(8,Math.min(innerWidth-w-8,targetLeft));
   const top=Math.max(8,Math.min(innerHeight-height-8,openAbove?r.top-height-8:r.bottom+8));
   profMenu.style.left=left/zoom+'px';profMenu.style.top=top/zoom+'px';
@@ -59,21 +65,26 @@ document.addEventListener('scroll',event=>{
   if(profMenu.hidden||profMenu.contains(event.target)||profilePositionFrame)return;
   profilePositionFrame=requestAnimationFrame(()=>{profilePositionFrame=0;positionProfMenu();});
 },{capture:true,passive:true});
-profileTrigger.onclick = e => {
-  e.stopPropagation();
-  if (profMenu.hidden) openProfMenu();
-  else closeProfMenu(true);
-};
+for (const trigger of [profileTrigger, mobileProfileTrigger]){
+  trigger.setAttribute('aria-haspopup', 'menu');
+  trigger.setAttribute('aria-controls', profMenu.id);
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.onclick = e => {
+    e.stopPropagation();
+    if (profMenu.hidden || profileMenuAnchor !== trigger) openProfMenu(false, trigger);
+    else closeProfMenu(true);
+  };
+  trigger.addEventListener('keydown', e => {
+    if (!['ArrowDown','ArrowUp'].includes(e.key)) return;
+    e.preventDefault();
+    openProfMenu(e.key === 'ArrowUp', trigger);
+  });
+}
 $('#bothBody').addEventListener('click',e=>{
   if(!e.target.closest('[data-choose-profile]'))return;
   e.stopPropagation();
   profileTrigger.scrollIntoView({block:'nearest'});
   profileTrigger.click();
-});
-profileTrigger.addEventListener('keydown', e => {
-  if (!['ArrowDown','ArrowUp'].includes(e.key)) return;
-  e.preventDefault();
-  openProfMenu(e.key === 'ArrowUp');
 });
 document.addEventListener('click', e => { if (!profMenu.hidden && !profMenu.contains(e.target)) closeProfMenu(); });
 profMenu.addEventListener('keydown', e => {

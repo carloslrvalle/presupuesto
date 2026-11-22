@@ -52,10 +52,13 @@ function setBadge(kind='local',text='Guardado en este dispositivo'){
  else if(navigator.onLine===false){kind='pending';text=sync.pending?'Guardado aquí · Sin conexión':'Sin conexión';}
  else if(sync.pending&&kind!=='busy'&&kind!=='err'){kind='pending';text='Pendiente de sincronizar';}
  text=text.replace(/^(☁️|⚠️)\s*/,'');
- // En teléfono el estado vive en Ajustes: un error nuevo se avisa una vez para que no pase inadvertido.
+ // El aviso de error complementa el indicador de Inicio y el detalle en Ajustes.
  if(kind==='err'&&b.dataset.alerted!==text&&typeof mobileLayout!=='undefined'&&mobileLayout.matches)toast('⚠ '+text+'. Revisa Ajustes.');
  b.dataset.alerted=kind==='err'?text:'';
  b.hidden=false;b.className='sync-badge '+kind;b.title=text;b.setAttribute('aria-label',text+'. Ver estado del guardado');b.innerHTML='<span class="sb-t">'+esc(text)+'</span>';
+ const dot=$('#mobileHomeSync');
+ const dotStatus=kind==='ok'?'Sincronizado con Google Sheets':kind==='local'?'Guardado en este dispositivo. Sheets sin conectar':text;
+ dot.className='sync-badge '+kind;dot.title=dotStatus;dot.setAttribute('aria-label',dotStatus+'. Ver estado del guardado');
 }
 function updateSyncInfo(err, phase){
  if (err === null) syncIssue = null;

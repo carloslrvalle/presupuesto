@@ -173,7 +173,7 @@ function renderDashboard(){
   $('#topExp').innerHTML = recentExpenseRows(txs, 5);
 
   renderCharts();
-  if (typeof renderMobileHome === 'function') renderMobileHome(txs, {inc, exp});
+  if (typeof renderMobileHomeChart === 'function') renderMobileHomeChart(txs);
 }
 // Gastos recientes del período (sin ahorro), del más nuevo al más antiguo. Escritorio muestra 5; Inicio móvil, más.
 function recentExpenseRows(txs, limit){

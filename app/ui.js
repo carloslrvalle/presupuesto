@@ -311,7 +311,7 @@ function toggleDisclosure(details,summary,wanted,animate=true){
  const finish=()=>{details.open=open;details.style.overflow='';details._disclosure=null;};
  if(!animate||reduceMotion()||Math.abs(from-to)<1){finish();return;}
  details.open=true;
- const distribution=details.matches('.expense-distribution-more'),duration=distribution?360:MOTION.panel;
+ const distribution=details.matches('.expense-distribution-more'),duration=open?MOTION.panel:MOTION.popup;
  const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:[{opacity:previousOpacity??(open?0:1),transform:previousTransform??(open?'translateY(-5px)':'none')},{opacity:open?1:0,transform:'none'}];
  const contentAnimation=content?.animate(frames,{duration,easing:MOTION.ease});
  const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});

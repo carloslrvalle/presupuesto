@@ -780,15 +780,29 @@ function revealMovementRow(id){
     const page = Math.floor(index / MOV_PAGE_SIZE);
     if (index >= 0 && page !== movPage) renderMovementPage(page);
   }
-  return document.querySelector(`#movBody [data-row="${id}"]`);
+  return document.querySelector(`#movBody [data-row="${CSS.escape(id)}"]`);
 }
-// Resalta brevemente una fila de la tabla de movimientos
+// Señala el movimiento persistido en la vista actual sin cambiar filtros ni foco.
 function highlightSaved(id){
   const row = revealMovementRow(id);
-  if (reduceMotion()) return;
-  const el = row || document.querySelector(`[data-go-tx="${id}"]`) || document.querySelector(`#calDay [data-edit="${id}"]`)?.closest('.prow');
-  if (!el) return; el.classList.remove('just'); void el.offsetWidth; el.classList.add('just');
-  if (el.getBoundingClientRect().top > innerHeight - 80) el.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
+  const selectorId = CSS.escape(id);
+  const recent = document.querySelector(`[data-go-tx="${selectorId}"]`);
+  const calendar = document.querySelector(`#calDay [data-edit="${selectorId}"]`)?.closest('.prow');
+  const target = [row, recent, calendar].find(candidate => candidate?.getClientRects().length);
+  if (!target) return;
+  clearTimeout(target._savedMarkTimer);
+  if (target.classList.contains('movement-saved')) {
+    const signal = target.getAnimations({subtree:true}).find(animation => animation.animationName === 'movementSaved');
+    if (signal) {
+      signal.currentTime = 0;
+      signal.play();
+    }
+  }
+  target.classList.add('movement-saved');
+  target._savedMarkTimer = setTimeout(() => target.classList.remove('movement-saved'), MOTION.signal);
+  if (document.documentElement.dataset.motionInput !== 'keyboard' && target.getBoundingClientRect().top > innerHeight - 80) {
+    target.scrollIntoView({block:'center', behavior:reduceMotion()?'instant':'smooth'});
+  }
 }
 function flashRow(id){motionAnimate(revealMovementRow(id),[{background:'var(--primary-soft)'},{background:'transparent'}],'signal');}
 function removeTransactions(ids){

@@ -326,8 +326,7 @@ mobileHomeSelector.innerHTML = `<span class="home-seg-ind" aria-hidden="true"></
   <button type="button" data-home-kind="income" aria-pressed="false" aria-controls="mobileHomeChart movBody">Ingresos</button>
   <button type="button" data-home-kind="both" aria-pressed="false" aria-controls="mobileHomeChart movBody" aria-label="Gastos e ingresos" title="Gastos e ingresos">${ic('arrow-down-up')}</button>`;
 const homeSegIndicator = mobileHomeSelector.firstElementChild;
-function moveHomeSegIndicator(animate = true){
-  const active = mobileHomeSelector.querySelector('button.active');
+function moveHomeSegIndicator(animate = true, active = mobileHomeSelector.querySelector('button.active')){
   if (!active?.offsetWidth) return;
   const geometry = {left: active.offsetLeft+'px', width: active.offsetWidth+'px'};
   if (!animate || !homeSegIndicator.style.width){ homeSegIndicator._motion?.cancel(); Object.assign(homeSegIndicator.style, geometry); return; }
@@ -338,12 +337,30 @@ function moveHomeSegIndicator(animate = true){
 new ResizeObserver(() => requestAnimationFrame(() => { if (!homeSegIndicator._motion) moveHomeSegIndicator(false); })).observe(mobileHomeSelector);
 // Las cifras indican su alcance: «Del mes» o «Del ciclo».
 for (const [card, icon] of [['.k-exp','arrow-down'],['.k-inc','arrow-up']]){
-  const value = $(`#tab-dashboard ${card}>summary .value`);
-  value?.insertAdjacentHTML('afterend','<span class="home-scope mobile-only"></span>');
+  const details = mobileHomeMetrics.querySelector(card);
+  const summary = details.querySelector('summary');
+  const value = summary.querySelector('.value');
+  value.insertAdjacentHTML('afterend','<span class="home-scope mobile-only"></span>');
   // En Ambos, Gastos muestra qué parte de los ingresos del período se gastó (sin ahorro ni aportes).
-  if (card === '.k-exp') value?.parentElement.insertAdjacentHTML('beforeend','<span class="home-ratio mobile-only"></span>');
+  if (card === '.k-exp') summary.insertAdjacentHTML('beforeend','<span class="home-ratio mobile-only"></span>');
   // Cada cifra lleva el icono de su rol: ↑ entra (ingreso), ↓ sale (gasto).
-  value?.insertAdjacentHTML('beforebegin',`<span class="home-kind-ic mobile-only" aria-hidden="true">${ic(icon)}</span>`);
+  value.insertAdjacentHTML('beforebegin',`<span class="home-kind-ic mobile-only" aria-hidden="true">${ic(icon)}</span>`);
+  const parts = [...summary.children].filter(part => !part.matches('.metric-chevron'));
+  const mobileCard = document.createElement('div');
+  mobileCard.className = `card kpi home-metric ${card.slice(1)}`;
+  function placeHomeMetric(){
+    // La cifra comparte los mismos nodos en móvil y PC, conservando sus IDs.
+    if (mobileLayout.matches){
+      if (mobileCard.isConnected) return;
+      details.replaceWith(mobileCard);
+      mobileCard.append(...parts, details);
+    }else if (mobileCard.isConnected){
+      summary.prepend(...parts);
+      mobileCard.replaceWith(details);
+    }
+  }
+  placeHomeMetric();
+  mobileLayout.addEventListener('change', placeHomeMetric);
 }
 const mobileHomeChart = document.createElement('div');
 mobileHomeChart.id = 'mobileHomeChart';
@@ -383,6 +400,7 @@ function focusMobileHistory(){
 positionMobileHistory();
 mobileLayout.addEventListener('change', positionMobileHistory);
 let mobileHomeSeriesKey = '';
+const mobileHomePlots = new Map();
 let mobileHomeWeeks = [];
 function selectMobileHomeWeek(index){
   const week = mobileHomeWeeks[index];
@@ -405,50 +423,66 @@ function renderMobileHomeChart(txs){
   const kinds = kind === 'both' ? ['expense','income'] : [kind];
   // Gastos excluye ahorro y aportes; en Ambos, gasto e ingreso comparten escala.
   const byKind = kinds.map(k => txs.filter(t => t.type === k && (k === 'income' || !isSavingTx(t))));
-  const series = mobilePeriodWeeks(cycleView()).map(week => ({...week, values: byKind.map(list => weekTotal(list, week))}));
+  const cycle = cycleView();
+  const series = mobilePeriodWeeks(cycle).map(week => ({...week, values: byKind.map(list => weekTotal(list, week))}));
   // Ambos compara acumulados por día (como un saldo que crece): ingreso y gasto se cruzan si el mes se pasa.
   let days = [], daily = [];
   if (kind === 'both' && series.length){
+    const totals = byKind.map(list => {
+      const byDay = new Map();
+      for (const tx of list) byDay.set(tx.date, (byDay.get(tx.date) || 0) + Number(tx.amount || 0));
+      return byDay;
+    });
+    const accumulated = totals.map(() => 0);
     for (let d = series[0].start; d <= series.at(-1).end; d = dateOffset(d,1)) days.push(d);
-    daily = days.map(d => byKind.map(list => sum(list.filter(t => t.date <= d))));
+    daily = days.map(day => totals.map((byDay,i) => accumulated[i] += byDay.get(day) || 0));
     for (const week of series){ week.values = daily[days.indexOf(week.end)]; week.cumulative = true; }
   }
-  const key = JSON.stringify([kind, series]);
+  const width = 360, height = parseFloat(getComputedStyle(mobileHomeChart).getPropertyValue('--home-plot-height')) || 144, band = 10;
+  const key = JSON.stringify([kind, height, cycle, series, daily]);
   if (mobileHomeSeriesKey === key) return;
   mobileHomeSeriesKey = key;
   mobileHomeWeeks = series;
   const focused = document.activeElement?.closest('[data-home-week]');
+  const animate = mobileLayout.matches && activeTab() === 'dashboard' && !reduceMotion();
+  const oldPlot = mobileHomeChart.querySelector('svg');
+  oldPlot?._motion?.cancel();
+  if (oldPlot) oldPlot._motion = null;
   const max = Math.max(0, ...series.flatMap(week => week.values));
   const noun = kind === 'both' ? 'movimientos' : kind === 'income' ? 'ingresos' : 'gastos';
+  for (const el of mobileHomeMetrics.querySelectorAll('.home-scope')) el.textContent = cycle ? 'Del ciclo' : 'Del mes';
+  if (kind === 'both'){
+    const [periodSpend,periodIncome] = daily.at(-1) || [0,0];
+    mobileHomeMetrics.querySelector('.home-ratio').textContent = periodIncome > 0 ? `${pctTxt(periodSpend / periodIncome * 100)} de tus ingresos` : 'Sin ingresos en el período';
+  }
   if (!max){
     mobileHomeChart.innerHTML = `<p class="mobile-home-empty">Sin ${noun} registrados en este período.</p>`;
     if (focused) mobileHomeSelector.querySelector('.active').focus({preventScroll:true});
     return;
   }
-  for (const el of mobileHomeMetrics.querySelectorAll('.home-scope')) el.textContent = cycleView() ? 'Del ciclo' : 'Del mes';
-  const periodIncome = sum(txs.filter(t => t.type === 'income')), periodSpend = spendSum(txs);
-  mobileHomeMetrics.querySelector('.home-ratio').textContent = periodIncome > 0 ? `${pctTxt(periodSpend / periodIncome * 100)} de tus ingresos` : 'Sin ingresos en el período';
-  // Alto real de la gráfica y franja superior reservada a las cifras superpuestas.
-  const width = 360, height = parseFloat(getComputedStyle(mobileHomeChart).getPropertyValue('--home-plot-height')) || 144, band = 10;
-  const lines = kinds.map((k, s) => ({kind:k, points: series.map(({values}, i) => ({
-    x: (i + .5) * width / series.length,
-    y: height - 12 - (height - 18 - band) * values[s] / max
-  }))}));
-  const label = kind === 'both' ? 'Ingresos y gastos acumulados' : `${kind === 'income' ? 'Ingresos' : 'Gastos'} por semana`;
-  const weekLabel = week => kind === 'both' ? `al ${weekDate(week.end)}, ingresos ${fmt(week.values[1])}, gastos ${fmt(week.values[0])}` : fmt(week.values[0]);
-  const plot = kind === 'both' ? mobileCumulativeSvg(width, height, kinds, days, daily, series, max, label, band) : mobileTrendSvg(width, height, lines, label);
-  mobileHomeChart.innerHTML = `<div class="mobile-home-plot">
-    ${plot}
-    <div class="mobile-home-weeks" role="group" aria-label="${label}" style="--week-count:${series.length}">
-      ${series.map((week,i) => `<button type="button" data-home-week="${i}" aria-label="${weekRange(week)}: ${weekLabel(week)}"></button>`).join('')}
-    </div>
-  </div><div class="mobile-home-readout" role="status"><span></span><strong></strong></div>`;
+  const cached = mobileHomePlots.get(kind);
+  if (cached?.key === key){
+    mobileHomeChart.replaceChildren(...cached.nodes);
+  }else{
+    const lines = kinds.map((k, s) => ({kind:k, points: series.map(({values}, i) => ({
+      x: (i + .5) * width / series.length,
+      y: height - 12 - (height - 18 - band) * values[s] / max
+    }))}));
+    const label = kind === 'both' ? 'Ingresos y gastos acumulados' : `${kind === 'income' ? 'Ingresos' : 'Gastos'} por semana`;
+    const weekLabel = week => kind === 'both' ? `al ${weekDate(week.end)}, ingresos ${fmt(week.values[1])}, gastos ${fmt(week.values[0])}` : fmt(week.values[0]);
+    const plot = kind === 'both' ? mobileCumulativeSvg(width, height, kinds, days, daily, series, max, label, band) : mobileTrendSvg(width, height, lines, label);
+    mobileHomeChart.innerHTML = `<div class="mobile-home-plot">
+      ${plot}
+      <div class="mobile-home-weeks" role="group" aria-label="${label}" style="--week-count:${series.length}">
+        ${series.map((week,i) => `<button type="button" data-home-week="${i}" aria-label="${weekRange(week)}: ${weekLabel(week)}"></button>`).join('')}
+      </div>
+    </div><div class="mobile-home-readout" role="status"><span></span><strong></strong></div>`;
+    mobileHomePlots.set(kind, {key, nodes:[...mobileHomeChart.children]});
+  }
   const selected = focused ? Math.min(Number(focused.dataset.homeWeek),series.length-1) : Math.max(0, series.findLastIndex(week => week.values.some(Boolean)));
   selectMobileHomeWeek(selected);
   if (focused) mobileHomeChart.querySelector(`[data-home-week="${selected}"]`).focus({preventScroll:true});
-  if (mobileLayout.matches && activeTab() === 'dashboard'){
-    motionAnimate(mobileHomeChart.querySelector('svg'), [{opacity:.65,clipPath:'inset(0 50% 0 0)'}, {opacity:1,clipPath:'inset(0)'}], 'data');
-  }
+  if (animate) motionAnimate(mobileHomeChart.querySelector('svg'), [{opacity:.65,clipPath:'inset(0 50% 0 0)'}, {opacity:1,clipPath:'inset(0)'}], 'data');
 }
 mobileHomeChart.addEventListener('click', event => {
   const button = event.target.closest('[data-home-week]');
@@ -610,7 +644,7 @@ function syncMobileMovementTools(){
 }
 function positionMovementPanels(){
   if (mobileLayout.matches){
-    movementFilters.before(movementPanelRegion);
+    if (!movementPanelRegion.isConnected) movementFilters.before(movementPanelRegion);
     movementPanelRegion.append(movementFilters, movementPanels.details);
     $('#movBody').after($('#movPages'));
   }else{
@@ -703,25 +737,51 @@ function mobileTrendSvg(width, height, lines, label){
 
 function syncMobileHomeKind(){
   const kind = $('#fltType').value || 'both';
-  if (mobileHomeMetrics.dataset.homeKind === kind) return;
+  const previous = mobileHomeMetrics.dataset.homeKind;
+  if (previous === kind) return false;
+  moveHomeSegIndicator(true,mobileHomeSelector.querySelector(`button[data-home-kind="${kind}"]`));
   mobileHomeMetrics.dataset.homeKind = kind;
   for (const option of mobileHomeSelector.querySelectorAll('button')){
     const on = option.dataset.homeKind === kind;
     option.classList.toggle('active', on);
     option.setAttribute('aria-pressed', String(on));
   }
-  moveHomeSegIndicator();
   // Sin esperar un fotograma: así ninguna cifra conserva el tamaño del modo anterior.
-  mobileHomeMetrics.querySelectorAll('.value').forEach(value => value.style.removeProperty('font-size'));
   fitMetricValues();
-  // Cifras y lista cambian con un fundido corto en lugar de saltar.
-  for (const el of [...mobileHomeMetrics.querySelectorAll(':scope>.kpi'), $('#movBody')]) if (el.offsetHeight) motionAnimate(el, [{opacity:0, transform:'translateY(6px)'}, {opacity:1, transform:'none'}], 'popup');
-  // Las cifras visibles giran desde cero hasta su valor.
-  mobileHomeMetrics.querySelectorAll(':scope>.kpi .value').forEach(value => { if (value.offsetHeight) spinValue(value); });
+  // Solo gira la cifra que acaba de aparecer.
+  if (previous !== 'both') spinValue($(previous === 'expense' ? '#kIncome' : '#kExpense'));
   renderMobileHomeChart(planTx(currentMonth));
+  return true;
 }
-function renderMobileMovements(scope, filterCount){
-  syncMobileHomeKind();
+let pendingMovementReveal = null;
+function revealMobileMovementList(list){
+  if (!mobileLayout.matches || activeTab() !== 'dashboard' || $('#view-list').hidden || reduceMotion()) return;
+  const opacity = list._motion ? Number(getComputedStyle(list).opacity) : .48;
+  motionAnimate(list, [{opacity}, {opacity:1}], 'panel');
+}
+function renderMobileMovements(scope, filterCount, changedSeries){
+  if (changedSeries){
+    pendingMovementReveal?.disconnect();
+    pendingMovementReveal = null;
+    if (activeTab() === 'dashboard' && !$('#view-list').hidden && !reduceMotion()){
+      const list = $('#movBody');
+      const dockTop = mobileNav.getBoundingClientRect().top;
+      const bounds = list.getBoundingClientRect();
+      if (bounds.top < dockTop && bounds.bottom > 0){
+        revealMobileMovementList(list);
+      }else{
+        // Si la gráfica llena la pantalla, reserva el fundido para cuando se vean las filas.
+        const observer = new IntersectionObserver(([entry]) => {
+          if (!entry.isIntersecting || pendingMovementReveal !== observer) return;
+          observer.disconnect();
+          pendingMovementReveal = null;
+          revealMobileMovementList(list);
+        }, {rootMargin:`0px 0px -${Math.max(0,innerHeight-dockTop)}px`});
+        pendingMovementReveal = observer;
+        observer.observe(list);
+      }
+    }
+  }
   requestAnimationFrame(moveViewInd); // coloca la píldora de Lista/Calendario al mostrarse Resumen
   mobileHistoryScope.textContent = scope === 'all' ? 'Todo el historial' : scope === 'cycle' ? 'Ciclo de sueldo' : scope === 'year' ? currentMonth.slice(0,4) : monthLong(currentMonth);
   mobileMovementTools.querySelector('[data-movement-tool=search]').classList.toggle('has-value',Boolean($('#fltText').value.trim()));

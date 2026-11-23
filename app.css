@@ -342,6 +342,7 @@ button:disabled{transform:none!important}
 .gear-btn.active .vi{transform:rotate(90deg)}
 .gear-btn:active{transform:scale(.92)}
 .ptr.spin .vi{animation:btSpin .8s linear infinite}
+@keyframes btSpin{to{transform:rotate(1turn)}}
 .ptr.back{transition:transform var(--motion-panel) var(--ease-out),opacity var(--motion-fast) var(--motion-ease)}
 .prof-menu button{display:grid;grid-template-columns:34px minmax(0,1fr) 18px;align-items:center;gap:10px;width:100%;min-width:0;min-height:56px;padding:10px;border:0;border-radius:var(--radius-lg);background:transparent;color:var(--text);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer}
 .prof-menu button>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -778,7 +779,7 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  :root{--radius-pill:999px}
  #tab-dashboard>.dashboard-kpis{order:1;grid-template-columns:minmax(0,1fr);gap:8px}
- #tab-dashboard .dashboard-kpis[data-home-kind=expense]>.k-inc,#tab-dashboard .dashboard-kpis[data-home-kind=income]>.k-exp{display:none}
+ #tab-dashboard .dashboard-kpis[data-home-kind=expense]>.home-metric.k-inc,#tab-dashboard .dashboard-kpis[data-home-kind=income]>.home-metric.k-exp{display:none}
  #tab-dashboard .mobile-home-selector{display:grid;order:-1;justify-self:start;background:var(--surface-2);max-width:100%}
  #tab-dashboard .mobile-home-selector.seg,#tab-dashboard .mobile-home-selector button,#tab-dashboard .mobile-home-selector::before{--control-radius:var(--radius-pill);border-radius:var(--radius-pill)}
  #tab-dashboard .mobile-home-selector button{min-height:var(--control-height-touch);padding:4px 16px;white-space:normal}
@@ -790,28 +791,30 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #tab-dashboard .mobile-home-selector>button{position:relative;z-index:1;font-weight:600;transition:color var(--motion-panel) var(--motion-ease)}
  /* Mismo peso activo e inactivo: el ancho no cambia y nada se corre al elegir. */
  #tab-dashboard .mobile-home-selector>.home-seg-ind{grid-area:1/1}
- .home-scope{display:block;color:var(--muted);font-size:var(--type-meta);line-height:1.4}
- /* Cifras como en la versión original, iguales en Gastos, Ingresos y Ambos: alcance («Del mes» / «Del ciclo»)
-    arriba, cifra con su icono y chevrón, y la línea de contexto debajo (Disponible del presupuesto, etc.).
-    Filas de alto fijo: cambiar de modo o encoger la cifra no mueve nada de lo que sigue. */
- #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary{grid-template-columns:auto minmax(0,auto) auto 1fr;grid-template-rows:17px 34px 17px;justify-content:start;align-items:center;column-gap:6px;row-gap:4px;padding:8px 0;container-type:normal}
- #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .home-scope{grid-row:1;grid-column:1/-1;line-height:17px}
- #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .home-kind-ic{display:grid;place-items:center;grid-row:2;grid-column:1;width:24px;height:24px;border-radius:50%}
- #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .value{grid-row:2;grid-column:2;line-height:34px;text-align:left}
- #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .metric-chevron{position:static;grid-row:2;grid-column:3;translate:none}
- #tab-dashboard .dashboard-kpis[data-home-kind]>.kpi>summary .metric-preview{position:static;grid-row:3;grid-column:1/-1;width:auto;height:auto;overflow:hidden;clip-path:none;white-space:nowrap;text-overflow:ellipsis;line-height:17px}
+ /* El alcance y el contexto conservan su fila al cambiar de serie. */
+ #tab-dashboard .dashboard-kpis>.kpi.home-metric{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr);grid-template-rows:17px 34px 17px;align-items:center;gap:4px 6px;min-width:0;padding:8px 0;border:0;background:transparent;box-shadow:none;transform:none}
+ .home-metric>details,.home-metric>.label>.dot{display:none}
+ .home-metric>.label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .home-metric>.home-scope{display:block;grid-row:1;grid-column:1/-1;color:var(--muted);font-size:var(--type-meta);line-height:17px}
+ .home-metric>.home-kind-ic{display:grid;place-items:center;grid-row:2;grid-column:1;width:24px;height:24px;border-radius:50%}
+ .home-metric>.value{grid-row:2;grid-column:2;min-width:0;margin:0;font-size:clamp(20px,6.6vw,26px);line-height:34px;letter-spacing:-.5px}
+ .home-metric>:is(.metric-preview,.home-ratio){display:block;grid-row:3;grid-column:1/-1;min-height:0;overflow:hidden;color:var(--muted);font-size:var(--type-meta);line-height:17px;white-space:nowrap;text-overflow:ellipsis}
+ html[data-large-text] #tab-dashboard .dashboard-kpis>.kpi.home-metric{grid-template-rows:auto minmax(34px,auto) auto}
+ html[data-large-text] .home-metric>:is(.home-scope,.metric-preview,.home-ratio){line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+ html[data-large-text] .home-metric>.value{line-height:1.2}
+ html[data-large-text] #tab-dashboard .mobile-home-selector button{padding-inline:8px;overflow-wrap:normal}
+ .dp:has(.dp-g.months) :is(.dp-t,.dp-f>button){min-height:var(--control-height-touch)}
  /* Ambos: las dos tarjetas lado a lado con la misma plantilla y el mismo tamaño de cifra. */
  #tab-dashboard .dashboard-kpis[data-home-kind=both]{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
  #tab-dashboard .dashboard-kpis[data-home-kind=both]>:is(.mobile-home-selector,.mobile-home-trend){grid-column:1/-1}
  /* En Ambos el icono sube a la fila del alcance (16 px): la cifra gana ese ancho y no se encoge en 320 px. */
- #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .home-kind-ic{grid-row:1;width:17px;height:17px}
- #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .home-kind-ic>.vi{width:11px;height:11px}
- #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary{grid-template-columns:17px minmax(0,auto) auto 1fr}
- #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .home-scope{grid-column:2/-1;white-space:nowrap}
- #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi>summary .value{grid-column:1/3}
- #tab-dashboard .dashboard-kpis>.kpi>summary .home-ratio{display:none}
- #tab-dashboard .dashboard-kpis[data-home-kind=both]>.k-exp>summary .metric-preview{display:none}
- #tab-dashboard .dashboard-kpis[data-home-kind=both]>.k-exp>summary .home-ratio{display:block;grid-row:3;grid-column:1/-1;overflow:hidden;color:var(--muted);font-size:var(--type-meta);line-height:17px;white-space:nowrap;text-overflow:ellipsis}
+ #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi.home-metric{grid-template-columns:17px minmax(0,1fr)}
+ [data-home-kind=both]>.home-metric>.home-kind-ic{grid-row:1;width:17px;height:17px}
+ [data-home-kind=both]>.home-metric>.home-kind-ic>.vi{width:11px;height:11px}
+ [data-home-kind=both]>.home-metric>.home-scope{grid-column:2;white-space:nowrap}
+ [data-home-kind=both]>.home-metric>.value{grid-column:1/-1}
+ #tab-dashboard .home-metric>.home-ratio,[data-home-kind=both]>.home-metric.k-exp>.metric-preview{display:none}
+ #tab-dashboard [data-home-kind=both]>.home-metric.k-exp>.home-ratio{display:block}
  .home-kind-ic>.vi{width:14px;height:14px;stroke-width:2.5}
  #tab-dashboard .k-inc .home-kind-ic{background:var(--income-figure-soft,var(--income-soft));color:var(--income)}
  #tab-dashboard .k-exp .home-kind-ic{background:var(--expense-figure-soft,var(--expense-soft));color:var(--expense)}
@@ -828,14 +831,6 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  .mobile-home-readout strong>span:not(.pos){color:var(--text)}
  #tab-dashboard .mobile-home-selector button.active{color:var(--text);font-weight:600}
  #tab-dashboard .mobile-home-selector button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
- #tab-dashboard .dashboard-kpis>.kpi.metric-disclosure{border:0;border-radius:var(--radius);background:transparent;box-shadow:none}
- #tab-dashboard .dashboard-kpis>.kpi>summary{gap:4px;min-height:var(--control-height-touch);padding:8px 0;align-content:start;grid-template-rows:auto}
- #tab-dashboard .dashboard-kpis>.kpi>summary .label{color:var(--muted);font-weight:500;min-height:0;padding-right:16px;font-size:13px;line-height:1.35}
- #tab-dashboard .dashboard-kpis>.kpi>summary .dot{display:none}
- #tab-dashboard .dashboard-kpis>.kpi>summary .value{min-height:0;margin:0;align-self:center;text-align:left;white-space:normal;line-height:1.3;font-size:clamp(20px,6.6vw,26px);letter-spacing:-.5px;overflow-wrap:anywhere}
- #tab-dashboard .dashboard-kpis>.kpi>summary .metric-preview{min-height:0;grid-row:auto;display:block;font-size:12px;line-height:1.4;color:var(--muted)}
- #tab-dashboard .dashboard-kpis>.kpi>summary .metric-chevron{display:grid;top:10px;right:0}
- #tab-dashboard .dashboard-kpis>.kpi .metric-expanded{padding-inline:0}
  #tab-dashboard .mobile-home-trend{--home-plot-height:144px;display:block;margin-inline:calc(-1 * var(--page-gutter));color:var(--expense-chart)}
  #tab-dashboard [data-home-kind=income]>.mobile-home-trend{color:var(--income-chart)}
  .mobile-home-plot{position:relative;height:var(--home-plot-height)}
@@ -2045,7 +2040,6 @@ html:is([data-theme=clay],[data-theme=indigo]) .btn:not(.primary):not(.danger):n
 #errBar{position:fixed;left:12px;right:12px;top:12px;z-index:1001;padding:10px 14px;border-radius:var(--radius);background:var(--expense);color:var(--on-expense);font-size:13px;line-height:1.4;box-shadow:var(--shadow-float)}
 #appName{padding:2px 6px;margin-left:-6px;border-radius:var(--radius-sm)}
 .month-hidden{position:absolute;left:50%;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
-@keyframes dpSwap{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .tabs{position:relative;display:flex;gap:28px;overflow-x:auto;padding:6px 0 0;margin-top:4px;width:100%;flex:1 0 100%;box-shadow:inset 0 -1px 0 var(--border);scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tb-i{display:none}
@@ -2240,7 +2234,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .pp-f .ok:hover{filter:brightness(1.05);background:var(--primary-fill,var(--primary));color:var(--on-primary,#fff)}
 .es.es-sm{min-height:130px}
 .es-t{max-width:340px;line-height:1.45}
-@keyframes sparkIn{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes shimmer{from{background-position:130% 0}to{background-position:-30% 0}}
 .gs span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gs b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2267,7 +2260,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
 #frameField.open .acc-head .chev,.ig.open .ig-head .chev{transform:rotate(180deg)}
 #frameField.open .acc-head{border-color:color-mix(in srgb,var(--primary) 40%,var(--border))}
 .ig-name{flex:1;text-align:left}
-@keyframes gridIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes justSaved{0%{background:color-mix(in srgb,var(--income) 26%,transparent)}100%{background:transparent}}
 tr.just td,.just{animation:justSaved var(--motion-signal) var(--motion-ease)}
 #btnSelect .sel-ic{display:inline-grid}
@@ -2443,10 +2435,12 @@ body.sel-on .toast{bottom:150px}
 .nf-c{display:inline-block;vertical-align:top;height:1lh;white-space:pre}
 .nf-d{position:relative;overflow:hidden;font-variant-numeric:tabular-nums;-webkit-mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent)}
 .nf-g{color:transparent}
-.nf-d::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";position:absolute;inset:0 0 auto;text-align:center;white-space:pre;transform:translateY(calc(var(--n,0) * -1lh));transition:transform var(--nf-dur,0ms) cubic-bezier(.16,1,.3,1)}
-.nf-in{animation:nfIn var(--nf-dur,900ms) cubic-bezier(.16,1,.3,1) both}
+.nf-d::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";position:absolute;inset:0 0 auto;text-align:center;white-space:pre;transform:translateY(calc(var(--n,0) * -1lh));transition:transform var(--nf-dur,0ms) var(--motion-ease)}
+.nf-in{animation:nfIn var(--nf-dur,var(--motion-panel)) var(--motion-ease) both}
 @keyframes nfIn{from{opacity:0;transform:translateY(.35lh) scale(.9)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.nf-d::before{transition:none}.nf-in{animation:none}}
+html[data-motion-input=keyboard] .nf-d::before{transition:none}
+html[data-motion-input=keyboard] .nf-in{animation:none}
 @keyframes valueTick{from{opacity:.35;transform:translateY(3px)}to{opacity:1;transform:none}}
 td.value-tick{animation-name:valueTickCell}
 @keyframes valueTickCell{from{opacity:.35}to{opacity:1}}
@@ -3450,7 +3444,7 @@ button[aria-disabled=true]{cursor:not-allowed}
 @media(max-width:600px){
  .metric-caption-mobile{display:inline}
  .metric-caption-desktop{display:none}
- #tab-dashboard .metric-preview,#anKpis .analysis-metric>.small{display:block;grid-row:3;font-size:var(--metric-meta-size);line-height:1.5;overflow-wrap:anywhere}
+ #anKpis .analysis-metric>.small{display:block;grid-row:3;font-size:var(--metric-meta-size);line-height:1.5;overflow-wrap:anywhere}
 }
 @media(max-width:700px){
  .topbar>.wrap:first-child{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center}
@@ -3795,12 +3789,12 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-gauge-totals b{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
  /* Presupuesto compacto (1.10.165): cifra como en Resumen, barra de 8 px y totales en una fila. */
  #mobileBudgetGauge{padding:var(--mobile-panel-padding)}
- .mobile-budget-summary{display:grid;gap:4px}
+ .mobile-budget-summary{display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
  .mbs-label{color:var(--muted);font-size:var(--type-meta);line-height:1.4}
  .mbs-amount{color:var(--balance-figure);font-size:clamp(24px,8vw,30px);font-weight:600;letter-spacing:-.5px;line-height:1.2;font-variant-numeric:tabular-nums}
  .mbs-amount.neg{color:var(--expense)}
  .mobile-budget-tile-track.mbs-track{grid-area:auto;height:8px;margin-top:8px;border-radius:var(--radius-pill)}
- .mbs-meta{display:flex;justify-content:space-between;gap:8px;margin:4px 0 0;color:var(--muted);font-size:var(--type-meta);font-variant-numeric:tabular-nums}
+ .mbs-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;margin:4px 0 0;color:var(--muted);font-size:var(--type-meta);font-variant-numeric:tabular-nums}
  .mbs-meta b{color:var(--text);font-weight:600}
  .mobile-budget-tile-amount:not(:has(.mobile-budget-tile-caption)){align-self:center}
  /* Categorías en filas compactas, como Gastos recientes: el medidor resume arriba y cada fila se lee de un vistazo. */

@@ -16,8 +16,13 @@ function planningHeader(){
  const monthLabel=$('#monthLabel');
  monthLabel.textContent=compact?monthShort(currentMonth):bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
  monthLabel.title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
- if(compact)monthLabel.setAttribute('aria-label','Elegir período. '+(headerCycle?cycleLabel(currentMonth):monthLong(currentMonth)));
- else monthLabel.removeAttribute('aria-label');
+ if(compact){
+   monthLabel.setAttribute('aria-label',monthLabel.textContent+', elegir período');
+   monthLabel.setAttribute('aria-description',headerCycle?cycleLabel(currentMonth):monthLong(currentMonth));
+ }else{
+   monthLabel.removeAttribute('aria-label');
+   monthLabel.removeAttribute('aria-description');
+ }
  $('#prevM').title=bothCycles?'Cierre anterior':headerCycle?'Ciclo anterior':'Mes anterior';$('#nextM').title=bothCycles?'Cierre siguiente':headerCycle?'Ciclo siguiente':'Mes siguiente';
  const labels=document.querySelectorAll('#tab-dashboard .kpi .label');
  [cy?'Ingresos del ciclo':'Ingresos del mes',cy?'Gastos del ciclo':'Gastos del mes','Saldo acumulado','Tasa de ahorro'].forEach((text,i)=>{if(!labels[i])return;for(const node of labels[i].childNodes)if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){node.textContent=text;break;}});
@@ -229,9 +234,10 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
 // El teclado responde de inmediato; el puntero conserva las transiciones del componente.
 const reducedMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 function finishNavigationMotion(){
- for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.mobile-home-trend svg,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary)')){
+ for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary)')){
   el._motion?.finish();
  }
+ for(const digit of document.querySelectorAll('#tab-dashboard .home-metric .nf-d')) digit._spin?.cancel();
 }
 reducedMotionPreference.addEventListener('change', event => { if(event.matches)finishNavigationMotion(); });
 document.addEventListener('keydown',event=>{
@@ -404,7 +410,7 @@ function rollDigits(el, text, dur){
       if (digit) span.style.setProperty('--n', '0');
       if (fresh && old && dur) span.classList.add('nf-in');
     }
-    if (digit){ const g = document.createElement('span'); g.className = 'nf-g'; g.textContent = ch; span.replaceChildren(g); } else span.textContent = ch;
+    if (digit){ span._spin?.cancel(); const g = document.createElement('span'); g.className = 'nf-g'; g.textContent = ch; span.replaceChildren(g); } else span.textContent = ch;
     span._target = digit ? ch : null;
     map.set(key, span); frag.push(span);
   }
@@ -413,13 +419,19 @@ function rollDigits(el, text, dur){
   for (const span of frag) if (span._digit) span.style.setProperty('--n', span._target);
   el._rollKeys = keys; el._rollMap = map; el._rollText = el.textContent;
 }
-// Giro lento y con frenado largo (900 ms, curva que desacelera suave al final).
-const SPIN_MS = 900;
+// Mismo giro que al cambiar de serie: un solo tiempo y una sola curva (DESIGN.md).
+const SPIN_MS = MOTION.panel;
 const rollsDigits = el => typeof mobileLayout !== 'undefined' && mobileLayout.matches && !!el.closest?.('#tab-dashboard .dashboard-kpis');
 // Gira la cifra desde ceros hasta su valor (al cambiar de modo en Resumen móvil).
 function spinValue(el){
-  if (!el || !rollsDigits(el) || reduceMotion()) return;
-  const text = el.textContent; rollDigits(el, text.replace(/\d/g, '0'), 0); void el.offsetWidth; rollDigits(el, text, SPIN_MS);
+  if (!el || !rollsDigits(el) || reduceMotion() || !('pseudoElement' in KeyframeEffect.prototype) || performance.now() < (el._spinUntil || 0)) return;
+  el._spinUntil = performance.now() + MOTION.panel;
+  // Mueve las columnas ya montadas sin sustituir el importe ni forzar layout.
+  for (const digit of el.querySelectorAll('.nf-d')){
+    if (digit._target === '0') continue;
+    digit._spin = digit.animate([{transform:'translateY(0)'},{transform:'translateY(calc(var(--n) * -1lh))'}],
+      {pseudoElement:'::before',duration:MOTION.panel,easing:MOTION.ease});
+  }
 }
 function countUp(el, to, kind = 'money', cls){
   if (!el) return;

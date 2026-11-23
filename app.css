@@ -363,14 +363,6 @@ body.both-on #tabs,body.both-on #fab{display:none!important}
 @media(max-width:700px){
  .topbar .brand #appName{white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
 }
-@supports((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
- @media(max-width:600px) and (prefers-reduced-transparency:no-preference){
-  .topbar.scrolled::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4)}
- }
-}
-@media(forced-colors:active){
- .topbar.scrolled::before{display:none}
-}
 .prof-menu[hidden],.mov-action-menu[hidden],.sel-bar[hidden]{opacity:0;translate:0 5px;pointer-events:none}
 @media(pointer:coarse),(max-width:700px){
  .topbar .month-nav .month-label{flex:1;min-width:0;padding-inline:2px}
@@ -390,7 +382,6 @@ body.both-on #tabs,body.both-on #fab{display:none!important}
 }
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more){
  .topbar.scrolled{background:var(--bg)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
- .topbar.scrolled::before{display:none!important}
 }
 html[data-large-text] .month-nav .month-label{height:auto;padding-block:4px;font-size:.8125rem;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
@@ -466,7 +457,6 @@ html[data-large-text] .month-nav .month-label{height:auto;padding-block:4px;font
  .topbar .prof-chip .prof-nm{display:none}
 }
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
- .topbar.scrolled::before{display:none}
  .topbar .month-nav .month-label{font-size:14px;font-weight:600}
  .mobile-more-list>button+button{border-top:1px solid var(--border)}
  @media(hover:hover) and (pointer:fine){
@@ -476,7 +466,6 @@ html[data-large-text] .month-nav .month-label{height:auto;padding-block:4px;font
 #desktopSidebar,#desktopLayoutToggle{display:none}
 html:not([data-desktop-nav=side]) #desktopSectionTitle{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 @media(min-width:601px) and (min-height:501px),(min-width:961px),(min-width:601px) and (pointer:fine){
- .topbar::before{display:none}
  #tabs{--tab-surface:var(--surface-2);display:flex;gap:4px;align-items:center;flex:0 1 auto;width:auto;margin:0;padding:4px;background:var(--surface-2);border:0;box-shadow:none}
  #tabs>button{min-height:40px;padding:8px 18px;font-size:13px;font-weight:500}
  #tabs>button.active{background:transparent;color:var(--text);box-shadow:none}
@@ -769,8 +758,6 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #tab-dashboard .dashboard-kpis>.kpi>summary:focus-visible{outline:2px solid var(--primary);outline-offset:-3px;border-radius:inherit}
  #tab-dashboard .dashboard-kpis>.kpi[open]{border-color:var(--primary)}
  #tab-dashboard .metric-expanded{padding:0 var(--metric-padding) var(--metric-padding)}
- #mobileBudgetGauge{margin-bottom:16px;padding:4px var(--mobile-panel-padding) var(--mobile-panel-padding);border:1px solid var(--border);background:var(--surface)}
- #mobileBudgetGauge .mobile-gauge-totals{margin:0;font-size:12px}
  #anKpis .analysis-metric[aria-pressed=true]{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}
 }
 /* Gastos sobre el presupuesto: el aviso del indicador no depende solo del texto gris. */
@@ -797,7 +784,8 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  .home-metric>.label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
  .home-metric>.home-scope{display:block;grid-row:1;grid-column:1/-1;color:var(--muted);font-size:var(--type-meta);line-height:17px}
  .home-metric>.home-kind-ic{display:grid;place-items:center;grid-row:2;grid-column:1;width:24px;height:24px;border-radius:50%}
- .home-metric>.value{grid-row:2;grid-column:2;min-width:0;margin:0;font-size:clamp(20px,6.6vw,26px);line-height:34px;letter-spacing:-.5px}
+ .home-metric>.value,.mbs-amount{font-size:clamp(20px,6.6vw,26px);line-height:34px;letter-spacing:-.5px}
+ .home-metric>.value{grid-row:2;grid-column:2;min-width:0;margin:0}
  .home-metric>:is(.metric-preview,.home-ratio){display:block;grid-row:3;grid-column:1/-1;min-height:0;overflow:hidden;color:var(--muted);font-size:var(--type-meta);line-height:17px;white-space:nowrap;text-overflow:ellipsis}
  html[data-large-text] #tab-dashboard .dashboard-kpis>.kpi.home-metric{grid-template-rows:auto minmax(34px,auto) auto}
  html[data-large-text] .home-metric>:is(.home-scope,.metric-preview,.home-ratio){line-height:1.4;white-space:normal;overflow-wrap:anywhere}
@@ -809,6 +797,7 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #tab-dashboard .dashboard-kpis[data-home-kind=both]>:is(.mobile-home-selector,.mobile-home-trend){grid-column:1/-1}
  /* En Ambos el icono sube a la fila del alcance (16 px): la cifra gana ese ancho y no se encoge en 320 px. */
  #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi.home-metric{grid-template-columns:17px minmax(0,1fr)}
+ html[data-large-text] #tab-dashboard .dashboard-kpis[data-home-kind=both]>.kpi.home-metric{align-content:start;grid-template-rows:1.05rem minmax(34px,max-content) auto}
  [data-home-kind=both]>.home-metric>.home-kind-ic{grid-row:1;width:17px;height:17px}
  [data-home-kind=both]>.home-metric>.home-kind-ic>.vi{width:11px;height:11px}
  [data-home-kind=both]>.home-metric>.home-scope{grid-column:2;white-space:nowrap}
@@ -831,7 +820,7 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  .mobile-home-readout strong>span:not(.pos){color:var(--text)}
  #tab-dashboard .mobile-home-selector button.active{color:var(--text);font-weight:600}
  #tab-dashboard .mobile-home-selector button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
- #tab-dashboard .mobile-home-trend{--home-plot-height:144px;display:block;margin-inline:calc(-1 * var(--page-gutter));color:var(--expense-chart)}
+ .mobile-home-trend{--home-plot-height:144px;display:block;margin-inline:calc(-1 * var(--page-gutter));color:var(--expense-chart)}
  #tab-dashboard [data-home-kind=income]>.mobile-home-trend{color:var(--income-chart)}
  .mobile-home-plot{position:relative;height:var(--home-plot-height)}
  .mobile-home-empty{display:grid;align-items:center;min-height:var(--home-plot-height);margin:0;padding-inline:var(--page-gutter);color:var(--muted);font-size:var(--type-control)}
@@ -855,7 +844,8 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  @media(min-width:601px) and (max-height:500px) and (pointer:coarse){
   #tab-dashboard>.dashboard-kpis{grid-template-columns:minmax(0,1fr) auto}
   #tab-dashboard .mobile-home-selector{grid-area:1/2;align-self:center}
-  #tab-dashboard .mobile-home-trend{grid-column:1/-1;--home-plot-height:96px}
+  .mobile-home-trend{--home-plot-height:96px}
+  #tab-dashboard .mobile-home-trend{grid-column:1/-1}
  }
  /* Análisis deja más espacio a la gráfica sin ocultar el contexto de las cifras. */
  #anKpis .analysis-metric{display:grid;grid-template-rows:auto auto 1fr;align-content:start;gap:4px;padding:12px}
@@ -870,7 +860,7 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  #anKpis .analysis-metric .dot .vi,#bothBody .both-kpis .metric-disclosure .dot .vi{width:16px;height:16px}
  #anKpis .analysis-metric .value,#bothBody .both-kpis .metric-disclosure>summary .value{font-size:clamp(1.125rem,16cqi,var(--metric-value-size));font-weight:600;line-height:1.3;letter-spacing:-.5px}
 }
-:is(.card,.tab .card,#tab-dashboard .dashboard-kpis>.kpi,#mobileBudgetGauge){box-shadow:var(--shadow)}
+:is(.card,.tab .card,#tab-dashboard .dashboard-kpis>.kpi){box-shadow:var(--shadow)}
 
 /* ==================== Movimientos ==================== */
 @media(max-width:380px){
@@ -1343,12 +1333,10 @@ html[data-large-text] #view-list .mov-extra-filters{grid-row:3}
 #mobileBudgetAmount{width:100%;font-size:28px;min-height:64px;font-variant-numeric:tabular-nums}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  #tab-budget>.bud-grid{display:none}
- #tab-budget>.budget-actions>.btn-row{display:none}
- #tab-budget>.budget-actions{margin-bottom:16px;gap:8px;align-items:center}
+ #tab-budget .mobile-budget-options .budget-actions{margin-bottom:0;gap:8px;align-items:center}
  #tab-budget .budget-actions>.plan-period{flex:1 1 0;min-width:0}
  #tab-budget #mobileBudgetView{margin-bottom:24px}
- #mobileBudgetRange{font-size:12px;color:var(--muted);white-space:nowrap}
- .mobile-budget-gauge path{fill:none;stroke-width:12;stroke-linecap:round}
+ #tab-budget .period-trigger{--control-radius:var(--radius-pill)}
  .mobile-budget-tile>.ico .vi{width:17px;height:17px}
  .mobile-budget-tile:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
  #tab-budget .mobile-budget-options .bud-side{display:grid;gap:16px}
@@ -3467,9 +3455,6 @@ button[aria-disabled=true]{cursor:not-allowed}
  .topbar .month-nav{grid-column:2/4;grid-row:2;min-width:0;width:100%}
 }
 @supports((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
- @media(max-width:600px) and (prefers-reduced-transparency:no-preference){
-  .topbar.scrolled{background:transparent}
- }
  @media(prefers-reduced-transparency:no-preference){
   .toast{background:color-mix(in srgb,var(--text) 88%,transparent);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3)}
  }
@@ -3628,6 +3613,7 @@ html[data-large-text] .month-nav{height:auto}
 .mobile-more-list>button:is(:hover,[aria-current=page]){background:var(--surface-2)}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  /* Navegación y controles compartidos con las vistas de detalle. */
+ body:has(#tab-dashboard.active #tab-movs,#tab-budget.active)::before{content:"";position:fixed;z-index:29;inset:auto 0 0;height:var(--dock-controls-bottom);background:var(--bg)}
  #mobileNav{position:fixed;z-index:30;isolation:isolate;inset:auto max(24px,env(safe-area-inset-right,0px)) var(--dock-inset) max(24px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;min-height:var(--dock-height);max-width:var(--dock-max-width);margin-inline:auto;padding:var(--dock-padding);border:var(--dock-border) solid var(--border);border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow-sm)}
  #mobileNav>.mobile-nav-indicator,#mobileNav>#mobileNew .mobile-nav-glyph,#mobileNav .mobile-nav-glyph{border-radius:50%}
  #mobileNav>.mobile-nav-indicator{position:absolute;z-index:0;left:0;top:0;width:36px;height:36px;background:var(--surface-2);opacity:0;transform-origin:top left;pointer-events:none}
@@ -3648,62 +3634,66 @@ html[data-large-text] .month-nav{height:auto}
 }
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  .topbar,.topbar.scrolled{background:var(--bg);box-shadow:none;border-bottom-color:transparent}
- .topbar>.wrap:first-child{display:grid;grid-template-columns:minmax(0,1fr) fit-content(calc(100% - 8.5rem));align-items:center;gap:8px;padding-block:12px 8px}
+ .topbar>.wrap:first-child{display:grid;grid-template-columns:var(--control-height-touch) minmax(0,1fr) auto var(--control-height-touch);align-items:center;gap:4px;padding-block:12px 4px}
  .topbar .head-right{display:contents}
- .topbar .brand #appName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- .topbar .top-pair{grid-column:2;grid-row:1}
- .topbar .month-nav{grid-column:1/-1;grid-row:2;width:auto}
- .topbar .month-label{flex:1;min-width:0}
- .topbar .brand,.topbar:has(.sync-badge:not([hidden])) .brand{grid-column:1;grid-row:1;font-size:20px;letter-spacing:-.5px}
- /* Nombre de la app, perfil y guardado fuera de la cabecera móvil. */
  .topbar .brand{display:none}
- .topbar>.wrap:first-child{grid-template-columns:minmax(0,1fr);padding-block:12px 4px;row-gap:12px}
- /* Encabezado común: el título de la vista va primero y el período debajo; los títulos dentro del contenido se retiran. */
- html:not([data-desktop-nav=side]) #desktopSectionTitle{position:static;grid-column:1;grid-row:1;width:auto;height:auto;margin:0;overflow:visible;clip-path:none;white-space:normal;font-size:22px;font-weight:600;line-height:1.25;letter-spacing:-.45px}
- .topbar .month-nav{grid-row:2}
- body:has(#tab-dashboard.active) .topbar>.wrap:first-child:has(#mobileHomeSync){grid-template-columns:var(--control-height-touch) minmax(0,1fr) auto var(--control-height-touch);gap:4px}
- body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar .month-nav{grid-area:1/3;padding:0;border:0;border-radius:var(--radius-pill);background:var(--surface-2)}
- body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar .month-nav :is(#prevM,#nextM){display:none}
+ .topbar .month-nav{grid-area:1/3;width:auto;padding:0;border:0;border-radius:var(--radius-pill);background:var(--surface-2)}
+ .topbar .month-nav :is(#prevM,#nextM){display:none}
  /* Resumen: la etiqueta larga queda para lectores de pantalla (arriba se ve el alcance) y sin «Ver resumen» bajo el calendario. */
  #tab-dashboard .dashboard-kpis>.kpi>summary .label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
  #tab-dashboard #calSummary{display:none}
- /* Presupuesto y Metas: título y píldora de período en una fila, como en Resumen. */
- body:has(:is(#tab-budget,#tab-goals).active) .topbar>.wrap:first-child{grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px}
- body:has(:is(#tab-budget,#tab-goals).active) .topbar .month-nav{grid-area:1/2;justify-self:end;width:auto;min-height:0;box-shadow:none}
- body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar #monthLabel{display:inline-flex;justify-content:center;gap:8px;min-height:var(--control-height-touch);padding:0 10px;border-radius:var(--radius-pill);font-size:var(--type-meta);white-space:nowrap}
- body:has(:is(#tab-dashboard,#tab-budget,#tab-goals).active) .topbar #monthLabel::after{content:"";width:5px;height:5px;margin-block-start:-3px;border-inline-end:1.5px solid currentColor;border-block-end:1.5px solid currentColor;transform:rotate(45deg)}
- body:has(#tab-dashboard.active) #desktopSectionTitle{grid-column:2;min-width:0;font-size:var(--type-section);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- body:has(#tab-dashboard.active) #mobileHomeProfile{display:grid;grid-area:1/1;width:var(--control-height-touch);height:var(--control-height-touch);padding:0;border:0;background:transparent;cursor:pointer}
+ .topbar #monthLabel{display:inline-flex;justify-content:center;gap:8px;min-height:var(--control-height-touch);padding:0 10px;border-radius:var(--radius-pill);font-size:var(--type-meta);white-space:nowrap}
+ .topbar #monthLabel::after{content:"";width:5px;height:5px;margin-block-start:-3px;border-inline-end:1.5px solid currentColor;border-block-end:1.5px solid currentColor;transform:rotate(45deg)}
+ #mobileHomeProfile{display:grid;grid-area:1/1;width:var(--control-height-touch);height:var(--control-height-touch);padding:0;border:0;background:transparent;cursor:pointer}
  #mobileHomeProfile>.prof-av{width:34px;height:34px}
- body:has(#tab-dashboard.active) #mobileHomeSync{display:flex;grid-column:4;grid-row:1;justify-content:end;min-height:var(--control-height-touch);width:var(--control-height-touch);padding:0 4px;border:0;border-radius:var(--radius-pill);background:transparent;cursor:pointer}
+ #mobileHomeSync{display:flex;grid-area:1/4;position:relative;justify-content:center;align-items:center;min-height:var(--control-height-touch);width:var(--control-height-touch);padding:0 4px;border:0;border-radius:var(--radius-pill);background:transparent;color:var(--muted);cursor:pointer}
  :is(#mobileHomeSync,#mobileHomeProfile):focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
  #tab-dashboard .mobile-history-header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin:8px 0 12px}
  #mobileHistoryHeading{margin:0;font-size:var(--type-section)}
- #tab-dashboard #tab-movs>.toolbar{width:fit-content;max-width:100%;justify-content:flex-start;margin:0 auto 12px 0;padding:2px;border-radius:var(--radius-pill);background:var(--surface-2)}
+ :is(#tab-dashboard #tab-movs>.mobile-list-tools,.mobile-budget-tools){display:flex;position:relative;isolation:isolate;width:fit-content;max-width:100%;justify-content:flex-start;margin:0 auto 12px 0;padding:2px;border-radius:var(--radius-pill);background:var(--surface-2)}
+ .mobile-tool-ind{position:absolute;z-index:-1;inset-block:2px;left:0;width:0;background:var(--surface);border-radius:var(--radius-pill);box-shadow:var(--shadow);opacity:0;pointer-events:none;transform-origin:top left}
+ .mobile-budget-tools button{display:grid;place-items:center;width:var(--control-height-touch);height:var(--control-height-touch);padding:0;border:0;border-radius:var(--radius-pill);background:transparent;color:var(--muted);cursor:pointer}
+ .mobile-budget-tools button .vi{width:20px;height:20px}
+ .mobile-list-tools button:is([aria-pressed=true],[aria-expanded=true],.has-value){color:var(--text)}
+ .mobile-list-tools button.has-value{position:relative}
+ .mobile-list-tools button.has-value::after{content:'';position:absolute;inset:7px 7px auto auto;width:5px;height:5px;border-radius:50%;background:currentColor}
+ .mobile-budget-tools button:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+ #mobileBudgetSearch,#mobileBudgetFilters{margin-bottom:8px}
+ #mobileBudgetFilters>.fsel{width:max-content;max-width:100%}
+ .fsel-menu{left:var(--filter-menu-shift,0px);width:max-content;min-width:100%;max-width:var(--filter-menu-width,calc(100vw - 24px))}
+ html .tab .mobile-list-search,html #tab-movs .mobile-list-search{width:100%;min-width:0;border:0;border-radius:var(--radius-pill);background:transparent}
+ html .tab .mobile-list-search input{width:100%;min-width:0;min-height:var(--control-height-touch);padding-block:8px;border:1px solid var(--border);border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow-xs);font-size:max(16px,1rem);line-height:1.5}
+ html .tab .mobile-list-search input::placeholder{color:var(--muted);opacity:1}
+ html .tab .mobile-list-search input:focus{outline:none}
+ html .tab .mobile-list-search input:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+ #tab-budget #mobileBudgetFilters .fsel-btn,#tab-dashboard #tab-movs .fsel-btn{min-height:var(--control-height-touch);border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow-xs)}
+ #mobileBudgetEmpty{margin:8px 0 0}
  /* Lista/Calendario: el indicador en píldora se desliza como en el resto de selectores. */
- #tab-dashboard #tab-movs #movView .vseg-ind{inset-block:0;height:auto;border-radius:var(--radius-pill);background:var(--surface);box-shadow:0 1px 3px 0 rgb(0 0 0 / .08)}
+ #tab-dashboard #tab-movs #movView .vseg-ind{inset-block:0;height:auto;border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow)}
  #tab-dashboard #tab-movs #movView .vseg-ind::after{display:none}
  html #tab-dashboard #tab-movs #movView button.active{background:transparent!important;box-shadow:none!important}
  #tab-dashboard #tab-movs .mobile-movement-tools{margin-inline-start:0}
  #tab-dashboard #tab-movs #movView button,#tab-dashboard #tab-movs :is([data-movement-tool],#btnSelect){border-radius:var(--radius-pill)!important}
- #tab-dashboard #tab-movs :is(#movView button.active,[data-movement-tool][aria-expanded=true],#btnSelect[aria-pressed=true]){background:var(--surface);color:var(--text)}
- #tab-dashboard #tab-movs :is(.search-box,.fsel-btn,#movFilterClear,#movPages .btn){--control-radius:var(--radius-pill);border-radius:var(--radius-pill)}
+ #tab-dashboard #tab-movs :is([data-movement-tool][aria-expanded=true],.mobile-movement-tools button.has-value,#btnSelect.on){background:transparent;color:var(--text)}
+ #tab-dashboard #tab-movs :is(#movFilterClear,#movPages .btn){--control-radius:var(--radius-pill);border-radius:var(--radius-pill)}
+ @media(forced-colors:active){
+  .mobile-budget-tools button:is([aria-pressed=true],[aria-expanded=true]){outline:1px solid Highlight;outline-offset:-2px}
+ }
  #tab-dashboard #movBody .history-row{--control-radius:0px}
  #tab-dashboard #movBody .history-row+.history-row{border-top:1px solid var(--border)}
  #tab-dashboard #movBody .history-row-meta{color:var(--muted);font-size:var(--type-meta);overflow-wrap:anywhere}
  #movBody .history-amount>.plan-pill{display:table;margin:4px 0 0 auto}
  #mobileHomeSync.pending{color:var(--warn-ink,var(--warn))}
- body:has(#tab-dashboard.active) #desktopSectionTitle{display:flex;flex-direction:column;justify-content:center;line-height:1.2}
- #desktopSectionTitle>.home-hello{color:var(--muted);font-family:var(--font-body,inherit);font-size:var(--type-meta);font-weight:400;letter-spacing:0}
- #desktopSectionTitle>.home-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- body:has(#tab-dashboard.active) #mobileHomeSync{position:relative;justify-content:center;align-items:center;color:var(--muted)}
+ .topbar .mobile-greeting{display:flex;grid-area:1/2;min-width:0;flex-direction:column;justify-content:center;font-family:var(--font-head);font-size:var(--type-section);font-weight:600;line-height:1.2}
+ .mobile-greeting>.home-hello{color:var(--muted);font-family:var(--font-body,inherit);font-size:var(--type-meta);font-weight:400}
+ .mobile-greeting>.home-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  #mobileHomeSync>.vi{width:20px;height:20px}
  #mobileHomeSync::before{position:absolute;top:13px;right:9px;width:7px;height:7px;box-shadow:0 0 0 2px var(--bg)}
  #mobileHomeSync.ok::before{background:var(--income-chart)}
  #mobileHomeSync.local::before{background:var(--muted)}
  #mobileHomeSync.err::before{background:var(--expense)}
  #mobileHomeSync.busy::before{animation:none}
- .settings-intro,#mobileBudgetView>.mobile-section-heading,#bothBody .both-head h2{display:none}
+ :is(.mobile-view-heading,.settings-intro h2,#bothBody .both-head h2){font-size:var(--type-section)}
  .mobile-profile-host{margin:0 0 12px}
  .mobile-profile-host .top-pair{width:100%;box-sizing:border-box}
  .mobile-profile-host .sync-badge{display:none}
@@ -3779,10 +3769,6 @@ html[data-large-text] .month-nav{height:auto}
  }
  .mobile-more .dlg-head{flex:none;padding:24px 24px 12px;touch-action:none}
  .mobile-more-list{min-height:0;overscroll-behavior:contain;padding:0 16px 24px}
- @media(min-width:601px) and (max-height:500px) and (pointer:coarse){
-  html:not([data-large-text]) .topbar>.wrap:first-child:has(.month-nav:not([hidden])){grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
-  html:not([data-large-text]) .topbar .month-nav{grid-column:3;grid-row:1}
- }
 }
 .mobile-only{display:none}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
@@ -3791,43 +3777,50 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-section-heading h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.5px}
  .mobile-section-heading>button{display:flex;align-items:center;justify-content:center;gap:2px;min-width:44px;min-height:44px;border:0;background:transparent;color:var(--muted);padding:0;font-size:12px;cursor:pointer}
  .mobile-section-heading>button .vi{width:16px;height:16px}
- .mobile-budget-gauge{position:relative;max-width:340px;margin:8px auto 0;min-width:0}
- .mobile-budget-gauge>svg{display:block;width:100%;height:auto;overflow:visible}
- .mobile-gauge-copy{position:absolute;inset:auto 16% 10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
- .mobile-gauge-copy>span{font-size:12px;line-height:1.4;color:var(--muted)}
- .mobile-gauge-copy>strong:not(.neg){color:var(--balance-figure)}
- .mobile-gauge-copy>strong{font-size:clamp(24px,8vw,34px);font-weight:600;letter-spacing:-1px;line-height:1.15;overflow-wrap:anywhere;max-width:100%}
- .mobile-gauge-copy>small{font-size:12px;line-height:1.4;color:var(--muted)}
- .mobile-gauge-totals{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 24px;color:var(--muted);font-size:12px}
- .mobile-gauge-totals b{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
- /* Presupuesto compacto (1.10.165): cifra como en Resumen, barra de 8 px y totales en una fila. */
- #mobileBudgetGauge{padding:var(--mobile-panel-padding)}
  .mobile-budget-summary{display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
- .mbs-label{color:var(--muted);font-size:var(--type-meta);line-height:1.4}
- .mbs-amount{color:var(--balance-figure);font-size:clamp(24px,8vw,30px);font-weight:600;letter-spacing:-.5px;line-height:1.2;font-variant-numeric:tabular-nums}
- .mbs-amount.neg{color:var(--expense)}
- .mobile-budget-tile-track.mbs-track{grid-area:auto;height:8px;margin-top:8px;border-radius:var(--radius-pill)}
- .mbs-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;margin:4px 0 0;color:var(--muted);font-size:var(--type-meta);font-variant-numeric:tabular-nums}
- .mbs-meta b{color:var(--text);font-weight:600}
- .mobile-budget-tile-amount:not(:has(.mobile-budget-tile-caption)){align-self:center}
- /* Categorías en filas compactas, como Gastos recientes: el medidor resume arriba y cada fila se lee de un vistazo. */
- .mobile-budget-categories{display:grid;grid-template-columns:minmax(0,1fr);gap:0;padding:0 var(--mobile-panel-padding);border:1px solid var(--border);border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow)}
- .mobile-budget-tile{display:grid;grid-template-columns:32px minmax(0,1fr) auto;grid-template-areas:"ico copy amount" ". track track";align-items:center;column-gap:12px;row-gap:8px;min-width:0;min-height:44px;padding:14px 0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--text);text-align:left;font:inherit;cursor:pointer}
- .mobile-budget-tile+.mobile-budget-tile{border-top:1px solid var(--border)}
+ #mobileBudgetView{--budget-emphasis:color-mix(in srgb,var(--text) 82%,var(--bg))}
+ .mbs-label{margin:0;color:var(--muted);font-size:var(--type-meta);line-height:1.4}
+ .mbs-amount{color:var(--text);font-weight:600;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+ html[data-large-text] .mbs-amount{font-size:var(--metric-value-size);line-height:1.2}
+ #mobileBudgetChart{margin-top:var(--section-gap)}
+ .mobile-budget-chart-label{margin:0;color:var(--muted);font-size:var(--type-meta);font-weight:600}
+ .mobile-budget-bars{--budget-plot-height:clamp(108px,34vw,156px);position:relative;isolation:isolate;margin-block:4px 8px}
+ .mobile-budget-bars>.mobile-home-weeks{position:relative;inset:auto}
+ .mobile-budget-bars button{display:grid;grid-template-rows:var(--budget-plot-height) auto;gap:.65em;font:inherit;font-size:var(--type-meta);font-variant-numeric:tabular-nums}
+ .mobile-budget-bars button:focus-visible{position:relative;z-index:2;outline-color:var(--ring)}
+ .mobile-budget-bar-plot{display:grid;align-items:end;justify-items:center}
+ .mobile-budget-bar-plot>span{
+  --budget-bar-fade:linear-gradient(#000 8%,rgb(0 0 0 / .62) 32%,rgb(0 0 0 / .28) 55%,rgb(0 0 0 / .075) 73%,rgb(0 0 0 / .01) 85%,transparent 92%);
+  display:block;width:82%;max-width:72px;height:var(--budget-bar-height);
+  border-radius:var(--radius) var(--radius) 0 0;
+  background-color:color-mix(in srgb,var(--muted) 66%,var(--bg));
+  -webkit-mask-image:var(--budget-bar-fade);mask-image:var(--budget-bar-fade);
+  transform-origin:bottom;
+  transition:background-color var(--motion-tab) var(--motion-tab-ease)
+ }
+ .mobile-budget-bar-date{justify-self:center;padding:2px 4px;border-radius:var(--radius-pill);color:var(--muted);line-height:1.3}
+ [data-budget-week][aria-pressed=true] .mobile-budget-bar-plot>span{background-color:var(--budget-emphasis)}
+ [data-budget-week][aria-pressed=true] .mobile-budget-bar-date{background:var(--primary-soft);color:var(--text);font-weight:600}
+ .mobile-budget-plan-marker{position:absolute;z-index:1;inset:calc(var(--budget-plot-height) * var(--budget-plan-offset)) 0 auto;display:flex;align-items:center;gap:4px;transform:translateY(-50%);pointer-events:none}
+ .mobile-budget-plan-marker::after{content:"";flex:1;border-top:1px dashed var(--text)}
+ .mobile-budget-plan-marker span{padding:2px 7px;border-radius:var(--radius-pill);background:var(--text);color:var(--bg);font-size:var(--type-meta);font-weight:600;line-height:1.4}
+ #mobileBudgetTitle{margin:20px 0 8px}
+ .mobile-budget-categories{display:grid;grid-template-columns:minmax(0,1fr)}
+ .mobile-budget-tile{display:grid;grid-template-columns:32px minmax(0,1fr) fit-content(40%);grid-template-areas:"ico copy amount" ". track track";align-items:center;column-gap:10px;row-gap:4px;min-width:0;min-height:var(--control-height-touch);padding:8px 0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+ .mobile-budget-tile:not([hidden])~.mobile-budget-tile{border-top:1px solid var(--border)}
  .mobile-budget-tile>.ico{grid-area:ico;display:grid;place-items:center;width:32px;height:32px;border-radius:var(--radius-lg)}
  .mobile-budget-tile-copy{grid-area:copy;display:grid;gap:2px;min-width:0}
  .mobile-budget-tile-copy>b{font-size:var(--type-item);font-weight:600;line-height:1.35;overflow-wrap:anywhere}
  .mobile-budget-tile-meta{font-size:var(--type-meta);line-height:1.4;color:var(--muted);text-wrap:pretty}
- .mobile-budget-tile-amount{grid-area:amount;display:grid;justify-items:end;gap:2px;text-align:right}
- .mobile-budget-tile-amount>strong{font-size:var(--type-item);font-weight:600;line-height:1.35;overflow-wrap:anywhere}
- .mobile-budget-tile.over .mobile-budget-tile-amount>strong{color:var(--expense)}
+ .mobile-budget-tile-amount{grid-area:amount;align-self:start;display:grid;justify-items:end;gap:2px;text-align:right}
+ .mobile-budget-tile-amount>strong{font-size:var(--type-item);font-weight:600;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
  .mobile-budget-tile-caption{font-size:var(--type-meta);line-height:1.4;color:var(--muted)}
+ .mobile-budget-tile.over .mobile-budget-tile-caption{color:var(--text);font-weight:600}
  html[data-large-text] .mobile-budget-tile{grid-template-columns:32px minmax(0,1fr);grid-template-areas:"ico copy" ". amount" ". track"}
- .mobile-budget-tile-track{grid-area:track;display:block;height:4px;border-radius:4px;overflow:hidden;background:var(--surface-2)}
- .mobile-budget-tile-track>i{display:block;height:100%;border-radius:inherit;background:var(--balance-chart)}
- .mobile-budget-tile-track.warn>i{background:color-mix(in srgb,var(--warn) 75%,var(--surface))}
- .mobile-budget-tile-track.over>i{background:var(--expense)}
- .mobile-budget-tile-track.saving>i{background:var(--savings-chart)}
+ .mobile-budget-tile-track{grid-area:track;display:block;height:3px;border-radius:var(--radius-pill);overflow:hidden;background:var(--surface-2)}
+ .mobile-budget-tile-track>i{display:block;height:100%;border-radius:inherit;background:color-mix(in srgb,var(--text) 58%,var(--bg))}
+ .mobile-budget-tile-track.warn>i{background-image:repeating-linear-gradient(90deg,transparent 0 4px,var(--surface-2) 4px 6px)}
+ .mobile-budget-tile-track.over>i{background:var(--budget-emphasis)}
  .mobile-budget-tile:active{background:var(--surface-2);transform:scale(.99)}
  .mobile-budget-options{border-top:1px solid var(--border);margin-top:24px;padding-top:8px}
  .mobile-budget-options>summary{min-height:56px;padding:14px 0;font-size:14px;font-weight:600;cursor:pointer}
@@ -3837,11 +3830,16 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-budget-options>summary .vi{width:16px;height:16px;color:var(--muted);transition:transform var(--motion-panel) var(--motion-ease)}
  .mobile-budget-options[open]>summary .vi{transform:rotate(180deg)}
  .mobile-budget-options-body{display:grid;gap:16px;padding-top:12px}
- @media(max-width:360px){
-  .mobile-gauge-copy>strong{font-size:26px}
+ @media(forced-colors:active){
+  .mobile-budget-bar-plot>span{forced-color-adjust:none;background:CanvasText;-webkit-mask-image:none;mask-image:none}
+  [data-budget-week][aria-pressed=true] .mobile-budget-bar-plot>span{background:Highlight}
+  [data-budget-week][aria-pressed=true] .mobile-budget-bar-date{outline:1px solid Highlight}
+  :is(.mobile-budget-tile-track,.mobile-budget-tile-track.over)>i{forced-color-adjust:none;background-color:CanvasText}
+  .mobile-budget-tile-track.warn>i{background-image:repeating-linear-gradient(90deg,transparent 0 4px,Canvas 4px 6px)}
  }
  @media(prefers-reduced-motion:reduce){
   .mobile-budget-tile{transition:none;transform:none}
+  .mobile-budget-bar-plot>span{transition:none}
  }
  @media(hover:hover){
   .mobile-budget-tile:hover{background:var(--surface-2)}
@@ -3965,17 +3963,26 @@ html[data-large-text] .month-nav{height:auto}
   #mobileHomeSync::before{background:ButtonText}
   .mobile-weekly-area{display:none}
  }
- #mobileBudgetTitle{margin:0;font-size:var(--type-title);font-weight:600;line-height:1.3}
  #mobileNav>.mobile-nav-indicator{background:var(--primary-soft)}
  .mobile-more-list>button[aria-current=page]{background:var(--primary-soft);color:var(--primary)}
  .mobile-more-list>button>.vi:first-child,.settings-home-icon{border-radius:var(--radius-lg);background:var(--primary-soft);color:var(--primary)}
  .mobile-more-list>button{min-height:62px;padding-inline:8px}
  #mobileRecentAll,.tx-mobile-simple #mobileTxNote{color:var(--primary)}
- /* Vidrio estilo iOS en la barra inferior (pedido expreso; excepción documentada en DESIGN.md):
+ /* Vidrio en la navegación móvil (documentado en DESIGN.md):
     superficie translúcida, desenfoque con saturación, borde claro y brillo superior. Sin soporte, queda opaca. */
- @media(prefers-reduced-transparency:no-preference) and (prefers-contrast:no-preference) and (forced-colors:none){
-  @supports((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-   #mobileNav{background:color-mix(in srgb,var(--surface) 62%,transparent);border-color:rgb(255 255 255 / .55);-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);box-shadow:inset 0 1px 0 rgb(255 255 255 / .6),0 10px 30px -12px rgb(15 18 30 / .28),0 1px 3px rgb(15 18 30 / .08)}
+ @supports((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  :root{--mobile-glass-filter:blur(20px) saturate(1.8)}
+  @media(min-height:501px){
+   /* El filtro va en una capa propia para conservar la posición de los controles fijos. */
+   .topbar.scrolled{background:transparent;border-bottom-color:var(--border)}
+   .topbar.scrolled::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:var(--mobile-glass-filter);backdrop-filter:var(--mobile-glass-filter)}
+  }
+  @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
+   .topbar.scrolled{background:var(--bg);border-bottom-color:transparent}
+   .topbar.scrolled::before{content:none}
+  }
+  @media(prefers-reduced-transparency:no-preference) and (prefers-contrast:no-preference) and (forced-colors:none){
+   #mobileNav{background:color-mix(in srgb,var(--surface) 62%,transparent);border-color:rgb(255 255 255 / .55);-webkit-backdrop-filter:var(--mobile-glass-filter);backdrop-filter:var(--mobile-glass-filter);box-shadow:inset 0 1px 0 rgb(255 255 255 / .6),0 10px 30px -12px rgb(15 18 30 / .28),0 1px 3px rgb(15 18 30 / .08)}
    html[data-mode=dark] #mobileNav{background:color-mix(in srgb,var(--surface) 58%,transparent);border-color:rgb(255 255 255 / .1);box-shadow:inset 0 1px 0 rgb(255 255 255 / .08),0 10px 30px -12px rgb(0 0 0 / .6)}
    @media(prefers-color-scheme:dark){html:not([data-mode=light]) #mobileNav{background:color-mix(in srgb,var(--surface) 58%,transparent);border-color:rgb(255 255 255 / .1);box-shadow:inset 0 1px 0 rgb(255 255 255 / .08),0 10px 30px -12px rgb(0 0 0 / .6)}}
   }

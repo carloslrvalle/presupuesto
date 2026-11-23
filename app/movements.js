@@ -190,14 +190,22 @@ function enhanceSelect(sel){
     build();
     const rect = btn.getBoundingClientRect(), dock = $('#mobileNav')?.getBoundingClientRect();
     const zoom = Number(getComputedStyle(document.documentElement).zoom) || 1;
+    if (mobileLayout.matches){
+      menu.style.setProperty('--filter-menu-width', (innerWidth - 24) / zoom + 'px');
+      const shift = Math.min(0, innerWidth - 12 - rect.left - menu.offsetWidth * zoom);
+      menu.style.setProperty('--filter-menu-shift', shift / zoom + 'px');
+    }
     const above = rect.top - 12, below = (dock?.height ? dock.top : innerHeight) - rect.bottom - 12;
     const up = below < menu.scrollHeight * zoom && above > below;
     w.classList.toggle('opens-up', up);
     menu.style.setProperty('--filter-menu-space', Math.max(72, (up ? above : below) / zoom) + 'px');
     w.classList.add('open'); menu.removeAttribute('aria-hidden'); btn.setAttribute('aria-expanded','true');
+    menu.scrollTop = 0;
     setHl(sel.selectedIndex);
-    const el = menu.querySelector('.sel');
-    if (el) menu.scrollTop = el.offsetTop - menu.clientHeight / 2 + el.offsetHeight / 2;
+    if (!mobileLayout.matches){
+      const selected = menu.querySelector('.sel');
+      if (selected) menu.scrollTop = selected.offsetTop - menu.clientHeight / 2 + selected.offsetHeight / 2;
+    }
   };
   const close = () => {
     if (!w.classList.contains('open')) return;

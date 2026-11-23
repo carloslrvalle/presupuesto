@@ -10,15 +10,15 @@ function syncPlanningNavigation(name){
 }
 function planningHeader(){
  const bothCycles=bothMode&&bothUsesCycles();
- $('#monthLabel').closest('.month-nav').hidden=['analysis','cats','settings'].includes(activeTab());
+ const compact=mobileLayout.matches;
+ $('#monthLabel').closest('.month-nav').hidden=!compact&&['analysis','cats','settings'].includes(activeTab());
  const cy=cycleView(),headerCycle=cy||(document.querySelector('#tab-movs.active')&&typeof movView!=='undefined'&&movView==='list'&&$('#fltScope').value==='cycle');
- const compact=mobileLayout.matches&&['dashboard','budget','goals'].includes(activeTab());
  const monthLabel=$('#monthLabel');
  monthLabel.textContent=compact?monthShort(currentMonth):bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
  monthLabel.title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
  if(compact){
    monthLabel.setAttribute('aria-label',monthLabel.textContent+', elegir período');
-   monthLabel.setAttribute('aria-description',headerCycle?cycleLabel(currentMonth):monthLong(currentMonth));
+   monthLabel.setAttribute('aria-description',bothCycles?'Mes de cierre de ambos usuarios':headerCycle?cycleLabel(currentMonth):monthLong(currentMonth));
  }else{
    monthLabel.removeAttribute('aria-label');
    monthLabel.removeAttribute('aria-description');
@@ -234,7 +234,7 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
 // El teclado responde de inmediato; el puntero conserva las transiciones del componente.
 const reducedMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 function finishNavigationMotion(){
- for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary)')){
+ for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary,.mobile-budget-bar-plot>span)')){
   el._motion?.finish();
  }
  for(const digit of document.querySelectorAll('#tab-dashboard .home-metric .nf-d')) digit._spin?.cancel();
@@ -524,6 +524,8 @@ function showTab(name, scrollTop = 0){
   });
   // Al volver a Resumen, cada indicador conserva el último valor dibujado.
   if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
+  const enterMobileBudget = name === 'budget' && prevTab !== name && mobileLayout.matches;
+  if (enterMobileBudget) dirty.add(name);
   if (name === 'analysis' && currentMonth !== analysisSelectedMonth) dirty.add(name);
   const resumeAnalysis = name === 'analysis' && !dirty.has(name) && prevTab !== name;
   planningHeader();
@@ -542,6 +544,7 @@ function showTab(name, scrollTop = 0){
   if (embeddedMovements) focusMobileHistory();
   else if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
   if(prevTab !== name)revealNavigationView(section);
+  if(enterMobileBudget)revealMobileBudgetBars();
 }
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
 const tabScroll = {};

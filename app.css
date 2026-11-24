@@ -3999,7 +3999,6 @@ html[data-large-text] .month-nav{height:auto}
    .topbar.scrolled{background:var(--bg);border-bottom-color:transparent}
    .topbar.scrolled::before{content:none}
   }
-  @media(prefers-reduced-transparency:no-preference) and (prefers-contrast:no-preference) and (forced-colors:none){
    #mobileNav{
     --dock-glass-top:68%;--dock-glass-bottom:40%;--dock-rim:.66;--dock-glint:.86;
     background:linear-gradient(180deg,color-mix(in srgb,var(--surface) var(--dock-glass-top),transparent),color-mix(in srgb,var(--surface) var(--dock-glass-bottom),transparent));
@@ -4009,6 +4008,11 @@ html[data-large-text] .month-nav{height:auto}
    }
    html[data-mode=dark] #mobileNav{--dock-glass-top:76%;--dock-glass-bottom:48%;--dock-rim:.18;--dock-glint:.18}
    @media(prefers-color-scheme:dark){html:not([data-mode=light]) #mobileNav{--dock-glass-top:76%;--dock-glass-bottom:48%;--dock-rim:.18;--dock-glint:.18}}
+  @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
+   #mobileNav{background:var(--surface);border-color:var(--border);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:var(--shadow-sm)}
+  }
+  @media(forced-colors:active){
+   #mobileNav{background:Canvas;border-color:ButtonText}
   }
  }
  @media(prefers-reduced-motion:no-preference){

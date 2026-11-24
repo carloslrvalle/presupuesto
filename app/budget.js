@@ -151,9 +151,17 @@ $('#btnCopyPrev').onclick = async () => {
   }});
 };
 $('#btnSetDefault').onclick = () => {
-  if(cycleView()){const config=cycleConfig(),defaults={...(config.defaults||{})};defaults[cycleDay()]=Object.fromEntries(state.categories.map(c=>[c.id,cycleBudget(currentMonth,c.id)]));state.settings.budgetCycle={...config,defaults};save();renderAll();return toast('Base guardada para los próximos ciclos');}
-  state.categories.forEach(c => { if (payActive(c, currentMonth) && !isArch(c, currentMonth)) c.defaultBudget = getBudget(currentMonth, c.id); });
-  save(); renderAll(); toast('Guardado como presupuesto base 📌');
+  const cycle = cycleView();
+  if(!saveChange(() => {
+    if(cycle){
+      const config=cycleConfig(),defaults={...(config.defaults||{})};
+      defaults[cycleDay()]=Object.fromEntries(state.categories.map(c=>[c.id,cycleBudget(currentMonth,c.id)]));
+      state.settings.budgetCycle={...config,defaults};
+    }else{
+      state.categories.forEach(c => { if (payActive(c, currentMonth) && !isArch(c, currentMonth)) c.defaultBudget = getBudget(currentMonth, c.id); });
+    }
+  }))return;
+  renderAll();toast(cycle?'Base guardada para los próximos ciclos':'Guardado como presupuesto base 📌');
 };
 
 /* ---------- Categorías ---------- */
@@ -308,7 +316,7 @@ function renderCats(){
       <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}">${iconHTML(c.icon, c.color)}</button>
       <input type="text" data-act="name" aria-label="Nombre de la categoría ${esc(c.name)}" value="${esc(c.name)}">
       ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="${c.pay ? esc(payHumanCfg(payCfg(c.pay))) : 'Día de pago'}">${ic('calendar-days')}<span>${c.pay ? 'Cobro: ' + payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
-      <div class="row-acts"><details class="cat-actions"><summary class="iconbtn" aria-label="Acciones de ${esc(c.name)}" title="Acciones de categoría">⋯</summary><div class="cat-actions-menu"><button type="button" data-act="arch">${ic('archive')} Archivar</button><button type="button" data-act="del">${ic('trash-2')} Eliminar</button></div></details></div>
+      <div class="row-acts"><details class="cat-actions"><summary class="iconbtn" aria-label="Acciones de ${esc(c.name)}" title="Acciones de categoría">⋯</summary><div class="cat-actions-menu">${type==='expense'? `<button type="button" data-act="saving">${ic('piggy-bank')} ${isSavingCat(c.id)?'Contar como gasto':'Contar como ahorro'}</button>` : ''}<button type="button" data-act="arch">${ic('archive')} Archivar</button><button type="button" data-act="del">${ic('trash-2')} Eliminar</button></div></details></div>
     </div>`).join('') || '<div class="muted small" style="padding:10px 0">Sin categorías.</div>';
     if (arch.length) $(type === 'income' ? '#catsIncome' : '#catsExpense').insertAdjacentHTML('beforeend', `<details class="arch-group"><summary>${CHEV_D}${arch.length} ${arch.length === 1 ? 'categoría archivada' : 'categorías archivadas'}</summary>${arch.map(c => `<div class="arch-row" data-id="${esc(c.id)}"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span>${esc(c.name)}<small>desde ${monthLong(c.archived).toLowerCase()}</small></span><button class="btn sm" data-unarch="${esc(c.id)}">${ic('archive-restore')} Restaurar</button></div>`).join('')}</details>`);
   });
@@ -338,14 +346,29 @@ $('#tab-cats').addEventListener('click', async e => {
   if (add){
     const type = add.dataset.addcat;
     const nc = {id:uid(), name:'Nueva categoría', icon:'svg:tag', type, color:PALETTE[state.categories.length % PALETTE.length], defaultBudget:0};
-    state.categories.push(nc); if (curTheme()) nc.color = curThemeColorCat(nc);
-    save(); renderAll();
+    if(!saveChange(() => {
+      state.categories.push(nc);
+      if(type==='expense')(state.settings.savingCategories??={})[nc.id]=false;
+      if(curTheme())nc.color=curThemeColorCat(nc);
+    }))return;
+    renderAll();
     const inputs = document.querySelectorAll(`#${type==='income'?'catsIncome':'catsExpense'} input[data-act=name]`);
     const last = inputs[inputs.length-1]; if (last){ last.focus(); last.select(); }
     return;
   }
   const btn = e.target.closest('[data-act]'); if (!btn) return;
   const row = btn.closest('.cat-row'), c = state.categories.find(x => x.id === row.dataset.id);
+  if(btn.dataset.act==='saving'){
+    const profile=activeProfile, saving=!isSavingCat(c.id), classification=saving?'ahorro':'gasto';
+    const summary=row.querySelector('summary');
+    setMenuDisclosure(btn.closest('.cat-actions'),false);
+    summary.focus({preventScroll:true});
+    if(!(await ask({title:`¿Contar «${c.name}» como ${classification}?`,msg:'También se actualizarán los totales de movimientos anteriores de esta categoría.',ok:'Cambiar',danger:false,icon:'piggy-bank'})))return;
+    if(profile!==activeProfile||!state.categories.some(cat=>cat.id===c.id))return;
+    if(!saveChange(()=>{state.settings.savingCategories[c.id]=saving;}))return;
+    keepFocus(renderAll);toast(`«${c.name}» se cuenta como ${classification}`);
+    return;
+  }
   if (btn.dataset.act === 'icon') openIcon(icon => { c.icon = icon; save(); renderAll(); },
     {color:c.color, soft:true, themeColor: curThemeColorCat(c), onColor: col => { c.color = col; save(); }}, c.icon);
   if (btn.dataset.act === 'del'){

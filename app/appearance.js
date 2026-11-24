@@ -2,29 +2,6 @@
 /* ---------- Temas de color ---------- */
 // Cada categoría recibe un "rol" según su nombre o ícono, y cada tema define un color por rol
 const ROLES = ['home','food','transport','bills','health','fun','shop','edu','debt','save','other','income','bonus','pet','travel','tech'];
-const ROLE_RX = [
-  ['home', /vivienda|casa|alquiler|hipoteca|depa|hogar|mantenimiento/i, /house|home|building|sofa|bed|key|armchair|lamp/],
-  ['food', /aliment|comida|mercado|super|restaur|delivery|caf[eé]|almuerzo|cena|bodega/i, /shopping-cart|shopping-basket|utensils|coffee|pizza|apple|croissant|sandwich|soup|salad|beef|cake|cookie|egg/],
-  ['transport', /transporte|auto|carro|gasolina|combustible|taxi|uber|bus|movilidad|peaje|cochera/i, /car|bus|fuel|bike|train|truck|motorbike|scooter|parking/],
-  ['bills', /servicio|luz|agua|internet|tel[eé]fono|movistar|claro|entel|bitel|cable|\bgas\b|l[ií]nea|celular|plan/i, /lightbulb|wifi|plug|droplet|phone|smartphone|wrench|router|zap/],
-  ['health', /salud|m[eé]dic|farmacia|seguro|gym|gimnasio|dentista|cl[ií]nica/i, /stethoscope|pill|heart-pulse|dumbbell|hospital|syringe|activity|bandage/],
-  ['fun', /entreten|ocio|netflix|spotify|disney|hbo|prime|cine|juego|salida|apple|youtube|m[uú]sica|streaming|fiesta/i, /film|clapperboard|music|gamepad|headphones|tv|ticket|popcorn|party|dices|joystick/],
-  ['shop', /ropa|compra|shopping|regalo|zapat|belleza|cuidado/i, /shirt|shopping-bag|scissors|gem|store|sparkles|watch/],
-  ['edu', /educa|curso|estudio|universidad|colegio|libro|idioma|ingl[eé]s/i, /book|graduation|school|notebook|library|languages|pencil/],
-  ['debt', /deuda|tarjeta|cr[eé]dito|pr[eé]stamo|cuota|banco/i, /credit-card|landmark|receipt/],
-  ['save', /ahorro|inversi[oó]n|fondo|meta/i, /piggy-bank|trending-up|vault|chart/],
-  ['pet', /mascota|perro|gato|michi|micha|veterin/i, /dog|cat|paw|bird|rabbit|fish/],
-  ['travel', /viaje|vacacion|hotel|pasaje|vuelo/i, /plane|luggage|globe|map|tent|mountain|umbrella/],
-  ['tech', /tecnolog|software|app|nube|dominio|hosting|suscrip/i, /laptop|monitor|cpu|cloud|server|hard-drive/],
-  ['income', /sueldo|salario|pago|n[oó]mina|honorario|freelance|venta/i, /briefcase|dollar|banknote|wallet/],
-  ['bonus', /gratific|bono|cts|extra|pluxee|utilidad|aguinaldo|reembolso|devoluci/i, /gift|star|award|trophy|coins/],
-  ['other', /otro|varios|misc/i, /package|plus|tag|circle-help/]];
-function roleOf(c){
-  const ic = String(c.icon || '').replace('svg:', '');
-  for (const [r, rx] of ROLE_RX) if (rx.test(c.name || '')) return r;
-  for (const [r, , ri] of ROLE_RX) if (ri.test(ic)) return r;
-  return c.type === 'income' ? 'bonus' : 'other';
-}
 // h = color por rol (en el orden de ROLES), accent = color del logo
 // Paletas inspiradas en esquemas conocidos por su armonía (Catppuccin, Nord, Rosé Pine, Dracula, Tokyo Night,
 // Gruvbox, Solarized, Everforest, Kanagawa) y en paletas de finanzas.

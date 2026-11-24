@@ -47,10 +47,25 @@ function reconcile(base,local,remote,choices={}){
   }out[name]=records;
  }
  if(known){
-  const shared=(b.categories||[]).map(c=>c.id).filter(id=>(l.categories||[]).some(c=>c.id===id)&&(r.categories||[]).some(c=>c.id===id));
-  const order=d=>(d.categories||[]).map(c=>c.id).filter(id=>shared.includes(id));
-  const chosen=merge(order(b),order(l),order(r),['categoryOrder']),rank=new Map(chosen.map((id,i)=>[id,i]));
-  out.categories.sort((a,b)=>(rank.get(a.id)??shared.length)-(rank.get(b.id)??shared.length));
+  const [before,here,there]=[b,l,r].map(d=>(d.categories||[]).map(c=>c.id));
+  const localIds=new Set(here),remoteIds=new Set(there);
+  const shared=new Set(before.filter(id=>localIds.has(id)&&remoteIds.has(id)));
+  const [baseOrder,localOrder,remoteOrder]=[before,here,there].map(ids=>ids.filter(id=>shared.has(id)));
+  const chosen=merge(baseOrder,localOrder,remoteOrder,['categoryOrder']);
+  const byId=new Map(out.categories.map(c=>[c.id,c]));
+  const placed=new Set(chosen), after=new Map();
+  // Las categorías nuevas conservan su posición junto a las que ya existían.
+  for(const ids of [here,there]){
+   let anchor=null;
+   for(const id of ids){
+    if(shared.has(id)){anchor=id;continue;}
+    if(!byId.has(id)||placed.has(id))continue;
+    if(!after.has(anchor))after.set(anchor,[]);
+    after.get(anchor).push(id);placed.add(id);
+   }
+  }
+  const ordered=[...(after.get(null)||[]),...chosen.flatMap(id=>[id,...(after.get(id)||[])])];
+  out.categories=ordered.map(id=>byId.get(id));
  }
  out.budgets=merge(b.budgets||{},l.budgets||{},r.budgets||{},['budgets']);
  out.settings=merge(b.settings||{},l.settings||{},r.settings||{},['settings']);

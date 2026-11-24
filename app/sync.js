@@ -1,7 +1,8 @@
 // Presupuesto: sync.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Google Sheets ---------- */
 const SYNC_KEY = 'budgetPlanner.sync';
-let sync = (() => { try { return JSON.parse(localData.readText(SYNC_KEY)) || {}; } catch(e){ return {}; } })();
+const readSyncConfig = () => JSON.parse(localData.readText(SYNC_KEY)) || {};
+let sync = (() => { try { return readSyncConfig(); } catch(e){ return {}; } })();
 if (sync.auto === undefined) sync.auto = true;
 // Estado de sincronización del usuario activo (cada perfil lleva su propia revisión y pendientes)
 if (sync.byProf && sync.byProf[activeProfile]) Object.assign(sync, sync.byProf[activeProfile]);
@@ -19,7 +20,15 @@ else if (sync.byProf && activeProfile !== 'p1') Object.assign(sync, {rev:0, pend
   } catch(e){ window.__connFromLink = 'bad'; }
   try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
 })();
-const saveSync = () => { sync.byProf = sync.byProf || {}; sync.byProf[activeProfile] = {rev:Number(sync.rev) || 0, pending:!!sync.pending, lastSync:sync.lastSync || 0}; try { localData.writeText(SYNC_KEY, JSON.stringify(sync)); } catch(e){localSaveFailed=true;return false;}return true; };
+const sameSyncConnection = config => config.url===sync.url && config.token===sync.token;
+function saveSync(profile=activeProfile,status={rev:Number(sync.rev)||0,pending:!!sync.pending,lastSync:sync.lastSync||0}){
+  try{
+    const stored=readSyncConfig();
+    sync.byProf={...(sameSyncConnection(stored)?stored.byProf:sync.byProf),[profile]:status};
+    localData.writeText(SYNC_KEY,JSON.stringify(sync));
+    return true;
+  }catch(e){localSaveFailed=true;return false;}
+}
 const syncOn = () => !localRecovery && !!(sync.url && sync.token);
 let pushTimer = null, pushing = false, pushTask = null, changeSeq = 0;
 let syncIssue = null;
@@ -139,12 +148,17 @@ function syncCacheKey(kind,profile=activeProfile){return 'budgetPlanner.sync.'+k
 function readSyncCache(kind,profile=activeProfile){const key=syncCacheKey(kind,profile);try{const value=JSON.parse(localData.readText(key)||'null')||syncCacheMemory.get(key);return value?.url===sync.url?value:null;}catch(e){return syncCacheMemory.get(key)||null;}}
 function writeSyncCache(kind,value,profile=activeProfile){const key=syncCacheKey(kind,profile),data={...value,url:sync.url};syncCacheMemory.set(key,data);try{localData.writeText(key,JSON.stringify(data));return true;}catch(e){localSaveFailed=true;setBadge('err','No se pudo guardar aquí');return false;}}
 function rememberSyncBase(data,rev,profile=activeProfile){return writeSyncCache('base',{data:SyncCore.clone(data),rev:Number(rev)||0},profile);}
+function readSyncBase(profile=activeProfile){
+  const base=readSyncCache('base',profile);
+  if(base?.data)normalizeCategoryData(base.data);
+  return base;
+}
 function clearSyncConflict(profile=activeProfile){syncCacheMemory.delete(syncCacheKey('conflict',profile));localData.remove(syncCacheKey('conflict',profile));}
 function acceptSyncRemote(remote,profile=activeProfile){
  if(localTabChanged||localRecovery)return false;
  if(!remote||!Array.isArray(remote.categories)||!Array.isArray(remote.transactions))throw new Error('Sheets devolvió datos incompletos. Se conserva la copia local.');
- validateStateData(remote);
- const base=readSyncCache('base',profile),local=SyncCore.clone(snapshot()),rev=Number(remote.rev)||0;
+ normalizeCategoryData(validateStateData(remote));
+ const base=readSyncBase(profile),local=SyncCore.clone(snapshot()),rev=Number(remote.rev)||0;
  if(rev<Math.max(Number(sync.rev)||0,Number(base?.rev)||0)){setBadge(sync.pending?'pending':'ok',sync.pending?'Pendiente de sincronizar':'Sincronizado');updateSyncInfo();return false;}
  const empty=!remote.categories.length&&!remote.transactions.length&&!remote.goals?.length;
  const seedCats=seed().categories;
@@ -183,6 +197,7 @@ function syncConflictLabel(item,remote){
  const fields={amount:'Importe',method:'Método de pago',desc:'Descripción',date:'Fecha',catId:'Categoría',name:'Nombre',type:'Tipo',classification:'Tipo y categoría',day:'Día',auto:'Registro automático',target:'Objetivo',initial:'Ahorro inicial',savePct:'Meta de ahorro',saveMode:'Forma de ahorro',budgetCycle:'Período',font:'Tipografía',theme:'Tema'};
  const record=(state[collection]||[]).find?.(r=>r.id===id)||(remote[collection]||[]).find?.(r=>r.id===id);
  if(collection==='budgets')return 'Presupuesto · '+id+' · '+getCat(item.path[2]?.replace(/^cycle\d+:/,'')).name;
+ if(collection==='settings'&&id==='savingCategories'&&field)return 'Clasificación · '+(state.categories.find(c=>c.id===field)||remote.categories.find(c=>c.id===field)||getCat(field)).name;
  return (names[collection]||'Dato')+(record?' · '+(record.desc||record.name||getCat(record.catId).name):'')+(fields[field||id]?' · '+fields[field||id]:'');
 }
 function syncConflictValue(value,path=[]){
@@ -192,18 +207,18 @@ function syncConflictValue(value,path=[]){
  if(path[0]==='categoryOrder'&&Array.isArray(value))return value.map(id=>getCat(id).name).join(' → ');
  if(path.at(-1)==='classification'&&value)return (value.type==='income'?'Ingreso':'Gasto')+' · '+(state.categories.find(c=>c.id===value.catId)||syncConflict()?.remote?.categories?.find(c=>c.id===value.catId)||getCat(value.catId)).name;
  if(value===undefined)return 'Eliminado';if(value===null||value==='')return 'Sin especificar';
- if(typeof value==='boolean')return value?'Activado':'Desactivado';if(Array.isArray(value))return value.map(v=>syncConflictValue(v)).join(' · ')||'Sin elementos';
+ if(typeof value==='boolean')return path[0]==='settings'&&path[1]==='savingCategories'?(value?'Ahorro':'Gasto'):(value?'Activado':'Desactivado');if(Array.isArray(value))return value.map(v=>syncConflictValue(v)).join(' · ')||'Sin elementos';
  if(typeof value==='object'){if('enabled' in value)return value.enabled?'Ciclo desde el día '+value.day:'Mes calendario';return [value.name||value.desc,value.date,value.amount!=null?fmt(value.amount):''].filter(Boolean).join(' · ')||'Configuración modificada';}return String(value);
 }
 function openSyncConflicts(){
- const saved=syncConflict();if(!saved)return;const result=SyncCore.reconcile(readSyncCache('base')?.data||null,snapshot(),saved.remote);
+ const saved=syncConflict();if(!saved)return;const result=SyncCore.reconcile(readSyncBase()?.data||null,snapshot(),saved.remote);
  if(!result.conflicts.length){clearSyncConflict();acceptSyncRemote(saved.remote);if(sync.auto)pushNow();return;}
  syncConflictDialog.innerHTML='<form id="syncConflictForm"><div class="dlg-head"><h3 id="syncConflictTitle">Revisar cambios · '+esc(profOf(activeProfile).name)+'</h3><button type="button" class="iconbtn" data-sync-conflict-close aria-label="Cerrar">'+ic('x')+'</button></div><div class="dlg-body"><p>Dos dispositivos modificaron el mismo dato. Elige qué conservar. Los cambios compatibles se combinan automáticamente.</p><div class="sync-conflict-list">'+result.conflicts.map((item,i)=>'<fieldset><legend>'+esc(syncConflictLabel(item,saved.remote))+'</legend>'+['local','remote'].map(side=>'<label><input type="radio" required name="choice'+i+'" value="'+side+'"><span><small>'+(side==='local'?'En este dispositivo':'En Sheets')+'</small><b>'+esc(syncConflictValue(item[side],item.path))+'</b></span></label>').join('')+'</fieldset>').join('')+'</div></div><div class="dlg-actions dlg-foot"><button type="button" class="btn" data-sync-conflict-close>Revisar después</button><button type="submit" class="btn primary">Conservar selección</button></div></form>';
  syncConflictDialog.querySelectorAll('[data-sync-conflict-close]').forEach(b=>b.onclick=()=>syncConflictDialog.close());
  const profile=activeProfile,url=sync.url;
  syncConflictDialog.querySelector('form').onsubmit=e=>{e.preventDefault();if(profile!==activeProfile||url!==sync.url){syncConflictDialog.close();return;}
   const form=new FormData(e.target),choices={};result.conflicts.forEach((item,i)=>choices[item.key]=form.get('choice'+i));
-  const latest=SyncCore.reconcile(readSyncCache('base')?.data||null,snapshot(),saved.remote,choices);if(latest.conflicts.length){openSyncConflicts();return;}
+  const latest=SyncCore.reconcile(readSyncBase()?.data||null,snapshot(),saved.remote,choices);if(latest.conflicts.length){openSyncConflicts();return;}
   latest.data.rev=saved.rev;if(!applyRemote(latest.data,true))return;rememberSyncBase(saved.remote,saved.rev);clearSyncConflict();syncConflictDialog.close();changeSeq++;saveSync();setBadge('pending','Selección guardada aquí · Pendiente');updateSyncInfo();if(sync.auto)pushNow();
  };
  if(!syncConflictDialog.open)syncConflictDialog.showModal();
@@ -369,9 +384,14 @@ $('#btnSyncPush').onclick = async () => {
 $('#btnSyncPull').onclick=async()=>{if(!syncOn())return toast('Primero conecta tu hoja');await startupSync();};
 $('#syncAuto').addEventListener('change', e => { sync.auto = e.target.checked; saveSync(); resetSyncRecovery(); if (sync.auto && sync.pending) pushNow(); });
 window.addEventListener('online', () => { resetSyncRecovery(); if (syncOn() && sync.auto) startupSync().then(pushOtherPending); });
-window.addEventListener('pagehide',()=>{if(!localTabChanged){saveLocal();saveSync();}});
-window.addEventListener('storage',e=>{if(e.key!==storeKey()||!e.newValue||localTabChanged)return;localTabChanged=true;
+window.addEventListener('pagehide',()=>{if(saveLocal())saveSync();});
+function markLocalTabChanged(){
+ if(localTabChanged)return;
+ localTabChanged=true;
  const dialog=document.createElement('dialog');dialog.className='sync-tab-dialog';dialog.innerHTML='<h3>Hay cambios en otra pestaña</h3><p>Esta pestaña quedó desactualizada y dejará de guardar. Puedes descargar su copia antes de cargar los datos nuevos.</p><div class="dlg-actions"><button type="button" class="btn" data-tab-copy>Descargar esta copia</button><button type="button" class="btn primary" data-tab-reload>Cargar datos nuevos</button></div>';document.body.append(dialog);dialog.oncancel=e=>e.preventDefault();dialog.querySelector('[data-tab-copy]').onclick=()=>download('presupuesto-pestana-'+todayISO()+'.json',JSON.stringify(state,null,2),'application/json');dialog.querySelector('[data-tab-reload]').onclick=()=>location.reload();dialog.showModal();setBadge('err','Cambios en otra pestaña');updateSyncInfo();
+}
+window.addEventListener('storage',e=>{
+ if(e.key===storeKey()&&e.newValue!==localStateRaw)markLocalTabChanged();
 });
 window.addEventListener('offline',()=>{setBadge('pending','Sin conexión');updateSyncInfo();});
 // Abierta desde el enlace de Apps Script (celular): la URL de sincronización se completa sola

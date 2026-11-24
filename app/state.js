@@ -14,22 +14,27 @@ function validateProfilesData(o){
 let profiles = (() => { try { return validateProfilesData(JSON.parse(localData.readText(PROF_KEY))); } catch(e){} return PROF_DEFAULT(); })();
 function saveProfiles(touch){ if (touch) profiles.u = Date.now(); try { localData.writeText(PROF_KEY, JSON.stringify(profiles)); } catch(e){} }
 const profOf = id => profiles.list.find(x => x.id === id) || profiles.list[0];
+// Paso único a íconos vectoriales: convierte los emoji conocidos (categorías, metas y logo)
+const EMOJI_V = {'💼':'briefcase','💰':'wallet','💵':'banknote','🎁':'gift','🏦':'landmark','⭐':'star','📈':'trending-up','🧾':'receipt','➕':'plus','🏠':'house','🛒':'shopping-cart','🍽':'utensils','☕':'coffee','🚗':'car','🚌':'bus','⛽':'fuel','🚕':'car-taxi-front','💡':'lightbulb','💧':'droplet','🔥':'flame','📱':'smartphone','🌐':'globe','📺':'tv','🩺':'stethoscope','💊':'pill','🏋':'dumbbell','🎬':'clapperboard','🎮':'gamepad-2','🎵':'music','✈':'plane','🏖':'umbrella','👕':'shirt','👟':'footprints','💇':'scissors','📚':'book-open','🎓':'graduation-cap','💻':'laptop','💳':'credit-card','🐷':'piggy-bank','🎯':'target','🐶':'dog','🐱':'cat','👶':'baby','❤':'heart','🎉':'party-popper','🛠':'wrench','🧹':'spray-can','🔧':'wrench','📦':'package','🏥':'hospital','🍔':'sandwich','🍺':'beer','🎟':'ticket','🧴':'spray-can','🎂':'cake','🏍':'motorbike','🅿':'square-parking','🚲':'bike','🧑‍💻':'laptop','📌':'pin','❔':'circle-help','🪙':'coins','✨':'sparkles','🏆':'trophy','📊':'chart-column','🍕':'pizza','🎮':'gamepad-2'};
+const toVec = e => { if (!e || isVec(e)) return e; const k = String(e).replace(/\uFE0F/g, ''); return EMOJI_V[k] && VICONS[EMOJI_V[k]] ? 'svg:' + EMOJI_V[k] : e; };
+function isVec(e){ return typeof e === 'string' && e.startsWith('svg:'); }
 function seed(){
   const inc = [['Sueldo','svg:briefcase'],['Gratificación','svg:gift'],['CTS','svg:landmark'],['Bonos','svg:star'],['Otros ingresos','svg:plus']];
   const exp = [['Vivienda','svg:house'],['Alimentación','svg:shopping-cart'],['Transporte','svg:car'],['Servicios','svg:lightbulb'],['Salud','svg:stethoscope'],['Entretenimiento','svg:clapperboard'],['Ropa','svg:shirt'],['Educación','svg:book-open'],['Deudas / Tarjeta','svg:credit-card'],['Ahorro','svg:piggy-bank'],['Otros gastos','svg:package']];
   let i = 0;
   const mk = type => ([name,icon]) => ({id:uid()+i, name, icon, type, color:PALETTE[(i++)%PALETTE.length], defaultBudget:0});
-  return {
+  return normalizeCategoryData({
     version:1,
     categories:[...inc.map(mk('income')), ...exp.map(mk('expense'))],
     budgets:{}, transactions:[],
     settings:{methods:['Efectivo','Débito','Tarjeta de crédito','Yape / Plin','Transferencia'], appIcon:'svg:coins', uiIcons:'vector', vecDone:true, pastelDone:true}
-  };
+  });
 }
-var localRecovery=null,localSaveFailed=false,localTabChanged=false;
+var localRecovery=null,localSaveFailed=false,localTabChanged=false,localStateRaw=null;
 function readState(){
   let raw;
   try{raw=localData.readText(storeKey());}catch(e){localRecovery={profile:activeProfile,raw:null};return seed();}
+  localStateRaw=raw;
   if(raw===null)return seed();
   try{return cleanState(JSON.parse(raw));}catch(e){localRecovery={profile:activeProfile,raw};return seed();}
 }
@@ -47,13 +52,26 @@ function showLocalRecovery(){
   dialog.querySelector('[data-recovery-retry]').onclick=()=>location.reload();
   if(!dialog.open)dialog.showModal();
 }
-function saveLocal(){if(localRecovery||localTabChanged){localSaveFailed=true;return false;}try{localData.writeText(storeKey(),JSON.stringify(state));localSaveFailed=false;return true;}catch(e){localSaveFailed=true;toast('⚠️ No se pudo guardar en este dispositivo. Mantén la app abierta y libera espacio.');return false;}}
+function writeActiveState(){
+  const key=storeKey(), next=JSON.stringify(state);
+  if(localData.readText(key)!==localStateRaw)return false;
+  if(next!==localStateRaw)localData.writeText(key,next);
+  localStateRaw=next;
+  return true;
+}
+function saveLocal(){
+  if(localRecovery||localTabChanged){localSaveFailed=true;return false;}
+  try{
+    if(!writeActiveState()){markLocalTabChanged();return false;}
+    localSaveFailed=false;return true;
+  }catch(e){localSaveFailed=true;toast('⚠️ No se pudo guardar en este dispositivo. Mantén la app abierta y libera espacio.');return false;}
+}
 const qMicro = typeof queueMicrotask === 'function' ? f => queueMicrotask(f) : f => Promise.resolve().then(f);
 let _txIdx = null;
 /* Registro de cambios para sincronizar entre dispositivos: cada registro guarda cuándo cambió (u) y los borrados quedan anotados */
 var _snapRec = null;
 var SYNC_COLLS = ['categories', 'transactions', 'recurring', 'goals'];
-var SYNC_SETTINGS = ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose','budgetCycle','design'];
+var SYNC_SETTINGS = ['appName','appIcon','appColor','uiIcons','recSugHidden','vecDone','pastelDone','theme','monoColor','savePct','saveMode','savePctM','font','onboarded','lastClose','budgetCycle','design','savingCategories'];
 function syncSettings(){ const o = {}; SYNC_SETTINGS.forEach(k => o[k] = state.settings[k]); return o; }
 function recKey(r){ const o = Object.assign({}, r); delete o.u; return JSON.stringify(o); }
 function snapState(){
@@ -137,12 +155,27 @@ function validateStateData(st){
     for(const k of ['onboarded','vecDone','pastelDone'])if(s[k]!=null&&typeof s[k]!=='boolean')fail();
     if(s.methods!=null&&(!Array.isArray(s.methods)||s.methods.some(m=>typeof m!=='string')))fail();
     if(s.recSugHidden!=null&&(!Array.isArray(s.recSugHidden)||s.recSugHidden.some(v=>!id(v))))fail();
+    if(s.savingCategories!=null&&(!object(s.savingCategories)||Object.entries(s.savingCategories).some(([k,v])=>!id(k)||typeof v!=='boolean')))fail();
     if(s.savePct!=null&&(!amount(s.savePct)||Number(s.savePct)>100))fail();
     if(s.savePctM!=null){if(!object(s.savePctM))fail();for(const [m,v] of Object.entries(s.savePctM))if(!/^(?:cycle(?:[1-9]|[12]\d|3[01]):)?\d{4}-(0[1-9]|1[0-2])$/.test(m)||!amount(v)||Number(v)>100)fail();}
     if(s.budgetCycle!=null){const c=s.budgetCycle;if(!object(c)||c.enabled!=null&&typeof c.enabled!=='boolean'||c.day!=null&&(!Number.isInteger(Number(c.day))||Number(c.day)<1||Number(c.day)>31))fail();if(c.defaults!=null){if(!object(c.defaults))fail();for(const [day,values] of Object.entries(c.defaults)){if(!/^(?:[1-9]|[12]\d|3[01])$/.test(day)||!object(values))fail();for(const [k,v] of Object.entries(values))if(!id(k)||!amount(v))fail();}}}
   }
   if(st.methods!=null&&(!Array.isArray(st.methods)||st.methods.some(m=>typeof m!=='string')))fail();
   if(st.meta!=null){if(!object(st.meta))fail();for(const k of ['del','bu'])if(st.meta[k]!=null&&!object(st.meta[k]))fail();}
+  return st;
+}
+function normalizeCategoryData(st){
+  for(const item of [...st.categories,...(st.goals||[])]){
+    if(!item.color)item.color='#94a3b8';
+    else if(item.color.length===4)item.color='#'+[...item.color.slice(1)].map(c=>c+c).join('');
+    else if(item.color.length===9)item.color=item.color.slice(0,7);
+  }
+  if(!st.categories.length)return st;
+  st.settings??={};
+  const flags=st.settings.savingCategories??={};
+  for(const c of st.categories){
+    if(c.type==='expense'&&!Object.hasOwn(flags,c.id))flags[c.id]=roleOf(st.settings.vecDone?c:{...c,icon:toVec(c.icon)})==='save';
+  }
   return st;
 }
 // Normaliza formatos locales antiguos; nunca convierte una fecha civil imposible en otra.
@@ -158,16 +191,13 @@ function cleanState(st){
     t.date = d.slice(0, 10); t.amount = Number(t.amount) || 0; return t;
   }).filter(t => t.date);
   if (!st.budgets || typeof st.budgets !== 'object') st.budgets = {};
-  validateStateData(st);return st;
+  return normalizeCategoryData(validateStateData(st));
 }
 let state = readState();
 if(localRecovery)window.addEventListener('load',showLocalRecovery,{once:true});
 if (!state.categories || !state.categories.length) state.categories = seed().categories;
 state.settings = state.settings || {methods:[]}; state.recurring = state.recurring || []; state.goals = state.goals || [];
-// Paso único a íconos vectoriales: convierte los emoji conocidos (categorías, metas y logo)
-const EMOJI_V = {'💼':'briefcase','💰':'wallet','💵':'banknote','🎁':'gift','🏦':'landmark','⭐':'star','📈':'trending-up','🧾':'receipt','➕':'plus','🏠':'house','🛒':'shopping-cart','🍽':'utensils','☕':'coffee','🚗':'car','🚌':'bus','⛽':'fuel','🚕':'car-taxi-front','💡':'lightbulb','💧':'droplet','🔥':'flame','📱':'smartphone','🌐':'globe','📺':'tv','🩺':'stethoscope','💊':'pill','🏋':'dumbbell','🎬':'clapperboard','🎮':'gamepad-2','🎵':'music','✈':'plane','🏖':'umbrella','👕':'shirt','👟':'footprints','💇':'scissors','📚':'book-open','🎓':'graduation-cap','💻':'laptop','💳':'credit-card','🐷':'piggy-bank','🎯':'target','🐶':'dog','🐱':'cat','👶':'baby','❤':'heart','🎉':'party-popper','🛠':'wrench','🧹':'spray-can','🔧':'wrench','📦':'package','🏥':'hospital','🍔':'sandwich','🍺':'beer','🎟':'ticket','🧴':'spray-can','🎂':'cake','🏍':'motorbike','🅿':'square-parking','🚲':'bike','🧑‍💻':'laptop','📌':'pin','❔':'circle-help','🪙':'coins','✨':'sparkles','🏆':'trophy','📊':'chart-column','🍕':'pizza','🎮':'gamepad-2'};
-const toVec = e => { if (!e || isVec(e)) return e; const k = String(e).replace(/\uFE0F/g, ''); return EMOJI_V[k] && VICONS[EMOJI_V[k]] ? 'svg:' + EMOJI_V[k] : e; };
-function isVec(e){ return typeof e === 'string' && e.startsWith('svg:'); }
+normalizeCategoryData(state);
 function migrateVec(){
   if (state.settings.vecDone) return false;
   state.categories.forEach(c => c.icon = toVec(c.icon));
@@ -176,7 +206,7 @@ function migrateVec(){
   state.settings.uiIcons = 'vector'; state.settings.vecDone = true;
   return true;
 }
-if (!localRecovery && migrateVec()){ state.updatedAt = Date.now(); try{ localData.writeText(storeKey(), JSON.stringify(state)); }catch(e){} }
+if (!localRecovery && migrateVec()){ state.updatedAt = Date.now(); try{ writeActiveState(); }catch(e){} }
 
 
 let currentMonth=ym(new Date());

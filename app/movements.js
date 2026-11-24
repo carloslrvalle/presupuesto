@@ -598,11 +598,15 @@ function createTxCategory(){
  if(!name){error.textContent='Escribe un nombre para la categoría.';$('#txCategoryName').focus();return;}
  if(catsOf(txType).some(c=>c.name.toLocaleLowerCase()===name.toLocaleLowerCase())){error.textContent='Ya existe una categoría con ese nombre, incluso si está archivada.';return;}
  const c={id:uid(),name,icon:txNewCategoryIcon,type:txType,color:$('#txCategoryColor').value,defaultBudget:0};
- if(contributionGoal && roleOf(c)!=='save'){
+ const saving=c.type==='expense'&&roleOf(c)==='save';
+ if(contributionGoal && !saving){
    error.textContent='Usa un nombre o un ícono de ahorro para esta categoría.';
    return;
  }
- if(!saveChange(() => state.categories.push(c), txDialog))return;
+ if(!saveChange(() => {
+   state.categories.push(c);
+   if(c.type==='expense')(state.settings.savingCategories??={})[c.id]=saving;
+ }, txDialog))return;
  txDialog.querySelector('.dialog-save-error')?.remove();
  selCat=c.id;dirty=new Set(Object.keys(VIEWS));
  $('#txCategoryEditor').hidden=true;$('#txNewCategory').setAttribute('aria-expanded','false');$('#txCategorySearch').value='';txCategoryExpanded=false;renderTxChips();

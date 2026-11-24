@@ -54,7 +54,7 @@ function cycleTx(m,all=false){const p=cyclePeriod(m);return BudgetFinance.transa
 function cycleReal(m,id){return sum(cycleTx(m).filter(t=>t.catId===id));}
 function cycleTotal(m,type){return catsOf(type).filter(c=>!isArch(c,cyclePeriod(m).start.slice(0,7))||cycleReal(m,c.id)).reduce((s,c)=>s+cycleBudget(m,c.id),0);}
 function cyclePlanned(m,type,id){return sum(cycleTx(m,true).filter(t=>isPlanned(t)&&(!type||t.type===type)&&(!id||t.catId===id)));}
-function cycleSavings(m){const txs=cycleTx(m);return BudgetFinance.savings(txs,{savingIds:state.categories.filter(c=>isSavingCat(c.id)).map(c=>c.id),mode:saveMode(),pct:Number((state.settings.savePctM||{})[cycleBudgetKey(m)]??state.settings.savePct)||0,incomeBudget:sum(txs.filter(t=>t.type==='income'))>0?0:cycleTotal(m,'income')});}
+function cycleSavings(m){const txs=cycleTx(m);return BudgetFinance.savings(txs,{savingIds:savingCategoryIds(),mode:saveMode(),pct:Number((state.settings.savePctM||{})[cycleBudgetKey(m)]??state.settings.savePct)||0,incomeBudget:sum(txs.filter(t=>t.type==='income'))>0?0:cycleTotal(m,'income')});}
 function cycleBalance(m){const p=cyclePeriod(m);return BudgetFinance.balance(state.transactions,p.start,p.end,todayISO());}
 function cycleProjection(m){
  const txs=cycleTx(m);
@@ -80,7 +80,7 @@ function planLabel(m){return cycleView()?cycleLabel(m):monthLong(m);}
 // 'left' = lo que sobra: ingresos − gastos de consumo (lo separado también cuenta como ahorro)
 const saveMode = () => state.settings.saveMode === 'set' ? 'set' : 'left';
 const savePctOf = m => { const o = (state.settings.savePctM || {})[m]; return Number(o != null ? o : state.settings.savePct) || 0; };
-function savingsOf(m){const txs=txOfMonth(m);return BudgetFinance.savings(txs,{savingIds:state.categories.filter(c=>isSavingCat(c.id)).map(c=>c.id),mode:saveMode(),pct:savePctOf(m),incomeBudget:sum(txs.filter(t=>t.type==='income'))>0?0:totalBudget(m,'income')});}
+function savingsOf(m){const txs=txOfMonth(m);return BudgetFinance.savings(txs,{savingIds:savingCategoryIds(),mode:saveMode(),pct:savePctOf(m),incomeBudget:sum(txs.filter(t=>t.type==='income'))>0?0:totalBudget(m,'income')});}
 // ---- Días de pago por categoría de ingreso: "25-fin", "15, 26-fin", "30" ----
 const MES_L = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','setiembre','octubre','noviembre','diciembre'];
 function payWindows(str){
@@ -135,8 +135,9 @@ function pendingPays(m){
   });
   return out.sort((x, y) => x.a - y.a);
 }
-const isSavingCat = id => { const c = state.categories.find(x => x.id === id); return !!c && c.type === 'expense' && roleOf(c) === 'save'; };
-const activeSavingCats = () => catsActive('expense').filter(c => roleOf(c) === 'save');
+const isSavingCat = id => Object.hasOwn(state.settings.savingCategories||{},id) && state.settings.savingCategories[id];
+const savingCategoryIds = () => Object.keys(state.settings.savingCategories||{}).filter(isSavingCat);
+const activeSavingCats = () => catsActive('expense').filter(c => isSavingCat(c.id));
 // Separar dinero (categoría de ahorro o aporte a meta) no es gasto: mismo criterio que BudgetFinance.savings.
 const isSavingTx = t => t.type === 'expense' && (isSavingCat(t.catId) || !!t.goalId);
 const spendSum = txs => sum(txs.filter(t => t.type === 'expense' && !isSavingTx(t)));

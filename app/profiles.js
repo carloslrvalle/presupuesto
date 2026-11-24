@@ -107,6 +107,7 @@ function loadProfileState(){
   localRecovery=null;state = readState();
   if (!state.categories || !state.categories.length) state.categories = seed().categories;
   state.settings = state.settings || {methods:[]}; state.recurring = state.recurring || []; state.goals = state.goals || [];
+  normalizeCategoryData(state);
   if (!state.updatedAt) saveLocal();
   _txIdx = null; _snapRec = snapState();
   if(localRecovery)setTimeout(showLocalRecovery,0);
@@ -117,14 +118,23 @@ function pushOtherPending(){
  if(otherPush)return otherPush;const other=otherProfile(),bp=(sync.byProf||{})[other];if(!syncOn()||!sync.auto||!bp?.pending||syncConflict(other))return Promise.resolve(false);
  otherPush=(async()=>{try{
   const loaded=await callSheets({action:'load',profile:other});if(loaded.protocol!==2)throw new Error('Actualiza Apps Script para sincronizar de forma protegida.');
-  const st=profileState(other);if(!st)return false;const snap=SyncCore.clone(withState(st,()=>snapshot())),base=readSyncCache('base',other),remote=loaded.data;
+   const st=profileState(other);if(!st||!sync.auto||!sameSyncConnection(readSyncConfig()))return false;
+   const snap=SyncCore.clone(withState(st,()=>snapshot())),base=readSyncBase(other),remote=loaded.data;
   if(!remote||!Array.isArray(remote.categories))throw new Error('Respuesta incompleta de Sheets');
+   normalizeCategoryData(remote);
   const result=!remote.categories.length?{data:snap,conflicts:[]}:SyncCore.reconcile(base?.data||null,snap,remote);
   if(result.conflicts.length){writeSyncCache('conflict',{remote,rev:remote.rev},other);return false;}
   const sent=result.data,res=await callSheets({action:'save',profile:other,data:sent,base:Number(remote.rev)||0});if(res.protocol!==2||!Number.isInteger(res.rev)||res.rev<=Number(remote.rev||0))throw new Error('Sin confirmación de Sheets');
-  const latest=profileState(other),latestSnap=SyncCore.clone(withState(latest,()=>snapshot()));const rebased=SyncCore.reconcile(snap,latestSnap,sent);if(rebased.conflicts.length)throw new Error('El otro perfil cambió durante el envío');
-  const d=rebased.data;['categories','transactions','recurring','goals','budgets','meta'].forEach(k=>latest[k]=d[k]);latest.settings={...latest.settings,...d.settings,methods:d.methods};localData.writeText(storeKey(other),JSON.stringify(latest));rememberSyncBase(sent,res.rev,other);
-  sync.byProf[other]={rev:res.rev,pending:!SyncCore.same(d,sent),lastSync:Date.now()};saveSync();_oth=null;return true;
+   const key=storeKey(other),before=localData.readText(key);
+   if(!before||!sameSyncConnection(readSyncConfig()))return false;
+   const latest=cleanState(JSON.parse(before));
+   const latestSnap=SyncCore.clone(withState(latest,()=>snapshot()));const rebased=SyncCore.reconcile(snap,latestSnap,sent);if(rebased.conflicts.length)throw new Error('El otro perfil cambió durante el envío');
+   const d=rebased.data;d.rev=res.rev;
+   const next=JSON.stringify(otherStateFromRemote(other,d,latest));
+   if(localData.readText(key)!==before)return false;
+   if(next!==before)localData.writeText(key,next);
+   rememberSyncBase(sent,res.rev,other);
+   saveSync(other,{rev:res.rev,pending:!SyncCore.same(d,sent),lastSync:Date.now()});_oth=null;return true;
  }catch(err){if(err.code==='REV_CONFLICT'&&err.remote){/* La siguiente conciliación leerá la revisión nueva, sin escribir sobre ella. */}scheduleSyncRecovery({...err,retryable:err.retryable||err.code==='REV_CONFLICT'});return false;}})().finally(()=>{otherPush=null;if(!pushing&&!currentSyncIssue())setBadge(sync.pending?'pending':sync.lastSync?'ok':'local',sync.pending?'Pendiente de sincronizar':sync.lastSync?'Sincronizado':'Guardado en este dispositivo');updateSyncInfo();});return otherPush;
 }
 async function switchProfile(id){
@@ -136,7 +146,8 @@ async function switchProfile(id){
   try {
     if (otherPush) await otherPush;
     // Antes de cambiar, se suben los cambios pendientes del usuario actual
-    if (syncOn() && (sync.pending || pushing)) { try { await pushNow(); } catch(e){} }
+    if (pushTask) await pushTask;
+    else if (syncOn() && sync.auto && sync.pending) await pushNow();
     if (document.querySelector('dialog[open]')) return;
     resetSyncRecovery(); clearTimeout(pushTimer);
     if(!saveLocal())return;saveSync();
@@ -236,9 +247,9 @@ async function enterBoth(){
   refreshOther(true);
 }
 // Sheets guarda los métodos fuera de settings: se rearma la copia local igual que applyRemote, sin perder métodos ni ajustes locales.
-function otherStateFromRemote(id,data){
+function otherStateFromRemote(id,data,prev=profileState(id)||{}){
   validateStateData(data);
-  const prev = profileState(id) || {}, d = cleanState(SyncCore.clone(data)), settings = {...(prev.settings || {})};
+  const d = cleanState(SyncCore.clone(data)), settings = {...(prev.settings || {})};
   if (d.settings && typeof d.settings === 'object') SYNC_SETTINGS.forEach(k => { if (Object.prototype.hasOwnProperty.call(d.settings, k)) settings[k] = d.settings[k]; else delete settings[k]; });
   if (Array.isArray(d.methods)) settings.methods = d.methods; else if (!Array.isArray(settings.methods)) settings.methods = [];
   const out = {...prev, categories:d.categories, transactions:d.transactions || [], budgets:d.budgets || {}, recurring:Array.isArray(d.recurring) ? d.recurring : (prev.recurring || []), goals:Array.isArray(d.goals) ? d.goals : (prev.goals || []), meta:d.meta && typeof d.meta === 'object' ? d.meta : (prev.meta || {}), settings, updatedAt:d.updatedAt || Date.now()};
@@ -248,17 +259,20 @@ function otherStateFromRemote(id,data){
 // Trae lo último del otro usuario desde Sheets (para «Ambos» y las metas compartidas), como máximo cada minuto
 let otherAt = 0;
 async function refreshOther(force){
-  const other = otherProfile(), bp = (sync.byProf || {})[other] || {};
-  if (!syncOn() || bp.pending || syncConflict(other) || (!force && Date.now() - otherAt < 60000)) return;
-  try{if(localData.readText(storeKey(other))!==null&&!profileState(other))return;}catch(e){return;}
-  otherAt = Date.now();
+  const other = otherProfile(), key=storeKey(other);
+  if (!syncOn() || localTabChanged || syncConflict(other) || (!force && Date.now() - otherAt < 60000)) return;
   try {
+    const stored=readSyncConfig(), before=localData.readText(key), status=stored.byProf?.[other];
+    if((sameSyncConnection(stored)&&status?.pending)||(before!==null&&!profileState(other)))return;
+    otherAt=Date.now();
     const j = await callSheets({action:'load', profile:other});
-    if (j.protocol===2 && j.data && Array.isArray(j.data.categories) && j.data.categories.length && other === otherProfile()){
-      if(sync.byProf?.[other]?.pending||syncConflict(other)||Number(j.data.rev)<Number(sync.byProf?.[other]?.rev||0))return;
-      try { localData.writeText(storeKey(other),JSON.stringify(otherStateFromRemote(other,j.data))); }catch(e){localSaveFailed=true;setBadge('err','No se pudo guardar aquí');updateSyncInfo();return;}
-      rememberSyncBase(j.data,j.data.rev,other);
-      sync.byProf = sync.byProf || {}; sync.byProf[other] = {rev:Number(j.data.rev) || 0, pending:false, lastSync:Date.now()}; saveSync();
+    if (j.protocol===2 && j.data && Array.isArray(j.data.categories) && j.data.categories.length && other === otherProfile()&&!localTabChanged){
+      const next=JSON.stringify(otherStateFromRemote(other,j.data)),current=readSyncConfig(),latest=current.byProf?.[other];
+      if(!sameSyncConnection(current)||latest?.pending||syncConflict(other)||Number(j.data.rev)<Number(latest?.rev||0))return;
+      if(localData.readText(key)!==before)return;
+      try { if(next!==before)localData.writeText(key,next); }catch(e){localSaveFailed=true;setBadge('err','No se pudo guardar aquí');updateSyncInfo();return;}
+      rememberSyncBase(normalizeCategoryData(j.data),j.data.rev,other);
+      saveSync(other,{rev:Number(j.data.rev)||0,pending:false,lastSync:Date.now()});
       _oth = null; dirty.add('goals'); dirty.add('both');
       if (bothMode) renderBoth(); else if (activeTab() === 'goals') renderView('goals');
     }
@@ -272,31 +286,31 @@ function renderBoth(){
   const months = Array.from({length:6}, (_, i) => shiftMonth(m, i - 5));
   const rows = profiles.list.map(pr => {
     const st = profileState(pr.id);
-    if (!st) return {pr, empty:true, inc:0, exp:0, saved:0, rate:null, series:months.map(() => 0), top:[]};
+    if (!st) return {pr, empty:true, inc:0, exp:0, result:0, saved:0, rate:null, series:months.map(() => 0), top:[]};
     return withState(st, () => {
-      const period=bothPeriod(m),txs=period.cycle?cycleTx(m):txOfMonth(m),inc=sum(txs.filter(t=>t.type==='income')),exp=sum(txs.filter(t=>t.type==='expense')),sv=period.cycle?cycleSavings(m):savingsOf(m),balance=period.cycle?cycleBalance(m):balanceOfMonth(m);
-      const periods=months.map(mm=>bothPeriod(mm)),series=months.map((mm,i)=>sum((periods[i].cycle?cycleTx(mm):txOfMonth(mm)).filter(t=>t.type==='expense')));
-      const top = txs.filter(t => t.type === 'expense').map(t => { const c = getCat(t.catId); return {t, c:{name:c.name, icon:c.icon, color:c.color}}; });
-      return {pr,period,periods,inc,exp,cash:balance.total,previous:balance.previous,saved:sv.saved||0,rate:sv.rate,series,top};
+      const period=bothPeriod(m),txs=period.cycle?cycleTx(m):txOfMonth(m),inc=sum(txs.filter(t=>t.type==='income')),exp=spendSum(txs),sv=period.cycle?cycleSavings(m):savingsOf(m),balance=period.cycle?cycleBalance(m):balanceOfMonth(m);
+      const periods=months.map(mm=>bothPeriod(mm)),series=months.map((mm,i)=>spendSum(periods[i].cycle?cycleTx(mm):txOfMonth(mm)));
+      const top = txs.filter(t => t.type === 'expense' && !isSavingTx(t)).map(t => { const c = getCat(t.catId); return {t, c:{name:c.name, icon:c.icon, color:c.color}}; });
+      return {pr,period,periods,inc,exp,result:balance.result,cash:balance.total,previous:balance.previous,saved:sv.saved||0,rate:sv.rate,series,top};
     });
   });
-  const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), saved = T('saved'), bal = T('cash');
+  const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), result = T('result'), saved = T('saved'), bal = T('cash');
   const perProfile=(key,total,percentage=false)=>rows.map(r=>`<div class="metric-detail-row"><span>${esc(r.pr.name)}</span><b>${fmt(r[key]||0)}${percentage&&total>0?` <small>${((r[key]||0)/total*100).toFixed(1)}%</small>`:''}</b></div>`).join('');
   const kpi = (lbl, icon, val, sub, cls) => `<details class="card kpi metric-disclosure ${cls}" data-both-metric="${esc(lbl)}"${opened.has(lbl)?' open':''}><summary><div class="label"><span class="dot">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><span class="metric-chevron" aria-hidden="true">${ic('chevron-down')}</span></summary><div class="metric-expanded"><div class="metric-details">${sub}</div></div></details>`;
   const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5), shared = sharedGoalsCard();
   const profilePeriods=cycles?`<dl class="both-period-list" aria-label="Períodos por usuario">${rows.map(({pr,period})=>`<div><dt>${esc(pr.name)}</dt><dd>${period?esc(period.label):'Sin datos disponibles'}</dd></div>`).join('')}</dl>`:'';
   box.innerHTML = `<div class="both-head"><h2>Ambos · ${cycles?'cierre de ':''}${monthLong(m)}</h2><div class="both-access"><span class="small muted">Solo lectura</span><button type="button" class="btn sm" data-choose-profile>Elegir perfil</button></div></div>
     ${hasCycles?`<div class="both-period-controls"><div class="seg" role="group" aria-label="Períodos de Ambos"><button type="button" data-both-period="profiles" aria-pressed="${bothPeriodMode==='profiles'}" class="${bothPeriodMode==='profiles'?'active':''}">Según cada usuario</button><button type="button" data-both-period="calendar" aria-pressed="${bothPeriodMode==='calendar'}" class="${bothPeriodMode==='calendar'?'active':''}">Mes calendario</button></div><p class="small muted">${cycles?'Se suman los períodos de cada usuario.':'Ambos usuarios se comparan del primer al último día del mes.'} Solo cuentan movimientos realizados.</p>${profilePeriods}</div>`:''}
-    <div class="period-overview"><div><span>Resultado conjunto ${cycles?'de los períodos':'del mes'}</span><strong class="${inc-exp<0?'neg':''}">${fmt(inc-exp)}</strong><small>Ingresos menos gastos registrados</small></div></div>
+    <div class="period-overview"><div><span>Resultado conjunto ${cycles?'de los períodos':'del mes'}</span><strong class="${result<0?'neg':''}">${fmt(result)}</strong><small>Ingresos menos salidas de dinero</small></div></div>
     <div class="kpis dashboard-kpis both-kpis">
       ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), perProfile('inc',inc,true), 'k-inc')}
       ${kpi('Gastos de ambos', 'arrow-up', fmt(exp), perProfile('exp',exp,true), 'k-exp')}
-      ${kpi('Saldo acumulado conjunto', 'scale', `<span class="${bal < 0 ? 'neg' : ''}">${fmt(bal)}</span>`,perProfile('cash',bal)+`<p class="small muted">${cycles?'Cada saldo se calcula hasta el final de su propio período.':'Saldos acumulados hasta el final del mes.'} Los movimientos futuros no se incluyen.</p><div class="metric-detail-row"><span>Saldo anterior</span><b>${fmt(T('previous'))}</b></div><div class="metric-detail-row"><span>Resultado ${cycles?'de los períodos':'del mes'}</span><b>${fmt(inc-exp)}</b></div>`, 'k-balance')}
+      ${kpi('Saldo acumulado conjunto', 'scale', `<span class="${bal < 0 ? 'neg' : ''}">${fmt(bal)}</span>`,perProfile('cash',bal)+`<p class="small muted">${cycles?'Cada saldo se calcula hasta el final de su propio período.':'Saldos acumulados hasta el final del mes.'} Los movimientos futuros no se incluyen.</p><div class="metric-detail-row"><span>Saldo anterior</span><b>${fmt(T('previous'))}</b></div><div class="metric-detail-row"><span>Resultado ${cycles?'de los períodos':'del mes'}</span><b>${fmt(result)}</b></div>`, 'k-balance')}
       ${kpi('Ahorro conjunto', 'piggy-bank', fmt(saved),perProfile('saved',saved)+`<div class="small muted">${inc > 0 ? `${(saved / inc * 100).toFixed(1)}% de los ingresos de ambos` : 'Sin ingresos registrados'}</div>`, 'k-save')}
     </div>
     <div class="grid2 top">
       <div class="card"><h2>Por usuario</h2><div class="both-users">${rows.map(r => `<div class="bu-row" data-both-profile="${esc(r.pr.id)}">${avatarBox(r.pr)}<div style="min-width:0"><div class="bu-name"><span>${esc(r.pr.name)}</span>${r.empty ? '<span class="small muted">sin datos aún</span>' : ''}</div><p class="both-user-period">${r.period?esc(r.period.label):'Sin datos disponibles'}</p>
-        <div class="bu-stats"><div>Ingresos<b class="pos">${fmt(r.inc)}</b></div><div>Gastos<b>${fmt(r.exp)}</b></div><div>Balance<b class="${r.inc - r.exp >= 0 ? 'pos' : 'neg'}">${fmt(r.inc - r.exp)}</b></div><div>Ahorro<b>${r.rate != null ? r.rate.toFixed(1) + '%' : '—'}</b></div></div></div></div>`).join('')}
+        <div class="bu-stats"><div>Ingresos<b class="pos">${fmt(r.inc)}</b></div><div>Gastos<b>${fmt(r.exp)}</b></div><div>Balance<b class="${r.result >= 0 ? 'pos' : 'neg'}">${fmt(r.result)}</b></div><div>Ahorro<b>${r.rate != null ? r.rate.toFixed(1) + '%' : '—'}</b></div></div></div></div>`).join('')}
         <div class="small muted" style="margin-top:4px">Parte de los gastos seleccionados</div><div class="bu-share">${rows.map((r,i) => `<i style="width:${exp>0?(r.exp / exp * 100).toFixed(1):0}%;background:${colors[i]}"></i>`).join('')}</div><div class="both-share-legend">${rows.map((r,i)=>`<div><span><i style="background:${colors[i]}"></i>${esc(r.pr.name)}</span><b>${exp>0?(r.exp/exp*100).toFixed(1)+'%':'—'}</b></div>`).join('')}</div></div></div>
       <div class="card"><h3 id="bothChartTitle">Gastos de ambos · últimos 6 ${cycles?'cierres':'meses'}</h3>${cycles?'<p class="small muted">Cada serie respeta el período de su usuario.</p>':''}<div class="chart-wrap" id="bothWrap"><canvas id="chBoth"></canvas></div></div>
     </div>

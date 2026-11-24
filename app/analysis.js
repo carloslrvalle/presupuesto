@@ -69,7 +69,7 @@ function analysisThrough(month,day){
   if(analysisMetric==='income')return sum(tx.filter(t=>t.type==='income'));
   if(analysisMetric==='expense')return spendSum(tx);
   const savings=BudgetFinance.savings(tx,{
-    savingIds:state.categories.filter(c=>isSavingCat(c.id)).map(c=>c.id),
+    savingIds:savingCategoryIds(),
     mode:saveMode(),pct:savePctOf(month)
   });
   return analysisMetric==='rate'?savings.rate:savings.saved;

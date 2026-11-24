@@ -258,7 +258,7 @@ function finishNavigationMotion(){
  for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#mobileBudgetPanels,.mobile-budget-bar-plot>span,.goal-progress>span,.expense-distribution-track>span)')){
   el._motion?.finish();
  }
- for(const digit of document.querySelectorAll('#tab-dashboard .home-metric .nf-d')) digit._spin?.cancel();
+ for(const digit of document.querySelectorAll('.nf-d')) digit._spin?.cancel();
 }
 reducedMotionPreference.addEventListener('change', event => { if(event.matches)finishNavigationMotion(); });
 document.addEventListener('keydown',event=>{
@@ -314,8 +314,8 @@ if(!CSS.supports('overlay','auto')){
 }
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
 const MOTION={
- ...Object.fromEntries(['fast','move','popup','tab','panel','data','trace','signal'].map(kind=>[kind,parseFloat(cssVar('--motion-'+kind))])),
- dataEasing:'easeOutQuart',ease:cssVar('--motion-ease')
+ ...Object.fromEntries(['fast','move','popup','tab','panel','number','data','trace','signal'].map(kind=>[kind,parseFloat(cssVar('--motion-'+kind))])),
+ dataEasing:'easeInOutSine',dataEase:cssVar('--motion-data-ease'),ease:cssVar('--motion-ease')
 };
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
@@ -324,7 +324,7 @@ function motionAnimate(el,frames,kind='move'){
  if(!el)return;
  if(el._motion){el._motion.cancel();el._motion=null;}
  if(reduceMotion())return;
- const animation=el.animate(frames,{duration:MOTION[kind],easing:MOTION.ease});el._motion=animation;
+ const animation=el.animate(frames,{duration:MOTION[kind],easing:kind==='data'?MOTION.dataEase:MOTION.ease});el._motion=animation;
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
 function revealContent(el,kind='fast'){
@@ -360,7 +360,7 @@ function replayBarChart(chart){
  chart.stop();
  chart.resize();
  if(animate){
-  if(!chart.options.animation)chart.options.animation=stagger();
+  if(!chart.options.animation)chart.options.animation=chart===chBars?evolutionAnimation():stagger();
   chart.$entered=false;
   chart.reset();
  }
@@ -456,7 +456,7 @@ updateTextScale();
 window.addEventListener('resize',updateTextScale);
 new MutationObserver(updateTextScale).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
 function fitMetricValues(){
- document.querySelectorAll('.tab.active .kpi .value').forEach(el=>fitMetricValue(el));
+ document.querySelectorAll('.tab.active .kpi .value,.tab.active #mobileBudgetTotal').forEach(el=>fitMetricValue(el));
  // Los indicadores del grupo comparten tamaño, incluso si un importe necesita ajustarse.
  document.querySelectorAll('.tab.active .dashboard-kpis,.tab.active .both-kpis').forEach(group=>{
   const values=[...group.querySelectorAll('.value')].filter(el=>el.getBoundingClientRect().width>0);
@@ -466,9 +466,7 @@ function fitMetricValues(){
 }
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
-// Importes reales en un solo nodo: sin columnas, mascaras ni transformaciones de glifos.
-// Dígitos que giran en su columna (efecto recuperado de 0059a5b). En móvil, las cifras de Resumen lo usan
-// al cambiar de valor y al cambiar de modo; con movimiento reducido el valor aparece directo.
+// En móvil, las cifras de Resumen y el total de Presupuesto comparten las columnas de dígitos.
 function rollKeys(text){
   const first = text.search(/\d/), last = text.length - 1 - [...text].reverse().join('').search(/\d/);
   if (first < 0) return [...text].map((ch, i) => ['p' + i, ch]);
@@ -498,18 +496,16 @@ function rollDigits(el, text, dur){
   for (const span of frag) if (span._digit) span.style.setProperty('--n', span._target);
   el._rollKeys = keys; el._rollMap = map; el._rollText = el.textContent;
 }
-// Mismo giro que al cambiar de serie: un solo tiempo y una sola curva (DESIGN.md).
-const SPIN_MS = MOTION.panel;
-const rollsDigits = el => typeof mobileLayout !== 'undefined' && mobileLayout.matches && !!el.closest?.('#tab-dashboard .dashboard-kpis');
-// Gira la cifra desde ceros hasta su valor (al cambiar de modo en Resumen móvil).
+const rollsDigits = el => mobileLayout.matches && el.matches('#tab-dashboard .dashboard-kpis .value,#mobileBudgetTotal');
+// Al aparecer una cifra, reutiliza sus columnas montadas. Un cambio de valor en curso tiene prioridad.
 function spinValue(el){
-  if (!el || !rollsDigits(el) || reduceMotion() || !('pseudoElement' in KeyframeEffect.prototype) || performance.now() < (el._spinUntil || 0)) return;
-  el._spinUntil = performance.now() + MOTION.panel;
-  // Mueve las columnas ya montadas sin sustituir el importe ni forzar layout.
+  if (!el || !rollsDigits(el) || reduceMotion() || !('pseudoElement' in KeyframeEffect.prototype) || !el.getClientRects().length) return;
+  if (el.getAnimations({subtree:true}).some(animation => animation instanceof CSSTransition)) return;
   for (const digit of el.querySelectorAll('.nf-d')){
     if (digit._target === '0') continue;
+    digit._spin?.cancel();
     digit._spin = digit.animate([{transform:'translateY(0)'},{transform:'translateY(calc(var(--n) * -1lh))'}],
-      {pseudoElement:'::before',duration:MOTION.panel,easing:MOTION.ease});
+      {pseudoElement:'::before',duration:MOTION.number,easing:MOTION.dataEase});
   }
 }
 function countUp(el, to, kind = 'money', cls){
@@ -518,7 +514,7 @@ function countUp(el, to, kind = 'money', cls){
     const key = el.id || el.dataset.k, target = kind === 'pct' ? to.toFixed(1) + '%' : fmt(to), changed = key in numMemo && numMemo[key] !== to;
     if (cls !== undefined) el.className = cls;
     numMemo[key] = to; el._countValue = to; el._countTarget = to; el._fitTexts = [target];
-    if (el.textContent !== target || !el.firstElementChild) rollDigits(el, target, changed && !reduceMotion() ? SPIN_MS : 0);
+    if (el.textContent !== target || !el.firstElementChild) rollDigits(el, target, changed && !reduceMotion() ? MOTION.number : 0);
     fitMetricValue(el); return;
   }
   const key=el.id||el.dataset.k, target=kind==='pct'?to.toFixed(1)+'%':fmt(to);
@@ -609,7 +605,6 @@ function showTab(name, scrollTop = 0){
     s.classList.toggle('active', s === section);
     if(s !== section && s._motion){s._motion.cancel();s._motion=null;}
   });
-  // Al volver a Resumen, cada indicador conserva el último valor dibujado.
   if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
   const enterMobileBudget = name === 'budget' && entering && mobileLayout.matches;
   if (enterMobileBudget) dirty.add(name);
@@ -631,10 +626,12 @@ function showTab(name, scrollTop = 0){
   if (entering) {
     leaveNavigationView(previousView,previousRect);
     revealNavigationView(section);
-    if (name === 'dashboard' && mobileLayout.matches) revealMobileHomeChart();
-    if (enterMobileBudget) revealMobileBudgetBars();
+    if (mobileLayout.matches) {
+      section.querySelectorAll('.home-metric>.value,#mobileBudgetTotal').forEach(spinValue);
+      if (name === 'dashboard') revealMobileHomeChart();
+      if (enterMobileBudget) revealMobileBudgetBars();
+    }
     if (name === 'goals') revealProgress('#goalsGrid .goal-progress>span');
-    if (name === 'dashboard' && !mobileLayout.matches) revealProgress('#donutWrap .expense-distribution-track>span');
     if ((name === 'dashboard' && chBars === existingBars) || (name === 'both' && chBoth === existingBars)) replayBarChart(existingBars);
     if (name === 'analysis') replayAnalysisTrace();
   }

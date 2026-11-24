@@ -90,7 +90,11 @@ function renderAll(){
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>{
  if(reduceMotion())document.getAnimations().forEach(a=>{try{if(a.effect.getTiming().iterations===Infinity)a.cancel();else a.finish();}catch(e){a.cancel();}});
- if(typeof Chart!=='undefined')Object.values(Chart.instances).forEach(chart=>{chart.stop();chart.options.animation=reduceMotion()?false:{duration:MOTION.data,easing:'easeOutQuart'};chart.update('none');});
+ if(typeof Chart!=='undefined')Object.values(Chart.instances).forEach(chart=>{
+   chart.stop();
+   chart.options.animation=chart===chBars?evolutionAnimation():stagger();
+   chart.update('none');
+ });
  renderAll();
 });
 setupSettings();

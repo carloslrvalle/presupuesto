@@ -15,7 +15,7 @@ html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%
 }
 /* Sistema de movimiento: respuesta, navegación, paneles y datos. */
 /* Escala compartida por función: igual contenido, igual tipografía en todas las vistas. */
-:root{--bg:#f7f7f8;--surface:#ffffff;--surface-2:#f3f3f5;--text:#18181b;--muted:#52525b;--border:#e4e4e7;--primary:#18181b;--primary-soft:#ececee;--on-primary:#ffffff;--income:#217053;--income-soft:#e6f3ed;--income-chart:#319e77;--expense:#a43c42;--expense-soft:#fbecec;--expense-chart:#db666a;--savings:#6945a7;--savings-soft:#f2edfa;--savings-chart:#9670d1;--balance:#34659b;--balance-soft:#eaf1f9;--balance-chart:#528dce;--on-expense:#fff;--warn:#f59e0b;color-scheme:light dark;--font-body:"Inter",system-ui,sans-serif;--font-head:"Geist",var(--font-body);--type-body:.875rem;--motion-fast:140ms;--motion-move:var(--motion-panel);--motion-popup:180ms;--motion-panel:240ms;--motion-data:420ms;--motion-trace:650ms;--motion-signal:800ms;--motion-ease:cubic-bezier(.22,1,.36,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:var(--motion-ease);--type-title:1.5rem;--type-section:1rem;--type-item:.875rem;--type-control:.875rem;--type-meta:.75rem;--content-width:960px;--page-gutter:16px;--section-gap:16px;--report-gap:clamp(16px,2.5vw,24px);--creation-size:56px;--metric-title-size:.8125rem;--metric-value-size:1.625rem;--metric-meta-size:.75rem;--metric-padding:1.125rem;--metric-label-height:2.4375rem;--metric-icon-size:1.875rem;--control-height:40px;--control-height-compact:32px;--control-height-touch:44px;--control-gap:8px;--icon-action-size:36px;--shadow-xs:0 1px 2px 0 rgba(0,0,0,.05);--shadow-sm:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--ring:color-mix(in srgb,var(--text) 40%,transparent);--motion-tab:var(--motion-fast);--motion-tab-ease:var(--motion-ease);--radius:8px;--radius-sm:6px;--radius-lg:12px;--radius-card:20px;--shadow:var(--shadow-sm,0 1px 3px rgba(30,40,120,.15));--shadow-fab:0 3px 10px rgb(17 24 39 / .14);--shadow-float:0 12px 32px -8px rgba(20,25,40,.22),0 2px 6px rgba(20,25,40,.06)}
+:root{--bg:#f7f7f8;--surface:#ffffff;--surface-2:#f3f3f5;--text:#18181b;--muted:#52525b;--border:#e4e4e7;--primary:#18181b;--primary-soft:#ececee;--on-primary:#ffffff;--income:#217053;--income-soft:#e6f3ed;--income-chart:#319e77;--expense:#a43c42;--expense-soft:#fbecec;--expense-chart:#db666a;--savings:#6945a7;--savings-soft:#f2edfa;--savings-chart:#9670d1;--balance:#34659b;--balance-soft:#eaf1f9;--balance-chart:#528dce;--on-expense:#fff;--warn:#f59e0b;color-scheme:light dark;--font-body:"Inter",system-ui,sans-serif;--font-head:"Geist",var(--font-body);--type-body:.875rem;--motion-fast:140ms;--motion-move:var(--motion-panel);--motion-popup:180ms;--motion-panel:240ms;--motion-number:520ms;--motion-data:620ms;--motion-trace:850ms;--motion-data-ease:cubic-bezier(.37,0,.63,1);--motion-signal:800ms;--motion-ease:cubic-bezier(.22,1,.36,1);--spring:var(--motion-ease);--ease-out:var(--motion-ease);--ease-in:var(--motion-ease);--type-title:1.5rem;--type-section:1rem;--type-item:.875rem;--type-control:.875rem;--type-meta:.75rem;--content-width:960px;--page-gutter:16px;--section-gap:16px;--report-gap:clamp(16px,2.5vw,24px);--creation-size:56px;--metric-title-size:.8125rem;--metric-value-size:1.625rem;--metric-meta-size:.75rem;--metric-padding:1.125rem;--metric-label-height:2.4375rem;--metric-icon-size:1.875rem;--control-height:40px;--control-height-compact:32px;--control-height-touch:44px;--control-gap:8px;--icon-action-size:36px;--shadow-xs:0 1px 2px 0 rgba(0,0,0,.05);--shadow-sm:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--ring:color-mix(in srgb,var(--text) 40%,transparent);--motion-tab:var(--motion-fast);--motion-tab-ease:var(--motion-ease);--radius:8px;--radius-sm:6px;--radius-lg:12px;--radius-card:20px;--shadow:var(--shadow-sm,0 1px 3px rgba(30,40,120,.15));--shadow-fab:0 3px 10px rgb(17 24 39 / .14);--shadow-float:0 12px 32px -8px rgba(20,25,40,.22),0 2px 6px rgba(20,25,40,.06)}
 @media(max-width:600px){
  :root{--metric-title-size:.75rem;--metric-value-size:1.5rem;--metric-meta-size:.75rem;--metric-padding:.875rem}
 }
@@ -689,7 +689,7 @@ html .dashboard-kpis .metric-disclosure>summary .label{min-height:39px}
  #anKpis .metric-selection{position:absolute}
 }
 /* Al abrir la app, los indicadores de Resumen entran uno tras otro. */
-body.app-enter #tab-dashboard .dashboard-kpis>.kpi{animation:motionReveal var(--motion-data) var(--motion-ease) both}
+body.app-enter #tab-dashboard .dashboard-kpis>.kpi{animation:motionReveal 420ms var(--motion-ease) both}
 body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(2){animation-delay:80ms}
 body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(3){animation-delay:160ms}
 body.app-enter #tab-dashboard .dashboard-kpis>.kpi:nth-child(4){animation-delay:240ms}
@@ -2063,7 +2063,7 @@ html:is([data-theme=clay],[data-theme=indigo]) .btn:not(.primary):not(.danger):n
 .neg{color:var(--expense)}
 .expense-distribution{display:grid;gap:16px;padding:4px 0}
 .expense-distribution-track{height:6px;border-radius:var(--radius);background:var(--surface-2);margin-top:6px;overflow:hidden}
-.expense-distribution-track>span{display:block;height:100%;border-radius:inherit;transform-origin:left;animation:distributionGrow var(--motion-data) var(--motion-ease) both}
+.expense-distribution-track>span{display:block;height:100%;border-radius:inherit;transform-origin:left;animation:distributionGrow var(--motion-data) var(--motion-data-ease) both}
 @keyframes distributionGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .expense-distribution-more{border-top:1px solid var(--border);padding-top:14px;font-size:12px;color:var(--muted)}
 .expense-distribution-more>summary{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:36px;list-style:none}
@@ -2424,8 +2424,8 @@ body.sel-on .toast{bottom:150px}
 .nf-c{display:inline-block;vertical-align:top;height:1lh;white-space:pre}
 .nf-d{position:relative;overflow:hidden;font-variant-numeric:tabular-nums;-webkit-mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent)}
 .nf-g{color:transparent}
-.nf-d::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";position:absolute;inset:0 0 auto;text-align:center;white-space:pre;transform:translateY(calc(var(--n,0) * -1lh));transition:transform var(--nf-dur,0ms) var(--motion-ease)}
-.nf-in{animation:nfIn var(--nf-dur,var(--motion-panel)) var(--motion-ease) both}
+.nf-d::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";position:absolute;inset:0 0 auto;text-align:center;white-space:pre;transform:translateY(calc(var(--n,0) * -1lh));transition:transform var(--nf-dur,0ms) var(--motion-data-ease)}
+.nf-in{animation:nfIn var(--nf-dur,var(--motion-number)) var(--motion-data-ease) both}
 @keyframes nfIn{from{opacity:0;transform:translateY(.35lh) scale(.9)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.nf-d::before{transition:none}.nf-in{animation:none}}
 html[data-motion-input=keyboard] .nf-d::before{transition:none}
@@ -2941,7 +2941,7 @@ button,.btn,.chip,.iconbtn,.seg button,.month-nav button,.year-nav button,.emoji
 .acc-body{display:grid;grid-template-rows:0fr}
 .acc-head .chev,.ig-head .chev,.zero-group>summary .chev,.arch-group summary .vi,.fsel-btn .chev{transition:transform var(--motion-panel) var(--motion-ease)}
 .zero-group[open]>div,.arch-group[open] .arch-row{animation:none}
-.cd-col i{display:block;width:100%;max-width:34px;border-radius:5px 5px 3px 3px;opacity:.45;transform-origin:bottom;animation:cdGrow var(--motion-data) var(--motion-ease) both;animation-duration:var(--motion-data);animation-timing-function:var(--motion-ease);animation-delay:0ms}
+.cd-col i{display:block;width:100%;max-width:34px;border-radius:5px 5px 3px 3px;opacity:.45;transform-origin:bottom;animation:cdGrow var(--motion-data) var(--motion-data-ease) both}
 .check input[type=checkbox],.check input[type=checkbox]::after,.color-preview,.acc-sw,.icon-preview .ico,.card{transition-duration:var(--motion-fast);transition-timing-function:var(--motion-ease)}
 .toast,.toast.show{transition:opacity var(--motion-move) var(--motion-ease),transform var(--motion-move) var(--motion-ease)}
 .topbar,.topbar .wrap,.brand,#appName,.month-nav,.prof-chip,.sync-badge,.ptr.back{transition-duration:var(--motion-move);transition-timing-function:var(--motion-ease)}

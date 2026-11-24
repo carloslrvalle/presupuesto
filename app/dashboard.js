@@ -226,6 +226,11 @@ function chartTheme(){
   Object.assign(tt, {backgroundColor: dk ? '#16181d' : cssVar('--text'), titleColor: dk ? cssVar('--text') : cssVar('--bg'), bodyColor: dk ? cssVar('--muted') : cssVar('--bg'), borderColor: dk ? '#2a2e37' : 'transparent', borderWidth: dk ? 1 : 0, padding:10, cornerRadius:10, boxPadding:4, usePointStyle:true, titleFont:{weight:'700'}});
 }
 const stagger=()=>reduceMotion()?false:{duration:MOTION.data,easing:MOTION.dataEasing};
+const evolutionAnimation=()=>reduceMotion()?false:{
+  duration:MOTION.trace,easing:MOTION.dataEasing,
+  delay:c=>c.type==='data'&&!c.chart.$entered?c.dataIndex*(innerWidth<=700?40:80):0,
+  onComplete:({chart})=>{chart.$entered=true;}
+};
 const compactS = v => { const a = Math.abs(v), r = x => (Math.round(x * 10) / 10).toString().replace(/\.0$/, ''); return (v < 0 ? '−' : '') + 'S/ ' + (a >= 1e6 ? r(a / 1e6) + 'M' : a >= 1000 ? r(a / 1000) + 'k' : Math.round(a)); };
 // Quita la marca del borde del eje si queda pegada a la anterior (evita etiquetas encimadas como «S/ 440» sobre «S/ 400»)
 function trimTicks(sc){ const t = sc.ticks; if (t.length < 4) return; const h = Math.floor(t.length / 2), step = t[h].value - t[h - 1].value;
@@ -298,7 +303,7 @@ function renderCharts(){
       {type:'bar', label:'Ingresos', data:nul(incs), backgroundColor:barBg('--income-chart'), hoverBackgroundColor:barBg('--income-chart'), solid:'--income-chart', borderRadius:7, borderSkipped:false, maxBarThickness:28, categoryPercentage:.78, barPercentage:.86},
       {type:'bar', label:'Gastos', data:nul(exps), backgroundColor:barBg('--expense-chart'), hoverBackgroundColor:barBg('--expense-chart'), solid:'--expense-chart', borderRadius:7, borderSkipped:false, maxBarThickness:28, categoryPercentage:.78, barPercentage:.86}
 ]},
-    options:{maintainAspectRatio:false, animation:reduceMotion()?false:{duration:650,easing:'easeInOutCubic',delay:c=>c.type==='data'&&!c.chart.$entered?c.dataIndex*(innerWidth<=700?40:80):0,onComplete:({chart})=>{chart.$entered=true;}}, interaction:{mode:'index', intersect:false}, layout:{padding:{top:2, right:6, left:2}},
+    options:{maintainAspectRatio:false, animation:evolutionAnimation(), interaction:{mode:'index', intersect:false}, layout:{padding:{top:2, right:6, left:2}},
       plugins:{legend:{...LEGEND, labels:{...LEGEND.labels, generateLabels: ch => ch.data.datasets.map((d, i) => ({text:d.label, fillStyle:cssVar(d.solid), strokeStyle:cssVar(d.solid), lineWidth:d.type === 'line'?2:0, pointStyle:d.type === 'line' ? 'line' : 'rectRounded', hidden:!ch.isDatasetVisible(i), datasetIndex:i, fontColor:cssVar('--muted')}))}},
         tooltip:{filter: i => i.raw != null, callbacks:{title:items=>items.length?(cycleView()?cycleLabel(months[items[0].dataIndex]):monthLong(months[items[0].dataIndex])):'',label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`, labelColor: ctx => ({backgroundColor:cssVar(ctx.dataset.solid), borderColor:cssVar(ctx.dataset.solid), borderRadius:5})}}},
       scales:{x:{grid:{display:false}, border:{display:false}, ticks:{maxRotation:0,autoSkip:false,color: c => c.index === cur ? cssVar('--text') : cssVar('--muted'), font: c => ({size:12,weight: c.index === cur ? '700' : '500'})}},

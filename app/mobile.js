@@ -557,7 +557,11 @@ VICONS['sliders-horizontal'] = '<path d="M3 7h6m4 0h8M3 17h10m4 0h4M9 4v6m8 4v6"
 mobileBudgetView.id = 'mobileBudgetView';
 mobileBudgetView.className = 'mobile-only';
 mobileBudgetView.setAttribute('aria-labelledby', 'desktopSectionTitle');
-mobileBudgetView.innerHTML = `<div id="mobileBudgetGauge"></div><div id="mobileBudgetChart" hidden></div>
+mobileBudgetView.innerHTML = `<div id="mobileBudgetGauge"><div class="mobile-budget-summary">
+ <span id="mobileBudgetLabel" class="mbs-label"></span>
+ <strong id="mobileBudgetTotal" class="mbs-amount"></strong>
+ <p id="mobileBudgetHint" class="mbs-label" hidden></p>
+ </div></div><div id="mobileBudgetChart" hidden></div>
  <h2 id="mobileBudgetTitle" class="section-title">Presupuestos</h2>
  <div class="mobile-list-tools mobile-budget-tools" role="group" aria-label="Opciones de presupuestos">
   <span class="mobile-tool-ind" aria-hidden="true"></span>
@@ -679,7 +683,11 @@ function renderMobileBudget(){
   const spendRows = rows.filter(row => !row.saving);
   const budget = spendRows.reduce((total,row) => total+row.budget,0), real = spendRows.reduce((total,row) => total+row.real,0);
   const left = budget - real;
-  $('#mobileBudgetGauge').innerHTML = `<div class="mobile-budget-summary"><span class="mbs-label">${budget>0?(left<0?'Exceso':'Disponible')+' del '+(cycle?'ciclo':'mes'):'Sin presupuesto de gastos'}</span><strong class="mbs-amount">${budget>0?fmt(Math.abs(left)):fmt(real)}</strong>${budget>0?'':`<p class="mbs-label">${real?'Gastado sin plan. ':''}Toca una categoría para asignar un monto.</p>`}</div>`;
+  const planned = budget > 0, hint = $('#mobileBudgetHint');
+  $('#mobileBudgetLabel').textContent = planned ? (left < 0 ? 'Exceso' : 'Disponible') + ' del ' + (cycle ? 'ciclo' : 'mes') : 'Sin presupuesto de gastos';
+  countUp($('#mobileBudgetTotal'), planned ? Math.abs(left) : real);
+  hint.hidden = planned;
+  if (!planned) hint.textContent = (real ? 'Gastado sin plan. ' : '') + 'Toca una categoría para asignar un monto.';
   const spendIds = new Set(spendRows.map(({c}) => c.id));
   renderMobileBudgetChart(actuals.filter(t => spendIds.has(t.catId) && !isSavingTx(t)), budget, cycle);
   $('#mobileBudgetCategories').innerHTML = rows.map(({c,saving,budget,real}) => {

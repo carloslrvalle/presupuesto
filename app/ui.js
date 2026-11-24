@@ -14,7 +14,7 @@ function planningHeader(){
  $('#monthLabel').closest('.month-nav').hidden=!compact&&['analysis','cats','settings'].includes(activeTab());
  const cy=cycleView(),headerCycle=cy||(document.querySelector('#tab-movs.active')&&typeof movView!=='undefined'&&movView==='list'&&$('#fltScope').value==='cycle');
  const monthLabel=$('#monthLabel');
- monthLabel.textContent=compact?monthShort(currentMonth):bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):monthLong(currentMonth);
+ monthLabel.textContent=bothCycles?'Cierre · '+monthShort(currentMonth):headerCycle?'Ciclo · '+monthShort(currentMonth):compact?monthShort(currentMonth):monthLong(currentMonth);
  monthLabel.title=bothCycles?'Elegir mes de cierre de los períodos de ambos usuarios':headerCycle?cycleLabel(currentMonth):'Elegir mes';
  if(compact){
    monthLabel.setAttribute('aria-label',monthLabel.textContent+', elegir período');
@@ -41,21 +41,40 @@ function renderPeriodControls(){
  planningHeader();
 }
 let periodDraft=null;
+const periodDayGrid=$('#periodDays');
+periodDayGrid.innerHTML=Array.from({length:31},(_,index)=>`<button type="button" data-period-day="${index+1}" aria-pressed="false">${index+1}</button>`).join('');
 function renderPeriodEditor(){
  const d=periodDraft;
- $('#periodBody').innerHTML=`<div class="seg period-mode" role="group" aria-label="Tipo de período"><button type="button" data-period-mode="calendar" aria-pressed="${!d.enabled}" class="${d.enabled?'':'active'}">Mes calendario</button><button type="button" data-period-mode="cycle" aria-pressed="${d.enabled}" class="${d.enabled?'active':''}">Ciclo de sueldo</button></div>${d.enabled?'<div class="period-day-head"><b>Empieza el día</b><span>Elegido: '+d.day+'</span></div><div class="period-day-grid" role="group" aria-label="Día de inicio del ciclo">'+Array.from({length:31},(_,i)=>'<button type="button" data-period-day="'+(i+1)+'" aria-pressed="'+(d.day===i+1)+'" class="'+(d.day===i+1?'selected':'')+'">'+(i+1)+'</button>').join('')+'</div><p class="small muted">Los días 29–31 se ajustan al último día cuando el mes es más corto.</p>':'<p class="small muted">Presupuesto del primer al último día de cada mes.</p>'}<p class="period-data-note">Las compras y los presupuestos guardados conservan sus datos.</p>`;
+ for(const button of $('#periodBody .period-mode').children){
+  const selected=(button.dataset.periodMode==='cycle')===d.enabled;
+  button.classList.toggle('active',selected);
+  button.setAttribute('aria-pressed',String(selected));
+ }
+ $('#periodMonthInfo').hidden=d.enabled;
+ $('#periodCycleFields').hidden=!d.enabled;
+ if(!d.enabled)return;
+ for(const button of periodDayGrid.children)button.setAttribute('aria-pressed',String(Number(button.dataset.periodDay)===d.day));
+ const {start,end}=cyclePeriod(cycleMonthForDate(todayISO(),d.day),d.day);
+ $('#periodExample').textContent=fmtDateLong(start)+' – '+fmtDateLong(end);
+ $('#periodShortMonth').hidden=d.day<29;
 }
-function openPeriodEditor(){periodDraft={enabled:cycleEnabled(),day:cycleDay()};renderPeriodEditor();$('#periodDialog').showModal();}
+function openPeriodEditor(fromHeader=false){periodDraft={enabled:cycleEnabled(),day:cycleDay(),fromHeader};renderPeriodEditor();$('#periodDialog').showModal();}
 document.addEventListener('click',e=>{if(e.target.closest('[data-period-open]'))openPeriodEditor();});
 document.addEventListener('click',e=>{
  if(!periodDraft||!e.target.closest('#periodDialog'))return;
  const mode=e.target.closest('[data-period-mode]'),day=e.target.closest('[data-period-day]');
- if(mode){periodDraft.enabled=mode.dataset.periodMode==='cycle';renderPeriodEditor();$('#periodDialog [data-period-mode="'+mode.dataset.periodMode+'"]').focus();}
- if(day){periodDraft.day=Number(day.dataset.periodDay);renderPeriodEditor();$('#periodDialog [data-period-day="'+periodDraft.day+'"]').focus();}
- if(e.target.closest('#periodApply')){const draft=periodDraft;if(!setPlanningMode(draft.enabled,draft.day))return;$('#periodDialog').close();document.querySelector('.tab.active [data-period-open]')?.focus({preventScroll:true});}
+ if(mode){periodDraft.enabled=mode.dataset.periodMode==='cycle';renderPeriodEditor();}
+ if(day){periodDraft.day=Number(day.dataset.periodDay);renderPeriodEditor();}
+ if(e.target.closest('#periodApply')){
+  if(!setPlanningMode(periodDraft.enabled,periodDraft.day))return;
+  $('#periodDialog').close();
+  $(periodDraft.fromHeader?'#monthLabel':'.tab.active [data-period-open]')?.focus({preventScroll:true});
+ }
 });
 function setPlanningMode(enabled,day=cycleDay()){
  const wasEnabled=cycleEnabled(),previousDay=cycleDay(),was=cycleView();
+ if(wasEnabled===enabled&&previousDay===day)return true;
+ const scope=$('#fltScope'),followPeriod=scope.value===defaultMovementScope();
  if(!saveChange(()=>{
   state.settings.budgetCycle={...cycleConfig(),enabled,day};
   if(wasEnabled!==enabled||day!==previousDay)state.settings.lastClose=enabled?cycleBudgetKey(cycleMonthForDate()):thisMonth();
@@ -63,6 +82,7 @@ function setPlanningMode(enabled,day=cycleDay()){
  if(was)cycleSelectedMonths[activeProfile]=currentMonth;else cycleCalendarMonths[activeProfile]=currentMonth;
  currentMonth=enabled?cycleMonthForDate():cycleCalendarMonths[activeProfile]||thisMonth();
  cycleSelectedMonths[activeProfile]=enabled?currentMonth:cycleSelectedMonths[activeProfile];monthInput.value=currentMonth;
+ if(followPeriod)scope.value=defaultMovementScope();
  renderAll();toast(enabled?'Ciclo activo: '+cycleLabel(currentMonth):'Vista por mes calendario');return true;
 }
 let planningToday=todayISO();
@@ -234,7 +254,7 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
 // El teclado responde de inmediato; el puntero conserva las transiciones del componente.
 const reducedMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 function finishNavigationMotion(){
- for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary,.mobile-budget-bar-plot>span)')){
+ for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary,.mobile-budget-bar-plot>span,.goal-progress>span,.expense-distribution-track>span)')){
   el._motion?.finish();
  }
  for(const digit of document.querySelectorAll('#tab-dashboard .home-metric .nf-d')) digit._spin?.cancel();
@@ -291,6 +311,23 @@ function revealContent(el,kind='fast'){
 }
 function revealNavigationView(view){
  return motionAnimate(view,[{opacity:.92},{opacity:1}],'fast');
+}
+function replayBarChart(chart){
+ if(!chart?.canvas?.offsetWidth)return;
+ const animate=!reduceMotion();
+ chart.stop();
+ chart.resize();
+ if(animate){
+  if(!chart.options.animation)chart.options.animation=stagger();
+  chart.$entered=false;
+  chart.reset();
+ }
+ chart.update(animate?undefined:'none');
+}
+function revealProgress(selector){
+ for(const fill of document.querySelectorAll(selector)){
+  if(fill.getClientRects().length)motionAnimate(fill,[{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0)'}],'data');
+ }
 }
 function motionHeight(el){
  return el.getBoundingClientRect().height/(Number(getComputedStyle(document.documentElement).zoom)||1);
@@ -505,13 +542,18 @@ function showTab(name, scrollTop = 0){
   if (typeof selMode !== 'undefined' && selMode) setSelMode(false);
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
-  const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab();
-  if (prevTab === 'analysis' && name !== 'analysis' && chYear) {
-    chYear.stop();
-    finishAnalysisTrace(chYear);
+  const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab(), entering = prevTab !== name;
+  const existingBars = name === 'dashboard' ? chBars : name === 'both' ? chBoth : null;
+  if (entering) {
+    if (prevTab === 'dashboard') chBars?.stop();
+    if (prevTab === 'both') chBoth?.stop();
+    if (prevTab === 'analysis' && chYear) {
+      chYear.stop();
+      finishAnalysisTrace(chYear);
+    }
   }
   const section = $('#tab-' + name), tabIndicator = $('#tabInd');
-  if(prevTab!==name && tabBar.querySelector('button.active'))tabIndicator._navigationRect=tabIndicator.getBoundingClientRect();
+  if(entering && tabBar.querySelector('button.active'))tabIndicator._navigationRect=tabIndicator.getBoundingClientRect();
   for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
     button.classList.toggle('active', button === b);
     if (button === b) button.setAttribute('aria-current', 'page');
@@ -524,10 +566,9 @@ function showTab(name, scrollTop = 0){
   });
   // Al volver a Resumen, cada indicador conserva el último valor dibujado.
   if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
-  const enterMobileBudget = name === 'budget' && prevTab !== name && mobileLayout.matches;
+  const enterMobileBudget = name === 'budget' && entering && mobileLayout.matches;
   if (enterMobileBudget) dirty.add(name);
   if (name === 'analysis' && currentMonth !== analysisSelectedMonth) dirty.add(name);
-  const resumeAnalysis = name === 'analysis' && !dirty.has(name) && prevTab !== name;
   planningHeader();
   renderView(name);
   moveTabInd();
@@ -535,7 +576,6 @@ function showTab(name, scrollTop = 0){
     const left = b.offsetLeft - (tabBar.clientWidth - b.offsetWidth) / 2;
     tabBar.scrollTo({left:Math.max(0, left), behavior:reduceMotion() ? 'instant' : 'smooth'});
   }
-  if (resumeAnalysis && chYear){ chYear.resize(); chYear.update('none'); }
   if (name === 'goals') refreshOther();
   if (name === 'movs') moveViewInd();
   updateCreationControls();
@@ -543,8 +583,15 @@ function showTab(name, scrollTop = 0){
   if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
   if (embeddedMovements) focusMobileHistory();
   else if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
-  if(prevTab !== name)revealNavigationView(section);
-  if(enterMobileBudget)revealMobileBudgetBars();
+  if (entering) {
+    revealNavigationView(section);
+    if (name === 'dashboard' && mobileLayout.matches) revealMobileHomeChart();
+    if (enterMobileBudget) revealMobileBudgetBars();
+    if (name === 'goals') revealProgress('#goalsGrid .goal-progress>span');
+    if (name === 'dashboard' && !mobileLayout.matches) revealProgress('#donutWrap .expense-distribution-track>span');
+    if ((name === 'dashboard' && chBars === existingBars) || (name === 'both' && chBoth === existingBars)) replayBarChart(existingBars);
+    if (name === 'analysis') replayAnalysisTrace();
+  }
 }
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
 const tabScroll = {};

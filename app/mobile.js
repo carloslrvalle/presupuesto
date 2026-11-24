@@ -408,6 +408,7 @@ function keepMobileFocusAboveDock({target}){
   }
 }
 mobileHistory.addEventListener('focusin', keepMobileFocusAboveDock);
+$('#goalsGrid').addEventListener('focusin', keepMobileFocusAboveDock);
 let mobileHomeSeriesKey = '';
 const mobileHomePlots = new Map();
 let mobileHomeWeeks = [];
@@ -420,6 +421,9 @@ function selectMobileHomeWeek(index){
   readout.querySelector('strong').innerHTML = week.values.length > 1
     ? `<span class="pos">+ ${fmt(week.values[1])}</span><span>− ${fmt(week.values[0])}</span>`
     : fmt(week.values[0]);
+}
+function revealMobileHomeChart(){
+  motionAnimate(mobileHomeChart.querySelector('svg'), [{opacity:.65,clipPath:'inset(0 50% 0 0)'}, {opacity:1,clipPath:'inset(0)'}], 'data');
 }
 function renderMobileHomeChart(txs){
   if (!homeSegIndicator.style.width) requestAnimationFrame(() => moveHomeSegIndicator(false));
@@ -486,7 +490,7 @@ function renderMobileHomeChart(txs){
   const selected = focused ? Math.min(Number(focused.dataset.homeWeek),series.length-1) : Math.max(0, series.findLastIndex(week => week.values.some(Boolean)));
   selectMobileHomeWeek(selected);
   if (focused) mobileHomeChart.querySelector(`[data-home-week="${selected}"]`).focus({preventScroll:true});
-  if (animate) motionAnimate(mobileHomeChart.querySelector('svg'), [{opacity:.65,clipPath:'inset(0 50% 0 0)'}, {opacity:1,clipPath:'inset(0)'}], 'data');
+  if (animate) revealMobileHomeChart();
 }
 mobileHomeChart.addEventListener('click', event => {
   const button = event.target.closest('[data-home-week]');
@@ -566,7 +570,7 @@ $('#tab-budget').addEventListener('focusin', keepMobileFocusAboveDock);
 const mobileBudgetChart = $('#mobileBudgetChart');
 function revealMobileBudgetBars(){
   for (const bar of mobileBudgetChart.querySelectorAll('.mobile-budget-bar-plot>span')){
-    motionAnimate(bar,[{opacity:.35,transform:'scaleY(.92)'},{opacity:1,transform:'none'}],'panel');
+    motionAnimate(bar,[{opacity:.65,transform:'scaleY(.25)'},{opacity:1,transform:'none'}],'data');
   }
 }
 const mobileBudgetSearch = $('#mobileBudgetSearch input');
@@ -770,8 +774,6 @@ const movementToolIndicator = document.createElement('span');
 movementToolIndicator.className = 'mobile-only mobile-tool-ind';
 movementToolIndicator.setAttribute('aria-hidden','true');
 movementToolbar.prepend(movementToolIndicator);
-$('#movPages [data-mov-page="-1"] .mov-page-icon').innerHTML = ic('chevron-left');
-$('#movPages [data-mov-page="1"] .mov-page-icon').innerHTML = ic('chevron-right');
 let mobileMovementPanel = '';
 const movementPanels = {search:$('#movementSearch'), filters:$('#movExtraFilters'), details:$('#movSummary')};
 movementPanels.search.classList.add('mobile-list-search');
@@ -827,12 +829,10 @@ function positionMovementPanels(){
   if (mobileLayout.matches){
     if (!movementPanelRegion.isConnected) movementFilters.before(movementPanelRegion);
     movementPanelRegion.append(movementFilters, movementPanels.details);
-    $('#movBody').after($('#movPages'));
   }else{
     movementPanelRegion.before(movementFilters);
     movementPanelRegion.remove();
     movementSummaryHome.prepend(movementPanels.details);
-    movementPanels.details.after($('#movPages'));
   }
   setMobileMovementPanel('');
   syncMobileMovementTools();

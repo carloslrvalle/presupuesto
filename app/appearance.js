@@ -250,9 +250,7 @@ nameInput.addEventListener('change', () => {
   applyBrand();
 });
 
-/* ---------- Selector de mes ---------- */
-
-/* ---------- Selector de mes y fecha propio ---------- */
+/* ---------- Selector de período y fecha ---------- */
 const DP_M = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const DP_W = ['L','M','M','J','V','S','D'];
 const dpEl = document.createElement('div'); dpEl.id = 'budgetDatePicker'; dpEl.className = 'dp'; dpEl.setAttribute('role', 'dialog');
@@ -269,7 +267,8 @@ function dpOpen(anchor, o){
     y: Number((v || todayISO()).slice(0, 4)), m: Number((v || todayISO()).slice(5, 7))};
   anchor.classList.add('open');
   if (anchor.hasAttribute('aria-expanded')) anchor.setAttribute('aria-expanded', 'true');
-  dpEl.setAttribute('aria-label', o.mode === 'month' ? 'Elegir mes' : 'Elegir fecha');
+  dpEl.toggleAttribute('data-cycle-picker', Boolean(o.cycle));
+  dpEl.setAttribute('aria-label', o.cycle ? 'Elegir ciclo' : o.mode === 'month' ? 'Elegir mes' : 'Elegir fecha');
   // dentro de un diálogo modal el selector debe vivir en él (lo de afuera queda inactivo)
   const host = anchor.closest('dialog') || document.body; if (dpEl.parentNode !== host) host.appendChild(dpEl);
   dpRender();
@@ -296,8 +295,9 @@ function dpPlace(){
   const x=vv?.offsetLeft||0, y=vv?.offsetTop||0, width=vv?.width||innerWidth, height=vv?.height||innerHeight;
   dpEl.style.maxHeight=Math.max(0,(height-16)/zoom)+'px';
   const r = dpS.anchor.getBoundingClientRect(), w = dpEl.offsetWidth*zoom, h = dpEl.offsetHeight*zoom;
+  const gutter = dpS.cycle && mobileLayout.matches ? parseFloat(getComputedStyle(document.body).getPropertyValue('--page-gutter'))*zoom : 8;
   let left = dpS.align === 'center' ? r.left + r.width / 2 - w / 2 : r.left;
-  left = Math.max(x+8, Math.min(left, x+width-w-8));
+  left = Math.max(x+gutter, Math.min(left, x+width-w-gutter));
   const up = r.bottom+8+h>y+height-8 && r.top-y>y+height-r.bottom;
   const top=Math.max(y+8,Math.min(up?r.top-8-h:r.bottom+8,y+height-h-8));
   dpEl.classList.toggle('up', up);
@@ -307,11 +307,17 @@ function dpPlace(){
 }
 function dpRender(){
   const S = dpS, now = todayISO(), cur = S.value || '';
+  const currentPeriod = S.cycle ? cycleMonthForDate(now) : thisMonth();
   let head, body;
   if (S.view === 'months'){
-    head = `<button class="dp-nav" data-dp="py" aria-label="Año anterior">${ic('chevron-left')}</button><button class="dp-t" data-dp="noop">${S.y}</button><button class="dp-nav" data-dp="ny" aria-label="Año siguiente">${ic('chevron-right')}</button>`;
+    head = `<button class="dp-nav" data-dp="py" aria-label="Año anterior, ${S.y-1}">${ic('chevron-left')}</button><span class="dp-t">${S.y}</span><button class="dp-nav" data-dp="ny" aria-label="Año siguiente, ${S.y+1}">${ic('chevron-right')}</button>`;
     body = `<div class="dp-g months">${DP_M.map((n, i) => { const k = S.y + '-' + pad2(i + 1);
-      return `<button class="dp-c${k === cur.slice(0, 7) ? ' sel' : ''}${k === now.slice(0, 7) ? ' now' : ''}" data-dp="m" data-v="${i + 1}">${n}</button>`; }).join('')}</div>`;
+      const selected = k === cur.slice(0,7), current = k === currentPeriod;
+      const label = S.cycle ? `Ciclo con cierre en ${monthLong(k)}, ${cycleLabel(k)}` : monthLong(k);
+      const period = S.cycle ? cyclePeriod(k) : null;
+      return `<button class="dp-c${selected ? ' sel' : ''}${current ? ' now' : ''}" data-dp="m" data-v="${i + 1}" aria-label="${esc(label)}" aria-pressed="${selected}"${current?' aria-current="date"':''}>
+        ${n}${period ? `<small><span>${fmtDate(period.start).slice(0,5)}</span> <span>– ${fmtDate(period.end).slice(0,5)}</span></small>` : ''}
+      </button>`; }).join('')}</div>`;
   } else {
     const first = new Date(S.y, S.m - 1, 1), off = (first.getDay() + 6) % 7, dim = new Date(S.y, S.m, 0).getDate();
     const cells = [];
@@ -323,7 +329,7 @@ function dpRender(){
     head = `<button class="dp-nav" data-dp="pm" aria-label="Mes anterior">${ic('chevron-left')}</button><button class="dp-t" data-dp="tomonths" title="Elegir mes">${monthLong(S.y + '-' + pad2(S.m))}</button><button class="dp-nav" data-dp="nm" aria-label="Mes siguiente">${ic('chevron-right')}</button>`;
     body = `<div class="dp-g days">${DP_W.map(w => `<div class="dp-wd">${w}</div>`).join('')}${cells.join('')}</div>`;
   }
-  const foot = S.mode === 'month' ? `<button data-dp="today">Este mes</button>`
+  const foot = S.mode === 'month' ? `<button data-dp="today">${S.cycle ? 'Este ciclo' : 'Este mes'}</button>${S.editPeriod ? `<button class="dp-period-edit" data-dp="period" aria-haspopup="dialog" aria-controls="periodDialog">Mes o ciclo ${ic('chevron-right')}</button>` : ''}`
     : `${S.clearable ? '<button class="muted-b" data-dp="clear">Quitar fecha</button>' : '<span></span>'}<button data-dp="today">Hoy</button>`;
   dpEl.innerHTML = `<div class="dp-h">${head}</div><div class="dp-body">${body}</div><div class="dp-f">${foot}</div>`;
 }
@@ -337,11 +343,23 @@ dpEl.addEventListener('click', e => {
   else if (a === 'tomonths') S.view = 'months';
   else if (a === 'm'){ if (S.mode === 'month') return dpPick(S.y + '-' + pad2(b.dataset.v)); S.m = Number(b.dataset.v); S.view = 'days'; }
   else if (a === 'd') return dpPick(b.dataset.v);
-  else if (a === 'today') return dpPick(S.mode === 'month' ? thisMonth() : todayISO());
+  else if (a === 'today') return dpPick(S.cycle ? cycleMonthForDate() : S.mode === 'month' ? thisMonth() : todayISO());
+  else if (a === 'period'){ dpClose(true); return openPeriodEditor(true); }
   else if (a === 'clear') return dpPick('');
   else return;
   dpRender(); dpPlace();
   (dpEl.querySelector('[data-dp="'+a+'"]')||dpEl.querySelector('.dp-c.sel:not(:disabled),.dp-c:not(:disabled)'))?.focus({preventScroll:true});
+});
+dpEl.addEventListener('keydown', e => {
+  const cell=e.target.closest('.dp-c');
+  if(!cell||!dpS)return;
+  const columns=dpS.view==='months'?(dpS.cycle?2:3):7;
+  const step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-columns,ArrowDown:columns}[e.key];
+  if(!step)return;
+  e.preventDefault();
+  const cells=[...dpEl.querySelectorAll('.dp-c')];
+  const next=cells[cells.indexOf(cell)+step];
+  if(next&&!next.disabled)next.focus();
 });
 document.addEventListener('pointerdown', e => { if (dpS && !dpEl.contains(e.target) && !dpS.anchor.contains(e.target)) dpClose(); }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && dpS){ e.preventDefault(); e.stopPropagation(); dpClose(true); } }, true);
@@ -364,4 +382,8 @@ function dpField(input, opts = {}){
 dpField($('#fDate'));
 dpField($('#gDeadline'), {clearable:true, placeholder:'Sin fecha límite'});
 dpField($('#wdDate'));
-$('#monthLabel').onclick = () => dpOpen($('#monthLabel'), {mode:'month', value:currentMonth, align:'center', onPick: v => goMonth(v)});
+$('#monthLabel').onclick = () => dpOpen($('#monthLabel'), {
+  mode:'month', value:currentMonth, align:'center', cycle:cycleView(),
+  editPeriod:mobileLayout.matches && ['dashboard','budget'].includes(activeTab()),
+  onPick:goMonth
+});

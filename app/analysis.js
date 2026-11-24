@@ -98,6 +98,14 @@ function finishAnalysisTrace(chart){
   trace.raf=0;
   trace.progress=1;
 }
+function replayAnalysisTrace(){
+  if(!chYear)return;
+  chYear.resize();
+  chYear.update('none');
+  if(reduceMotion())return;
+  Object.assign(chYear.$analysisTrace,{progress:0,start:null,head:null});
+  chYear.draw();
+}
 function renderAnalysisChart(){
   const data=analysisData,phone=mobileAnalysis(),metric=ANALYSIS_METRICS[analysisMetric],cumulative=analysisChartMode==='total',percentage=analysisMetric==='rate';
   const last=data.months.findLastIndex((_,i)=>data.cum[i]!=null),indices=data.months.map((_,i)=>i).slice(data.first,last+1);

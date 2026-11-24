@@ -28,17 +28,17 @@ function movementHistory(list,dayLbl,filtered){
   return `<section class="history-day" aria-labelledby="history-day-${day}"><header class="history-day-head"><div class="history-day-date"><h2 class="history-day-title" id="history-day-${day}">${label}</h2>${date?`<span>${date}</span>`:''}${planned?'<span class="plan-pill">Programado</span>':''}</div></header><ul class="history-items">${items.map(t=>movementHistoryRow(t,false)).join('')}</ul></section>`;
  }).join('');
 }
-function renderMobileMovementRows(body,list){
+function renderMobileMovementRows(body,list,append=false){
   let group = body.querySelector(':scope>.history-items');
   if (!group){
     group = document.createElement('ul');
     group.className = 'history-items';
     body.replaceChildren(group);
   }
-  const existing = new Map([...group.children].map(row=>[row.dataset.row,row]));
+  const existing = append ? null : new Map([...group.children].map(row=>[row.dataset.row,row]));
   const entries = list.map(tx=>{
     const markup = movementHistoryRow(tx,true);
-    const row = existing.get(tx.id);
+    const row = existing?.get(tx.id);
     return {markup,row:row?._movementMarkup === markup ? row : null};
   });
   const template = document.createElement('template');
@@ -51,6 +51,7 @@ function renderMobileMovementRows(body,list){
     created._movementMarkup = markup;
     return created;
   });
+  if(append){group.append(template.content);return;}
   const kept = new Set(rows);
   for (const row of existing.values()) if (!kept.has(row)) row.remove();
   let position = group.firstElementChild;
@@ -72,7 +73,8 @@ function setMovementFiltersOpen(open){
 function defaultMovementScope(){return mobileLayout.matches && cycleView('dashboard') ? 'cycle' : 'month';}
 function movementsVisible(){return activeTab() === (mobileLayout.matches ? 'dashboard' : 'movs');}
 const MOV_PAGE_SIZE = 40;
-let movPage = 0, movQuery = '', movMatches = [], movFiltered = false, movSearchFrame = 0;
+const movMore = $('#movMore');
+let movPage = 0, movMobileLimit = MOV_PAGE_SIZE, movQuery = '', movMatches = [], movFiltered = false, movSearchFrame = 0;
 function renderMovs(refreshFilters = true){
   cancelAnimationFrame(movSearchFrame);
   movSearchFrame = 0;
@@ -91,7 +93,7 @@ function renderMovs(refreshFilters = true){
   const list = base.filter(t => (!ft || t.type === ft) && !(onlySpend && isSavingTx(t)) && (!fc || t.catId === fc) && (!fm || t.method === fm) && match(t))
     .sort((a,b) => b.date.localeCompare(a.date) || (b.created||0) - (a.created||0));
   const query = JSON.stringify([activeProfile,currentMonth,scope,ft,fc,fm,q]);
-  if (query !== movQuery) movPage = 0;
+  if (query !== movQuery){movPage = 0;movMobileLimit = MOV_PAGE_SIZE;}
   movQuery = query;
   movMatches = list;
   movFiltered = Boolean(q || extraCount);
@@ -107,11 +109,20 @@ function renderMovs(refreshFilters = true){
 
 function renderMovementPage(index){
   closeMovActionMenu(false);
+  const body = $('#movBody'), pager = $('#movPages');
+  body.classList.toggle('selecting',selMode);
+  if(mobileLayout.matches){
+    pager.hidden = true;
+    movMore.hidden = movMatches.length <= movMobileLimit;
+    if(movMatches.length)renderMobileMovementRows(body,movMatches.slice(0,movMobileLimit));
+    else body.innerHTML = movementHistory([],null,movFiltered);
+    return;
+  }
+  movMore.hidden = true;
   const pageCount = Math.ceil(movMatches.length / MOV_PAGE_SIZE);
   movPage = Math.max(0,Math.min(index,pageCount-1));
   const start = movPage * MOV_PAGE_SIZE;
   const list = movMatches.slice(start,start+MOV_PAGE_SIZE);
-  const pager = $('#movPages');
   pager.hidden = pageCount <= 1;
   if (!pager.hidden){
     const previous = pager.querySelector('[data-mov-page="-1"]');
@@ -125,19 +136,26 @@ function renderMovementPage(index){
     const diff = Math.round((d - t0) / 864e5), wd = movementWeekday.format(d);
     const long = `${wd.charAt(0).toUpperCase() + wd.slice(1)} ${D} ${MONTHS_ES[M - 1].toLowerCase()}${Y !== t0.getFullYear() ? ' ' + Y : ''}`;
     return diff === 0 ? ['Hoy', long] : diff === -1 ? ['Ayer', long] : diff === 1 ? ['Mañana', long] : [long, '']; };
-  const body = $('#movBody');
-  body.classList.toggle('selecting',selMode);
-  if (mobileLayout.matches && list.length) renderMobileMovementRows(body,list);
-  else body.innerHTML = movementHistory(list,dayLbl,movFiltered);
+  body.innerHTML = movementHistory(list,dayLbl,movFiltered);
 }
+function loadMoreMovements(){
+  if(movMore.hidden || !mobileLayout.matches || !movementsVisible() || movView !== 'list')return;
+  const start = movMobileLimit, focusNew = document.activeElement === movMore;
+  movMobileLimit += MOV_PAGE_SIZE;
+  const body = $('#movBody');
+  renderMobileMovementRows(body,movMatches.slice(start,movMobileLimit),true);
+  movMore.hidden = movMobileLimit >= movMatches.length;
+  if(focusNew)body.querySelector('.history-items').children[start]?.querySelector('.history-edit').focus();
+}
+movMore.addEventListener('click',loadMoreMovements);
+const movementLoader = new IntersectionObserver(([entry])=>{
+  if(entry.isIntersecting && document.activeElement !== movMore)loadMoreMovements();
+},{rootMargin:'0px 0px 240px'});
+movementLoader.observe(movMore);
 $('#movPages').addEventListener('click', event => {
   const button = event.target.closest('[data-mov-page]');
   if (!button) return;
   renderMovementPage(movPage + Number(button.dataset.movPage));
-  if (mobileLayout.matches){
-    focusMobileHistory();
-    return;
-  }
   if (button.disabled) $('#movPages button:not(:disabled)')?.focus({preventScroll:true});
 });
 const movementWeekday = new Intl.DateTimeFormat('es-PE', {weekday:'long'});
@@ -790,7 +808,10 @@ function revealMovementRow(id){
   if (movementsVisible() && movView === 'list'){
     const index = movMatches.findIndex(transaction => transaction.id === id);
     const page = Math.floor(index / MOV_PAGE_SIZE);
-    if (index >= 0 && page !== movPage) renderMovementPage(page);
+    if (mobileLayout.matches && index >= movMobileLimit){
+      movMobileLimit = (page+1)*MOV_PAGE_SIZE;
+      renderMovementPage(movPage);
+    }else if (!mobileLayout.matches && index >= 0 && page !== movPage) renderMovementPage(page);
   }
   return document.querySelector(`#movBody [data-row="${CSS.escape(id)}"]`);
 }

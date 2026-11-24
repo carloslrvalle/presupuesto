@@ -135,11 +135,12 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
       <div class="card">
         <div class="small muted" id="movSummary"></div>
         <nav id="movPages" aria-label="Páginas de movimientos" hidden>
-          <button type="button" class="btn" data-mov-page="-1" aria-label="Página anterior" title="Página anterior" aria-controls="movBody"><span class="mov-page-icon" aria-hidden="true"></span><span>Anterior</span></button>
+          <button type="button" class="btn" data-mov-page="-1" aria-label="Página anterior" title="Página anterior" aria-controls="movBody">Anterior</button>
           <span class="small muted" id="movPageRange" role="status"></span>
-          <button type="button" class="btn" data-mov-page="1" aria-label="Página siguiente" title="Página siguiente" aria-controls="movBody"><span class="mov-page-icon" aria-hidden="true"></span><span>Siguiente</span></button>
+          <button type="button" class="btn" data-mov-page="1" aria-label="Página siguiente" title="Página siguiente" aria-controls="movBody">Siguiente</button>
         </nav>
         <div id="movBody" class="mov-history"></div>
+        <button type="button" id="movMore" class="btn ghost" aria-controls="movBody" hidden>Cargar más movimientos</button>
       </div>
     </div>
     <div class="mview" id="view-cal" hidden>
@@ -177,7 +178,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
     <div class="toolbar">
       <button class="btn primary" id="btnNewGoal" hidden><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nueva meta</button>
     </div>
-    <div class="goals-grid" id="goalsGrid"></div>
+    <div id="goalsGrid"></div>
   </section>
 
   <!-- ANÁLISIS -->
@@ -284,7 +285,20 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
 
 <dialog id="periodDialog" aria-labelledby="periodTitle">
   <div class="dlg-head"><h3 id="periodTitle" style="margin:0">Período del presupuesto</h3><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M6 18 18 6"/></svg></button></div>
-  <div class="dlg-body" id="periodBody"></div>
+  <div class="dlg-body" id="periodBody">
+    <div class="seg period-mode" role="group" aria-label="Tipo de período">
+      <button type="button" data-period-mode="calendar" aria-pressed="true">Mes calendario</button>
+      <button type="button" data-period-mode="cycle" aria-pressed="false">Ciclo de sueldo</button>
+    </div>
+    <p class="small muted" id="periodMonthInfo">Presupuesto del primer al último día de cada mes.</p>
+    <div class="period-cycle-fields" id="periodCycleFields" hidden>
+      <h4 id="periodDayLabel">Día de inicio</h4>
+      <div class="period-day-grid" id="periodDays" role="group" aria-labelledby="periodDayLabel"></div>
+      <p class="period-example"><span>Ciclo vigente</span><output id="periodExample"></output></p>
+      <p class="small muted" id="periodShortMonth" hidden>En meses más cortos, el ciclo empieza el último día.</p>
+    </div>
+    <p class="period-data-note">Se conservan los movimientos y presupuestos guardados.</p>
+  </div>
   <div class="dlg-foot"><button type="button" class="btn" data-close>Cancelar</button><button type="button" class="btn primary" id="periodApply">Aplicar</button></div>
 </dialog>
 <!-- Dialog: movimiento -->

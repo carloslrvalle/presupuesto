@@ -911,7 +911,7 @@ function mobileCumulativeSvg(width, height, kinds, days, daily, weeks, max, labe
   const x = i => days.length > 1 ? firstX + i * (lastX - firstX) / (days.length - 1) : width / 2;
   const y = v => height - 12 - (height - 18 - band) * v / max;
   const end = days.length - 1;
-  return `<svg class="mobile-cumulative-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}">
+  return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}">
     <defs>${kinds.map(kind => `<linearGradient id="mobileHomeFade-${kind}" x1="0" x2="0" y1="0" y2="${height}" gradientUnits="userSpaceOnUse">
       <stop style="stop-color:var(--${kind}-chart)" stop-opacity=".14"/><stop offset="1" style="stop-color:var(--${kind}-chart)" stop-opacity="0"/>
     </linearGradient>`).join('')}</defs>

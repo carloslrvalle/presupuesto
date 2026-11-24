@@ -846,10 +846,6 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  .mobile-home-plot{position:relative;height:var(--home-plot-height)}
  .mobile-home-empty{display:grid;align-items:center;min-height:var(--home-plot-height);margin:0;padding-inline:var(--page-gutter);color:var(--muted);font-size:var(--type-control)}
  .mobile-home-trend svg{display:block;width:100%;height:100%}
- .mobile-cumulative-chart{
-  --edge-fade:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent);
-  -webkit-mask-image:var(--edge-fade);mask-image:var(--edge-fade)
- }
  /* Un punto por semana (como antes); la elegida crece a anillo. */
  .mobile-home-point{stroke:currentColor;stroke-width:5;stroke-linecap:round;paint-order:stroke;transition:stroke-width var(--motion-fast) var(--motion-ease)}
  .mobile-home-point.active{stroke-width:10}
@@ -3984,7 +3980,6 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-weekly-line{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
  @media(forced-colors:active){
   #tab-dashboard .dashboard-kpis[data-home-kind]>.mobile-home-trend{color:CanvasText}
-  .mobile-cumulative-chart{-webkit-mask-image:none;mask-image:none}
   #mobileHomeSync::before{background:ButtonText}
   .mobile-weekly-area{display:none}
  }

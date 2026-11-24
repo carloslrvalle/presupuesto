@@ -270,7 +270,17 @@ txDialog.addEventListener('mousedown',event=>{
   if(txDialog.contains(document.activeElement)&&document.activeElement.matches('input:not([type=hidden]),textarea'))event.preventDefault();
 });
 mobileTxDone.onclick=()=>setMobileTxPanel(null);
-txDialog.addEventListener('close',()=>{if(mobileLayout.matches)dpClose();});
+txDialog.addEventListener('close',()=>{if(dpS?.anchor.closest('dialog')===txDialog)dpClose();});
+txDialog.addEventListener('click',event=>{
+  if(!mobileLayout.matches||!txDialog.open||event.target===txDialog)return;
+  const note=$('#fDesc');
+  if(txDialog.classList.contains('note-open')&&!note.value&&!event.target.closest('.tx-note-field,#mobileTxNote')){
+    note.blur();txDialog.classList.remove('note-open');syncMobileTxUI();
+  }
+  if(!txDialog.matches('.category-open,.options-open'))return;
+  if(event.target.closest('.mobile-tx-panel-viewport,#mobileTxOptions,#mobileTxCategory,#mobileTxDone,[data-close]'))return;
+  setMobileTxPanel(null,{focus:false});
+},true);
 mobileTxNote.onclick=()=>{txDialog.classList.add('note-open');syncMobileTxUI();$('#fDesc').focus({preventScroll:true});};
 mobileTxOptions.onclick=()=>setMobileTxPanel(txDialog.classList.contains('options-open')?null:'options');
 mobileTxCategory.onclick=()=>setMobileTxPanel(txDialog.classList.contains('category-open')?null:'category');
@@ -555,14 +565,14 @@ mobileBudgetView.innerHTML = `<div id="mobileBudgetGauge"></div><div id="mobileB
   <button type="button" data-budget-tool="search" aria-label="Buscar presupuestos" aria-expanded="false" aria-controls="mobileBudgetSearch" title="Buscar">${ic('search')}</button>
   <button type="button" data-budget-tool="filter" aria-label="Filtrar presupuestos" aria-expanded="false" aria-controls="mobileBudgetFilters" title="Filtrar">${ic('sliders-horizontal')}</button>
  </div>
- <div id="mobileBudgetSearch" class="search-box mobile-list-search" hidden>${ic('search')}<input type="search" placeholder="Buscar categoría" aria-label="Buscar categoría de presupuesto"></div>
+ <div id="mobileBudgetPanels"><div id="mobileBudgetSearch" class="search-box mobile-list-search" hidden>${ic('search')}<input type="search" placeholder="Buscar categoría" aria-label="Buscar categoría de presupuesto"></div>
  <div id="mobileBudgetFilters" hidden>
   <select id="mobileBudgetState" aria-label="Estado del presupuesto">
    <option value="all">Todas las categorías</option>
    <option value="over">Con exceso</option>
    <option value="unplanned">Sin plan</option>
   </select>
- </div>
+ </div></div>
  <div class="mobile-budget-categories" id="mobileBudgetCategories"></div>
  <p id="mobileBudgetEmpty" class="small muted" role="status" hidden></p>`;
 $('#tab-budget .bud-grid').before(mobileBudgetView);
@@ -579,6 +589,7 @@ const mobileBudgetState = $('#mobileBudgetState');
 const budgetStateControl = enhanceSelect(mobileBudgetState);
 const budgetToolIndicator = $('.mobile-budget-tools .mobile-tool-ind');
 let mobileBudgetPanel = '';
+const budgetPanelRegion = $('#mobileBudgetPanels');
 function updateBudgetToolIndicator(){
   placeMobileToolIndicator(budgetToolIndicator,$(`[data-budget-tool="${mobileBudgetPanel || 'list'}"]`));
 }
@@ -599,10 +610,13 @@ function updateMobileBudgetList(){
   $('[data-budget-tool=search]').classList.toggle('has-value', Boolean(query));
   $('[data-budget-tool=filter]').classList.toggle('has-value', mobileBudgetFilter !== 'all');
 }
-function setMobileBudgetPanel(panel){
+function setMobileBudgetPanel(panel,animate=false){
+  const previous=mobileBudgetPanel;
   mobileBudgetPanel = panel;
-  $('#mobileBudgetSearch').hidden = panel !== 'search';
-  mobileBudgetFilters.hidden = panel !== 'filter';
+  updateInlinePanel(budgetPanelRegion,previous,panel,animate,()=>{
+    $('#mobileBudgetSearch').hidden = panel !== 'search';
+    mobileBudgetFilters.hidden = panel !== 'filter';
+  });
   $('[data-budget-tool=list]').setAttribute('aria-pressed', String(!panel));
   for (const tool of ['search','filter']) {
     $(`[data-budget-tool="${tool}"]`).setAttribute('aria-expanded', String(panel === tool));
@@ -620,7 +634,7 @@ mobileBudgetView.addEventListener('click', event => {
     mobileBudgetState.value = 'all';
     updateMobileBudgetList();
   }
-  setMobileBudgetPanel(tool === 'list' || tool === mobileBudgetPanel ? '' : tool);
+  setMobileBudgetPanel(tool === 'list' || tool === mobileBudgetPanel ? '' : tool,true);
   if (mobileBudgetPanel === 'search') mobileBudgetSearch.focus();
   if (mobileBudgetPanel === 'filter') budgetStateControl.querySelector('button').focus();
 });
@@ -789,36 +803,39 @@ function updateMovementToolIndicator(){
 new ResizeObserver(updateMovementToolIndicator).observe(movementToolbar);
 new MutationObserver(updateMovementToolIndicator).observe($('#btnSelect'),{attributes:true,attributeFilter:['aria-pressed','hidden']});
 
+function updateInlinePanel(region,previous,panel,animate,render){
+  const smooth=animate&&mobileLayout.matches&&!reduceMotion();
+  const from=smooth?motionHeight(region):0;
+  const opacity=smooth?getComputedStyle(region).opacity:1;
+  region._motion?.cancel();
+  region._motion=null;
+  if(smooth&&previous&&!panel&&from>0){
+    region.inert=true;
+    const exit=motionAnimate(region,[{height:from+'px',opacity,overflow:'clip'},{height:'0px',opacity:0,overflow:'clip'}],'popup');
+    exit.onfinish=()=>{region._motion=null;region.inert=false;render();};
+    return;
+  }
+  region.inert=false;
+  render();
+  const to=smooth?motionHeight(region):0;
+  if(smooth&&to>0)motionAnimate(region,[{height:from+'px',opacity:from?opacity:0,overflow:'clip'},{height:to+'px',opacity:1,overflow:'clip'}],'popup');
+}
 function setMobileMovementPanel(panel, animate = false){
   const compact = mobileLayout.matches;
-  const smooth = compact && animate && !reduceMotion();
-  const previousHeight = smooth ? movementPanelRegion.offsetHeight : 0;
-  movementPanelRegion._motion?.cancel();
-  movementPanelRegion._motion = null;
-  const previous = movementPanels[mobileMovementPanel];
-  if (previous?._motion){previous._motion.cancel();previous._motion=null;}
+  const previous=mobileMovementPanel;
   mobileMovementPanel = panel;
-  movementFilters.hidden = compact && !['search','filters'].includes(panel);
-  movementFilters.dataset.panel = panel;
-  movementPanels.search.hidden = compact && panel !== 'search';
-  // Los totales acompañan a los filtros: se ven juntos y la barra pierde un icono.
-  movementPanels.details.hidden = compact && panel !== 'filters';
-  setMovementFiltersOpen(panel === 'filters');
+  updateInlinePanel(movementPanelRegion,previous,panel,animate,()=>{
+    movementFilters.hidden = compact && !['search','filters'].includes(panel);
+    movementFilters.dataset.panel = panel;
+    movementPanels.search.hidden = compact && panel !== 'search';
+    // Los totales acompañan a los filtros.
+    movementPanels.details.hidden = compact && panel !== 'filters';
+    setMovementFiltersOpen(panel === 'filters');
+  });
   mobileMovementTools.querySelectorAll('button').forEach(button => {
     button.setAttribute('aria-expanded',String(button.dataset.movementTool === panel));
   });
   updateMovementToolIndicator();
-  if (smooth){
-    const height = movementPanelRegion.offsetHeight;
-    if (height !== previousHeight){
-      // Solo esta región cambia de altura. La gráfica y las filas avanzan en el flujo.
-      motionAnimate(movementPanelRegion, [
-        {height:previousHeight+'px', overflow:'clip'},
-        {height:height+'px', overflow:'clip'}
-      ], 'popup');
-    }
-    if (panel) revealContent(movementPanels[panel], 'popup');
-  }
 }
 
 function syncMobileMovementTools(){
@@ -854,6 +871,12 @@ $('#tab-movs').addEventListener('keydown', event => {
   setMobileMovementPanel('');
   button?.focus({preventScroll:true});
 });
+document.addEventListener('click',event=>{
+  if(!mobileLayout.matches||document.querySelector('dialog:modal'))return;
+  const target=event.target;
+  if(activeTab()==='dashboard'&&mobileMovementPanel&&!target.closest('#movementToolbar,#mobileMovementPanels'))setMobileMovementPanel('',true);
+  if(activeTab()==='budget'&&mobileBudgetPanel&&!target.closest('.mobile-budget-tools,#mobileBudgetPanels'))setMobileBudgetPanel('',true);
+},true);
 const weekDate = date => date.slice(8,10)+'/'+date.slice(5,7);
 const weekRange = ({start,end}) => start === end ? weekDate(start) : weekDate(start)+'–'+weekDate(end);
 const weekTotal = (transactions, {start,end}) => sum(transactions.filter(t => t.date >= start && t.date <= end));
@@ -884,17 +907,17 @@ function mobileTrendLine(points, end){
 
 function mobileCumulativeSvg(width, height, kinds, days, daily, weeks, max, label, band = 0){
   // Líneas rectas con área en degradado; la semana elegida usa la misma guía y el mismo anillo que Gastos e Ingresos.
-  const pad = 16; // los puntos del borde no se recortan
-  const x = i => days.length > 1 ? pad + i * (width - 2 * pad) / (days.length - 1) : width / 2;
+  const firstX = 16, lastX = width - 32;
+  const x = i => days.length > 1 ? firstX + i * (lastX - firstX) / (days.length - 1) : width / 2;
   const y = v => height - 12 - (height - 18 - band) * v / max;
   const end = days.length - 1;
-  return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}">
+  return `<svg class="mobile-cumulative-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}">
     <defs>${kinds.map(kind => `<linearGradient id="mobileHomeFade-${kind}" x1="0" x2="0" y1="0" y2="${height}" gradientUnits="userSpaceOnUse">
       <stop style="stop-color:var(--${kind}-chart)" stop-opacity=".14"/><stop offset="1" style="stop-color:var(--${kind}-chart)" stop-opacity="0"/>
     </linearGradient>`).join('')}</defs>
     ${weeks.map((week,i) => `<path class="mobile-home-guide" data-week="${i}" d="M${x(days.indexOf(week.end))} 0V${height}" vector-effect="non-scaling-stroke"/>`).join('')}
-    ${kinds.map((kind, s) => { const line = daily.map((v,i) => `${i ? 'L' : 'M'}${x(i)} ${y(v[s])}`).join(''); return `<g class="mobile-home-series" data-kind="${kind}">
-      <path class="mobile-weekly-area" d="${line}L${x(end)} ${height}L${x(0)} ${height}Z" fill="url(#mobileHomeFade-${kind})"/>
+    ${kinds.map((kind, s) => { const line = `M0 ${y(daily[0][s])} ${daily.map((v,i) => `L${x(i)} ${y(v[s])}`).join(' ')} H${width}`; return `<g class="mobile-home-series" data-kind="${kind}">
+      <path class="mobile-weekly-area" d="${line} V${height} H0 Z" fill="url(#mobileHomeFade-${kind})"/>
       <path class="mobile-weekly-line mobile-linear-line" d="${line}" fill="none" vector-effect="non-scaling-stroke"/>
       ${weeks.map((week,i) => { const d = days.indexOf(week.end), at = `M${x(d)} ${y(daily[d][s])}h.01`; return `<path class="mobile-home-point" data-week="${i}" d="${at}" vector-effect="non-scaling-stroke"/><path class="mobile-home-core" data-week="${i}" d="${at}" vector-effect="non-scaling-stroke"/>`; }).join('')}
     </g>`; }).join('')}

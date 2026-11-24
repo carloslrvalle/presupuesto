@@ -538,6 +538,7 @@ main.wrap{padding-top:24px;padding-bottom:110px}
 /* .wrap pone padding 0 16px: aquí se fija el aire bajo las pestañas */
 .tab{display:none}
 .tab.active{display:block}
+main.wrap>.tab.view-leaving,#tab-movs>.mview.view-leaving{display:block!important;position:fixed;z-index:9;inset:var(--view-exit-top) auto auto var(--view-exit-left);width:var(--view-exit-width);margin:0;pointer-events:none}
 .card{background:var(--surface);border:1px solid var(--border);padding:18px}
 .prow:has(.pr-main){grid-template-columns:34px minmax(0,1fr);align-items:start}
 .pr-main .bar{margin:0}
@@ -845,6 +846,10 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
  .mobile-home-plot{position:relative;height:var(--home-plot-height)}
  .mobile-home-empty{display:grid;align-items:center;min-height:var(--home-plot-height);margin:0;padding-inline:var(--page-gutter);color:var(--muted);font-size:var(--type-control)}
  .mobile-home-trend svg{display:block;width:100%;height:100%}
+ .mobile-cumulative-chart{
+  --edge-fade:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent);
+  -webkit-mask-image:var(--edge-fade);mask-image:var(--edge-fade)
+ }
  /* Un punto por semana (como antes); la elegida crece a anillo. */
  .mobile-home-point{stroke:currentColor;stroke-width:5;stroke-linecap:round;paint-order:stroke;transition:stroke-width var(--motion-fast) var(--motion-ease)}
  .mobile-home-point.active{stroke-width:10}
@@ -3677,6 +3682,7 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-list-tools button.has-value::after{content:'';position:absolute;inset:7px 7px auto auto;width:5px;height:5px;border-radius:50%;background:currentColor}
  .mobile-budget-tools button:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
  #mobileBudgetSearch,#mobileBudgetFilters{margin-bottom:8px}
+ #mobileBudgetPanels,#mobileMovementPanels{display:flow-root}
  #mobileBudgetFilters>.fsel{width:max-content;max-width:100%}
  .fsel-menu{left:var(--filter-menu-shift,0px);width:max-content;min-width:100%;max-width:var(--filter-menu-width,calc(100vw - 24px))}
  html .tab .mobile-list-search,html #tab-movs .mobile-list-search{width:100%;min-width:0;border:0;border-radius:var(--radius-pill);background:transparent}
@@ -3978,6 +3984,7 @@ html[data-large-text] .month-nav{height:auto}
  .mobile-weekly-line{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
  @media(forced-colors:active){
   #tab-dashboard .dashboard-kpis[data-home-kind]>.mobile-home-trend{color:CanvasText}
+  .mobile-cumulative-chart{-webkit-mask-image:none;mask-image:none}
   #mobileHomeSync::before{background:ButtonText}
   .mobile-weekly-area{display:none}
  }
@@ -3993,23 +4000,27 @@ html[data-large-text] .month-nav{height:auto}
   @media(min-height:501px){
    /* El filtro va en una capa propia para conservar la posición de los controles fijos. */
    .topbar.scrolled{background:transparent;border-bottom-color:var(--border)}
-   .topbar.scrolled::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:var(--mobile-glass-filter);backdrop-filter:var(--mobile-glass-filter)}
+   .topbar.scrolled::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 74%,transparent);-webkit-backdrop-filter:var(--mobile-glass-filter);backdrop-filter:var(--mobile-glass-filter)}
   }
   @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
    .topbar.scrolled{background:var(--bg);border-bottom-color:transparent}
    .topbar.scrolled::before{content:none}
   }
    #mobileNav{
-    --dock-glass-top:68%;--dock-glass-bottom:40%;--dock-rim:.66;--dock-glint:.86;
+    --dock-glass-top:66%;--dock-glass-bottom:42%;--dock-rim:.72;--dock-glint:.9;
     background:linear-gradient(180deg,color-mix(in srgb,var(--surface) var(--dock-glass-top),transparent),color-mix(in srgb,var(--surface) var(--dock-glass-bottom),transparent));
     border-color:rgb(255 255 255 / var(--dock-rim));
-    -webkit-backdrop-filter:blur(14px) saturate(1.65);backdrop-filter:blur(14px) saturate(1.65);
+    -webkit-backdrop-filter:blur(18px) saturate(1.55);backdrop-filter:blur(18px) saturate(1.55);
     box-shadow:inset 0 1px 0 rgb(255 255 255 / var(--dock-glint)),inset 0 -1px 0 rgb(255 255 255 / .09),0 8px 24px -12px rgb(0 0 0 / .45);
    }
-   html[data-mode=dark] #mobileNav{--dock-glass-top:76%;--dock-glass-bottom:48%;--dock-rim:.18;--dock-glint:.18}
-   @media(prefers-color-scheme:dark){html:not([data-mode=light]) #mobileNav{--dock-glass-top:76%;--dock-glass-bottom:48%;--dock-rim:.18;--dock-glint:.18}}
+   #mobileNav>button:not(.active,#mobileNew) .mobile-nav-glyph{background:color-mix(in srgb,var(--surface) 35%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255 / .12)}
+   #mobileNav>.mobile-nav-indicator{box-shadow:inset 0 1px 0 rgb(255 255 255 / var(--dock-glint)),var(--shadow-xs)}
+   html[data-mode=dark] #mobileNav{--dock-glass-top:70%;--dock-glass-bottom:50%;--dock-rim:.2;--dock-glint:.2}
+   @media(prefers-color-scheme:dark){html:not([data-mode=light]) #mobileNav{--dock-glass-top:70%;--dock-glass-bottom:50%;--dock-rim:.2;--dock-glint:.2}}
   @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
    #mobileNav{background:var(--surface);border-color:var(--border);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:var(--shadow-sm)}
+   #mobileNav>button:not(.active,#mobileNew) .mobile-nav-glyph{background:transparent;box-shadow:none}
+   #mobileNav>.mobile-nav-indicator{box-shadow:none}
   }
   @media(forced-colors:active){
    #mobileNav{background:Canvas;border-color:ButtonText}

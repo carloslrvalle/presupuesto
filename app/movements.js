@@ -328,6 +328,10 @@ function moveViewInd(){
 function setMovView(v){
   const previous = movView;
   movView = v === 'cal' ? 'cal' : 'list';
+  const switching = previous !== movView && movementsVisible();
+  if(switching)navigationExit?.();
+  const outgoing = switching && !reduceMotion() ? $('#view-' + previous) : null;
+  const outgoingRect = outgoing?.getBoundingClientRect();
   if (movView === 'cal' && selMode) setSelMode(false);
   document.querySelectorAll('#movView button').forEach(b => {
     const selected = b.dataset.view === movView;
@@ -347,7 +351,10 @@ function setMovView(v){
   if (movView === 'cal') renderCalendar();
   else if (previous !== movView) renderMovs();
   const section = $('#tab-movs');
-  if(previous !== movView && movementsVisible() && !section._motion)revealNavigationView(view);
+  if(switching && !section._motion){
+    leaveNavigationView(outgoing,outgoingRect);
+    revealNavigationView(view);
+  }
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
 window.addEventListener('resize', moveViewInd);

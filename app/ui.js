@@ -254,7 +254,8 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
 // El teclado responde de inmediato; el puntero conserva las transiciones del componente.
 const reducedMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 function finishNavigationMotion(){
- for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#movementSearch,#movExtraFilters,#movSummary,.mobile-budget-bar-plot>span,.goal-progress>span,.expense-distribution-track>span)')){
+ navigationExit?.();
+ for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#mobileBudgetPanels,.mobile-budget-bar-plot>span,.goal-progress>span,.expense-distribution-track>span)')){
   el._motion?.finish();
  }
  for(const digit of document.querySelectorAll('#tab-dashboard .home-metric .nf-d')) digit._spin?.cancel();
@@ -275,6 +276,26 @@ document.addEventListener('pointerdown',()=>{
  }
 },true);
 const reduceMotion = () => document.documentElement.dataset.motionInput === 'keyboard' || reducedMotionPreference.matches;
+function outsideDialog(event,dialog){
+ if(event.target!==dialog)return false;
+ const {left,right,top,bottom}=dialog.getBoundingClientRect();
+ return event.clientX<left||event.clientX>right||event.clientY<top||event.clientY>bottom;
+}
+let backdropPress=null;
+document.addEventListener('pointerdown',event=>{
+ const dialog=event.target;
+ backdropPress=event.button===0&&dialog instanceof HTMLDialogElement&&dialog.matches(':modal')&&
+  outsideDialog(event,dialog)&&!dialog.querySelector('.dp.show,.pp.show')?dialog:null;
+},true);
+document.addEventListener('pointercancel',()=>{backdropPress=null;},true);
+document.addEventListener('click',event=>{
+ const dialog=backdropPress;
+ backdropPress=null;
+ if(!dialog?.open||!event.detail||!outsideDialog(event,dialog))return;
+ event.preventDefault();
+ if(dialog.requestClose)dialog.requestClose();
+ else if(dialog.dispatchEvent(new Event('cancel',{cancelable:true})))dialog.close();
+},true);
 // El cierre visual de Safari no retiene controles accesibles ni retrasa el cierre nativo.
 if(!CSS.supports('overlay','auto')){
  document.addEventListener('close',e=>{if(e.target instanceof HTMLDialogElement&&!e.target.open)e.target.inert=true;},true);
@@ -311,6 +332,27 @@ function revealContent(el,kind='fast'){
 }
 function revealNavigationView(view){
  return motionAnimate(view,[{opacity:.92},{opacity:1}],'fast');
+}
+let navigationExit=null;
+function leaveNavigationView(view,rect){
+ if(!view||!rect||rect.bottom<=0||rect.top>=innerHeight||reduceMotion())return;
+ const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
+ view.style.setProperty('--view-exit-top',rect.top/zoom+'px');
+ view.style.setProperty('--view-exit-left',rect.left/zoom+'px');
+ view.style.setProperty('--view-exit-width',rect.width/zoom+'px');
+ view.classList.add('view-leaving');
+ view.inert=true;
+ const animation=view.animate([{opacity:1},{opacity:0}],{duration:MOTION.fast,easing:MOTION.ease});
+ const finish=()=>{
+  animation.onfinish=null;
+  animation.cancel();
+  view.classList.remove('view-leaving');
+  view.inert=false;
+  for(const side of ['top','left','width'])view.style.removeProperty('--view-exit-'+side);
+  navigationExit=null;
+ };
+ navigationExit=finish;
+ animation.onfinish=finish;
 }
 function replayBarChart(chart){
  if(!chart?.canvas?.offsetWidth)return;
@@ -543,6 +585,9 @@ function showTab(name, scrollTop = 0){
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
   const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab(), entering = prevTab !== name;
+  if(entering)navigationExit?.();
+  const previousView=entering ? $('#tab-'+prevTab) : null;
+  const previousRect=previousView&&!reduceMotion()?previousView.getBoundingClientRect():null;
   const existingBars = name === 'dashboard' ? chBars : name === 'both' ? chBoth : null;
   if (entering) {
     if (prevTab === 'dashboard') chBars?.stop();
@@ -584,6 +629,7 @@ function showTab(name, scrollTop = 0){
   if (embeddedMovements) focusMobileHistory();
   else if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
   if (entering) {
+    leaveNavigationView(previousView,previousRect);
     revealNavigationView(section);
     if (name === 'dashboard' && mobileLayout.matches) revealMobileHomeChart();
     if (enterMobileBudget) revealMobileBudgetBars();
@@ -702,7 +748,7 @@ function tickChanges(root, selector, render){
   document.addEventListener('pointerdown', event => {
     if (!phone.matches || event.button>0 || drag || (event.isTrusted && !event.isPrimary)) return;
     const dialog = event.target.closest('dialog[open]');
-    if (!dialog || event.target.closest('button,input,select,textarea,a,label,[contenteditable]')) return;
+    if (!dialog || outsideDialog(event,dialog) || event.target.closest('button,input,select,textarea,a,label,[contenteditable]')) return;
     const handle = event.target.closest('.dlg-head,.pp-h') || (event.target === dialog ? dialog : null);
     if (!handle) return;
     const transform = getComputedStyle(dialog).transform;

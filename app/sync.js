@@ -372,7 +372,11 @@ async function startupLoad(){
 }
 
 $('#btnSyncConnect').onclick=async()=>{
- const url=$('#syncUrl').value.trim(),token=$('#syncToken').value.trim();if(!/^https:\/\/script\.google\.com\/.+\/exec/.test(url))return toast('La URL debe ser de script.google.com y terminar en /exec');if(!token)return toast('Ingresa la clave');
+ const url=$('#syncUrl').value.trim(),token=$('#syncToken').value.trim();
+ // El error queda junto a su campo y el foco va al primero que requiere corrección.
+ const errors=[['syncUrl',/^https:\/\/script\.google\.com\/.+\/exec/.test(url)?'':'La URL debe ser de script.google.com y terminar en /exec.'],['syncToken',token?'':'Ingresa la clave.']];
+ for(const [id,msg] of errors){$('#'+id).setAttribute('aria-invalid',String(!!msg));$('#'+id+'Error').textContent=msg;}
+ const invalid=errors.find(([,msg])=>msg);if(invalid)return $('#'+invalid[0]).focus();
  resetSyncRecovery();if(url!==sync.url||token!==sync.token){sync.rev=0;sync.lastSync=0;sync.byProf={};for(const pr of profiles.list){localData.remove(syncCacheKey('base',pr.id));localData.remove(syncCacheKey('conflict',pr.id));syncCacheMemory.delete(syncCacheKey('base',pr.id));syncCacheMemory.delete(syncCacheKey('conflict',pr.id));}}
  sync.url=url;sync.token=token;sync.auto=$('#syncAuto').checked;sync.pending=true;saveSync();await startupSync();
 };

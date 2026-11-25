@@ -162,7 +162,7 @@ function openWithdraw(id){
   const g = state.goals.find(x => x.id === id); if (!g) return; wdGoalId = id;
   $('#wdTitle').textContent = 'Retirar de «' + g.name + '»';
   $('#wdHint').textContent = `Tienes ${fmt(goalSaved(g))} ahorrados en esta meta. Lo que retires se descuenta de su avance.`;
-  $('#wdAmount').value = ''; $('#wdAmount').max = goalSaved(g); $('#wdDate').max = todayISO(); $('#wdDate').value = todayISO(); $('#wdNote').value = '';
+  $('#wdAmount').value = ''; $('#wdAmount').max = (Math.round(goalSaved(g) * 100) / 100).toFixed(2); $('#wdDate').max = todayISO(); $('#wdDate').value = todayISO(); $('#wdNote').value = '';
   $('#wdDialog').showModal(); setTimeout(() => $('#wdAmount').focus(), 50);
 }
 $('#wdForm').addEventListener('submit', e => {
@@ -171,9 +171,10 @@ $('#wdForm').addEventListener('submit', e => {
   if (!g) return toast('⚠️ La meta ya no está disponible.');
   const date = $('#wdDate').value || todayISO();
   if (date > todayISO()) return toast('El retiro debe tener fecha de hoy o anterior');
-  const a = Math.round(parseFloat($('#wdAmount').value) * 100) / 100, have = goalSaved(g);
-  if (!(a > 0)) return toast('Ingresa un monto válido');
-  if (a > have + .005) return toast(`Solo tienes ${fmt(have)} en esta meta`);
+  // Céntimos enteros: el saldo mostrado, el máximo del campo y esta validación coinciden.
+  const cents = Math.round(parseFloat($('#wdAmount').value) * 100), haveCents = Math.round(goalSaved(g) * 100), a = cents / 100;
+  if (!(cents > 0)) return toast('Ingresa un monto válido');
+  if (cents > haveCents) return toast(`Solo tienes ${fmt(haveCents / 100)} en esta meta`);
   const w = {id:uid(), d:date, a, n:$('#wdNote').value.trim()};
   if (!saveChange(() => { g.out = [...(g.out || []), w]; }, $('#wdDialog'))) return;
   $('#wdDialog').close(); renderAll();
@@ -182,6 +183,15 @@ $('#wdForm').addEventListener('submit', e => {
     const goal = state.goals.find(x => x.id === g.id);
     if (goal && saveChange(() => { goal.out = (goal.out || []).filter(x => x.id !== w.id); })) renderAll();
   }});
+});
+// Tras el redibujo, el foco vuelve a la tarjeta de la meta.
+$('#wdDialog').addEventListener('close', () => {
+  const id = CSS.escape(wdGoalId || '');
+  if (id) requestAnimationFrame(() => {
+    if (document.activeElement !== document.body) return;
+    const button = $(`[data-goal-out="${id}"]`) || $(`[data-goal-add="${id}"]`) || $(`[data-goal-edit="${id}"]`);
+    (button?.closest('details:not([open])')?.querySelector('summary') || button)?.focus({preventScroll:true});
+  });
 });
 
 // ---------- Cierre de mes: al empezar un mes nuevo, cómo te fue en el anterior ----------

@@ -73,7 +73,7 @@ function updateMobileNavigation() {
   });
   const add = $('#mobileNew');
   add.disabled = bothMode;
-  add.title = bothMode ? 'Elige un perfil para registrar movimientos' : 'Nuevo movimiento';
+  add.title = bothMode ? 'Elige un perfil para registrar movimientos' : current === 'goals' ? 'Nueva meta' : 'Nuevo movimiento';
   add.setAttribute('aria-label',add.title);
   moveMobileNavIndicator();
 }
@@ -270,6 +270,13 @@ txDialog.addEventListener('mousedown',event=>{
   if(txDialog.contains(document.activeElement)&&document.activeElement.matches('input:not([type=hidden]),textarea'))event.preventDefault();
 });
 mobileTxDone.onclick=()=>setMobileTxPanel(null);
+// Escape cierra primero el panel abierto y conserva el borrador; el siguiente cierra el alta.
+txDialog.addEventListener('keydown',event=>{
+  if(event.key!=='Escape'||event.defaultPrevented||!mobileLayout.matches||!txDialog.matches('.category-open,.options-open'))return;
+  const opener=txDialog.classList.contains('category-open')?mobileTxCategory:mobileTxOptions;
+  event.preventDefault();event.stopPropagation();
+  setMobileTxPanel(null,{focus:false});opener.focus({preventScroll:true});
+});
 txDialog.addEventListener('close',()=>{if(dpS?.anchor.closest('dialog')===txDialog)dpClose();});
 txDialog.addEventListener('click',event=>{
   if(!mobileLayout.matches||!txDialog.open||event.target===txDialog)return;
@@ -298,7 +305,9 @@ if(mobileLayout.matches){$('#fltScope').value=defaultMovementScope();$('#fltType
 // El tipo es del selector de Resumen solo en móvil; en PC vuelve a «Todos».
 mobileLayout.addEventListener('change',({matches})=>{$('#fltType').value=matches?'expense':'';});
 $('#mobileNew').onclick = () => {
-  if (!bothMode) openTx(null, movementsVisible() && movView==='cal' && calSel ? {date:calSel} : {});
+  if (bothMode) return;
+  if (activeTab() === 'goals') return openGoal();
+  openTx(null, movementsVisible() && movView==='cal' && calSel ? {date:calSel} : {});
 };
 $('#mobileMoreButton').onclick = () => {
   updateMobileNavigation();

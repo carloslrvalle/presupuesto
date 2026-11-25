@@ -251,14 +251,14 @@ let settingsVerifiedConnection=syncOn()&&sync.lastSync?sync.url+'|'+sync.token:'
 function settingsConnectionReady(){return syncOn()&&settingsVerifiedConnection===sync.url+'|'+sync.token;}
 function openSettingsSection(id,focus=false){
  const root=$('#tab-settings');
- const changed=(root.dataset.settingsView||null)!==id;
+ const previous=root.dataset.settingsView||null,changed=previous!==id;
  if(id)root.dataset.settingsView=id;else delete root.dataset.settingsView;
  root.querySelectorAll('.settings-panel').forEach(p=>{p.hidden=p.id!=='settings-panel-'+id;});
  root.querySelector('.settings-home').hidden=!!id;
  root.querySelectorAll('[data-settings-target]').forEach(b=>{if(b.dataset.settingsTarget===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  const target=id?$('#settings-panel-'+id):root.querySelector('.settings-home');
  if(changed)revealContent(target);
- if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else root.querySelector('.settings-home [data-settings-target]').focus({preventScroll:true});}
+ if(focus){if(id)$('#settings-heading-'+id).focus({preventScroll:true});else(root.querySelector(`.settings-home [data-settings-target="${previous}"]`)||root.querySelector('.settings-home [data-settings-target]')).focus({preventScroll:true});}
 }
 function renderSettingsStatus(){
  if(!$('#settingsStatusTitle'))return;

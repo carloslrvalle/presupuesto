@@ -245,8 +245,8 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
         <h3><span class="ui-ic" data-e="☁️"></span>Google Sheets</h3>
         <p class="small muted">Pega la URL de tu aplicación web de Apps Script y la clave que pusiste en el script.</p>
         <div class="stack">
-          <div class="field"><label>URL de la aplicación web</label><input type="text" id="syncUrl" placeholder="https://script.google.com/macros/s/…/exec"></div>
-          <div class="field"><label>Clave (TOKEN)</label><input type="text" id="syncToken" placeholder="La misma clave del script" autocomplete="off"></div>
+          <div class="field"><label for="syncUrl">URL de la aplicación web</label><input type="text" id="syncUrl" placeholder="https://script.google.com/macros/s/…/exec" aria-describedby="syncUrlError"><span id="syncUrlError" class="field-error"></span></div>
+          <div class="field"><label for="syncToken">Clave (TOKEN)</label><input type="text" id="syncToken" placeholder="La misma clave del script" autocomplete="off" aria-describedby="syncTokenError"><span id="syncTokenError" class="field-error"></span></div>
           <label class="check"><input type="checkbox" id="syncAuto" checked> Guardar en Sheets automáticamente con cada cambio</label>
           <div class="toolbar" style="margin:0">
             <button class="btn primary" id="btnSyncConnect"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Conectar</button>
@@ -383,7 +383,7 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <div class="dlg-head"><h3 style="margin:0" id="colorDialogTitle">Elige un color</h3><button type="button" class="iconbtn" data-close aria-label="Cerrar"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
   <div class="dlg-body">
     <div class="color-preview" id="colorPreview"><span id="colorPreviewIcon"></span><strong id="colorPreviewValue"></strong><small>Vista previa</small></div>
-    <div class="field color-hex-field"><label for="colorHex">Código HEX</label><input id="colorHex" type="text" maxlength="7" autocomplete="off" spellcheck="false" aria-describedby="colorError" placeholder="#A6DCEF"><span id="colorError" class="color-error" role="status"></span></div>
+    <div class="field color-hex-field"><label for="colorHex">Código HEX</label><input id="colorHex" type="text" maxlength="7" autocomplete="off" spellcheck="false" aria-describedby="colorError" placeholder="#A6DCEF"><span id="colorError" class="field-error" role="status"></span></div>
     <div class="color-sliders"><label for="colorHue">Tono</label><input type="range" id="colorHue" min="0" max="360" step="1"><label for="colorSaturation">Saturación</label><input type="range" id="colorSaturation" min="0" max="100" step="1"><label for="colorLightness">Luminosidad</label><input type="range" id="colorLightness" min="0" max="100" step="1"></div>
     <div class="palette" id="paletteGrid"></div>
   </div>

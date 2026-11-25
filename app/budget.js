@@ -134,20 +134,22 @@ $('#btnCopyPrev').onclick = async () => {
   }))return;
   if(activeProfile!==profile || currentMonth!==m || cycleView()!==cycle || (cycle && cycleDay()!==day) || localRecovery || localTabChanged)return;
   const before = {...state.budgets[m]};
-  state.budgets[m] = {...before,...copy};
-  if(!save())return;
+  if(!saveChange(()=>{state.budgets[m] = {...before,...copy};})){renderAll();return;}
   renderAll();
   toast(cycle?'Presupuesto copiado del ciclo anterior':'Presupuesto copiado de '+monthLong(prev), {action:'Deshacer',onAction:()=>{
     if(activeProfile!==profile || localRecovery || localTabChanged)return;
-    const budget = state.budgets[m];
-    if(!budget)return;
-    for(const [key,value] of Object.entries(copy)){
-      if(budget[key]!==value)continue;
-      if(Object.hasOwn(before,key))budget[key]=before[key];
-      else delete budget[key];
-    }
-    if(!Object.keys(budget).length)delete state.budgets[m];
-    if(save()){renderAll();toast('Presupuesto anterior restaurado');}
+    if(!state.budgets[m])return;
+    const restored = saveChange(()=>{
+      const budget = state.budgets[m];
+      for(const [key,value] of Object.entries(copy)){
+        if(budget[key]!==value)continue;
+        if(Object.hasOwn(before,key))budget[key]=before[key];
+        else delete budget[key];
+      }
+      if(!Object.keys(budget).length)delete state.budgets[m];
+    });
+    renderAll();
+    if(restored)toast('Presupuesto anterior restaurado');
   }});
 };
 $('#btnSetDefault').onclick = () => {
@@ -335,12 +337,13 @@ $('#tab-cats').addEventListener('change', e => {
 $('#tab-cats').addEventListener('click', async e => {
   const pb = e.target.closest('.pay-btn'); if (pb){ openPayPicker(pb, pb.closest('.cat-row').dataset.id); return; }
   const ua = e.target.closest('[data-unarch]');
-  if (ua){ const c = state.categories.find(x => x.id === ua.dataset.unarch); if (c){ delete c.archived; save(); renderAll(); toast(`«${c.name}» restaurada`, {icon:'archive-restore'}); } return; }
+  if (ua){ const c = state.categories.find(x => x.id === ua.dataset.unarch); if (c){ const ok = saveChange(() => { delete state.categories.find(x => x.id === c.id).archived; }); renderAll(); if (ok) toast(`«${c.name}» restaurada`, {icon:'archive-restore'}); } return; }
   const ar = e.target.closest('[data-act="arch"]');
   if (ar){ setMenuDisclosure(ar.closest('.cat-actions'),false); const c = state.categories.find(x => x.id === ar.closest('.cat-row').dataset.id); if (!c) return;
     const row = ar.closest('.cat-row'); await fadeOut(row);
-    c.archived = currentMonth < thisMonth() ? thisMonth() : currentMonth; save(); renderAll();
-    toast(`«${c.name}» archivada: ya no aparece al registrar ni en el presupuesto`, {icon:'archive', action:'Deshacer', onAction: () => { delete c.archived; save(); renderAll(); }});
+    const id = c.id, archived = saveChange(() => { c.archived = currentMonth < thisMonth() ? thisMonth() : currentMonth; }); renderAll();
+    // Tras una reversión el objeto cambia; Deshacer busca la categoría por id.
+    if (archived) toast(`«${c.name}» archivada: ya no aparece al registrar ni en el presupuesto`, {icon:'archive', action:'Deshacer', onAction: () => { saveChange(() => { const x = state.categories.find(y => y.id === id); if (x) delete x.archived; }); renderAll(); }});
     return; }
   const add = e.target.closest('[data-addcat]');
   if (add){

@@ -254,11 +254,20 @@ const cssVar = n => { const de = document.documentElement, k = [...de.attributes
 // El teclado responde de inmediato; el puntero conserva las transiciones del componente.
 const reducedMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 function finishNavigationMotion(){
- navigationExit?.();
- for(const el of document.querySelectorAll('#tabInd,#mobileNavIndicator,#movView .vseg-ind,.tab.active,.tab.active .mview:not([hidden]),.tab.active :is(.home-seg-ind,.mobile-home-trend svg,#movBody,#mobileMovementPanels,#mobileBudgetPanels,.mobile-budget-bar-plot>span,.goal-progress>span,.expense-distribution-track>span)')){
-  el._motion?.finish();
+ navigationExit?.finish();
+ for(const animation of document.getAnimations()){
+  if(animation instanceof CSSAnimation||animation instanceof CSSTransition||animation.playState==='finished')continue;
+  if(Number.isFinite(animation.effect?.getComputedTiming().endTime))animation.finish();
  }
- for(const digit of document.querySelectorAll('.nf-d')) digit._spin?.cancel();
+ if(typeof Chart==='undefined')return;
+ for(const chart of Object.values(Chart.instances)){
+  const tracing=chart.$analysisTrace?.progress<1;
+  if(!tracing&&!Chart.animator.running(chart))continue;
+  if(tracing)finishAnalysisTrace(chart);
+  chart.$analysisUpdating=false;
+  chart.stop();
+  chart.update('none');
+ }
 }
 reducedMotionPreference.addEventListener('change', event => { if(event.matches)finishNavigationMotion(); });
 document.addEventListener('keydown',event=>{
@@ -320,39 +329,71 @@ const MOTION={
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
 const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
-function motionAnimate(el,frames,kind='move'){
+function motionAnimate(el,frames,kind='move',easing=kind==='data'?MOTION.dataEase:MOTION.ease,options={}){
  if(!el)return;
  if(el._motion){el._motion.cancel();el._motion=null;}
  if(reduceMotion())return;
- const animation=el.animate(frames,{duration:MOTION[kind],easing:kind==='data'?MOTION.dataEase:MOTION.ease});el._motion=animation;
+ const animation=el.animate(frames,{duration:MOTION[kind],easing,...options});el._motion=animation;
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
 function revealContent(el,kind='fast'){
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
 }
-function revealNavigationView(view){
- return motionAnimate(view,[{opacity:.92},{opacity:1}],'fast');
-}
 let navigationExit=null;
-function leaveNavigationView(view,rect){
- if(!view||!rect||rect.bottom<=0||rect.top>=innerHeight||reduceMotion())return;
+const navigationHandoffOpacity=.82;
+function captureNavigationChange(from,to){
+ if(reduceMotion()){navigationExit?.finish();return null;}
+ const opacity=from?Number(getComputedStyle(from).opacity):0;
+ const pending=navigationExit;
+ const targetStyle=pending?.view===to?getComputedStyle(to):null;
+ const returning=targetStyle?.visibility==='visible'?Number(targetStyle.opacity):null;
+ const delay=pending?Math.max(0,pending.handoff-Number(pending.animation.currentTime)):0;
+ // Si el destino anterior aún no aparece, deja acabar la salida que sí está a la vista.
+ if(delay&&returning===null&&opacity<=.01)return {delay};
+ pending?.finish();
+ return {from,rect:from?.getBoundingClientRect(),opacity,returning};
+}
+function leaveNavigationView(view,rect,opacity){
+ if(!view||!rect||rect.bottom<=0||rect.top>=innerHeight||opacity<=.01)return 0;
  const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
  view.style.setProperty('--view-exit-top',rect.top/zoom+'px');
  view.style.setProperty('--view-exit-left',rect.left/zoom+'px');
  view.style.setProperty('--view-exit-width',rect.width/zoom+'px');
  view.classList.add('view-leaving');
  view.inert=true;
- const animation=view.animate([{opacity:1},{opacity:0}],{duration:MOTION.fast,easing:MOTION.ease});
+ const handoff=MOTION.fast/2;
+ const animation=view.animate([
+  {opacity,visibility:'visible',easing:'ease-in'},
+  {opacity:navigationHandoffOpacity,visibility:'hidden',offset:.5},
+  {opacity:navigationHandoffOpacity,visibility:'hidden'}
+ ],{duration:MOTION.fast,fill:'forwards'});
  const finish=()=>{
   animation.onfinish=null;
   animation.cancel();
   view.classList.remove('view-leaving');
   view.inert=false;
   for(const side of ['top','left','width'])view.style.removeProperty('--view-exit-'+side);
-  navigationExit=null;
+  if(navigationExit?.animation===animation)navigationExit=null;
  };
- navigationExit=finish;
+ navigationExit={view,animation,handoff,finish};
  animation.onfinish=finish;
+ return handoff;
+}
+function revealNavigationView(view,change){
+ if(!change||reduceMotion())return;
+ const returning=change.returning>0;
+ const delay=returning?0:change.delay??leaveNavigationView(change.from,change.rect,change.opacity);
+ if(delay){
+  const duration=delay+MOTION.fast/2;
+  motionAnimate(view,[
+   {opacity:0,easing:'steps(1,end)'},
+   {opacity:navigationHandoffOpacity,offset:delay/duration,easing:MOTION.ease},
+   {opacity:1}
+  ],'fast','linear',{duration,fill:'backwards'});
+ }else{
+  const duration=returning?MOTION.fast/2:MOTION.fast;
+  motionAnimate(view,[{opacity:returning?change.returning:.92},{opacity:1}],'fast',MOTION.ease,{duration});
+ }
 }
 function replayBarChart(chart){
  if(!chart?.canvas?.offsetWidth)return;
@@ -441,9 +482,18 @@ function fitMetricValue(el){
  const style=getComputedStyle(el),boxWidth=parseFloat(style.width)||el.offsetWidth;
  const available=boxWidth-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0)-(parseFloat(style.borderLeftWidth)||0)-(parseFloat(style.borderRightWidth)||0);
  if(available<=0||!el.getClientRects().length)return;
- const size=parseFloat(style.fontSize),range=document.createRange();range.selectNodeContents(el);
+ const size=parseFloat(style.fontSize);
  // El rango se mide en pantalla; convertirlo al mismo espacio CSS que el ancho disponible.
- const zoom=el.getBoundingClientRect().width/boxWidth||1,width=range.getBoundingClientRect().width/zoom;
+ const zoom=el.getBoundingClientRect().width/boxWidth||1;
+ const columns=el.querySelector('.nf-money-window');
+ let renderedWidth;
+ if (columns){
+  renderedWidth=columns.getBoundingClientRect().right-el.firstElementChild.getBoundingClientRect().left;
+ }else{
+  const range=document.createRange();range.selectNodeContents(el);
+  renderedWidth=range.getBoundingClientRect().width;
+ }
+ const width=renderedWidth/zoom;
  if(width>available)el.style.fontSize=Math.max(12,size*(available-2)/width)+'px';
 }
 function updateTextScale(){
@@ -477,45 +527,150 @@ function rollKeys(text){
   [...text.slice(last + 1)].forEach((ch, i) => out.push(['s' + i, ch]));
   return out;
 }
+function moneyDigitPositions(track, old){
+  const columns = new Map([...old].filter(([key]) => !key.startsWith('p')));
+  for (const ghost of track.querySelectorAll('.nf-money-ghost')) columns.set(ghost.dataset.key, ghost);
+  const style = getComputedStyle(track);
+  const scale = new DOMMatrixReadOnly(style.transform === 'none' ? undefined : style.transform).a;
+  const fontSize = parseFloat(style.fontSize) * scale;
+  const positions = new Map([...columns].map(([key, span]) => {
+    const rect = span.getBoundingClientRect();
+    const moving = ['running','paused'].includes(span._spin?.playState);
+    let offset = null;
+    if (span._digit){
+      const style = getComputedStyle(span,'::before');
+      const rowHeight = parseFloat(style.lineHeight);
+      const y = new DOMMatrixReadOnly(style.transform === 'none' ? undefined : style.transform).m42;
+      // Conserva el dígito visible si el importe nuevo necesita otro tamaño de texto.
+      offset = rowHeight > 0 ? `translateY(${y/rowHeight}lh)` : style.transform;
+    }
+    return [key,{left:rect.left,width:rect.width, text:span.dataset.glyph ?? span.textContent,
+      offset, opacity:Number(getComputedStyle(span).opacity), moving}];
+  }));
+  return {positions,fontSize};
+}
+function animateMoneyDigitSpacing(el, track, map, before){
+  const reference = map.get('dot');
+  if (!before.positions.has('dot') || !reference) return;
+  const zoom = el.getBoundingClientRect().width / el.offsetWidth || 1;
+  const left = track.getBoundingClientRect().left;
+  const scale = before.fontSize/parseFloat(getComputedStyle(track).fontSize);
+  const shift = (before.positions.get('dot').left-left-scale*(reference.getBoundingClientRect().left-left))/zoom;
+  if (Math.abs(shift) < .1 && Math.abs(scale-1) < .001) return;
+  // Las columnas que salen conservan su posición hasta que pasan detrás del símbolo.
+  for (const [key, column] of before.positions){
+    if (map.has(key)) continue;
+    const ghost = document.createElement('span');
+    ghost.className = `nf-c nf-money-ghost${column.offset ? ' nf-d' : ''}`;
+    ghost._digit = Boolean(column.offset);
+    ghost.dataset.key = key;
+    ghost.dataset.glyph = column.text;
+    ghost.setAttribute('aria-hidden','true');
+    ghost.style.left = `${((column.left-left)/zoom-shift)/scale}px`;
+    ghost.style.width = `${column.width/(zoom*scale)}px`;
+    ghost.style.opacity = column.opacity;
+    if (column.offset) ghost.style.setProperty('--nf-ghost-offset',column.offset);
+    track.append(ghost);
+  }
+  const animation = motionAnimate(track,[{transform:`translateX(${shift}px) scale(${scale})`},{transform:'none'}],'number',MOTION.dataEase);
+  animation.onfinish = () => {
+    if (track._motion !== animation) return;
+    track.querySelectorAll('.nf-money-ghost').forEach(ghost => ghost.remove());
+    track._motion = null;
+  };
+}
 function rollDigits(el, text, dur){
-  const keys = rollKeys(text), old = el._rollKeys && el.firstElementChild?.classList.contains('nf-c') && el.textContent === el._rollText ? el._rollMap : null, map = new Map(), frag = [];
-  el.style.setProperty('--nf-dur', (dur || 0) + 'ms');
+  const money = el.matches('#mobileBudgetTotal,#kExpense,#kIncome');
+  let track = money ? el.querySelector('.nf-money-track') : null;
+  const old = (track || el.firstElementChild?.classList.contains('nf-c')) && el.textContent === el._rollText ? el._rollMap : null;
+  const pseudo = money && 'pseudoElement' in KeyframeEffect.prototype;
+  const before = track && old && dur && el.getClientRects().length ? moneyDigitPositions(track, old) : null;
+  if (track){
+    track._motion?.cancel();
+    track._motion = null;
+  }else if (money){
+    el.innerHTML = '<span></span><span class="nf-money-window"><span class="nf-money-track"></span></span>';
+    track = el.querySelector('.nf-money-track');
+  }
+  const keys = rollKeys(text), map = new Map();
+  el.style.setProperty('--nf-dur', (pseudo ? 0 : dur || 0) + 'ms');
   for (const [key, ch] of keys){
     const digit = /\d/.test(ch); let span = old?.get(key);
     if (!span || span._digit !== digit || (!digit && span.textContent !== ch)){
       const fresh = !span; span = document.createElement('span'); span.className = digit ? 'nf-c nf-d' : 'nf-c'; span._digit = digit;
       if (digit) span.style.setProperty('--n', '0');
-      if (fresh && old && dur) span.classList.add('nf-in');
+      if (fresh && old && dur && !money) span.classList.add('nf-in');
     }
-    if (digit){ span._spin?.cancel(); const g = document.createElement('span'); g.className = 'nf-g'; g.textContent = ch; span.replaceChildren(g); } else span.textContent = ch;
+    if (digit){
+      span._spin?.cancel();
+      if (span.firstElementChild) span.firstElementChild.textContent = ch;
+      else {
+        const glyph = document.createElement('span');
+        glyph.className = 'nf-g';
+        glyph.textContent = ch;
+        span.append(glyph);
+      }
+    }else span.textContent = ch;
     span._target = digit ? ch : null;
-    map.set(key, span); frag.push(span);
+    map.set(key, span);
   }
-  el.replaceChildren(...frag);
-  if (dur) void el.offsetWidth; // las columnas nuevas se pintan en 0 antes de girar
-  for (const span of frag) if (span._digit) span.style.setProperty('--n', span._target);
-  el._rollKeys = keys; el._rollMap = map; el._rollText = el.textContent;
+  if (track){
+    const prefix = [], numbers = [];
+    for (const [key, span] of map) (key.startsWith('p') ? prefix : numbers).push(span);
+    el.firstElementChild.replaceChildren(...prefix);
+    const keep = new Set(numbers);
+    for (const span of [...track.children]) if (!keep.has(span)) span.remove();
+    let next = track.firstElementChild;
+    for (const span of numbers){
+      if (span !== next) track.insertBefore(span,next);
+      next = span.nextElementSibling;
+    }
+  }else{
+    el.replaceChildren(...map.values());
+  }
+  fitMetricValue(el); // Mide el formato final antes de desplazar las columnas.
+  if (dur && !pseudo) void el.offsetWidth; // pinta las columnas nuevas antes de girarlas
+  for (const [key, span] of map){
+    const previous = before?.positions.get(key);
+    if (span._digit){
+      span.style.setProperty('--n',span._target);
+      if (pseudo && before && (previous?.moving || previous?.text !== span._target))
+        animateDigit(span, previous?.offset || 'translateY(0)', dur);
+    }
+    if (track && !key.startsWith('p')){
+      span._motion?.cancel();
+      span._motion = null;
+      if (before && previous?.opacity !== 1)
+        motionAnimate(span,[{opacity:previous?.opacity ?? 0},{opacity:1}],'number',MOTION.dataEase);
+    }
+  }
+  if (before) animateMoneyDigitSpacing(el,track,map,before);
+  el._rollMap = map; el._rollText = el.textContent;
 }
 const rollsDigits = el => mobileLayout.matches && el.matches('#tab-dashboard .dashboard-kpis .value,#mobileBudgetTotal');
-// Al aparecer una cifra, reutiliza sus columnas montadas. Un cambio de valor en curso tiene prioridad.
+function animateDigit(digit, from, duration = MOTION.number){
+  digit._spin = digit.animate([{transform:from},{transform:'translateY(calc(var(--n) * -1lh))'}],
+    {pseudoElement:'::before',duration,easing:MOTION.dataEase});
+}
+// Reutiliza las columnas montadas. Un cambio de valor en curso tiene prioridad.
 function spinValue(el){
   if (!el || !rollsDigits(el) || reduceMotion() || !('pseudoElement' in KeyframeEffect.prototype) || !el.getClientRects().length) return;
-  if (el.getAnimations({subtree:true}).some(animation => animation instanceof CSSTransition)) return;
+  if (el.getAnimations({subtree:true}).some(animation => animation instanceof CSSTransition || animation.effect.pseudoElement === '::before')) return;
   for (const digit of el.querySelectorAll('.nf-d')){
-    if (digit._target === '0') continue;
+    if (digit._target === '0' && el._countValue !== 0) continue;
     digit._spin?.cancel();
-    digit._spin = digit.animate([{transform:'translateY(0)'},{transform:'translateY(calc(var(--n) * -1lh))'}],
-      {pseudoElement:'::before',duration:MOTION.number,easing:MOTION.dataEase});
+    animateDigit(digit,digit._target === '0' ? 'translateY(-1lh)' : 'translateY(0)');
   }
 }
-function countUp(el, to, kind = 'money', cls){
+function countUp(el, to, kind = 'money', cls, animateDigits = true){
   if (!el) return;
   if (rollsDigits(el)){
     const key = el.id || el.dataset.k, target = kind === 'pct' ? to.toFixed(1) + '%' : fmt(to), changed = key in numMemo && numMemo[key] !== to;
     if (cls !== undefined) el.className = cls;
     numMemo[key] = to; el._countValue = to; el._countTarget = to; el._fitTexts = [target];
-    if (el.textContent !== target || !el.firstElementChild) rollDigits(el, target, changed && !reduceMotion() ? MOTION.number : 0);
-    fitMetricValue(el); return;
+    if (el.textContent !== target || !el.firstElementChild) rollDigits(el, target, changed && animateDigits && !reduceMotion() ? MOTION.number : 0);
+    else fitMetricValue(el);
+    return;
   }
   const key=el.id||el.dataset.k, target=kind==='pct'?to.toFixed(1)+'%':fmt(to);
   if(cls!==undefined)el.className=cls;
@@ -581,9 +736,10 @@ function showTab(name, scrollTop = 0){
   // Desde «Ambos» cualquier pestaña normal vuelve al usuario activo (Ajustes se puede abrir en ambos modos)
   if (bothMode && name !== 'both' && name !== 'settings'){ bothMode = false; document.body.classList.remove('both-on'); renderProfileUI(); dirty = new Set(Object.keys(VIEWS)); }
   const b = $(`#tabs button[data-tab="${name}"]`), prevTab = activeTab(), entering = prevTab !== name;
-  if(entering)navigationExit?.();
+  const section = $('#tab-' + name), tabIndicator = $('#tabInd');
   const previousView=entering ? $('#tab-'+prevTab) : null;
-  const previousRect=previousView&&!reduceMotion()?previousView.getBoundingClientRect():null;
+  const transition=entering?captureNavigationChange(previousView,section):null;
+  const previousHomePlot=name==='dashboard'&&mobileLayout.matches?mobileHomeChart.querySelector('svg'):null;
   const existingBars = name === 'dashboard' ? chBars : name === 'both' ? chBoth : null;
   if (entering) {
     if (prevTab === 'dashboard') chBars?.stop();
@@ -593,7 +749,6 @@ function showTab(name, scrollTop = 0){
       finishAnalysisTrace(chYear);
     }
   }
-  const section = $('#tab-' + name), tabIndicator = $('#tabInd');
   if(entering && tabBar.querySelector('button.active'))tabIndicator._navigationRect=tabIndicator.getBoundingClientRect();
   for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
     button.classList.toggle('active', button === b);
@@ -607,7 +762,10 @@ function showTab(name, scrollTop = 0){
   });
   if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
   const enterMobileBudget = name === 'budget' && entering && mobileLayout.matches;
-  if (enterMobileBudget) dirty.add(name);
+  if (enterMobileBudget) {
+    resetMobileBudgetWeek();
+    dirty.add(name);
+  }
   if (name === 'analysis' && currentMonth !== analysisSelectedMonth) dirty.add(name);
   planningHeader();
   renderView(name);
@@ -624,16 +782,16 @@ function showTab(name, scrollTop = 0){
   if (embeddedMovements) focusMobileHistory();
   else if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
   if (entering) {
-    leaveNavigationView(previousView,previousRect);
-    revealNavigationView(section);
+    revealNavigationView(section,transition);
     if (mobileLayout.matches) {
       section.querySelectorAll('.home-metric>.value,#mobileBudgetTotal').forEach(spinValue);
-      if (name === 'dashboard') revealMobileHomeChart();
+      if (name === 'dashboard' && mobileHomeChart.querySelector('svg') === previousHomePlot) revealMobileHomeChart();
       if (enterMobileBudget) revealMobileBudgetBars();
     }
     if (name === 'goals') revealProgress('#goalsGrid .goal-progress>span');
     if ((name === 'dashboard' && chBars === existingBars) || (name === 'both' && chBoth === existingBars)) replayBarChart(existingBars);
     if (name === 'analysis') replayAnalysisTrace();
+    playGoalCelebration();
   }
 }
 // Barra de pestañas: cada sección recuerda su desplazamiento; tocar la pestaña activa vuelve arriba.
@@ -703,7 +861,7 @@ function tickChanges(root, selector, render){
     const target = dismiss ? dialog.offsetHeight + 24 : 0;
     const damping = dismiss && velocity > 500 ? .8 : 1;
     const omega = 2 * Math.PI / .3;
-    const motion = {position, velocity, target, raf:0, last:performance.now(), started:performance.now()};
+    const motion = {position, velocity, target, dismiss, raf:0, last:performance.now(), started:performance.now()};
     dialog._sheetMotion = motion;
     dialog.classList.add('sheet-settling');
     function frame(now){
@@ -712,6 +870,7 @@ function tickChanges(root, selector, render){
       if (reduceMotion()){ stopSheet(dialog); if (dismiss) dialog.close(); return; }
       const dt = Math.min(.032, Math.max(0,(now-motion.last)/1000));
       motion.last = now;
+      const target=motion.target;
       const x = motion.position-target, v = motion.velocity;
       const decay = Math.exp(-damping*omega*dt);
       if (damping === 1){
@@ -810,7 +969,10 @@ function tickChanges(root, selector, render){
       if (current.handle.hasPointerCapture(current.id)) current.handle.releasePointerCapture(current.id);
       stopSheet(current.dialog);
     }
-    document.querySelectorAll('dialog.sheet-settling').forEach(dialog=>stopSheet(dialog));
+    document.querySelectorAll('dialog.sheet-settling').forEach(dialog=>{
+      const motion=dialog._sheetMotion;
+      if(motion?.dismiss)motion.target=dialog.offsetHeight+24;
+    });
   });
 })();
 $('#btnSettings').onclick = () => { showTab('settings'); openSettingsSection(null); };

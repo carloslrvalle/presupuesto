@@ -214,7 +214,7 @@ function renderAnalysisChart(){
         y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>mixHex(cssVar(ctx.tick.value===0?'--muted':'--border'),cssVar('--surface'),ctx.tick.value===0?.42:.38),lineWidth:ctx=>ctx.tick.value===0?1.2:1},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}
   };
   if(chYear){
-    finishAnalysisTrace(chYear);
+    if(!animate)finishAnalysisTrace(chYear);
     chYear.setActiveElements([]);
     chYear.tooltip?.setActiveElements([],{x:0,y:0});
     chYear.data.labels=labels;

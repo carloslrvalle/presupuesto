@@ -521,7 +521,7 @@ function stepMobileChartWeek(event, selectWeek){
   event.preventDefault();
   const buttons = [...group.querySelectorAll('button')];
   const index = Math.max(0, Math.min(buttons.length - 1, buttons.indexOf(event.target) + direction));
-  selectWeek(index);
+  selectWeek?.(index);
   buttons[index].focus();
 }
 mobileHomeChart.addEventListener('keydown', event => stepMobileChartWeek(event, selectMobileHomeWeek));
@@ -557,7 +557,7 @@ VICONS['sliders-horizontal'] = '<path d="M3 7h6m4 0h8M3 17h10m4 0h4M9 4v6m8 4v6"
 mobileBudgetView.id = 'mobileBudgetView';
 mobileBudgetView.className = 'mobile-only';
 mobileBudgetView.setAttribute('aria-labelledby', 'desktopSectionTitle');
-mobileBudgetView.innerHTML = `<div id="mobileBudgetGauge"><div class="mobile-budget-summary">
+mobileBudgetView.innerHTML = `<div id="mobileBudgetGauge"><div class="mobile-budget-summary" aria-live="polite" aria-atomic="true">
  <span id="mobileBudgetLabel" class="mbs-label"></span>
  <strong id="mobileBudgetTotal" class="mbs-amount"></strong>
  <p id="mobileBudgetHint" class="mbs-label" hidden></p>
@@ -615,11 +615,12 @@ function updateMobileBudgetList(){
   $('[data-budget-tool=filter]').classList.toggle('has-value', mobileBudgetFilter !== 'all');
 }
 function setMobileBudgetPanel(panel,animate=false){
-  const previous=mobileBudgetPanel;
   mobileBudgetPanel = panel;
-  updateInlinePanel(budgetPanelRegion,previous,panel,animate,()=>{
+  updateInlinePanel(budgetPanelRegion,panel,animate,()=>{
     $('#mobileBudgetSearch').hidden = panel !== 'search';
     mobileBudgetFilters.hidden = panel !== 'filter';
+    if(animate && panel==='search')mobileBudgetSearch.focus();
+    if(animate && panel==='filter')budgetStateControl.querySelector('button').focus();
   });
   $('[data-budget-tool=list]').setAttribute('aria-pressed', String(!panel));
   for (const tool of ['search','filter']) {
@@ -639,8 +640,6 @@ mobileBudgetView.addEventListener('click', event => {
     updateMobileBudgetList();
   }
   setMobileBudgetPanel(tool === 'list' || tool === mobileBudgetPanel ? '' : tool,true);
-  if (mobileBudgetPanel === 'search') mobileBudgetSearch.focus();
-  if (mobileBudgetPanel === 'filter') budgetStateControl.querySelector('button').focus();
 });
 mobileBudgetView.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || event.defaultPrevented || !mobileBudgetPanel) return;
@@ -670,6 +669,16 @@ function positionMobileBudgetOptions(){
 mobileLayout.addEventListener('change', positionMobileBudgetOptions);
 positionMobileBudgetOptions();
 
+let mobileBudgetBalance;
+function renderMobileBudgetSummary(animate = false){
+  const week = mobileBudgetChart.querySelector('[aria-pressed=true]');
+  const label = $('#mobileBudgetLabel');
+  const text = week ? `Gastado al ${week.dataset.budgetEnd}` : mobileBudgetBalance.label;
+  const amount = week ? Number(week.dataset.budgetTotal) : mobileBudgetBalance.amount;
+  if (label.textContent !== text) label.textContent = text;
+  countUp($('#mobileBudgetTotal'), amount, 'money', undefined, animate);
+}
+
 function renderMobileBudget(){
   const m = currentMonth;
   const cycle = cycleView();
@@ -684,12 +693,15 @@ function renderMobileBudget(){
   const budget = spendRows.reduce((total,row) => total+row.budget,0), real = spendRows.reduce((total,row) => total+row.real,0);
   const left = budget - real;
   const planned = budget > 0, hint = $('#mobileBudgetHint');
-  $('#mobileBudgetLabel').textContent = planned ? (left < 0 ? 'Exceso' : 'Disponible') + ' del ' + (cycle ? 'ciclo' : 'mes') : 'Sin presupuesto de gastos';
-  countUp($('#mobileBudgetTotal'), planned ? Math.abs(left) : real);
+  mobileBudgetBalance = {
+    label: planned ? `${left < 0 ? 'Exceso' : 'Disponible'} del ${cycle ? 'ciclo' : 'mes'}` : 'Sin presupuesto de gastos',
+    amount: planned ? Math.abs(left) : real,
+  };
   hint.hidden = planned;
   if (!planned) hint.textContent = (real ? 'Gastado sin plan. ' : '') + 'Toca una categoría para asignar un monto.';
   const spendIds = new Set(spendRows.map(({c}) => c.id));
   renderMobileBudgetChart(actuals.filter(t => spendIds.has(t.catId) && !isSavingTx(t)), budget, cycle);
+  renderMobileBudgetSummary();
   $('#mobileBudgetCategories').innerHTML = rows.map(({c,saving,budget,real}) => {
     const left = budget-real, pct = budget>0?real/budget*100:0;
     const over = !saving && budget>0 && left<-.005;
@@ -702,8 +714,8 @@ function renderMobileBudget(){
 }
 
 let mobileBudgetChartKey = '', mobileBudgetPeriodKey = '';
-function selectMobileBudgetWeek(index){
-  markMobileChartWeek(mobileBudgetChart, index);
+function resetMobileBudgetWeek(){
+  markMobileChartWeek(mobileBudgetChart, -1);
 }
 
 function renderMobileBudgetChart(txs, budget, cycle){
@@ -713,9 +725,9 @@ function renderMobileBudgetChart(txs, budget, cycle){
   const key = JSON.stringify([period,budget,weeks]);
   if (key === mobileBudgetChartKey) return;
   mobileBudgetChartKey = key;
-  const focused = mobileBudgetChart.contains(document.activeElement);
+  const focusedWeek = mobileBudgetChart.contains(document.activeElement) ? document.activeElement.dataset.budgetWeek : undefined;
   const previous = mobileBudgetChart.querySelector('[aria-pressed=true]');
-  const selected = mobileBudgetPeriodKey === period && previous ? Math.min(Number(previous.dataset.budgetWeek),weeks.length-1) : weeks.length-1;
+  const selected = mobileBudgetPeriodKey === period && previous ? Math.min(Number(previous.dataset.budgetWeek),weeks.length-1) : -1;
   mobileBudgetPeriodKey = period;
   mobileBudgetChart.hidden = !weeks.length;
   if (!weeks.length){
@@ -728,23 +740,29 @@ function renderMobileBudgetChart(txs, budget, cycle){
     <div class="mobile-budget-bars" style="--budget-plan-offset:${(100-barHeight(budget))/100}">
       <div class="mobile-home-weeks" role="group" aria-labelledby="mobileBudgetChartLabel" aria-description="Plan: ${fmt(budget)}" style="--week-count:${weeks.length}">
         ${weeks.map((week,i) => {
-          const left = budget - week.total;
-          return `<button type="button" data-budget-week="${i}" aria-label="Al ${weekDate(week.end)}, gastado ${fmt(week.total)}. ${left<0?'Exceso':'Disponible'} ${fmt(Math.abs(left))}" style="--budget-bar-height:${barHeight(week.total)}%">
+          const end = weekDate(week.end);
+          return `<button type="button" data-budget-week="${i}" data-budget-end="${end}" data-budget-total="${week.total}" aria-label="Gasto acumulado al ${end}" aria-controls="mobileBudgetGauge" style="--budget-bar-height:${barHeight(week.total)}%">
           <span class="mobile-budget-bar-plot" aria-hidden="true"><span></span></span>
-          <span class="mobile-budget-bar-date" aria-hidden="true">${weekDate(week.end).replace('/','/<wbr>')}</span>
+          <span class="mobile-budget-bar-date" aria-hidden="true">${end.replace('/','/<wbr>')}</span>
         </button>`;
         }).join('')}
       </div>
       <div class="mobile-budget-plan-marker" aria-hidden="true"><span>Plan</span></div>
     </div>`;
-  selectMobileBudgetWeek(selected);
-  if (focused) mobileBudgetChart.querySelector('[aria-pressed=true]').focus({preventScroll:true});
+  markMobileChartWeek(mobileBudgetChart, selected);
+  if (focusedWeek !== undefined){
+    const index = Math.min(Number(focusedWeek), weeks.length-1);
+    mobileBudgetChart.querySelector(`[data-budget-week="${index}"]`).focus({preventScroll:true});
+  }
 }
 mobileBudgetChart.addEventListener('click', event => {
   const button = event.target.closest('[data-budget-week]');
-  if (button) selectMobileBudgetWeek(Number(button.dataset.budgetWeek));
+  if (!button) return;
+  const index = button.getAttribute('aria-pressed') === 'true' ? -1 : Number(button.dataset.budgetWeek);
+  markMobileChartWeek(mobileBudgetChart, index);
+  renderMobileBudgetSummary(event.detail > 0);
 });
-mobileBudgetChart.addEventListener('keydown', event => stepMobileChartWeek(event, selectMobileBudgetWeek));
+mobileBudgetChart.addEventListener('keydown', event => stepMobileChartWeek(event));
 
 const mobileBudgetEditor = document.createElement('dialog');
 mobileBudgetEditor.id = 'mobileBudgetEditor';
@@ -811,34 +829,56 @@ function updateMovementToolIndicator(){
 new ResizeObserver(updateMovementToolIndicator).observe(movementToolbar);
 new MutationObserver(updateMovementToolIndicator).observe($('#btnSelect'),{attributes:true,attributeFilter:['aria-pressed','hidden']});
 
-function updateInlinePanel(region,previous,panel,animate,render){
+function updateInlinePanel(region,panel,animate,render){
   const smooth=animate&&mobileLayout.matches&&!reduceMotion();
+  const previous=region._visiblePanel;
   const from=smooth?motionHeight(region):0;
   const opacity=smooth?getComputedStyle(region).opacity:1;
   region._motion?.cancel();
   region._motion=null;
-  if(smooth&&previous&&!panel&&from>0){
+  const show=()=>{
+    region._visiblePanel=panel;
+    region.inert=false;
+    render();
+  };
+  const animateTo=(visibleOpacity,duration)=>{
+    const to=motionHeight(region);
+    if(to>0)motionAnimate(region,[
+      {height:from+'px',opacity:visibleOpacity,overflow:'clip'},
+      {height:to+'px',opacity:1,overflow:'clip'}
+    ],'popup',MOTION.ease,{duration});
+  };
+  if(smooth&&previous&&previous!==panel&&from>0){
     region.inert=true;
-    const exit=motionAnimate(region,[{height:from+'px',opacity,overflow:'clip'},{height:'0px',opacity:0,overflow:'clip'}],'popup');
-    exit.onfinish=()=>{region._motion=null;region.inert=false;render();};
+    const duration=panel?MOTION.popup/2:MOTION.popup;
+    const exit=motionAnimate(region,[
+      {height:from+'px',opacity,overflow:'clip'},
+      {height:(panel?from:0)+'px',opacity:0,overflow:'clip'}
+    ],'popup',MOTION.ease,{duration,fill:'forwards'});
+    exit.onfinish=()=>{
+      if(region._motion!==exit)return;
+      exit.cancel();
+      region._motion=null;
+      show();
+      if(panel&&!reduceMotion())animateTo(0,duration);
+    };
     return;
   }
-  region.inert=false;
-  render();
-  const to=smooth?motionHeight(region):0;
-  if(smooth&&to>0)motionAnimate(region,[{height:from+'px',opacity:from?opacity:0,overflow:'clip'},{height:to+'px',opacity:1,overflow:'clip'}],'popup');
+  show();
+  if(smooth&&panel)animateTo(from?opacity:0,MOTION.popup);
 }
 function setMobileMovementPanel(panel, animate = false){
   const compact = mobileLayout.matches;
-  const previous=mobileMovementPanel;
   mobileMovementPanel = panel;
-  updateInlinePanel(movementPanelRegion,previous,panel,animate,()=>{
+  updateInlinePanel(movementPanelRegion,panel,animate,()=>{
     movementFilters.hidden = compact && !['search','filters'].includes(panel);
     movementFilters.dataset.panel = panel;
     movementPanels.search.hidden = compact && panel !== 'search';
     // Los totales acompañan a los filtros.
     movementPanels.details.hidden = compact && panel !== 'filters';
     setMovementFiltersOpen(panel === 'filters');
+    if(animate && panel==='search')$('#fltText').focus();
+    if(animate && panel==='filters')$('#movExtraFilters .fsel-btn')?.focus();
   });
   mobileMovementTools.querySelectorAll('button').forEach(button => {
     button.setAttribute('aria-expanded',String(button.dataset.movementTool === panel));
@@ -869,8 +909,6 @@ mobileMovementTools.addEventListener('click', event => {
   if (!button) return;
   const panel = button.dataset.movementTool;
   setMobileMovementPanel(mobileMovementPanel === panel ? '' : panel, true);
-  if (mobileMovementPanel === 'search') $('#fltText').focus();
-  if (mobileMovementPanel === 'filters') $('#movExtraFilters .fsel-btn')?.focus();
 });
 $('#tab-movs').addEventListener('keydown', event => {
   if (event.key !== 'Escape' || event.defaultPrevented || !mobileMovementPanel) return;
@@ -961,8 +999,7 @@ function syncMobileHomeKind(){
   }
   // Sin esperar un fotograma: así ninguna cifra conserva el tamaño del modo anterior.
   fitMetricValues();
-  // Solo gira la cifra que acaba de aparecer.
-  if (previous !== 'both') spinValue($(previous === 'expense' ? '#kIncome' : '#kExpense'));
+  mobileHomeMetrics.querySelectorAll('.home-metric>.value').forEach(spinValue);
   renderMobileHomeChart(planTx(currentMonth));
   return true;
 }

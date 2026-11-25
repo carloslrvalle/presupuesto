@@ -538,6 +538,7 @@ main.wrap{padding-top:24px;padding-bottom:110px}
 /* .wrap pone padding 0 16px: aquí se fija el aire bajo las pestañas */
 .tab{display:none}
 .tab.active{display:block}
+html.desktop-layout-moving{overflow-x:clip}
 main.wrap>.tab.view-leaving,#tab-movs>.mview.view-leaving{display:block!important;position:fixed;z-index:9;inset:var(--view-exit-top) auto auto var(--view-exit-left);width:var(--view-exit-width);margin:0;pointer-events:none}
 .card{background:var(--surface);border:1px solid var(--border);padding:18px}
 .prow:has(.pr-main){grid-template-columns:34px minmax(0,1fr);align-items:start}
@@ -3801,6 +3802,11 @@ html[data-large-text] .month-nav{height:auto}
  .mbs-label{margin:0;color:var(--muted);font-size:var(--type-meta);line-height:1.4}
  .mbs-amount{color:var(--text);font-weight:600;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
  html[data-large-text] .mbs-amount{font-size:var(--metric-value-size);line-height:1.2}
+ .nf-money-window{display:inline-block;vertical-align:top;height:1lh;clip-path:inset(-1lh -100vw -1lh 0)}
+ .nf-money-track{position:relative;display:block;white-space:pre;transform-origin:left center}
+ .nf-money-track .nf-money-ghost{position:absolute;top:0;pointer-events:none}
+ .nf-money-ghost.nf-d::before{transform:var(--nf-ghost-offset)}
+ .nf-money-ghost:not(.nf-d)::before{content:attr(data-glyph);content:attr(data-glyph) / ""}
  #mobileBudgetChart{margin-top:var(--section-gap)}
  .mobile-budget-chart-label{margin:0;color:var(--muted);font-size:var(--type-meta);font-weight:600}
  /* Compensa el selector y la lectura de Inicio para alinear los dos listados. */
@@ -3818,9 +3824,10 @@ html[data-large-text] .month-nav{height:auto}
   transform-origin:bottom;
   transition:background-color var(--motion-tab) var(--motion-tab-ease)
  }
- .mobile-budget-bar-date{justify-self:center;padding:2px 4px;border-radius:var(--radius-pill);color:var(--muted);line-height:1.3}
- [data-budget-week][aria-pressed=true] .mobile-budget-bar-plot>span{background-color:var(--budget-emphasis)}
- [data-budget-week][aria-pressed=true] .mobile-budget-bar-date{background:var(--primary-soft);color:var(--text);font-weight:600}
+ .mobile-budget-bar-date{justify-self:center;padding:2px 4px;border-radius:var(--radius-pill);color:var(--muted);line-height:1.3;
+  transition:background-color var(--motion-tab) var(--motion-tab-ease),color var(--motion-tab) var(--motion-tab-ease)}
+ [data-budget-week]:is([aria-pressed=true],.mobile-home-weeks:not(:has([aria-pressed=true]))>button:last-child) .mobile-budget-bar-plot>span{background-color:var(--budget-emphasis)}
+ [data-budget-week]:is([aria-pressed=true],.mobile-home-weeks:not(:has([aria-pressed=true]))>button:last-child) .mobile-budget-bar-date{background:var(--primary-soft);color:var(--text);font-weight:600}
  .mobile-budget-plan-marker{position:absolute;z-index:1;inset:calc(var(--budget-plot-height) * var(--budget-plan-offset)) 0 auto;display:flex;align-items:center;gap:4px;transform:translateY(-50%);pointer-events:none}
  .mobile-budget-plan-marker::after{content:"";flex:1;border-top:1px dashed var(--text)}
  .mobile-budget-plan-marker span{padding:2px 7px;border-radius:var(--radius-pill);background:var(--text);color:var(--bg);font-size:var(--type-meta);font-weight:600;line-height:1.4}

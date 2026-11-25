@@ -9,9 +9,19 @@ const isTouchPhone = () => innerWidth <= 600;
 // Deslizar a los lados cambia de mes; jalar hacia abajo (arriba de todo) sincroniza con Sheets
 const ptr = document.createElement('div'); ptr.className = 'ptr'; ptr.innerHTML = ic('refresh-cw'); document.body.appendChild(ptr);
 let sw = null, ptrBusy = false;
+function returnRefreshIndicator(){
+  ptr.classList.add('back');
+  ptr.style.opacity = 0;
+  ptr.style.transform = 'translateY(-60px)';
+}
+function cancelTouchGesture(){
+  if (sw?.pull) returnRefreshIndicator();
+  sw = null;
+}
 function hasHScroll(el){ for (let n = el; n && n !== document.body; n = n.parentElement){ const o = getComputedStyle(n).overflowX; if ((o === 'auto' || o === 'scroll') && n.scrollWidth > n.clientWidth + 2) return true; } return false; }
 document.addEventListener('touchstart', e => {
-  sw = null; if (e.touches.length !== 1 || !isTouchPhone() || document.querySelector('dialog[open]') || !profMenu.hidden) return;
+  cancelTouchGesture();
+  if (e.touches.length !== 1 || !isTouchPhone() || document.querySelector('dialog[open]') || !profMenu.hidden) return;
   const tg = e.target; if (!tg.closest || !tg.closest('main') || tg.closest('input,select,textarea,canvas,.vseg,[contenteditable]')) return;
   const t = e.touches[0]; sw = {x:t.clientX, y:t.clientY, t:Date.now(), top:window.scrollY <= 0, h:!hasHScroll(tg), pull:0};
 }, {passive:true});
@@ -24,15 +34,16 @@ document.addEventListener('touchmove', e => {
 }, {passive:true});
 document.addEventListener('touchend', e => {
   if (!sw) return; const s0 = sw; sw = null; const t = e.changedTouches[0], dx = t.clientX - s0.x, dy = t.clientY - s0.y;
-  if (s0.pull){ if (s0.pull >= 60) pullRefresh(); else { ptr.classList.add('back'); ptr.style.opacity = 0; ptr.style.transform = 'translateY(-60px)'; } return; }
+  if (s0.pull){ if (s0.pull >= 60) pullRefresh(); else returnRefreshIndicator(); return; }
   if (s0.h && Math.abs(dx) > 70 && Math.abs(dy) < 50 && Math.abs(dx) > Math.abs(dy) * 2 && Date.now() - s0.t < 600 && !['settings', 'cats'].includes(activeTab()))
     goMonth(shiftMonth(currentMonth, dx < 0 ? 1 : -1));
 });
+document.addEventListener('touchcancel',cancelTouchGesture,{passive:true});
 async function pullRefresh(){
   ptrBusy = true; ptr.classList.add('spin', 'back'); ptr.style.opacity = 1; ptr.style.transform = 'translateY(44px)';
   try { if (sync.pending && !await pushNow()) return toast('Los cambios siguen pendientes de confirmación'); if (!await startupLoad()) return toast('No se pudo confirmar la actualización con Sheets'); otherAt = 0; await refreshOther(true); renderAll(); toast('Actualizado con Sheets', {icon:'cloud'}); }
   catch(e){ toast('⚠️ No se pudo actualizar'); }
-  finally { ptrBusy = false; ptr.classList.remove('spin'); ptr.style.opacity = 0; ptr.style.transform = 'translateY(-60px)'; }
+  finally { ptrBusy = false; ptr.classList.remove('spin'); returnRefreshIndicator(); }
 }
 // Confeti breve (respeta «reducir movimiento»)
 function confetti(){
@@ -48,10 +59,30 @@ function confetti(){
     if (t < DUR) requestAnimationFrame(frame); else c.remove(); })(t0);
 }
 // Meta lograda: celebra cuando una meta pasa a completa (no al abrir la app)
-let _doneSet = null;
+let _doneSet = null, pendingGoalCelebration = null;
+function playGoalCelebration(){
+  const pending=pendingGoalCelebration;
+  if(!pending?.ready||bothMode||pending.profile!==activeProfile||pending.tab!==activeTab())return;
+  pendingGoalCelebration=null;
+  if(myGoals().some(goal=>goal.id===pending.id&&goalDone(goal)))confetti();
+}
 function checkGoalCelebration(){
-  if (bothMode) return; const now = new Set(myGoals().filter(goalDone).map(g => g.id));
-  if (_doneSet){ const fresh = [...now].filter(id => !_doneSet.has(id)); if (fresh.length){ const g = myGoals().find(x => x.id === fresh[0]); setTimeout(() => { confetti(); toast(`¡Meta lograda: ${g.name}!`, {icon:'party-popper'}); }, 380); } }
+  if (bothMode) return;
+  if(pendingGoalCelebration?.profile!==activeProfile)pendingGoalCelebration=null;
+  const complete=myGoals().filter(goalDone), now=new Set(complete.map(g=>g.id));
+  const fresh=_doneSet&&complete.find(g=>!_doneSet.has(g.id));
+  if(fresh){
+    const pending={id:fresh.id,profile:activeProfile,tab:activeTab(),ready:false};
+    pendingGoalCelebration=pending;
+    setTimeout(()=>{
+      if(bothMode||activeProfile!==pending.profile)return;
+      const goal=myGoals().find(g=>g.id===pending.id);
+      if(!goal||!goalDone(goal))return;
+      pending.ready=true;
+      playGoalCelebration();
+      toast(`¡Meta lograda: ${goal.name}!`,{icon:'party-popper'});
+    },380);
+  }
   _doneSet = now;
 }
 

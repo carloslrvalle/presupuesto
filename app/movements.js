@@ -329,16 +329,14 @@ function setMovView(v){
   const previous = movView;
   movView = v === 'cal' ? 'cal' : 'list';
   const switching = previous !== movView && movementsVisible();
-  if(switching)navigationExit?.();
-  const outgoing = switching && !reduceMotion() ? $('#view-' + previous) : null;
-  const outgoingRect = outgoing?.getBoundingClientRect();
+  const section = $('#tab-movs'), view = $('#view-' + movView);
+  const transition = switching && !section._motion ? captureNavigationChange($('#view-' + previous),view) : null;
   if (movView === 'cal' && selMode) setSelMode(false);
   document.querySelectorAll('#movView button').forEach(b => {
     const selected = b.dataset.view === movView;
     b.classList.toggle('active', selected);
     b.setAttribute('aria-pressed', String(selected));
   });
-  const view = $('#view-' + movView);
   document.querySelectorAll('#tab-movs .mview').forEach(el => {
     el.hidden = el !== view;
     if(el.hidden && el._motion){el._motion.cancel();el._motion=null;}
@@ -350,11 +348,7 @@ function setMovView(v){
   moveViewInd();
   if (movView === 'cal') renderCalendar();
   else if (previous !== movView) renderMovs();
-  const section = $('#tab-movs');
-  if(switching && !section._motion){
-    leaveNavigationView(outgoing,outgoingRect);
-    revealNavigationView(view);
-  }
+  if(transition)revealNavigationView(view,transition);
 }
 $('#movView').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setMovView(b.dataset.view); });
 window.addEventListener('resize', moveViewInd);

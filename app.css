@@ -444,17 +444,16 @@ html[data-large-text] .month-nav .month-label{height:auto;padding-block:4px;font
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  #tabs,#fab{display:none!important}
  #mobileNav>button{position:relative;z-index:1;display:grid;place-items:center;width:100%;min-width:0;min-height:var(--control-height-touch);padding:0;border:0;border-radius:var(--radius);background:transparent;color:var(--muted);cursor:pointer;touch-action:manipulation;transition:color var(--motion-fast) var(--motion-ease)}
- #mobileNav .mobile-nav-glyph{display:grid;place-items:center;width:36px;height:36px;border-radius:var(--radius-lg);transition:transform var(--motion-fast) var(--motion-ease)}
+ #mobileNav .mobile-nav-glyph{display:grid;place-items:center;width:36px;height:36px;border-radius:var(--radius-lg)}
  #mobileNav .mobile-nav-glyph>.vi{display:block;width:24px;height:24px;stroke-width:2;flex:none}
  #mobileNav>button.active{color:var(--text)}
  #mobileNav>#mobileNew{color:var(--text)}
  #mobileNav>#mobileNew .mobile-nav-glyph{background:var(--primary-fill,var(--primary));color:var(--on-primary);border-radius:var(--radius-lg)}
  #mobileNav>#mobileNew:disabled{opacity:.4;cursor:default}
- #mobileNav>button:not(:disabled):active .mobile-nav-glyph{transform:scale(.97);transition-duration:0ms}
  #mobileNav>button:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
  .mobile-more-list>button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
  @media(prefers-reduced-motion:reduce){
-  #mobileNav>button,#mobileNav .mobile-nav-glyph,#mobileNav>button:not(:disabled):active .mobile-nav-glyph{transition:none;transform:none}
+  #mobileNav>button{transition:none}
  }
  @media(forced-colors:active){
   #mobileNav>button,#mobileNav>button.active{color:ButtonText}
@@ -478,9 +477,6 @@ html[data-large-text] .month-nav .month-label{height:auto;padding-block:4px;font
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  .topbar .month-nav .month-label{font-size:14px;font-weight:600}
  .mobile-more-list>button+button{border-top:1px solid var(--border)}
- @media(hover:hover) and (pointer:fine){
-  #mobileNav>button:not(#mobileNew):hover .mobile-nav-glyph{background:var(--surface-2)}
- }
 }
 #desktopSidebar,#desktopLayoutToggle{display:none}
 html:not([data-desktop-nav=side]) #desktopSectionTitle{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
@@ -539,7 +535,11 @@ main.wrap{padding-top:24px;padding-bottom:110px}
 .tab{display:none}
 .tab.active{display:block}
 html.desktop-layout-moving{overflow-x:clip}
+/* La vista saliente pasa un instante por display:none: sin esto, sus animaciones CSS (barras de distribución) se reinician desde cero mientras se desvanece. */
+.view-leaving :is(*,*::before,*::after){animation:none!important}
 main.wrap>.tab.view-leaving,#tab-movs>.mview.view-leaving{display:block!important;position:fixed;z-index:9;inset:var(--view-exit-top) auto auto var(--view-exit-left);width:var(--view-exit-width);margin:0;pointer-events:none}
+/* La salida pasa un instante por display:none y reiniciaría las animaciones CSS (p. ej., las barras de distribución volvían a crecer desde 0). */
+:is(main.wrap>.tab,#tab-movs>.mview).view-leaving *{animation:none!important}
 .card{background:var(--surface);border:1px solid var(--border);padding:18px}
 .prow:has(.pr-main){grid-template-columns:34px minmax(0,1fr);align-items:start}
 .pr-main .bar{margin:0}
@@ -768,6 +768,8 @@ html[data-large-text] .kpi .value{font-size:var(--metric-value-size)}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  /* Inicio: cuatro tarjetas de resumen. */
  #tab-dashboard.active{display:flex;flex-direction:column;gap:12px}
+ /* Al salir conserva su composición: con display:block perdía el espacio de 12 px y Movimientos subía de golpe. */
+ main.wrap>#tab-dashboard.view-leaving{display:flex!important;flex-direction:column;gap:12px}
  #tab-dashboard>.plan-period{order:0;justify-content:space-between;gap:8px;padding:0;display:none}
  #tab-dashboard:has(>#firstMovement:not([hidden]))>:is(.dashboard-kpis,#tab-movs){display:none}
  #firstMovement{display:grid;gap:16px;padding:18px}
@@ -3630,14 +3632,15 @@ html[data-large-text] .month-nav{height:auto}
 @media(max-width:600px),(max-width:960px) and (max-height:500px) and (pointer:coarse){
  /* Navegación y controles compartidos con las vistas de detalle. */
  #mobileNav{position:fixed;z-index:30;isolation:isolate;inset:auto max(24px,env(safe-area-inset-right,0px)) var(--dock-inset) max(24px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;min-height:var(--dock-height);max-width:var(--dock-max-width);margin-inline:auto;padding:var(--dock-padding);border:var(--dock-border) solid var(--border);border-radius:var(--radius-pill);background:var(--surface);box-shadow:var(--shadow-sm)}
- #mobileNav>.mobile-nav-indicator,#mobileNav>#mobileNew .mobile-nav-glyph,#mobileNav .mobile-nav-glyph{border-radius:50%}
- #mobileNav>.mobile-nav-indicator{position:absolute;z-index:0;left:0;top:0;width:36px;height:36px;background:var(--surface-2);opacity:0;transform-origin:top left;pointer-events:none}
+ #mobileNav .mobile-nav-glyph{border-radius:50%}
+ /* «+» elevado: círculo tinta con anillo de superficie que sobresale de la cápsula. El realce es estado, no movimiento. */
+ #mobileNav>#mobileNew .mobile-nav-glyph{width:52px;height:52px;border-radius:50%;translate:0 -16px;background:var(--primary-fill,var(--primary));color:var(--on-primary);box-shadow:0 0 0 4px var(--surface),0 6px 16px -4px rgb(0 0 0 / .32),inset 0 1px 0 rgb(255 255 255 / .18)}
+ @media(forced-colors:active){#mobileNav>#mobileNew .mobile-nav-glyph{background:ButtonText;color:Canvas;box-shadow:0 0 0 4px Canvas}}
  .topbar .gear-btn{display:none}
  body:not(.sel-on):has(.fab:not([hidden])) .toast,.toast{bottom:calc(var(--dock-controls-bottom) + var(--visible-bottom,0px))}
  .sel-bar{width:calc(100% - 24px);max-width:440px;justify-content:space-between;bottom:var(--dock-controls-bottom)}
  @media(forced-colors:active){
   #mobileNav{background:Canvas;border-color:ButtonText}
-  #mobileNav>.mobile-nav-indicator{background:Canvas;outline:2px solid Highlight;outline-offset:-2px}
  }
 }
 @media(max-width:700px){
@@ -3985,7 +3988,6 @@ html[data-large-text] .month-nav{height:auto}
   #mobileHomeSync::before{background:ButtonText}
   .mobile-weekly-area{display:none}
  }
- #mobileNav>.mobile-nav-indicator{background:var(--primary-soft)}
  .mobile-more-list>button[aria-current=page]{background:var(--primary-soft);color:var(--primary)}
  .mobile-more-list>button>.vi:first-child,.settings-home-icon{border-radius:var(--radius-lg);background:var(--primary-soft);color:var(--primary)}
  .mobile-more-list>button{min-height:62px;padding-inline:8px}
@@ -4010,14 +4012,13 @@ html[data-large-text] .month-nav{height:auto}
     -webkit-backdrop-filter:blur(18px) saturate(1.55);backdrop-filter:blur(18px) saturate(1.55);
     box-shadow:inset 0 1px 0 rgb(255 255 255 / var(--dock-glint)),inset 0 -1px 0 rgb(255 255 255 / .09),0 8px 24px -12px rgb(0 0 0 / .45);
    }
-   #mobileNav>button:not(.active,#mobileNew) .mobile-nav-glyph{background:color-mix(in srgb,var(--surface) 35%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255 / .12)}
-   #mobileNav>.mobile-nav-indicator{box-shadow:inset 0 1px 0 rgb(255 255 255 / var(--dock-glint)),var(--shadow-xs)}
+   /* Vidrio líquido: brillo especular en el borde superior que se desvanece hacia el centro. */
+   #mobileNav::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(120% 90% at 50% -30%,rgb(255 255 255 / calc(var(--dock-glint) * .55)),transparent 60%),linear-gradient(90deg,rgb(255 255 255 / calc(var(--dock-glint) * .18)),transparent 22% 78%,rgb(255 255 255 / calc(var(--dock-glint) * .18)))}
    html[data-mode=dark] #mobileNav{--dock-glass-top:70%;--dock-glass-bottom:50%;--dock-rim:.2;--dock-glint:.2}
    @media(prefers-color-scheme:dark){html:not([data-mode=light]) #mobileNav{--dock-glass-top:70%;--dock-glass-bottom:50%;--dock-rim:.2;--dock-glint:.2}}
   @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
    #mobileNav{background:var(--surface);border-color:var(--border);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:var(--shadow-sm)}
-   #mobileNav>button:not(.active,#mobileNew) .mobile-nav-glyph{background:transparent;box-shadow:none}
-   #mobileNav>.mobile-nav-indicator{box-shadow:none}
+   #mobileNav::before{content:none}
   }
   @media(forced-colors:active){
    #mobileNav{background:Canvas;border-color:ButtonText}

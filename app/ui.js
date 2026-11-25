@@ -340,7 +340,6 @@ function revealContent(el,kind='fast'){
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
 }
 let navigationExit=null;
-const navigationHandoffOpacity=.82;
 function captureNavigationChange(from,to){
  if(reduceMotion()){navigationExit?.finish();return null;}
  const opacity=from?Number(getComputedStyle(from).opacity):0;
@@ -361,11 +360,11 @@ function leaveNavigationView(view,rect,opacity){
  view.style.setProperty('--view-exit-width',rect.width/zoom+'px');
  view.classList.add('view-leaving');
  view.inert=true;
+ // Fundido secuencial: las secciones tienen distinta composición y superponerlas se lee como un salto.
  const handoff=MOTION.fast/2;
  const animation=view.animate([
-  {opacity,visibility:'visible',easing:'ease-in'},
-  {opacity:navigationHandoffOpacity,visibility:'hidden',offset:.5},
-  {opacity:navigationHandoffOpacity,visibility:'hidden'}
+  {opacity,visibility:'visible',easing:MOTION.ease},
+  {opacity:0,visibility:'hidden'}
  ],{duration:MOTION.fast,fill:'forwards'});
  const finish=()=>{
   animation.onfinish=null;
@@ -384,15 +383,16 @@ function revealNavigationView(view,change){
  const returning=change.returning>0;
  const delay=returning?0:change.delay??leaveNavigationView(change.from,change.rect,change.opacity);
  if(delay){
-  const duration=delay+MOTION.fast/2;
+  // La sección nueva aparece cuando la anterior ya casi no se ve.
+  const duration=delay+MOTION.panel;
   motionAnimate(view,[
-   {opacity:0,easing:'steps(1,end)'},
-   {opacity:navigationHandoffOpacity,offset:delay/duration,easing:MOTION.ease},
+   {opacity:0},
+   {opacity:0,offset:delay/duration,easing:MOTION.ease},
    {opacity:1}
-  ],'fast','linear',{duration,fill:'backwards'});
+  ],'panel','linear',{duration,fill:'backwards'});
  }else{
-  const duration=returning?MOTION.fast/2:MOTION.fast;
-  motionAnimate(view,[{opacity:returning?change.returning:.92},{opacity:1}],'fast',MOTION.ease,{duration});
+  const duration=returning?MOTION.fast:MOTION.panel;
+  motionAnimate(view,[{opacity:returning?change.returning:0},{opacity:1}],'panel',MOTION.ease,{duration});
  }
 }
 function replayBarChart(chart){
@@ -781,6 +781,13 @@ function showTab(name, scrollTop = 0){
   if (typeof updateDesktopNavigation === 'function') updateDesktopNavigation();
   if (embeddedMovements) focusMobileHistory();
   else if(window.scrollY !== scrollTop)window.scrollTo({top:scrollTop, behavior:'instant'});
+  if (entering) {
+    // Al cambiar de sección el scroll salta: la cabecera adopta su fondo en el mismo cuadro. Con transición, el vidrio desaparecía antes que llegara el fondo opaco y la sección saliente se veía a través.
+    const header=$('.topbar');
+    header.style.transition='none';
+    header.classList.toggle('scrolled', window.scrollY > 4);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>header.style.transition=''));
+  }
   if (entering) {
     revealNavigationView(section,transition);
     if (mobileLayout.matches) {

@@ -11,39 +11,6 @@ mobileNav.innerHTML = mobileNavItem('dashboard', 'Resumen', 'house')
   + mobileNavItem('goals', 'Metas', 'target')
   + `<button type="button" id="mobileMoreButton" aria-label="Más opciones" title="Más opciones" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileMore"><span class="mobile-nav-glyph">${ic('list')}</span></button>`;
 document.body.append(mobileNav);
-const mobileNavIndicator=document.createElement('span');
-mobileNavIndicator.id='mobileNavIndicator';mobileNavIndicator.className='mobile-nav-indicator';
-mobileNavIndicator.setAttribute('aria-hidden','true');mobileNav.prepend(mobileNavIndicator);
-
-function moveMobileNavIndicator(animate=true){
- const glyph=mobileNav.querySelector('button.active .mobile-nav-glyph');
- if(!mobileLayout.matches||!mobileNav.offsetWidth||!glyph){
-  mobileNavIndicator._motion?.cancel();mobileNavIndicator._motion=null;
-  mobileNavIndicator._placed=false;mobileNavIndicator.style.opacity='0';return;
- }
- // Mide la posición sin la escala del gesto de presión.
- const button=glyph.parentElement.getBoundingClientRect(),dock=mobileNav.getBoundingClientRect();
- const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;
- const width=glyph.offsetWidth,height=glyph.offsetHeight;
- const geometry={
-  left:((button.left-dock.left+button.width/2)/zoom-mobileNav.clientLeft-width/2)+'px',
-  top:((button.top-dock.top+button.height/2)/zoom-mobileNav.clientTop-height/2)+'px',
-  width:width+'px',height:height+'px'
- };
- mobileNavIndicator.style.opacity='1';
- // Las notificaciones de tamaño sin un nuevo destino no interrumpen el recorrido.
- if(mobileNavIndicator._placed && Object.entries(geometry).every(([key,value])=>Math.abs(parseFloat(mobileNavIndicator.style[key])-parseFloat(value))<.05))return;
- if(!animate||!mobileNavIndicator._placed||reduceMotion()){
-  mobileNavIndicator._motion?.cancel();mobileNavIndicator._motion=null;Object.assign(mobileNavIndicator.style,geometry);
- }else{
-  moveIndicator(mobileNavIndicator,geometry,undefined,MOTION.panel);
- }
- mobileNavIndicator._placed=true;
-}
-window.addEventListener('resize',()=>moveMobileNavIndicator(false));
-mobileLayout.addEventListener('change',()=>moveMobileNavIndicator(false));
-new ResizeObserver(()=>requestAnimationFrame(()=>moveMobileNavIndicator(false))).observe(mobileNav);
-
 const mobileMore = document.createElement('dialog');
 mobileMore.id = 'mobileMore';
 mobileMore.className = 'mobile-more';
@@ -75,7 +42,6 @@ function updateMobileNavigation() {
   add.disabled = bothMode;
   add.title = bothMode ? 'Elige un perfil para registrar movimientos' : current === 'goals' ? 'Nueva meta' : 'Nuevo movimiento';
   add.setAttribute('aria-label',add.title);
-  moveMobileNavIndicator();
 }
 
 function navigateMobile(tab) {
@@ -96,6 +62,18 @@ mobileNav.addEventListener('click', event => {
   const button = event.target.closest('[data-mobile-tab]');
   if (button) navigateMobile(button.dataset.mobileTab);
 });
+// Flechas izquierda/derecha recorren la barra sin activar.
+mobileNav.addEventListener('keydown', event => {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+  const items = [...mobileNav.querySelectorAll('button:not(:disabled)')], index = items.indexOf(document.activeElement);
+  if (index < 0) return;
+  event.preventDefault();
+  items[(index + (event.key === 'ArrowRight' ? 1 : -1) + items.length) % items.length].focus();
+});
+// Entrada: la barra sube a través de un desenfoque.
+if (mobileLayout.matches && !reduceMotion()) {
+  mobileNav.animate([{opacity:0,transform:'translateY(14px)',filter:'blur(6px)'},{opacity:1,transform:'none',filter:'none'}], {duration:MOTION.panel,easing:MOTION.ease});
+}
 
 // Prototipo de alta: los mismos campos y validaciones, con opciones secundarias plegadas.
 const txHeader=txDialog.querySelector('.dlg-head'),txBody=txDialog.querySelector('.dlg-body');

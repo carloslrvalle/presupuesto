@@ -103,7 +103,7 @@ async function askPersist(){
     let p = await navigator.storage.persisted(); if (!p) p = await navigator.storage.persist();
     el.hidden = false; el.classList.toggle('ok', p);
     el.innerHTML = p ? ic('shield-check') + '<span>Datos de este dispositivo protegidos: el navegador no los borrará por su cuenta.</span>'
-                     : ic('shield') + '<span>El navegador aún no protege los datos de este dispositivo. Instalar la app suele activarlo.</span>';
+                     : ic('shield') + '<span>El navegador todavía puede borrar los datos guardados en este dispositivo. Instalar la app suele evitarlo.</span>';
   } catch(e){}
 }
 window.addEventListener('appinstalled', () => setTimeout(askPersist, 800));

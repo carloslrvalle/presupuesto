@@ -86,7 +86,7 @@ function applyAppFont(){
 function renderThemes(){
  const el=$('#themeGrid');if(!el)return;
  el.innerHTML=[['system','Sistema','monitor'],['light','Claro','sun'],['dark','Oscuro','moon']].map(([id,name,icon])=>'<button type="button" class="btn'+(id===colorSchemePreference?' primary':'')+'" data-theme="'+id+'" aria-pressed="'+(id===colorSchemePreference)+'">'+ic(icon)+name+'</button>').join('');
- $('#themeNote').textContent='Sistema sigue automáticamente el modo claro u oscuro de este equipo.';
+ $('#themeNote').textContent='«Sistema» usa el modo claro u oscuro de tu dispositivo.';
 }
 $('#themeGrid').addEventListener('click',e=>{const button=e.target.closest('[data-theme]');if(button)applyTheme(button.dataset.theme);});
 

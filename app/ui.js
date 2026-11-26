@@ -35,9 +35,9 @@ function renderPeriodControls(){
  const cy=cycleEnabled();
  document.querySelectorAll('[data-plan-controls]').forEach(el=>{
   el.dataset.periodMode=cy?'cycle':'calendar';
-  el.innerHTML=`<button type="button" class="btn period-trigger" data-period-open aria-haspopup="dialog" aria-controls="periodDialog">${ic('calendar-days')}<span>${cy?'Ciclo · día '+cycleDay():'Mes calendario'}</span>${ic('chevron-down')}</button><span class="period-range" title="${cy?cycleLabel(currentMonth):monthLong(currentMonth)}">${cy?shortPeriodLabel(currentMonth):monthLong(currentMonth)}</span>${el.closest('#tab-dashboard')?'<button type="button" class="info-tip" aria-label="Ayuda del período" data-tip="El ciclo reúne compras de dos meses en un solo presupuesto. Cada movimiento conserva su fecha; el análisis mensual sigue por calendario.">'+ic('info')+'</button>':''}`;
+  el.innerHTML=`<button type="button" class="btn period-trigger" data-period-open aria-haspopup="dialog" aria-controls="periodDialog">${ic('calendar-days')}<span>${cy?'Ciclo · día '+cycleDay():'Mes calendario'}</span>${ic('chevron-down')}</button><span class="period-range" title="${cy?cycleLabel(currentMonth):monthLong(currentMonth)}">${cy?shortPeriodLabel(currentMonth):monthLong(currentMonth)}</span>${el.closest('#tab-dashboard')?'<button type="button" class="info-tip" aria-label="Ayuda del período" data-tip="El ciclo reúne compras de dos meses en un solo presupuesto. Cada movimiento conserva su fecha y Análisis usa meses calendario.">'+ic('info')+'</button>':''}`;
  });
- const help=$('#tab-budget .toolbar>.info-tip');if(help)help.dataset.tip='Elige mes o ciclo con el calendario. Copiar trae el plan anterior; Usar como base lo aplica a períodos futuros sin plan propio. Tus movimientos conservan su fecha.';
+ const help=$('#tab-budget .toolbar>.info-tip');if(help)help.dataset.tip='Elige mes o ciclo en el calendario. «Copiar mes anterior» trae el plan del período pasado y «Usar como base» lo aplica a los períodos siguientes que no tengan plan propio. Tus movimientos conservan su fecha.';
  planningHeader();
 }
 let periodDraft=null;
@@ -333,9 +333,30 @@ function motionAnimate(el,frames,kind='move',easing=kind==='data'?MOTION.dataEas
  if(!el)return;
  if(el._motion){el._motion.cancel();el._motion=null;}
  if(reduceMotion())return;
- const animation=el.animate(frames,{duration:MOTION[kind],easing,...options});el._motion=animation;
+ const animation=holdUntilPainted(el.animate(frames,{duration:MOTION[kind],easing,...options}));el._motion=animation;
  animation.onfinish=()=>{if(el._motion===animation)el._motion=null;};return animation;
 }
+// En un teléfono el cuadro que pinta un render pesado dura cientos de ms y se comía el inicio de la animación (se veía a la mitad).
+// La animación queda en su primer cuadro y arranca en cuanto llega un cuadro ligero (como máximo 400 ms después).
+function holdUntilPainted(animation){
+ if(!animation)return animation;
+ animation.pause();
+ let first=0,last=0;
+ const tick=now=>{
+  if(animation.playState!=='paused')return;
+  first||=now;
+  if(last&&now-last<34||now-first>400){animation.play();return;}
+  last=now;requestAnimationFrame(tick);
+ };
+ requestAnimationFrame(tick);
+ return animation;
+}
+// Lo mismo para la entrada de hojas y diálogos (transiciones CSS de [open] y ::backdrop).
+const nativeShowModal=HTMLDialogElement.prototype.showModal;
+HTMLDialogElement.prototype.showModal=function(){
+ nativeShowModal.call(this);
+ queueMicrotask(()=>{if(this.open)for(const a of document.getAnimations())if(a instanceof CSSTransition&&a.effect?.target===this&&a.transitionProperty!=='visibility')holdUntilPainted(a);}); // visible ya: su primer pintado ocurre antes del recorrido
+};
 function revealContent(el,kind='fast'){
  return motionAnimate(el,[{opacity:.9,translate:'0 3px'},{opacity:1,translate:'none'}],kind);
 }
@@ -433,8 +454,8 @@ function toggleDisclosure(details,summary,wanted,animate=true){
  details.open=true;
  const distribution=details.matches('.expense-distribution-more'),duration=open?MOTION.panel:MOTION.popup;
  const frames=distribution?[{opacity:previousOpacity??(open?0:1)},{opacity:open?1:0}]:[{opacity:previousOpacity??(open?0:1),transform:previousTransform??(open?'translateY(-5px)':'none')},{opacity:open?1:0,transform:'none'}];
- const contentAnimation=content?.animate(frames,{duration,easing:MOTION.ease});
- const animation=details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease});
+ const contentAnimation=holdUntilPainted(content?.animate(frames,{duration,easing:MOTION.ease}));
+ const animation=holdUntilPainted(details.animate([{height:from+'px'},{height:to+'px'}],{duration,easing:MOTION.ease}));
  details._disclosure={animation,contentAnimation,open};animation.onfinish=finish;
 }
 function menuDisclosureOpen(details){
@@ -453,7 +474,7 @@ function setMenuDisclosure(details,open){
  details.toggleAttribute('data-menu-closing',!open);
  if(open)details.open=true;
  if(reduceMotion()){details.open=open;details.removeAttribute('data-menu-closing');return;}
- const animation=menu.animate([{opacity,transform},{opacity:open?1:0,transform:open?'none':'translateY(3px) scale(.98)'}],{duration:MOTION.popup,easing:MOTION.ease,fill:'both'});
+ const animation=holdUntilPainted(menu.animate([{opacity,transform},{opacity:open?1:0,transform:open?'none':'translateY(3px) scale(.98)'}],{duration:MOTION.popup,easing:MOTION.ease,fill:'both'}));
  details._menuMotion=animation;
  animation.onfinish=()=>{
   if(details._menuMotion!==animation)return;
@@ -649,8 +670,8 @@ function rollDigits(el, text, dur){
 }
 const rollsDigits = el => mobileLayout.matches && el.matches('#tab-dashboard .dashboard-kpis .value,#mobileBudgetTotal');
 function animateDigit(digit, from, duration = MOTION.number){
-  digit._spin = digit.animate([{transform:from},{transform:'translateY(calc(var(--n) * -1lh))'}],
-    {pseudoElement:'::before',duration,easing:MOTION.dataEase});
+  digit._spin = holdUntilPainted(digit.animate([{transform:from},{transform:'translateY(calc(var(--n) * -1lh))'}],
+    {pseudoElement:'::before',duration,easing:MOTION.dataEase}));
 }
 // Reutiliza las columnas montadas. Un cambio de valor en curso tiene prioridad.
 function spinValue(el){

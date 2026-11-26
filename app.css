@@ -23,6 +23,10 @@ html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%
  :root{--metric-padding:.75rem;--metric-icon-size:1.625rem;--metric-label-height:3.375rem}
 }
 @media(max-width:700px){
+ /* Móvil: hojas y paneles con la curva de hoja nativa. A 180/240 ms con salida exponencial casi todo el recorrido ocurría en el primer cuadro y se abrían de golpe. */
+ :root{--motion-popup:260ms;--motion-panel:360ms;--motion-ease:cubic-bezier(.32,.72,0,1)}
+}
+@media(max-width:700px){
  :root{--page-gutter:12px}
 }
 @media(max-width:700px),(pointer:coarse){
@@ -2101,8 +2105,8 @@ tr.over td{background:color-mix(in srgb,var(--expense) 6%,transparent)}
 .alert-pill .vi{width:12px;height:12px}
 .prow.link{cursor:pointer;border-radius:var(--radius);transition:background-color var(--motion-fast) var(--motion-ease)}
 .top-exp-copy>span{display:block}
-.prow.link:not(.over):hover{background:var(--surface-2)}
 @media(hover:hover) and (pointer:fine){
+ .prow.link:not(.over):hover{background:var(--surface-2)}
  .prow.link.over:hover{filter:brightness(.98)}
 }
 @keyframes flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary) 55%,transparent);border-color:var(--primary)}100%{box-shadow:0 0 0 8px transparent}}
@@ -3012,7 +3016,7 @@ button,.btn,.chip,.iconbtn,.seg button,.month-nav button,.year-nav button,.emoji
 .history-day-date>span:not(.plan-pill){font-size:11px;color:var(--muted)}
 .history-items{margin:0;padding:0;list-style:none}
 .history-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:10px;align-items:center;border-bottom:1px solid var(--border);border-radius:0;transition:background-color var(--motion-fast) var(--motion-ease)}
-.history-row:hover{background:color-mix(in srgb,var(--primary) 3%,var(--surface))}
+@media(hover:hover) and (pointer:fine){.history-row:hover{background:color-mix(in srgb,var(--primary) 3%,var(--surface))}}
 .history-amount{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.5;letter-spacing:-.15px}
 .mov-history.selecting .picked{background:var(--primary-soft);border-radius:var(--radius)}
 .history-edit{display:grid;align-items:center;width:100%;min-width:0;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer;min-height:54px;padding:8px 0;grid-template-columns:32px minmax(0,1fr) auto;gap:11px}
@@ -3484,7 +3488,7 @@ button[aria-disabled=true]{cursor:not-allowed}
  /* La navegación revela el contenido ya dibujado desde ui.js. */
  .kpi.link:hover{border-color:color-mix(in srgb,var(--primary) 28%,var(--border));box-shadow:0 1px 2px rgba(20,25,40,.05),0 8px 22px -10px color-mix(in srgb,var(--primary) 35%,transparent)}
 }
-.history-row:active,.prow.link:active,.settings-home-row:active{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}
+@media(pointer:fine){.history-row:active,.prow.link:active,.settings-home-row:active{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}}
 .value-tick{animation:valueTick var(--motion-move) var(--motion-ease)}
 .tx-more{display:none}
 @media(max-width:700px){

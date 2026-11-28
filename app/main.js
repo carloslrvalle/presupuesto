@@ -37,15 +37,17 @@ document.addEventListener('keydown',e=>{
 $('#tab-cats').addEventListener('keydown',e=>{
   const grip=e.target.closest('.grip');if(!grip||!['ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();
   const id=grip.closest('.cat-row').dataset.id,c=state.categories.find(c=>c.id===id),list=catsActive(c.type),index=list.findIndex(c=>c.id===id),next=list[index+(e.key==='ArrowUp'?-1:1)];if(!next)return;
-  const a=state.categories.indexOf(c),b=state.categories.indexOf(next);[state.categories[a],state.categories[b]]=[state.categories[b],state.categories[a]];const saved=save();renderCats();
+  const a=state.categories.indexOf(c),b=state.categories.indexOf(next);
+  const saved=saveChange(()=>{[state.categories[a],state.categories[b]]=[state.categories[b],state.categories[a]];});
+  renderCats();
   dirty=new Set(Object.keys(VIEWS));dirty.delete('cats');
   [...document.querySelectorAll('.cat-row')].find(r=>r.dataset.id===id)?.querySelector('.grip').focus();if(saved)toast('Categoría reordenada');
 });
 let chartScript = null, chartLoadFailed = false;
 function loadChartFor(container){
   if (typeof Chart !== 'undefined') return true;
-  if (!container.closest('.tab.active')) return false;
-  container.innerHTML = chartLoadFailed
+  if (container && !container.closest('.tab.active')) return false;
+  if (container) container.innerHTML = chartLoadFailed
     ? '<div class="chart-status"><span>No se pudo cargar el gráfico.</span><button type="button" class="btn sm" data-retry-chart>Reintentar</button></div>'
     : '<div class="chart-status" role="status">Cargando gráfico…</div>';
   if (chartLoadFailed) return false;
@@ -57,7 +59,7 @@ function loadChartFor(container){
     function finish(){
       chartLoadFailed = typeof Chart === 'undefined';
       if (chartLoadFailed){ script.remove(); chartScript = null; }
-      const current = activeTab(), chartViews = ['dashboard','analysis','both'];
+      const current = activeTab(), chartViews = mobileLayout.matches ? ['analysis','both'] : ['dashboard','analysis','both'];
       chartViews.forEach(view => dirty.add(view));
       if (chartViews.includes(current)) renderView(current);
     }
@@ -75,6 +77,15 @@ document.addEventListener('click', e => {
   renderView(view);
 });
 function renderView(n){ if (!dirty.has(n) || !VIEWS[n]) return; dirty.delete(n); VIEWS[n](); enhanceAccessibility(); requestAnimationFrame(fitMetricValues); }
+mobileLayout.addEventListener('change',()=>{
+  for(const view of ['dashboard','budget','movs'])dirty.add(view);
+  renderView(activeTab());
+});
+matchMedia('(min-width:601px) and (max-height:500px) and (pointer:coarse)').addEventListener('change',()=>{
+  if (!mobileLayout.matches) return;
+  if (activeTab()==='dashboard') renderMobileHomeChart(planTx(currentMonth));
+  else dirty.add('dashboard');
+});
 function renderAll(){
   planningHeader();
   applyBrand(); renderThemes();

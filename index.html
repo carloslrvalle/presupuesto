@@ -185,33 +185,49 @@ html[data-mode=dark] #boot .boot-mark{filter:invert(1)}
   <section class="tab" id="tab-analysis">
     <h2 class="mobile-only section-title mobile-view-heading">Análisis</h2>
     <div class="toolbar analysis-toolbar">
-      <div class="year-nav"><button id="yearPrev" title="Año anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="yearLabel"></span><button id="yearNext" title="Año siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
-      <p class="analysis-available small muted">Saldo disponible del año <b id="analysisAvailable"></b></p>
+      <p class="analysis-available small muted">Resultado del año <b id="analysisAvailable"></b></p>
+      <div class="year-nav" role="group" aria-label="Año del análisis"><button type="button" id="yearPrev" title="Año anterior" aria-label="Año anterior"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span id="yearLabel" aria-live="polite"></span><button type="button" id="yearNext" title="Año siguiente" aria-label="Año siguiente"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
     </div>
-    <div class="kpis" id="anKpis" role="group" aria-label="Indicador de análisis"></div>
-    <div class="card year-chart-card" id="yearChartCard">
-      <div class="year-chart-head"><div><h2 class="section-title" id="analysisChartTitle">Ingresos mes a mes</h2><button type="button" class="info-tip" id="yearChartHelp" aria-label="Ayuda del gráfico" aria-describedby="yearChartDescription">ⓘ</button><span id="yearChartDescription" hidden></span></div>
-        <div class="chart-modes" id="yearChartModes" role="group" aria-label="Serie del indicador"><button type="button" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div>
+    <div class="analysis-explorer">
+      <div class="analysis-metrics">
+        <p class="analysis-metrics-label" id="analysisMetricsLabel">Indicador del gráfico</p>
+        <div class="kpis" id="anKpis" role="group" aria-labelledby="analysisMetricsLabel"></div>
       </div>
-      <div class="year-chart-body"><div class="chart-wrap" id="yearWrap"><canvas id="chYear"></canvas></div><div class="chart-readout" id="yearReadout" aria-live="polite"></div></div>
+      <section class="report-chart" id="yearChartCard" aria-labelledby="analysisChartTitle">
+        <div class="year-chart-head">
+          <div class="year-chart-heading"><h2 class="section-title" id="analysisChartTitle">Ingresos mes a mes</h2><button type="button" class="info-tip" id="yearChartHelp" aria-label="Ayuda del gráfico" aria-describedby="yearChartDescription"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button><span id="yearChartDescription" hidden></span></div>
+          <div class="seg chart-modes" id="yearChartModes" role="group" aria-label="Serie del indicador"><button type="button" class="active" data-year-mode="month" aria-pressed="true">Del mes</button><button type="button" data-year-mode="total" aria-pressed="false">Acumulado</button></div>
+        </div>
+        <div class="year-chart-body">
+          <div class="chart-wrap" id="yearWrap"><canvas id="chYear"></canvas></div>
+          <div class="chart-readout" id="yearReadout" aria-live="polite"></div>
+        </div>
+      </section>
     </div>
     <div class="analysis-details">
-      <details class="analysis-detail" id="analysisCategoryDetail"><summary><span id="analysisDetailTitle">Detalle por categoría</span><small id="analysisDetailHint">Ingresos</small></summary><div class="analysis-detail-body"><div class="analysis-mobile" id="yearMobileDetail"></div><div class="table-wrap" id="yearTable" tabindex="0" role="region" aria-label="Detalle mensual del indicador"></div><div class="analysis-detail-actions" id="analysisMovementsAction"></div></div></details>
+      <details class="analysis-detail" id="analysisCategoryDetail"><summary><span id="analysisDetailTitle">Detalle por categoría</span><small id="analysisDetailHint">Ingresos</small><svg class="vi report-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="analysis-detail-body"><div class="analysis-mobile" id="yearMobileDetail"></div><div class="table-wrap" id="yearTable" tabindex="0" role="region" aria-label="Detalle mensual del indicador"></div><div class="analysis-detail-actions" id="analysisMovementsAction"></div></div></details>
     </div>
   </section>
 
   <!-- CATEGORÍAS -->
-  <section class="tab" id="tab-cats">
-    <p class="small muted category-instructions">Toca un nombre para editarlo. Para ordenarlo, arrastra el asa o selecciónala y usa las flechas ↑ y ↓.</p>
-    <div class="grid2" style="margin-top:0">
-      <div class="card">
-        <div class="toolbar" style="margin-bottom:6px"><h2 class="section-title" style="margin:0"><span class="ui-ic" data-e="💸"></span>Categorías de gasto</h2><button type="button" class="info-tip" aria-label="Ayuda" data-tip="Toca el ícono para cambiar su ícono y color, o el nombre para renombrarla. Arrastra desde ⋮⋮ para ordenar. Los montos se definen en Presupuesto."><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button><span class="spacer"></span><button class="btn sm" data-addcat="expense"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Agregar</button></div>
+  <section class="tab" id="tab-cats" data-category-kind="expense">
+    <div class="category-toolbar">
+      <h2 class="section-title">Categorías</h2>
+      <button type="button" class="btn ghost" data-addcat="expense" aria-label="Agregar categoría de gasto"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Agregar</button>
+    </div>
+    <div class="seg category-switch" role="group" aria-label="Tipo de categoría">
+      <button type="button" class="active" data-category-view="expense" aria-controls="expenseCategories" aria-pressed="true">Gastos</button>
+      <button type="button" data-category-view="income" aria-controls="incomeCategories" aria-pressed="false">Ingresos</button>
+    </div>
+    <div class="category-groups">
+      <section class="category-group" id="expenseCategories" aria-labelledby="expenseCategoriesTitle">
+        <div class="category-head"><h2 class="section-title" id="expenseCategoriesTitle">Gastos</h2><button type="button" class="btn ghost" data-addcat="expense" aria-label="Agregar categoría de gasto"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Agregar</button></div>
         <div id="catsExpense"></div>
-      </div>
-      <div class="card">
-        <div class="toolbar" style="margin-bottom:6px"><h2 class="section-title" style="margin:0"><span class="ui-ic" data-e="💰"></span>Categorías de ingreso</h2><span class="spacer"></span><button class="btn sm" data-addcat="income"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Agregar</button></div>
+      </section>
+      <section class="category-group" id="incomeCategories" aria-labelledby="incomeCategoriesTitle">
+        <div class="category-head"><h2 class="section-title" id="incomeCategoriesTitle">Ingresos</h2><button type="button" class="btn ghost" data-addcat="income" aria-label="Agregar categoría de ingreso"><svg class="vi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Agregar</button></div>
         <div id="catsIncome"></div>
-      </div>
+      </section>
     </div>
   </section>
 

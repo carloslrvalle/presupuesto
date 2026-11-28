@@ -1,6 +1,7 @@
 // Presupuesto: sync.js — ver README.md del proyecto para responsabilidades y orden de carga.
 /* ---------- Google Sheets ---------- */
 const SYNC_KEY = 'budgetPlanner.sync';
+const validSyncUrl = url => /^https:\/\/script\.google\.com\/[^?#]+\/exec$/.test(url);
 const readSyncConfig = () => JSON.parse(localData.readText(SYNC_KEY)) || {};
 let sync = (() => { try { return readSyncConfig(); } catch(e){ return {}; } })();
 if (sync.auto === undefined) sync.auto = true;
@@ -12,7 +13,7 @@ else if (sync.byProf && activeProfile !== 'p1') Object.assign(sync, {rev:0, pend
   const m = /[#&]conectar=([\w-]+)/.exec(location.hash || ''); if (!m) return;
   try {
     const b = m[1].split('-').join('+').split('_').join('/'), o = JSON.parse(decodeURIComponent(escape(atob(b + '==='.slice((b.length + 3) % 4)))));
-    if (!o || !/^https:[/][/]script\.google\.com[/]/.test(o.u) || !o.t) throw new Error('link');
+    if (!o || !validSyncUrl(o.u) || !o.t) throw new Error('link');
     const changed = sync.url !== o.u || sync.token !== o.t;
     sync.url = o.u; sync.token = o.t; if (changed){ sync.rev = 0; sync.byProf = {}; }
     try { localData.writeText(SYNC_KEY, JSON.stringify(sync)); } catch(e){}
@@ -154,13 +155,16 @@ function readSyncBase(profile=activeProfile){
   return base;
 }
 function clearSyncConflict(profile=activeProfile){syncCacheMemory.delete(syncCacheKey('conflict',profile));localData.remove(syncCacheKey('conflict',profile));}
+function emptySyncData(data){
+ return !data.categories.length&&!data.transactions.length&&!data.goals?.length&&!data.recurring?.length&&!Object.keys(data.budgets||{}).length;
+}
 function acceptSyncRemote(remote,profile=activeProfile){
  if(localTabChanged||localRecovery)return false;
  if(!remote||!Array.isArray(remote.categories)||!Array.isArray(remote.transactions))throw new Error('Sheets devolvió datos incompletos. Se conserva la copia local.');
  normalizeCategoryData(validateStateData(remote));
  const base=readSyncBase(profile),local=SyncCore.clone(snapshot()),rev=Number(remote.rev)||0;
  if(rev<Math.max(Number(sync.rev)||0,Number(base?.rev)||0)){setBadge(sync.pending?'pending':'ok',sync.pending?'Pendiente de sincronizar':'Sincronizado');updateSyncInfo();return false;}
- const empty=!remote.categories.length&&!remote.transactions.length&&!remote.goals?.length;
+ const empty=emptySyncData(remote);
  const seedCats=seed().categories;
  const fresh=!base&&!local.transactions.length&&!local.goals.length&&!local.recurring.length&&!Object.keys(local.budgets||{}).length&&local.categories.length===seedCats.length&&local.categories.every(c=>!c.defaultBudget&&!c.archived&&!c.pay&&seedCats.some(s=>s.type===c.type&&s.name===c.name));
  const result=empty?{data:local,conflicts:[]}:fresh?{data:remote,conflicts:[]}:SyncCore.reconcile(base?.data||null,local,remote);
@@ -358,9 +362,7 @@ async function startupLoad(){
  try{
   if(syncConflict()){setBadge('err','Cambios por revisar');updateSyncInfo();return;}
   setBadge('busy','Consultando Sheets…');
-  // Brillo en indicadores mientras llega la versión de Sheets; las cifras locales siguen visibles.
-  document.body.classList.add('syncing');
-  const j=await callSheets({action:'load'}).finally(()=>document.body.classList.remove('syncing'));if(j.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
+  const j=await callSheets({action:'load'});if(j.protocol!==2)throw new Error('Actualiza Codigo.gs y su implementación para activar la sincronización protegida.');
   if(localTabChanged||profile!==activeProfile||connection!==sync.url+'|'+sync.token)return false;
   if(!acceptSyncRemote(j.data,profile))return;
   if(sync.pending){setBadge('pending','Guardado aquí · Pendiente de sincronizar');if(sync.auto&&!await pushNow())return false;}
@@ -374,7 +376,7 @@ async function startupLoad(){
 $('#btnSyncConnect').onclick=async()=>{
  const url=$('#syncUrl').value.trim(),token=$('#syncToken').value.trim();
  // El error queda junto a su campo y el foco va al primero que requiere corrección.
- const errors=[['syncUrl',/^https:\/\/script\.google\.com\/.+\/exec/.test(url)?'':'La URL debe ser de script.google.com y terminar en /exec.'],['syncToken',token?'':'Ingresa la clave.']];
+ const errors=[['syncUrl',validSyncUrl(url)?'':'La URL debe ser de script.google.com y terminar en /exec.'],['syncToken',token?'':'Ingresa la clave.']];
  for(const [id,msg] of errors){$('#'+id).setAttribute('aria-invalid',String(!!msg));$('#'+id+'Error').textContent=msg;}
  const invalid=errors.find(([,msg])=>msg);if(invalid)return $('#'+invalid[0]).focus();
  resetSyncRecovery();if(url!==sync.url||token!==sync.token){sync.rev=0;sync.lastSync=0;sync.byProf={};for(const pr of profiles.list){localData.remove(syncCacheKey('base',pr.id));localData.remove(syncCacheKey('conflict',pr.id));syncCacheMemory.delete(syncCacheKey('base',pr.id));syncCacheMemory.delete(syncCacheKey('conflict',pr.id));}}

@@ -57,9 +57,9 @@ function cyclePlanned(m,type,id){return sum(cycleTx(m,true).filter(t=>isPlanned(
 function cycleSavings(m){const txs=cycleTx(m);return BudgetFinance.savings(txs,{savingIds:savingCategoryIds(),mode:saveMode(),pct:Number((state.settings.savePctM||{})[cycleBudgetKey(m)]??state.settings.savePct)||0,incomeBudget:sum(txs.filter(t=>t.type==='income'))>0?0:cycleTotal(m,'income')});}
 function cycleBalance(m){const p=cyclePeriod(m);return BudgetFinance.balance(state.transactions,p.start,p.end,todayISO());}
 function cycleProjection(m){
- const txs=cycleTx(m);
+ const txs=cycleTx(m), start=cyclePeriod(m).start.slice(0,7);
  const total=type=>{
-  const known=catsOf(type).reduce((s,c)=>{const real=sum(txs.filter(t=>t.type===type&&t.catId===c.id)),plan=cyclePlanned(m,type,c.id);return s+Math.max(real+plan,cycleBudget(m,c.id));},0);
+  const known=catsOf(type).reduce((s,c)=>{const real=sum(txs.filter(t=>t.type===type&&t.catId===c.id)),plan=cyclePlanned(m,type,c.id);return s+Math.max(real+plan,isArch(c,start)?0:cycleBudget(m,c.id));},0);
   return known+sum(txs.filter(t=>t.type===type&&!state.categories.some(c=>c.id===t.catId)))+sum(cycleTx(m,true).filter(t=>isPlanned(t)&&t.type===type&&!state.categories.some(c=>c.id===t.catId)));
  };
  return {projInc:total('income'),projExp:total('expense')};
@@ -127,7 +127,7 @@ const payRange = (a, b, m) => { const dim = daysIn(m), B = Math.min(b, dim), A =
 function pendingPays(m){
   const out = [], today = m === thisMonth() ? new Date().getDate() : m < thisMonth() ? 99 : 0, dim = daysIn(m), mo = Number(m.slice(5, 7));
   const got = (c, A, B) => txOfMonthAll(m).some(t => t.type === 'income' && t.catId === c.id && Number(t.date.slice(8, 10)) >= A - 3 && Number(t.date.slice(8, 10)) <= B + 3);
-  state.categories.filter(c => c.type === 'income' && c.pay).forEach(c => {
+  state.categories.filter(c => c.type === 'income' && c.pay && !isArch(c,m)).forEach(c => {
     const cfg = payCfg(c.pay);
     if (cfg.mode === 'dates'){ cfg.dates.filter(d => d.slice(0, 7) === m).forEach(d => { const D = Number(d.slice(8, 10)); if (D >= today && !got(c, D, D)) out.push({c, a:D, b:D}); }); return; }
     if (cfg.mode === 'months' && !cfg.months.includes(mo)) return;

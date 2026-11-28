@@ -131,6 +131,7 @@ const strokeOn = hex => { if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return 'curr
   if (dark && L < .12) return toneHex(hex, .78, 0);      // negro / grafito / grises oscuros → claro en modo oscuro
   return hex; };
 const isV = ic => typeof ic === 'string' && ic.startsWith('svg:');
+VICONS.ellipsis = '<g fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></g>';
 const svgIcon = (name, stroke) => VICONS[name = VICONS[name] ? name : 'circle-help'] ? `<svg class="vi" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${VICONS[name]}</svg>` : '❔';
 // Ícono de categoría/meta: emoji o vectorial. solidBg = color de fondo sólido (logo) para elegir trazo blanco u oscuro
 function iconHTML(icon, color, solidBg){
@@ -271,8 +272,9 @@ function finishNavigationMotion(){
 }
 reducedMotionPreference.addEventListener('change', event => { if(event.matches)finishNavigationMotion(); });
 document.addEventListener('keydown',event=>{
- if(['Shift','Control','Alt','Meta'].includes(event.key))return;
- document.documentElement.dataset.motionInput='keyboard';
+ const {dataset}=document.documentElement;
+ if(dataset.motionInput==='keyboard'||['Shift','Control','Alt','Meta'].includes(event.key))return;
+ dataset.motionInput='keyboard';
  finishNavigationMotion();
 },true);
 document.addEventListener('pointerdown',()=>{
@@ -322,10 +324,16 @@ if(!CSS.supports('overlay','auto')){
  },true);
 }
 // Ritmos compartidos por interacción; los estados financieros no alteran el movimiento.
-const MOTION={
- ...Object.fromEntries(['fast','move','popup','tab','panel','number','data','trace','signal'].map(kind=>[kind,parseFloat(cssVar('--motion-'+kind))])),
- dataEasing:'easeInOutSine',dataEase:cssVar('--motion-data-ease'),ease:cssVar('--motion-ease')
-};
+const MOTION={dataEasing:'easeInOutSine'};
+function syncMotionTokens(){
+ const styles=getComputedStyle(document.documentElement);
+ for(const kind of ['fast','move','popup','tab','panel','number','data','trace','signal'])
+  MOTION[kind]=parseFloat(styles.getPropertyValue('--motion-'+kind));
+ MOTION.dataEase=styles.getPropertyValue('--motion-data-ease').trim();
+ MOTION.ease=styles.getPropertyValue('--motion-ease').trim();
+}
+syncMotionTokens();
+matchMedia('(max-width:700px)').addEventListener('change',syncMotionTokens);
 const motionDataEase=x=>1-Math.pow(1-x,4);
 // Recorrer un trazado requiere tiempo para seguir su trayectoria, sin frenar los controles.
 const motionTraceEase=x=>.5-.5*Math.cos(Math.PI*x);
@@ -428,9 +436,10 @@ function replayBarChart(chart){
  }
  chart.update(animate?undefined:'none');
 }
-function revealProgress(selector){
- for(const fill of document.querySelectorAll(selector)){
-  if(fill.getClientRects().length)motionAnimate(fill,[{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0)'}],'data');
+function revealGoalProgress(){
+ if(reduceMotion())return;
+ for(const fill of document.querySelectorAll('#goalsGrid .goal-progress>span')){
+  if(!fill.closest('.goal-done-group:not([open])'))motionAnimate(fill,[{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0)'}],'data');
  }
 }
 function motionHeight(el){
@@ -537,7 +546,7 @@ function fitMetricValues(){
 }
 window.addEventListener('resize',()=>requestAnimationFrame(fitMetricValues));
 if(document.fonts){document.fonts.ready.then(fitMetricValues);document.fonts.addEventListener('loadingdone',fitMetricValues);}
-// En móvil, las cifras de Resumen y el total de Presupuesto comparten las columnas de dígitos.
+// Las cifras animadas comparten las columnas de dígitos.
 function rollKeys(text){
   const first = text.search(/\d/), last = text.length - 1 - [...text].reverse().join('').search(/\d/);
   if (first < 0) return [...text].map((ch, i) => ['p' + i, ch]);
@@ -668,16 +677,17 @@ function rollDigits(el, text, dur){
   if (before) animateMoneyDigitSpacing(el,track,map,before);
   el._rollMap = map; el._rollText = el.textContent;
 }
-const rollsDigits = el => mobileLayout.matches && el.matches('#tab-dashboard .dashboard-kpis .value,#mobileBudgetTotal');
+const rollsDigits = el => el.matches('#anKpis .value') || (mobileLayout.matches && el.matches('#tab-dashboard .dashboard-kpis .value,#mobileBudgetTotal'));
 function animateDigit(digit, from, duration = MOTION.number){
   digit._spin = holdUntilPainted(digit.animate([{transform:from},{transform:'translateY(calc(var(--n) * -1lh))'}],
     {pseudoElement:'::before',duration,easing:MOTION.dataEase}));
 }
 // Reutiliza las columnas montadas. Un cambio de valor en curso tiene prioridad.
 function spinValue(el){
-  if (!el || !rollsDigits(el) || reduceMotion() || !('pseudoElement' in KeyframeEffect.prototype) || !el.getClientRects().length) return;
-  if (el.getAnimations({subtree:true}).some(animation => animation instanceof CSSTransition || animation.effect.pseudoElement === '::before')) return;
-  for (const digit of el.querySelectorAll('.nf-d')){
+  if (!el || reduceMotion() || !('pseudoElement' in KeyframeEffect.prototype)) return;
+  const digits = [...el.querySelectorAll('.nf-d:not(.nf-money-ghost)')];
+  if (digits.some(digit=>['running','paused'].includes(digit._spin?.playState))) return;
+  for (const digit of digits){
     if (digit._target === '0' && el._countValue !== 0) continue;
     digit._spin?.cancel();
     animateDigit(digit,digit._target === '0' ? 'translateY(-1lh)' : 'translateY(0)');
@@ -762,6 +772,7 @@ function showTab(name, scrollTop = 0){
   const transition=entering?captureNavigationChange(previousView,section):null;
   const previousHomePlot=name==='dashboard'&&mobileLayout.matches?mobileHomeChart.querySelector('svg'):null;
   const existingBars = name === 'dashboard' ? chBars : name === 'both' ? chBoth : null;
+  const existingAnalysis = name === 'analysis' ? chYear : null;
   if (entering) {
     if (prevTab === 'dashboard') chBars?.stop();
     if (prevTab === 'both') chBoth?.stop();
@@ -770,7 +781,7 @@ function showTab(name, scrollTop = 0){
       finishAnalysisTrace(chYear);
     }
   }
-  if(entering && tabBar.querySelector('button.active'))tabIndicator._navigationRect=tabIndicator.getBoundingClientRect();
+  if(entering && !mobileLayout.matches && tabBar.querySelector('button.active'))tabIndicator._navigationRect=tabIndicator.getBoundingClientRect();
   for (const button of document.querySelectorAll('#tabs button[data-tab]')) {
     button.classList.toggle('active', button === b);
     if (button === b) button.setAttribute('aria-current', 'page');
@@ -781,17 +792,14 @@ function showTab(name, scrollTop = 0){
     s.classList.toggle('active', s === section);
     if(s !== section && s._motion){s._motion.cancel();s._motion=null;}
   });
-  if (name === 'dashboard') dirty.add(name); // se redibuja para que los gráficos tomen su tamaño
   const enterMobileBudget = name === 'budget' && entering && mobileLayout.matches;
-  if (enterMobileBudget) {
-    resetMobileBudgetWeek();
-    dirty.add(name);
-  }
+  if (enterMobileBudget) resetMobileBudgetWeek();
   if (name === 'analysis' && currentMonth !== analysisSelectedMonth) dirty.add(name);
   planningHeader();
   renderView(name);
+  if (name === 'dashboard' && mobileLayout.matches) renderView('movs');
   moveTabInd();
-  if (b && !floatingTabs.matches && tabBar.scrollWidth > tabBar.clientWidth) {
+  if (b && !mobileLayout.matches && tabBar.scrollWidth > tabBar.clientWidth) {
     const left = b.offsetLeft - (tabBar.clientWidth - b.offsetWidth) / 2;
     tabBar.scrollTo({left:Math.max(0, left), behavior:reduceMotion() ? 'instant' : 'smooth'});
   }
@@ -812,13 +820,17 @@ function showTab(name, scrollTop = 0){
   if (entering) {
     revealNavigationView(section,transition);
     if (mobileLayout.matches) {
-      section.querySelectorAll('.home-metric>.value,#mobileBudgetTotal').forEach(spinValue);
+      if (name === 'dashboard') spinMobileHomeValues();
+      if (enterMobileBudget) spinValue($('#mobileBudgetTotal'));
       if (name === 'dashboard' && mobileHomeChart.querySelector('svg') === previousHomePlot) revealMobileHomeChart();
       if (enterMobileBudget) revealMobileBudgetBars();
     }
-    if (name === 'goals') revealProgress('#goalsGrid .goal-progress>span');
+    if (name === 'goals') revealGoalProgress();
     if ((name === 'dashboard' && chBars === existingBars) || (name === 'both' && chBoth === existingBars)) replayBarChart(existingBars);
-    if (name === 'analysis') replayAnalysisTrace();
+    if (name === 'analysis') {
+      if (chYear && chYear === existingAnalysis && chYear.$analysisTrace.progress === 1) replayAnalysisTrace();
+      $('#anKpis').querySelectorAll('.value').forEach(spinValue);
+    }
     playGoalCelebration();
   }
 }
@@ -935,8 +947,10 @@ function tickChanges(root, selector, render){
     if (!dialog || outsideDialog(event,dialog) || event.target.closest('button,input,select,textarea,a,label,[contenteditable]')) return;
     const handle = event.target.closest('.dlg-head,.pp-h') || (event.target === dialog ? dialog : null);
     if (!handle) return;
-    const transform = getComputedStyle(dialog).transform;
-    const position = dialog._sheetMotion?.position ?? (transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42);
+    const {transform,translate} = getComputedStyle(dialog);
+    const y = translate.split(' ')[1] || '0';
+    const offset = y.endsWith('%') ? parseFloat(y)*dialog.offsetHeight/100 : parseFloat(y);
+    const position = dialog._sheetMotion?.position ?? ((transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42)+offset);
     stopSheet(dialog, true);
     dialog.classList.add('sheet-dragging');
     dialog.style.transform = 'translateY('+position+'px)';
@@ -1034,10 +1048,10 @@ function moveIndicator(indicator, geometry, previousRect, duration=MOTION.tab){
 function moveTabInd(animate=true){
   const b = $('#tabs button.active'), ind = $('#tabInd'), previous=ind._navigationRect;
   delete ind._navigationRect;
+  if(floatingTabs.matches){ind._motion?.cancel();ind._motion=null;return;}
   const wasVisible = ind.style.opacity === '1';
   ind.style.opacity = b ? 1 : 0;
   if (!b) { ind._motion?.cancel();ind._motion=null;return; }
-  // En el teléfono, el indicador abarca toda la pestaña, incluso al pasar a dos filas.
   // La misma pieza sigue la caja completa en la barra superior y en el menú lateral.
   const box=b.getBoundingClientRect(),nav=tabBar.getBoundingClientRect();
   const zoom=Number(getComputedStyle(document.documentElement).zoom)||1;

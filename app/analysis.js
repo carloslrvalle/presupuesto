@@ -84,7 +84,37 @@ function renderYearReadout(){
   const previous=matched?analysisThrough(previousMonth,day):analysisDisplayValue(previousMonth);
   const range=matched?`Del 1 al ${day} de cada mes`:inProgress?`Hasta el ${fmtDateLong(todayISO())}`:'';
   const change=analysisChange(current,previous),difference=current!=null&&previous!=null?current-previous:0,tone=Math.abs(difference)<.005?'neutral':((difference>0)===(analysisMetric==='expense')?'bad':'good');
-  el.innerHTML=`<div class="year-readout-month"><div class="analysis-month-caption" id="analysisMonthCaption">Mes seleccionado${inProgress?'<span class="analysis-period-state">En curso</span>':''}</div><details class="analysis-month-picker"><summary id="analysisMonthTrigger" aria-labelledby="analysisMonthCaption analysisMonthName"><span class="analysis-month-icon" aria-hidden="true">${ic('calendar')}</span><span id="analysisMonthName">${esc(monthLong(analysisSelectedMonth))}</span>${CHEV}</summary><div class="analysis-month-menu"><div class="analysis-month-year">${analysisSelectedMonth.slice(0,4)}<span>Elegir mes</span></div><div class="analysis-month-options">${months.map(m=>`<button type="button" data-analysis-month="${m}" aria-pressed="${m===analysisSelectedMonth}"><span>${esc(monthLong(m).replace(/ \d{4}$/,''))}</span>${m===analysisSelectedMonth?CHECK:''}</button>`).join('')}</div></div></details><select id="yearReadoutMonth" hidden aria-hidden="true" tabindex="-1">${months.map(m=>`<option value="${m}"${m===analysisSelectedMonth?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select></div><dl><div><dt>${analysisChartMode==='total'?(analysisMetric==='rate'?'Tasa acumulada':'Acumulado'):ANALYSIS_METRICS[analysisMetric].label}</dt><dd data-analysis-value="current" class="${current<0?'neg':''}">${analysisFormat(current)}</dd></div><div><dt>${analysisPreviousLabel(analysisSelectedMonth)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div></dl>${range?`<p class="analysis-range small muted">${range}</p>`:''}<span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${analysisMetric==='rate'?'Diferencia en puntos porcentuales entre ambas tasas.':'Diferencia relativa respecto al período anterior.'}">${change}${change.startsWith('+')||change.startsWith('−')?(analysisChartMode==='total'?' vs. acumulado anterior':matched?' vs. mismo tramo anterior':' vs. mes anterior'):''}</span>${analysisChartMode==='total'?`<span class="analysis-accumulated">${ANALYSIS_METRICS[analysisMetric].label} del mes: <b>${analysisFormat(analysisMonthlyValue(analysisSelectedMonth))}</b></span>`:''}`;
+  const cumulative = analysisChartMode==='total', label = ANALYSIS_METRICS[analysisMetric].label;
+  const currentLabel = cumulative ? (analysisMetric==='rate'?'Tasa acumulada':'Acumulado') : label;
+  const changeHelp = analysisMetric==='rate'
+    ? 'Diferencia en puntos porcentuales entre ambas tasas.'
+    : 'Diferencia relativa respecto al período anterior.';
+  const changeContext = /^[+−]/.test(change)
+    ? (cumulative ? ' vs. acumulado anterior' : matched ? ' vs. mismo tramo anterior' : ' vs. mes anterior')
+    : '';
+  el.innerHTML = `
+    <div class="year-readout-month">
+      <div class="analysis-month-caption" id="analysisMonthCaption">Mes seleccionado${inProgress?'<span class="analysis-period-state">En curso</span>':''}</div>
+      <details class="analysis-month-picker">
+        <summary id="analysisMonthTrigger" aria-labelledby="analysisMonthCaption analysisMonthName"><span class="analysis-month-icon" aria-hidden="true">${ic('calendar')}</span><span id="analysisMonthName">${esc(monthLong(month))}</span>${CHEV}</summary>
+        <div class="analysis-month-menu">
+          <div class="analysis-month-year">${month.slice(0,4)}<span>Elegir mes</span></div>
+          <div class="analysis-month-options">${months.map(m=>`<button type="button" data-analysis-month="${m}" aria-pressed="${m===month}"><span>${esc(monthLong(m).replace(/ \d{4}$/,''))}</span>${m===month?CHECK:''}</button>`).join('')}</div>
+        </div>
+      </details>
+      <select id="yearReadoutMonth" hidden aria-hidden="true" tabindex="-1">${months.map(m=>`<option value="${m}"${m===month?' selected':''}>${esc(monthLong(m))}</option>`).join('')}</select>
+    </div>
+    <div class="analysis-readout-values">
+      <dl>
+        <div><dt>${currentLabel}</dt><dd data-analysis-value="current" class="${current<0?'neg':''}">${analysisFormat(current)}</dd></div>
+        <div><dt>${analysisPreviousLabel(month)}</dt><dd data-analysis-value="previous">${analysisFormat(previous)}</dd></div>
+      </dl>
+      <div class="analysis-readout-notes">
+        <span class="analysis-change" data-tone="${tone}" data-analysis-value="change" title="${changeHelp}">${change}${changeContext}</span>
+        ${range?`<p class="analysis-range">${range}</p>`:''}
+        ${cumulative?`<span class="analysis-accumulated">${label} del mes <b>${analysisFormat(analysisMonthlyValue(month))}</b></span>`:''}
+      </div>
+    </div>`;
 }
 function selectAnalysisMonth(month){
   if (!month) return;
@@ -110,13 +140,13 @@ function renderAnalysisChart(){
   const data=analysisData,phone=mobileAnalysis(),metric=ANALYSIS_METRICS[analysisMetric],cumulative=analysisChartMode==='total',percentage=analysisMetric==='rate';
   const last=data.months.findLastIndex((_,i)=>data.cum[i]!=null),indices=data.months.map((_,i)=>i).slice(data.first,last+1);
   const values=analysisValues(),color=cssVar(metric.color);
-  const surface=cssVar('--surface');
+  const background=cssVar('--bg');
   const seriesKey=JSON.stringify([activeProfile,data.months[0],analysisMetric,analysisChartMode]);
   const chartKey=JSON.stringify([seriesKey,phone,reduceMotion(),indices,values,color,isDarkUI(),...['--surface','--text','--muted','--bg','--border'].map(cssVar)]);
   if (chYear?.$analysisKey === chartKey){
     if(chYear.$analysisMonth !== analysisSelectedMonth){
       chYear.$analysisMonth=analysisSelectedMonth;
-      chYear.update();
+      chYear.update('analysisSelection');
     }
     return;
   }
@@ -141,9 +171,9 @@ function renderAnalysisChart(){
       const {chart}=ctx, area=chart.chartArea;
       if(!area)return false;
       const fade=chart.ctx.createLinearGradient(0,area.top,0,area.bottom);
-      fade.addColorStop(0,mixHex(color,surface,.69));
-      fade.addColorStop(1,mixHex(color,surface,.97));
-      return {target:'origin',above:fade,below:mixHex(color,surface,.88)};
+      fade.addColorStop(0,color+'38');
+      fade.addColorStop(1,color+'00');
+      return {target:'origin',above:fade,below:color+'1f'};
     },
     borderWidth:2.5,tension:0,spanGaps:false,
     pointRadius:({dataIndex:i,dataset})=>{
@@ -151,7 +181,7 @@ function renderAnalysisChart(){
       const points=dataset.data;
       return points[i]!=null&&points[i-1]==null&&points[i+1]==null?3:0;
     },
-    pointHoverRadius:6,pointHitRadius:14,pointBackgroundColor:color,pointBorderColor:surface,pointBorderWidth:1.5
+    pointHoverRadius:6,pointHitRadius:14,pointBackgroundColor:color,pointBorderColor:background,pointBorderWidth:1.5
   };
   const valid=dataset.data.filter(v=>v!=null),lower=Math.min(0,...valid),upper=Math.max(0,...valid),span=upper-lower||1;
   const step=10**Math.floor(Math.log10(span));
@@ -202,7 +232,7 @@ function renderAnalysisChart(){
         duration:MOTION.data,easing:MOTION.dataEasing,
         onComplete:({chart})=>{if(chart.$analysisUpdating){chart.$analysisUpdating=false;chart.draw();}}
       },
-      transitions:{active:{animation:{duration:0}},resize:{animation:{duration:0}}},
+      transitions:{active:{animation:{duration:0}},resize:{animation:{duration:0}},analysisSelection:{animation:{duration:0}}},
       interaction:{mode:'index',intersect:false},layout:{padding:{top:22,right:12,bottom:8}},
       onClick:(event,items)=>{const item=items[0];if(item)selectAnalysisMonth(data.months[indices[item.index]]);},
       plugins:{legend:{display:false},tooltip:{enabled:!phone,callbacks:{title:items=>items.length?monthLong(data.months[indices[items[0].dataIndex]]):'',label:ctx=>' '+dataset.label+': '+analysisFormat(ctx.parsed.y)}}},
@@ -211,7 +241,7 @@ function renderAnalysisChart(){
         if(phone&&labels.length>8&&value!==selectedIndex&&(value%2||Math.abs(value-selectedIndex)===1))return '';
         return this.getLabelForValue(value);
       },color:ctx=>data.months[indices[ctx.index]]===analysisSelectedMonth?cssVar('--text'):cssVar('--muted'),font:ctx=>({size:phone?10:12,weight:data.months[indices[ctx.index]]===analysisSelectedMonth?700:400}),padding:10}},
-        y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>mixHex(cssVar(ctx.tick.value===0?'--muted':'--border'),cssVar('--surface'),ctx.tick.value===0?.42:.38),lineWidth:ctx=>ctx.tick.value===0?1.2:1},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}
+        y:{min:domainMin,max:domainMax,afterBuildTicks:trimTicks,grid:{color:ctx=>mixHex(cssVar(ctx.tick.value===0?'--muted':'--border'),background,ctx.tick.value===0?.42:.38),lineWidth:ctx=>ctx.tick.value===0?1.2:1},border:{display:false},ticks:{precision:2,callback:value=>percentage?Number(value).toLocaleString('es-PE',{maximumFractionDigits:1})+'%':value&&Math.abs(value)<1?fmt(value):compactS(value),maxTicksLimit:phone?4:5,font:{size:phone?11:12},padding:8}}}
   };
   if(chYear){
     if(!animate)finishAnalysisTrace(chYear);
@@ -251,7 +281,7 @@ function renderAnalysisDetails(){
   if (detail.hidden) return;
   $('#analysisDetailHint').textContent=metric.label+' · '+y;
   $('#analysisMovementsAction').innerHTML=`<button type="button" class="btn sm" data-analysis-movements="${analysisMetric}">${ic('list')} Ver movimientos del año</button>`;
-  renderMobileYearDetail();
+  if (mobileAnalysis()){renderMobileYearDetail();return;}
   const selectedIndex=months.indexOf(analysisSelectedMonth),head=`<thead><tr><th>Categoría</th>${MONTHS_ES.map((name,i)=>`<th class="num${i===selectedIndex?' cur':''}">${name}</th>`).join('')}<th class="num">Total</th></tr></thead>`;
   const sum=values=>values.reduce((a,v)=>a+(v||0),0),row=(label,values,total)=>`<tr><td>${label}</td>${values.map(v=>`<td class="num">${fmt0(v)}</td>`).join('')}<td class="num"><b>${fmt0(total)}</b></td></tr>`;
   const type=analysisMetric,keys=catsOf(type).map(c=>({c,values:grid[type+':'+c.id]})).concat([{c:getCat(null),values:grid[type+':_none']}]).filter(x=>x.values);
@@ -268,7 +298,6 @@ $('#anKpis').addEventListener('click', e => {
     const selected = metric === button;
     metric.classList.toggle('selected', selected);
     metric.setAttribute('aria-pressed', String(selected));
-    metric.querySelector('.metric-selection').innerHTML = ic(selected ? 'check' : 'chevron-down');
   }
   renderAnalysisSelection();
   enhanceAccessibility();
@@ -330,14 +359,16 @@ document.addEventListener('keydown',e=>{
 
 matchMedia('(max-width:700px)').addEventListener('change',()=>{
   dirty.add('analysis');
+  dirty.add('dashboard');
   if(activeTab()==='analysis') renderView('analysis');
+  else if(activeTab()==='dashboard'&&!mobileLayout.matches) renderView('dashboard');
 });
 
 function renderAnalysis(){
   const y = currentMonth.slice(0,4), tm = thisMonth();
   const months = MONTHS_ES.map((_, i) => `${y}-${String(i + 1).padStart(2, '0')}`);
   $('#yearLabel').textContent = y;
-  const yearTx = state.transactions.filter(t => t.date.slice(0,4) === y && !isPlanned(t));
+  const yearTx = months.flatMap(txOfMonth);
   const grid = {};
   yearTx.forEach(t => {
     if (isSavingTx(t)) return; // el ahorro separado no es gasto: queda en la métrica Ahorro
@@ -356,21 +387,20 @@ function renderAnalysis(){
   // KPIs del año (el ahorro se mide igual que en el Resumen: lo que separo o lo que sobra)
   const savings = months.map(savingsOf);
   const ySv = savings.reduce((a, v, i) => { a.saved += v.saved; if (v.pct && v.inc && months[i] <= tm){ a.goalMonths++; if (v.saved >= v.target) a.hit++; } return a; }, {saved:0, goalMonths:0, hit:0});
-  const kpi=(id,icon,value,sub,cls='')=>{const metric=ANALYSIS_METRICS[id],on=analysisMetric===id;return `<button type="button" class="card kpi analysis-metric ${metric.className}${on?' selected':''}" data-analysis-metric="${id}" aria-pressed="${on}" aria-controls="yearChartCard"><div class="label"><span class="dot">${ic(icon)}</span>${metric.label}</div><span class="metric-selection" aria-hidden="true">${ic(on?'check':'chevron-down')}</span><div class="value ${cls}" data-k="an:${id}" data-num="${typeof value==='number'?value:''}" data-kind="${id==='rate'?'pct':'money'}">${typeof value==='number'?'':value}</div><div class="small muted">${sub}</div></button>`;};
-  const caption=(mobile,desktop)=>'<span class="metric-caption-mobile">'+mobile+'</span><span class="metric-caption-desktop">'+desktop+'</span>';
+  const kpi=(id,icon,value,sub,cls='')=>{const metric=ANALYSIS_METRICS[id],on=analysisMetric===id;return `<button type="button" class="kpi analysis-metric ${metric.className}${on?' selected':''}" data-analysis-metric="${id}" aria-pressed="${on}" aria-controls="yearChartCard"><span class="label"><span class="dot" aria-hidden="true">${ic(icon)}</span>${metric.label}<span class="metric-selection" aria-hidden="true">${ic('check')}</span></span><span class="value ${cls}" data-k="an:${id}" data-num="${typeof value==='number'?value:''}" data-kind="${id==='rate'?'pct':'money'}">${typeof value==='number'?'':value}</span><span class="small muted">${sub}</span></button>`;};
   const savingsCaption = saveMode() === 'set' ? 'Dinero apartado' : 'Incluye aportes';
   $('#anKpis').innerHTML =
-    kpi('income','arrow-down',yInc,caption(`Promedio mensual<br>${fmt(yInc/withData)}`,`Promedio ${fmt(yInc/withData)} al mes`)) +
-    kpi('expense','arrow-up',yExp,caption(`Promedio mensual<br>${fmt(yExp/withData)}`,`Promedio ${fmt(yExp/withData)} al mes`)) +
+    kpi('income','arrow-down',yInc,`${fmt(yInc/withData)} al mes`) +
+    kpi('expense','arrow-up',yExp,`${fmt(yExp/withData)} al mes`) +
     kpi('savings','piggy-bank',ySv.saved,savingsCaption,ySv.saved<0?'neg':'') +
-    kpi('rate','chart-pie',yInc?ySv.saved/yInc*100:'—',ySv.goalMonths?caption(`Meta: ${ySv.hit} de ${ySv.goalMonths} meses`,`Meta cumplida en ${ySv.hit} de ${ySv.goalMonths} meses`):'Sin ingresos registrados');
+    kpi('rate','chart-pie',yInc?ySv.saved/yInc*100:'—',ySv.goalMonths?`Meta cumplida en ${ySv.hit} de ${ySv.goalMonths} meses`:'Sin ingresos registrados');
   $('#anKpis').querySelectorAll('[data-num]').forEach(el => { if (el.dataset.num !== '') countUp(el, Number(el.dataset.num), el.dataset.kind); });
 
   // Gráfico: ahorro mensual + acumulado
-  const bal = savings.map(v => v.saved), balC = tot.map((t, i) => t.inc || t.exp ? bal[i] : null);
-  const firstData = tot.findIndex(t => t.inc || t.exp);
-  let acc = 0; const cum = months.map((m, i) => firstData >= 0 && i >= firstData && (m <= tm || tot[i].inc || tot[i].exp) ? (acc += bal[i]) : null);
-  analysisData={months,bal,balC,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData,cumulative:analysisCumulativeSeries(tot,bal,cum)};
+  const bal = savings.map(v => v.saved);
+  const firstData = savings.findIndex(v => v.inc || v.cons || v.sep);
+  let acc = 0; const cum = months.map((m, i) => firstData >= 0 && i >= firstData && m <= tm ? (acc += bal[i]) : null);
+  analysisData={months,bal,cum,tot,grid,rates:tot.map((t,i)=>t.inc?bal[i]/t.inc*100:null),first:firstData,cumulative:analysisCumulativeSeries(tot,bal,cum)};
   analysisSelectedMonth=currentMonth;
   if(analysisDetailPeriod!=='year')analysisDetailPeriod=currentMonth;
   renderAnalysisSelection();
@@ -382,7 +412,11 @@ function renderAnalysisSelection(){
   $('#analysisChartTitle').textContent=metric.title;
   $('#yearChartHelp').dataset.tip=metric.help;
   $('#yearChartDescription').textContent=metric.help;
-  $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.yearMode===analysisChartMode)));
+  $('#yearChartModes').querySelectorAll('[data-year-mode]').forEach(b=>{
+    const selected=b.dataset.yearMode===analysisChartMode;
+    b.classList.toggle('active',selected);
+    b.setAttribute('aria-pressed',String(selected));
+  });
   $('#yearChartModes').hidden=!hasData;
   const readout=$('#yearReadout'), pickerFocused=readout.contains(document.activeElement);
   renderYearReadout();

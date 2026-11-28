@@ -122,7 +122,7 @@ function pushOtherPending(){
    const snap=SyncCore.clone(withState(st,()=>snapshot())),base=readSyncBase(other),remote=loaded.data;
   if(!remote||!Array.isArray(remote.categories))throw new Error('Respuesta incompleta de Sheets');
    normalizeCategoryData(remote);
-  const result=!remote.categories.length?{data:snap,conflicts:[]}:SyncCore.reconcile(base?.data||null,snap,remote);
+  const result=emptySyncData(remote)?{data:snap,conflicts:[]}:SyncCore.reconcile(base?.data||null,snap,remote);
   if(result.conflicts.length){writeSyncCache('conflict',{remote,rev:remote.rev},other);return false;}
   const sent=result.data,res=await callSheets({action:'save',profile:other,data:sent,base:Number(remote.rev)||0});if(res.protocol!==2||!Number.isInteger(res.rev)||res.rev<=Number(remote.rev||0))throw new Error('Sin confirmación de Sheets');
    const key=storeKey(other),before=localData.readText(key);
@@ -231,7 +231,7 @@ function sharedGoalsCard(){
   if (!list.length) return '';
   const today = todayISO();
   const colors=bothProfileColors();
-  return `<div class="card both-goals"><h3>Metas compartidas · acumulado</h3>${list.map(({g, owner}) => {
+  return `<div class="card both-goals"><h3 class="section-title">Metas compartidas</h3>${list.map(({g, owner}) => {
     const sp = {p1:0, p2:0}; profiles.list.forEach(pr => { const st = sts[pr.id]; if (st) sp[pr.id] += sum((st.transactions || []).filter(t => t.goalId === g.id && !(t.date > today))); });
     sp[owner] += Number(g.initial || 0);
     const tot = sp.p1 + sp.p2, saved = tot - goalOut(g), tg = Number(g.target) || 0, pct = tg ? Math.min(100, saved / tg * 100) : 0;
@@ -266,7 +266,7 @@ async function refreshOther(force){
     if((sameSyncConnection(stored)&&status?.pending)||(before!==null&&!profileState(other)))return;
     otherAt=Date.now();
     const j = await callSheets({action:'load', profile:other});
-    if (j.protocol===2 && j.data && Array.isArray(j.data.categories) && j.data.categories.length && other === otherProfile()&&!localTabChanged){
+    if (j.protocol===2 && j.data && !emptySyncData(j.data) && other === otherProfile()&&!localTabChanged){
       const next=JSON.stringify(otherStateFromRemote(other,j.data)),current=readSyncConfig(),latest=current.byProf?.[other];
       if(!sameSyncConnection(current)||latest?.pending||syncConflict(other)||Number(j.data.rev)<Number(latest?.rev||0))return;
       if(localData.readText(key)!==before)return;
@@ -296,32 +296,53 @@ function renderBoth(){
   });
   const T = k => rows.reduce((a, r) => a + (r[k] || 0), 0), inc = T('inc'), exp = T('exp'), result = T('result'), saved = T('saved'), bal = T('cash');
   const perProfile=(key,total,percentage=false)=>rows.map(r=>`<div class="metric-detail-row"><span>${esc(r.pr.name)}</span><b>${fmt(r[key]||0)}${percentage&&total>0?` <small>${((r[key]||0)/total*100).toFixed(1)}%</small>`:''}</b></div>`).join('');
-  const kpi = (lbl, icon, val, sub, cls) => `<details class="card kpi metric-disclosure ${cls}" data-both-metric="${esc(lbl)}"${opened.has(lbl)?' open':''}><summary><div class="label"><span class="dot">${ic(icon)}</span>${lbl}</div><div class="value">${val}</div><span class="metric-chevron" aria-hidden="true">${ic('chevron-down')}</span></summary><div class="metric-expanded"><div class="metric-details">${sub}</div></div></details>`;
+  const kpi = (key, label, icon, val, sub, cls) => `<details class="card kpi metric-disclosure ${cls}" data-both-metric="${esc(key)}"${opened.has(key)?' open':''}><summary><div class="label"><span class="dot">${ic(icon)}</span>${label}</div><div class="value">${val}</div><span class="metric-chevron" aria-hidden="true">${ic('chevron-down')}</span></summary><div class="metric-expanded"><div class="metric-details">${sub}</div></div></details>`;
   const top = rows.flatMap(r => r.top.map(x => ({...x, pr:r.pr}))).sort((a, b) => b.t.amount - a.t.amount).slice(0, 5), shared = sharedGoalsCard();
   const profilePeriods=cycles?`<dl class="both-period-list" aria-label="Períodos por usuario">${rows.map(({pr,period})=>`<div><dt>${esc(pr.name)}</dt><dd>${period?esc(period.label):'Sin datos disponibles'}</dd></div>`).join('')}</dl>`:'';
-  box.innerHTML = `<div class="both-head"><h2>Ambos · ${cycles?'cierre de ':''}${monthLong(m)}</h2><div class="both-access"><span class="small muted">Solo lectura</span><button type="button" class="btn sm" data-choose-profile>Elegir perfil</button></div></div>
+  box.innerHTML = `<div class="both-head"><div><h2 class="mobile-only section-title">Ambos</h2><p class="small muted">${cycles?'Cierre · ':''}${monthLong(m)} · Solo lectura</p></div><button type="button" class="btn ghost" data-choose-profile>${ic('users')} Elegir perfil</button></div>
     ${hasCycles?`<div class="both-period-controls"><div class="seg" role="group" aria-label="Períodos de Ambos"><button type="button" data-both-period="profiles" aria-pressed="${bothPeriodMode==='profiles'}" class="${bothPeriodMode==='profiles'?'active':''}">Según cada usuario</button><button type="button" data-both-period="calendar" aria-pressed="${bothPeriodMode==='calendar'}" class="${bothPeriodMode==='calendar'?'active':''}">Mes calendario</button></div><p class="small muted">${cycles?'Se suman los períodos de cada usuario.':'Ambos usuarios se comparan del primer al último día del mes.'} Solo cuentan movimientos realizados.</p>${profilePeriods}</div>`:''}
     <div class="period-overview"><div><span>Resultado conjunto ${cycles?'de los períodos':'del mes'}</span><strong class="${result<0?'neg':''}">${fmt(result)}</strong><small>Ingresos menos salidas de dinero</small></div></div>
     <div class="kpis dashboard-kpis both-kpis">
-      ${kpi('Ingresos de ambos', 'arrow-down', fmt(inc), perProfile('inc',inc,true), 'k-inc')}
-      ${kpi('Gastos de ambos', 'arrow-up', fmt(exp), perProfile('exp',exp,true), 'k-exp')}
-      ${kpi('Saldo acumulado conjunto', 'scale', `<span class="${bal < 0 ? 'neg' : ''}">${fmt(bal)}</span>`,perProfile('cash',bal)+`<p class="small muted">${cycles?'Cada saldo se calcula hasta el final de su propio período.':'Saldos acumulados hasta el final del mes.'} Los movimientos futuros no se incluyen.</p><div class="metric-detail-row"><span>Saldo anterior</span><b>${fmt(T('previous'))}</b></div><div class="metric-detail-row"><span>Resultado ${cycles?'de los períodos':'del mes'}</span><b>${fmt(result)}</b></div>`, 'k-balance')}
-      ${kpi('Ahorro conjunto', 'piggy-bank', fmt(saved),perProfile('saved',saved)+`<div class="small muted">${inc > 0 ? `${(saved / inc * 100).toFixed(1)}% de los ingresos de ambos` : 'Sin ingresos registrados'}</div>`, 'k-save')}
+      ${kpi('Ingresos de ambos', 'Ingresos', 'arrow-down', fmt(inc), perProfile('inc',inc,true), 'k-inc')}
+      ${kpi('Gastos de ambos', 'Gastos', 'arrow-up', fmt(exp), perProfile('exp',exp,true), 'k-exp')}
+      ${kpi('Saldo acumulado conjunto', 'Saldo acumulado', 'scale', `<span class="${bal < 0 ? 'neg' : ''}">${fmt(bal)}</span>`,perProfile('cash',bal)+`<p class="small muted">${cycles?'Cada saldo se calcula hasta el final de su propio período.':'Saldos acumulados hasta el final del mes.'} Los movimientos futuros no se incluyen.</p><div class="metric-detail-row"><span>Saldo anterior</span><b>${fmt(T('previous'))}</b></div><div class="metric-detail-row"><span>Resultado ${cycles?'de los períodos':'del mes'}</span><b>${fmt(result)}</b></div>`, 'k-balance')}
+      ${kpi('Ahorro conjunto', 'Ahorro', 'piggy-bank', fmt(saved),perProfile('saved',saved)+`<div class="small muted">${inc > 0 ? `${(saved / inc * 100).toFixed(1)}% de los ingresos de ambos` : 'Sin ingresos registrados'}</div>`, 'k-save')}
     </div>
     <div class="grid2 top">
-      <div class="card"><h2>Por usuario</h2><div class="both-users">${rows.map(r => `<div class="bu-row" data-both-profile="${esc(r.pr.id)}">${avatarBox(r.pr)}<div style="min-width:0"><div class="bu-name"><span>${esc(r.pr.name)}</span>${r.empty ? '<span class="small muted">sin datos aún</span>' : ''}</div><p class="both-user-period">${r.period?esc(r.period.label):'Sin datos disponibles'}</p>
-        <div class="bu-stats"><div>Ingresos<b class="pos">${fmt(r.inc)}</b></div><div>Gastos<b>${fmt(r.exp)}</b></div><div>Balance<b class="${r.result >= 0 ? 'pos' : 'neg'}">${fmt(r.result)}</b></div><div>Ahorro<b>${r.rate != null ? r.rate.toFixed(1) + '%' : '—'}</b></div></div></div></div>`).join('')}
-        <div class="small muted" style="margin-top:4px">Parte de los gastos seleccionados</div><div class="bu-share">${rows.map((r,i) => `<i style="width:${exp>0?(r.exp / exp * 100).toFixed(1):0}%;background:${colors[i]}"></i>`).join('')}</div><div class="both-share-legend">${rows.map((r,i)=>`<div><span><i style="background:${colors[i]}"></i>${esc(r.pr.name)}</span><b>${exp>0?(r.exp/exp*100).toFixed(1)+'%':'—'}</b></div>`).join('')}</div></div></div>
-      <div class="card"><h3 id="bothChartTitle">Gastos de ambos · últimos 6 ${cycles?'cierres':'meses'}</h3>${cycles?'<p class="small muted">Cada serie respeta el período de su usuario.</p>':''}<div class="chart-wrap" id="bothWrap"><canvas id="chBoth"></canvas></div></div>
+      <div class="card"><h2 class="section-title">Por usuario</h2><div class="both-users">${rows.map(r => `<div class="bu-row" data-both-profile="${esc(r.pr.id)}">${avatarBox(r.pr)}<div class="bu-identity"><b class="bu-name">${esc(r.pr.name)}</b><p class="both-user-period">${r.period?esc(r.period.label):'Sin datos disponibles'}</p></div>
+        <dl class="bu-stats"><div><dt>Ingresos</dt><dd>${fmt(r.inc)}</dd></div><div><dt>Gastos</dt><dd>${fmt(r.exp)}</dd></div><div><dt>Resultado</dt><dd class="${r.result < 0 ? 'neg' : ''}">${fmt(r.result)}</dd></div><div><dt>Tasa de ahorro</dt><dd>${r.rate != null ? r.rate.toFixed(1) + '%' : '—'}</dd></div></dl></div>`).join('')}</div>
+        <div class="both-share"><h3 class="section-title">Participación en los gastos</h3><div class="bu-share" aria-hidden="true">${rows.map((r,i) => `<i style="width:${exp>0?(r.exp / exp * 100).toFixed(1):0}%;background:${colors[i]}"></i>`).join('')}</div><div class="both-share-legend">${rows.map((r,i)=>`<div><span><i style="background:${colors[i]}"></i>${esc(r.pr.name)}</span><b>${exp>0?(r.exp/exp*100).toFixed(1)+'%':'—'}</b></div>`).join('')}</div></div></div>
+      <section class="report-chart both-chart" aria-labelledby="bothChartTitle"><h2 class="section-title" id="bothChartTitle">Evolución de gastos</h2><p class="small muted">Últimos 6 ${cycles?'cierres según el período de cada usuario':'meses'}</p><div class="chart-wrap" id="bothWrap"><canvas id="chBoth"></canvas></div></section>
     </div>
-    <details class="both-extra" id="bothExtra"${extraOpen?' open':''}><summary>Más detalle · ${shared?'Metas compartidas y ':''}Top 5 gastos ${ic('chevron-down')}</summary><div class="both-bottom">${shared}
-    <div class="card both-top"><h3>Top 5 gastos ${cycles?'de los períodos':'del mes'} de ambos</h3>${top.length ? top.map((x,i) => `<div class="prow"><span class="both-rank">${i+1}</span>${avatarBox(x.pr)}<div class="pn"><b title="${esc(x.t.desc || x.c.name)}">${esc(x.t.desc || x.c.name)}</b><span title="${esc(x.pr.name+' · '+x.c.name)}">${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${esc(x.t.date)}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos en los períodos seleccionados.</div>'}</div></div></details>`;
+    <details class="both-extra" id="bothExtra"${extraOpen?' open':''}><summary><span>${shared?'Metas compartidas y mayores gastos':'Mayores gastos'}</span>${ic('chevron-down')}</summary><div class="both-bottom">${shared}
+    <div class="card both-top"><h3 class="section-title">Mayores gastos ${cycles?'de los períodos':'del mes'}</h3>${top.length ? top.map(x => `<div class="prow"><span class="ico" style="background:${soft(x.c.color)}" aria-hidden="true">${iconHTML(x.c.icon,x.c.color)}</span><div class="pn"><b>${esc(x.t.desc || x.c.name)}</b><span>${esc(x.pr.name)} · ${esc(x.c.name)}</span><time datetime="${esc(x.t.date)}">${fmtDateLong(x.t.date)}</time></div><b class="both-top-amount">${fmt(x.t.amount)}</b></div>`).join('') : '<div class="small muted">Aún no hay gastos en los períodos seleccionados.</div>'}</div></div></details>`;
   requestAnimationFrame(fitMetricValues);
   if (chBoth){ chBoth.destroy(); chBoth = null; }
+  if (!rows.some(row=>row.series.some(Boolean))){
+    $('#bothWrap').innerHTML = emptyBox('chart-column','Aún no hay gastos registrados en estos períodos.');
+    return;
+  }
   if (!loadChartFor($('#bothWrap'))) return;
   chartTheme();
+  const background=cssVar('--bg');
+  const datasets=rows.map((r,i)=>{
+    const ink=financialChartColor(colors[i],background);
+    return {
+      label:r.pr.name, data:r.series, periods:r.periods,
+      backgroundColor:({chart,type,raw,active})=>{
+        if(type!=='data'||!chart.chartArea||!raw||active)return ink;
+        const axis=chart.scales.y;
+        const fade=chart.ctx.createLinearGradient(0,axis.getPixelForValue(raw),0,axis.getBasePixel());
+        fade.addColorStop(0,ink);
+        fade.addColorStop(.55,ink+'80');
+        fade.addColorStop(1,ink+'14');
+        return fade;
+      },
+      hoverBackgroundColor:ink, borderRadius:5, borderSkipped:'start', maxBarThickness:24, barPercentage:.85, categoryPercentage:.7
+    };
+  });
   chBoth = new Chart($('#chBoth'), {type:'bar', plugins:[legendGap],
-    data:{labels:months.map(m=>innerWidth<=700?monthAbbr(m):monthShort(m)), datasets:rows.map((r,i) => ({label:r.pr.name, data:r.series, backgroundColor:financialChartColor(colors[i]), hoverBackgroundColor:financialChartColor(colors[i]), borderRadius:5, borderSkipped:'start', maxBarThickness:24, barPercentage:.85, categoryPercentage:.7, periods:r.periods}))},
+    data:{labels:months.map(m=>innerWidth<=700?monthAbbr(m):monthShort(m)), datasets},
     options:{maintainAspectRatio:false, animation:stagger(), interaction:{mode:'index', intersect:false},
       plugins:{legend:LEGEND, tooltip:{callbacks:{label: c => [` ${c.dataset.label}: ${fmt(c.parsed.y)}`,c.dataset.periods?.[c.dataIndex]?.label||'Sin datos disponibles'], footer: items => 'Total: ' + fmt(items.reduce((a, i) => a + i.parsed.y, 0))}}},
       scales:{x:{stacked:false, grid:{display:false}, border:{display:false}}, y:{stacked:false, beginAtZero:true, afterBuildTicks:trimTicks, grid:{color:cssVar('--border')}, border:{display:false}, ticks:{callback:compactS, maxTicksLimit:5, padding:8}}}}});

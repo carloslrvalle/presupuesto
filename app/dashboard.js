@@ -148,6 +148,11 @@ function renderDashboard(){
   else { $('#kSavings').textContent = '—'; $('#kSavings').className = 'value'; numMemo.kSavings = 0; }
   renderDashboardKpis({m,inc,exp,bInc,bExp,pInc,pExp,pp,pace,cash,closing,closed,sv});
 
+  if (mobileLayout.matches){
+    renderMobileHomeChart(txs);
+    if (activeTab()==='dashboard') loadChartFor(); // Prepara el script sin crear los gráficos de PC ocultos.
+    return;
+  }
 
   const pm = shiftMonth(m, -1);
   const rows = type => {
@@ -173,7 +178,6 @@ function renderDashboard(){
   $('#topExp').innerHTML = recentExpenseRows(txs, 5);
 
   renderCharts();
-  if (typeof renderMobileHomeChart === 'function') renderMobileHomeChart(txs);
 }
 // Gastos recientes del período (sin ahorro), del más nuevo al más antiguo. Escritorio muestra 5; Inicio móvil, más.
 function recentExpenseRows(txs, limit){
@@ -292,7 +296,7 @@ function renderCharts(){
   if (!loadChartFor(bw)) return;
   const grid = cssVar('--border'); chartTheme();
   if (!bw.querySelector('canvas')) bw.innerHTML = '<canvas id="chBars"></canvas>';
-  const has = i => incs[i] || exps[i], net = months.map((mm, i) => has(i) ? planSavings(mm).saved : null), cur = months.length - 1, ink = cssVar('--savings-chart');
+  const has = i => incs[i] || exps[i], cur = months.length - 1;
   const nul = arr => arr.map((v, i) => has(i) ? v : null);
   // Barras sólidas: el mes actual a color completo y el resto aclarado hacia la superficie, como en Análisis
   const barBg = v => c => mixHex(cssVar(v), cssVar('--surface'), c.dataIndex === c.chart.data.labels.length-1 || c.active ? 0 : .4);

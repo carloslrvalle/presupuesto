@@ -18,7 +18,7 @@ function movementHistoryRow(t,mobile){
    const meta = mobile
      ? `<span class="history-secondary"><span class="history-row-meta">${t.desc?`${esc(c.name)} · `:''}<time datetime="${esc(t.date)}">${fmtDate(t.date)}</time></span></span>`
      : t.desc||t.method?`<span class="history-secondary">${t.desc?`<span class="history-description">${esc(t.desc)}</span>`:''}${t.method?`<span class="history-detail">${esc(t.method)}</span>`:''}</span>`:'';
-   return `<li class="history-row${planned?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary">${mobile?`<span class="history-mobile-title">${esc(t.desc||c.name)}</span>`:`<span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span>`}</span>${meta}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}${mobile&&planned?'<span class="plan-pill">Programado</span>':''}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false"><svg class="vi" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></li>`;
+   return `<li class="history-row${planned?' planned':''}${selSet.has(t.id)?' picked':''}" data-row="${esc(t.id)}"><button type="button" class="history-edit" data-edit="${esc(t.id)}" aria-description="${action}"${selMode?` aria-pressed="${selSet.has(t.id)}"`:''}><span class="history-icon" aria-hidden="true" style="background:${soft(c.color)}">${iconHTML(c.icon,c.color)}</span><span class="history-copy"><span class="history-primary">${mobile?`<span class="history-mobile-title">${esc(t.desc||c.name)}</span>`:`<span class="history-category history-desktop-title" title="${esc(c.name)}">${esc(c.name)}</span>`}</span>${meta}</span><b class="history-amount ${isI?'pos':isS?'sv':'xp'}"${isS?' title="Separado como ahorro: no cuenta como gasto"':''}>${isI?'+':isS?'↗':'−'} ${fmt(t.amount)}${mobile&&planned?'<span class="plan-pill">Programado</span>':''}</b></button><button type="button" class="iconbtn history-options" data-row-menu="${esc(t.id)}" aria-label="Opciones de ${esc(t.desc||c.name)}" aria-haspopup="menu" aria-expanded="false">${ic('ellipsis')}</button></li>`;
 }
 function movementHistory(list,dayLbl,filtered){
  if(!list.length)return filtered?emptyBox('search','Ningún movimiento coincide con tu búsqueda o filtros.'):emptyBox('receipt','Aún no hay movimientos en este período.','tx','Nuevo movimiento');
@@ -294,7 +294,8 @@ function openMovs({type = '', cat = '', scope = 'month', view = 'list',month=nul
   showTab('movs');
   if(month && month !== currentMonth){
     currentMonth=month;monthInput.value=month;planningHeader();
-    if(mobileLayout.matches)renderDashboard();
+    dirty=new Set(Object.keys(VIEWS));
+    if(mobileLayout.matches)renderView('dashboard');
   }
   setMovView(view);
   if (view !== 'list') return;
@@ -366,7 +367,11 @@ function renderCalendar(){
   const m = currentMonth, [y, mo] = m.split('-').map(Number), dim = daysIn(m), first = (new Date(y, mo - 1, 1).getDay() + 6) % 7;
   if (mobileLayout.matches) mobileHistoryScope.textContent = monthLong(m);
   const tm = thisMonth(), today = m === tm ? new Date().getDate() : 0, byDay = {};
-  txOfMonthAll(m).forEach(t => { const d = Number(t.date.slice(8, 10)), o = byDay[d] = byDay[d] || {exp:0, inc:0, n:0, plan:0}; if (isPlanned(t)) o.plan++; o[t.type === 'income' ? 'inc' : 'exp'] += Number(t.amount) || 0; o.n++; });
+  txOfMonthAll(m).forEach(t => {
+    const d = Number(t.date.slice(8, 10)), day = byDay[d] ||= {exp:0, inc:0, saving:0, plan:0};
+    if (isPlanned(t)) day.plan++;
+    else day[t.type === 'income' ? 'inc' : isSavingTx(t) ? 'saving' : 'exp'] += Number(t.amount) || 0;
+  });
   const exps = Object.values(byDay).map(o => o.exp).filter(Boolean), max = Math.max(1, ...exps);
   const srt = [...exps].sort((a, b) => a - b), med = srt.length ? srt[Math.floor(srt.length / 2)] : 0; // mediana: un gasto 'muy alto' es >2.5× un día normal
   // Escala logarítmica: un día de alquiler no deja a los demás casi blancos
@@ -378,9 +383,8 @@ function renderCalendar(){
     calSel = dateFor(m, today || firstWith || 1);
   }
   const daysPassed = m < tm ? dim : m === tm ? today : 0;
-  const totExp = sum(txOfMonth(m).filter(t => t.type === 'expense'));
   // El promedio diario solo cuenta lo ya ocurrido (no los gastos con fecha futura)
-  const pastExp = sum(txOfMonth(m).filter(t => t.type === 'expense')), avg = daysPassed ? pastExp / daysPassed : 0;
+  const avg = daysPassed ? exps.reduce((sum,value)=>sum+value,0) / daysPassed : 0;
   let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map((d, i) => `<div class="cal-h${i > 4 ? ' we' : ''}">${d}</div>`).join('');
   let col = 0, week = 0, idx = 0, weekStart = 1;
   const weeks = [];
@@ -391,7 +395,7 @@ function renderCalendar(){
     if (o) week += o.exp;
     const hot = o && o.exp > med * 2.5 && exps.length > 3;
     const e = lvlOf(o && o.exp, max), g = lvlOf(o && o.inc, maxInc), kind = e && g ? ' both' : e ? ' has-exp' : g ? ' has-inc' : '';
-    const dayLabel=`${fmtDateLong(iso)}. Ingresos: ${fmt(o?.inc||0)}. Gastos: ${fmt(o?.exp||0)}`;
+    const dayLabel=`${fmtDateLong(iso)}. Ingresos: ${fmt(o?.inc||0)}. Gastos: ${fmt(o?.exp||0)}${o?.saving ? '. Ahorro: '+fmt(o.saving) : ''}${o?.plan ? '. '+plural(o.plan,'programado') : ''}`;
     html += `<button type="button" class="cal-d${we ? ' we' : ''}${kind}${d === today ? ' today' : ''}${iso === calSel ? ' sel' : ''}${today && d > today ? ' future' : ''}${o && o.plan ? ' planned' : ''}" data-day="${iso}" style="--e1:${e.toFixed(0)}%;--e2:${(e * .35).toFixed(0)}%;--g1:${g.toFixed(0)}%;--g2:${(g * .35).toFixed(0)}%;--i:${idx++}" aria-label="${esc(dayLabel)}" title="${esc(dayLabel)}" aria-pressed="${iso===calSel}" tabindex="${iso===calSel?0:-1}">
       <span class="cd-n">${d}</span>${hot ? '<span class="cd-hot" title="Gasto alto">●</span>' : ''}
       </button>`;
@@ -405,7 +409,7 @@ function renderCalendar(){
   const top = Object.entries(byDay).sort((a, b) => b[1].exp - a[1].exp)[0];
   const zero = daysPassed ? Array.from({length:daysPassed}, (_, i) => i + 1).filter(d => !byDay[d] || !byDay[d].exp).length : 0;
   const wd = d => new Date(y, mo - 1, d).toLocaleDateString('es-PE', {weekday:'short'}).replace('.', '');
-  const bExp = totalBudget(m, 'expense'), daily = bExp ? bExp / dim : 0;
+  const bExp = planSpendTotal(m, false), daily = bExp ? bExp / dim : 0;
   $('#calStats').innerHTML = [
     ['Promedio por día', daysPassed ? fmt(avg) : '—', daily ? (avg <= daily ? `<span class="pos">dentro de ${fmt(daily)}/día</span>` : `<span class="neg">sobre ${fmt(daily)}/día</span>`) : ''],
     ['Día de mayor gasto', top && top[1].exp ? fmt(top[1].exp) : '—', top && top[1].exp ? `${wd(Number(top[0]))} ${Number(top[0])}` : ''],
@@ -417,7 +421,8 @@ function renderCalendar(){
 let calAvg = 0;
 function renderCalDay(){
   const iso = calSel, list = state.transactions.filter(t => t.date === iso).sort((a, b) => (b.created || 0) - (a.created || 0));
-  const exp = sum(list.filter(t => t.type === 'expense')), inc = sum(list.filter(t => t.type === 'income'));
+  const real = list.filter(t => !isPlanned(t));
+  const exp = spendSum(real), inc = sum(real.filter(t => t.type === 'income')), saved = saveSum(real);
   const vsAvg = calAvg && exp ? exp / calAvg : 0;
   const [y, mo, d] = iso.split('-').map(Number), label = new Date(y, mo - 1, d).toLocaleDateString('es-PE', {weekday:'long', day:'numeric', month:'long'});
   $('#calDay').innerHTML = `<header class="cal-day-head">
@@ -428,6 +433,7 @@ function renderCalDay(){
       ${list.length ? `<dl class="cal-day-totals">
         <div><dt>Gastos</dt><dd class="xp">${fmt(exp)}</dd></div>
         <div><dt>Ingresos</dt><dd class="pos">${inc ? '+' : ''}${fmt(inc)}</dd></div>
+        ${saved ? `<div><dt>Ahorro</dt><dd class="sv">${fmt(saved)}</dd></div>` : ''}
       </dl>` : ''}
       ${vsAvg ? `<div class="vs-avg ${vsAvg > 1.2 ? 'hi' : vsAvg < .8 ? 'lo' : ''}">${vsAvg >= 1 ? vsAvg.toFixed(1) + '× tu promedio diario' : Math.round(vsAvg * 100) + '% de tu promedio diario'}</div>` : ''}
     </header>
@@ -460,10 +466,10 @@ $('#calGrid').addEventListener('keydown', e => {
   next?.click();
   next?.focus();
 });
-$('#calDay').addEventListener('click', async e => {
+$('#calDay').addEventListener('click', e => {
   const ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
   if (ed) openTx(ed.dataset.edit);
-  if (dl){ await fadeOut(dl.closest('.prow')); delTxUndo(dl.dataset.del); }
+  if (dl) delTxUndo(dl.dataset.del);
 });
 
 $('#fltText').addEventListener('input', () => {
@@ -521,10 +527,10 @@ $('#movBody').addEventListener('click', e => {
   tr.querySelector('.history-edit').setAttribute('aria-pressed',String(selSet.has(id)));
   renderSelUI();
 }, true);
-$('#movBody').addEventListener('click', async e => {
+$('#movBody').addEventListener('click', e => {
   const ed = e.target.closest('[data-edit]'), dl = e.target.closest('[data-del]');
   if (ed) openTx(ed.dataset.edit);
-  if (dl){ await fadeOut(dl.closest('[data-row]')); delTxUndo(dl.dataset.del); }
+  if (dl) delTxUndo(dl.dataset.del);
 });
 
 const movActionMenu=document.createElement('div');movActionMenu.className='mov-action-menu';movActionMenu.setAttribute('role','menu');movActionMenu.setAttribute('aria-label','Acciones del movimiento');movActionMenu.hidden=true;
@@ -566,9 +572,9 @@ movActionMenu.addEventListener('keydown',e=>{
  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const buttons=[...movActionMenu.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length].focus();}
  if(e.key==='Tab')closeMovActionMenu();
 });
-movActionMenu.addEventListener('click',async e=>{
+movActionMenu.addEventListener('click',e=>{
  const b=e.target.closest('[data-mov-action]');if(!b||!movAction)return;const id=movAction.id;closeMovActionMenu();
- if(b.dataset.movAction==='edit')openTx(id);else{await fadeOut(document.querySelector(`#movBody [data-row="${id}"]`));delTxUndo(id);}
+ if(b.dataset.movAction==='edit')openTx(id);else delTxUndo(id);
 });
 $('#movFilterToggle').onclick=toggleMovementFilters;
 $('#movFilterClear').onclick = () => {

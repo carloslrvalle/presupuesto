@@ -67,21 +67,23 @@ document.addEventListener('change', e => {
     state.settings.savePctM = {...(state.settings.savePctM || {})};
     if (all){ state.settings.savePct = v; delete state.settings.savePctM[m]; }
     else state.settings.savePctM[m] = v;
-    save(); keepFocus(() => { renderSaveCard(); renderDashboard(); }); toast(v ? `Meta de ahorro: ${v}%${all ? '' : cycleView() ? ' en este ciclo' : ' en ' + monthLong(m)}` : 'Meta de ahorro quitada');
+    save(); dirty.add('analysis'); dirty.add('both');
+    keepFocus(() => { renderSaveCard(); renderDashboard(); }); toast(v ? `Meta de ahorro: ${v}%${all ? '' : cycleView() ? ' en este ciclo' : ' en ' + monthLong(m)}` : 'Meta de ahorro quitada');
   }
 });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-svmode]'); if (!b) return;
-  state.settings.saveMode = b.dataset.svmode; save(); renderSaveCard(); renderDashboard(); if (activeTab() === 'analysis') renderAnalysis();
+  state.settings.saveMode = b.dataset.svmode; save(); dirty.add('analysis'); dirty.add('both');
+  renderSaveCard(); renderDashboard(); if (activeTab() === 'analysis') renderView('analysis');
 });
 function renderBudget(){
   ensureCyclePlan(currentMonth);renderPeriodControls();
   renderSaveCard();
+  if (mobileLayout.matches){renderMobileBudget();return;}
   const before = [...document.querySelectorAll('#tab-budget tfoot td')].map(t => t.textContent);
   $('#budExpense').innerHTML = budgetTable('expense');
   $('#budIncome').innerHTML = budgetTable('income');
   if (before.length) document.querySelectorAll('#tab-budget tfoot td').forEach((t, i) => { if (before[i] !== undefined && before[i] !== t.textContent && !reduceMotion()) motionAnimate(t,[{opacity:.55},{opacity:1}],'fast'); });
-  if (typeof renderMobileBudget === 'function') renderMobileBudget();
 }
 function saveBudgetAmount(id, value, dialog){
   const month = currentMonth;
@@ -174,7 +176,12 @@ document.addEventListener('pointerdown', e => {
   const g = e.target.closest('#tab-cats .grip'); if (!g || e.button !== 0 || catDrag) return;
   const row = g.closest('.cat-row'); e.preventDefault();
   const r = row.getBoundingClientRect(), list = row.parentElement;
-  catDrag = {row, list, originalNext:row.nextElementSibling, offY:e.clientY - r.top, t:0, id:e.pointerId};
+  const transform = getComputedStyle(row).transform;
+  row.style.transform = transform === 'none' ? '' : transform;
+  row._catSettle?.cancel();
+  row._catSettle = null;
+  const t = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42;
+  catDrag = {row, list, originalNext:row.nextElementSibling, offY:e.clientY - r.top, t, id:e.pointerId};
   row.classList.add('dragging'); list.setPointerCapture(e.pointerId);
 });
 document.addEventListener('pointermove', e => {
@@ -200,16 +207,26 @@ const endCatDrag = e => {
     row.classList.remove('dragging');row.style.transform='';
     return;
   }
-  row.style.transition = 'transform '+MOTION.move+'ms '+MOTION.ease; row.style.transform = '';
-  setTimeout(() => { row.classList.remove('dragging'); row.style.transition = ''; }, MOTION.move);
+  const transform = row.style.transform;
+  row.style.transform = '';
+  if (transform && !reduceMotion()){
+    const settle = row.animate([{transform},{transform:'none'}],{duration:MOTION.move,easing:MOTION.ease});
+    row._catSettle = settle;
+    settle.onfinish = () => {
+      if(row._catSettle !== settle)return;
+      row._catSettle = null;
+      row.classList.remove('dragging');
+    };
+  } else row.classList.remove('dragging');
   const ids = [...list.querySelectorAll('.cat-row')].map(r => r.dataset.id), type = list.id === 'catsIncome' ? 'income' : 'expense';
   const active = catsActive(type), before = active.map(c => c.id).join();
   if (ids.join() === before) return;
   const byId = new Map(active.map(c => [c.id, c]));
   if(ids.length!==active.length||ids.some(id=>!byId.has(id))){renderCats();return;}
   let next = 0;
-  state.categories = state.categories.map(c => byId.has(c.id) ? byId.get(ids[next++]) : c);
-  const saved = save(); dirty = new Set(Object.keys(VIEWS)); dirty.delete('cats');
+  const saved = saveChange(() => { state.categories = state.categories.map(c => byId.has(c.id) ? byId.get(ids[next++]) : c); });
+  if (!saved) renderCats();
+  dirty = new Set(Object.keys(VIEWS)); dirty.delete('cats');
   if(saved)toast('Orden actualizado', {icon:'list'});
 };
 document.addEventListener('pointerup', endCatDrag); document.addEventListener('pointercancel', endCatDrag);
@@ -315,11 +332,12 @@ function renderCats(){
     const arch = catsOf(type).filter(c => c.archived);
     $(type === 'income' ? '#catsIncome' : '#catsExpense').innerHTML = catsActive(type).map(c => `<div class="cat-row" data-id="${esc(c.id)}">
       <span class="grip" role="button" tabindex="0" title="Arrastra o usa las flechas para ordenar" aria-keyshortcuts="ArrowUp ArrowDown" aria-label="Ordenar ${esc(c.name)} con flecha arriba o abajo">${GRIP}</span>
-      <button class="ico" data-act="icon" style="background:${soft(c.color)}" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}">${iconHTML(c.icon, c.color)}</button>
-      <input type="text" data-act="name" aria-label="Nombre de la categoría ${esc(c.name)}" value="${esc(c.name)}">
+      <button type="button" class="ico" data-act="icon" title="Personalizar ícono y color" aria-label="Personalizar ${esc(c.name)}"><span class="cat-icon-tile" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</span></button>
+      <input type="text" data-act="name" aria-label="Nombre de la categoría ${esc(c.name)}"${type==='expense'&&isSavingCat(c.id)?' aria-description="Cuenta como ahorro"':''} value="${esc(c.name)}">
+      <span class="cat-name-preview" aria-hidden="true">${esc(c.name)}${type==='expense'&&isSavingCat(c.id)?'<small>Cuenta como ahorro</small>':''}</span>
       ${type === 'income' ? `<button type="button" class="pay-btn${c.pay ? ' set' : ''}" data-act="pay" aria-haspopup="dialog" aria-expanded="false" aria-controls="payPicker" title="${c.pay ? esc(payHumanCfg(payCfg(c.pay))) : 'Día de pago'}">${ic('calendar-days')}<span>${c.pay ? 'Cobro: ' + payLabel(c.pay) : 'Día de pago'}</span></button>` : ''}
-      <div class="row-acts"><details class="cat-actions"><summary class="iconbtn" aria-label="Acciones de ${esc(c.name)}" title="Acciones de categoría">⋯</summary><div class="cat-actions-menu">${type==='expense'? `<button type="button" data-act="saving">${ic('piggy-bank')} ${isSavingCat(c.id)?'Contar como gasto':'Contar como ahorro'}</button>` : ''}<button type="button" data-act="arch">${ic('archive')} Archivar</button><button type="button" data-act="del">${ic('trash-2')} Eliminar</button></div></details></div>
-    </div>`).join('') || '<div class="muted small" style="padding:10px 0">Sin categorías.</div>';
+      <div class="row-acts"><details class="cat-actions"><summary class="iconbtn" aria-label="Acciones de ${esc(c.name)}" title="Acciones de categoría">${ic('ellipsis')}</summary><div class="cat-actions-menu">${type==='expense'? `<button type="button" data-act="saving">${ic('piggy-bank')} ${isSavingCat(c.id)?'Contar como gasto':'Contar como ahorro'}</button>` : ''}<button type="button" data-act="arch">${ic('archive')} Archivar</button><button type="button" data-act="del">${ic('trash-2')} Eliminar</button></div></details></div>
+    </div>`).join('') || '<p class="category-empty small muted">Sin categorías activas.</p>';
     if (arch.length) $(type === 'income' ? '#catsIncome' : '#catsExpense').insertAdjacentHTML('beforeend', `<details class="arch-group"><summary>${CHEV_D}${arch.length} ${arch.length === 1 ? 'categoría archivada' : 'categorías archivadas'}</summary>${arch.map(c => `<div class="arch-row" data-id="${esc(c.id)}"><div class="ico" style="background:${soft(c.color)}">${iconHTML(c.icon, c.color)}</div><span>${esc(c.name)}<small>desde ${monthLong(c.archived).toLowerCase()}</small></span><button class="btn sm" data-unarch="${esc(c.id)}">${ic('archive-restore')} Restaurar</button></div>`).join('')}</details>`);
   });
 }
@@ -335,6 +353,19 @@ $('#tab-cats').addEventListener('change', e => {
   keepFocus(renderAll); toast('Categoría actualizada');
 });
 $('#tab-cats').addEventListener('click', async e => {
+  const view = e.target.closest('[data-category-view]');
+  if (view){
+    const section = e.currentTarget, kind = view.dataset.categoryView;
+    section.dataset.categoryKind = kind;
+    for (const button of section.querySelectorAll('[data-category-view]')){
+      button.classList.toggle('active',button===view);
+      button.setAttribute('aria-pressed',String(button===view));
+    }
+    const add = section.querySelector('.category-toolbar [data-addcat]');
+    add.dataset.addcat = kind;
+    add.setAttribute('aria-label',kind==='income'?'Agregar categoría de ingreso':'Agregar categoría de gasto');
+    return;
+  }
   const pb = e.target.closest('.pay-btn'); if (pb){ openPayPicker(pb, pb.closest('.cat-row').dataset.id); return; }
   const ua = e.target.closest('[data-unarch]');
   if (ua){ const c = state.categories.find(x => x.id === ua.dataset.unarch); if (c){ const ok = saveChange(() => { delete state.categories.find(x => x.id === c.id).archived; }); renderAll(); if (ok) toast(`«${c.name}» restaurada`, {icon:'archive-restore'}); } return; }
@@ -391,8 +422,20 @@ $('#tab-cats').addEventListener('click', async e => {
     if (saved) toast('Categoría eliminada');
   }
 });
+$('#tab-cats').addEventListener('toggle',e=>{
+  const menu = e.target;
+  if(!menu.matches('.cat-actions')||!menu.open)return;
+  const rect = menu.querySelector('summary').getBoundingClientRect();
+  const dock = $('#mobileNav')?.getBoundingClientRect();
+  const above = rect.top-Math.max(8,$('.topbar').getBoundingClientRect().bottom);
+  const below = (dock?.height?dock.top:innerHeight)-rect.bottom-8;
+  const up = below<160&&above>below;
+  menu.classList.toggle('opens-up',up);
+  const zoom = Number(getComputedStyle(document.documentElement).zoom)||1;
+  menu.style.setProperty('--cat-menu-space',Math.max(44,Math.min(240,(up?above:below)/zoom-4))+'px');
+},true);
 document.addEventListener('click', e => { document.querySelectorAll('#tab-cats .cat-actions[open]').forEach(menu => { if (!menu.contains(e.target)) setMenuDisclosure(menu,false); }); });
-document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const menu = document.querySelector('#tab-cats .cat-actions[open]:not([data-menu-closing])'); if (menu){ setMenuDisclosure(menu,false); menu.querySelector('summary').focus(); e.preventDefault(); } });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const menu = document.querySelector('#tab-cats.active .cat-actions[open]:not([data-menu-closing])'); if (menu){ setMenuDisclosure(menu,false); menu.querySelector('summary').focus({preventScroll:true}); e.preventDefault(); } });
 
 /* ---------- Selector de íconos ---------- */
 // frame = {color, soft, onColor}: soft=true usa el tono suave (categorías), soft=false el color sólido (logo)
@@ -416,8 +459,8 @@ function renderIconGrid(){
   const g = $('#emojiGrid'), cur = isV(previewIcon) ? previewIcon.slice(4) : '';
   const openIdx = Math.max(0, VGROUPS.findIndex(([, names]) => names.includes(cur)));
   g.innerHTML = VGROUPS.map(([gname, names], i) => `<div class="ig${i === openIdx ? ' open' : ''}" data-g="${i}">
-    <button type="button" class="ig-head"><span class="ig-prev">${names.slice(0, 4).map(n => svgIcon(n, 'currentColor')).join('')}</span><span class="ig-name">${gname}</span><span class="small muted">${names.length}</span>${CHEV_D}</button>
-    <div class="acc-body"><div class="acc-in"><div class="emoji-grid">${i === openIdx ? groupHTML(names) : ''}</div></div></div></div>`).join('');
+    <button type="button" class="ig-head" aria-expanded="${i === openIdx}"><span class="ig-prev">${names.slice(0, 4).map(n => svgIcon(n, 'currentColor')).join('')}</span><span class="ig-name">${gname}</span><span class="small muted">${names.length}</span>${CHEV_D}</button>
+    <div class="acc-body"${i === openIdx ? '' : ' inert'}><div class="acc-in"><div class="emoji-grid">${i === openIdx ? groupHTML(names) : ''}</div></div></div></div>`).join('');
   g.style.color = iconInk();
   markSel();
   const sel = g.querySelector('.sel'); if (sel) requestAnimationFrame(() => sel.scrollIntoView({block:'nearest'}));
@@ -444,10 +487,26 @@ $('#frameHead').onclick=openFrameColor;
 $('#emojiGrid').addEventListener('click', e => {
   const h = e.target.closest('.ig-head'); if (!h) return;
   const ig = h.parentElement, open = !ig.classList.contains('open');
-  document.querySelectorAll('#emojiGrid .ig.open').forEach(x => x !== ig && x.classList.remove('open'));
+  for (const group of document.querySelectorAll('#emojiGrid .ig.open')){
+    group.classList.remove('open');
+    group.firstElementChild.setAttribute('aria-expanded','false');
+    group.lastElementChild.inert = true;
+  }
   if (open){ const grid = ig.querySelector('.emoji-grid'); if (!grid.children.length){ grid.innerHTML = groupHTML(VGROUPS[ig.dataset.g][1]); markSel(); } }
   ig.classList.toggle('open', open);
-  if(open)setTimeout(()=>{if(ig.isConnected&&ig.classList.contains('open'))ig.scrollIntoView({block:'nearest',behavior:reduceMotion()?'instant':'smooth'});},reduceMotion()?0:MOTION.panel);
+  h.setAttribute('aria-expanded',String(open));
+  const body = ig.lastElementChild;
+  body.inert = !open;
+  if (!open) return;
+  const scroll = () => {
+    if(!iconDialog.open||!ig.isConnected||!ig.classList.contains('open'))return;
+    const viewport = ig.closest('.dlg-body');
+    const top = h.getBoundingClientRect().top, bounds = viewport.getBoundingClientRect();
+    if(top<bounds.top||top+h.offsetHeight>bounds.bottom)
+      h.scrollIntoView({block:'nearest',behavior:reduceMotion()?'instant':'smooth'});
+  };
+  const animation = body.getAnimations().find(a=>a instanceof CSSTransition&&a.transitionProperty==='grid-template-rows');
+  if(animation)animation.finished.then(scroll,()=>{});else scroll();
 });
 iconDialog.addEventListener('close', () => { if (iconDirty){ iconDirty = false; renderAll(); } });
 $('#emojiGrid').addEventListener('click', e => { const b = e.target.closest('[data-icon]'); if (b){ iconDialog.close(); iconCb && iconCb(b.dataset.icon); } });

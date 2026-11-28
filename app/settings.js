@@ -12,7 +12,7 @@ let sw = null, ptrBusy = false;
 function returnRefreshIndicator(){
   ptr.classList.add('back');
   ptr.style.opacity = 0;
-  ptr.style.transform = 'translateY(-60px)';
+  ptr.style.transform = reduceMotion() ? 'translateY(44px)' : 'translateY(-60px)';
 }
 function cancelTouchGesture(){
   if (sw?.pull) returnRefreshIndicator();
@@ -29,7 +29,8 @@ document.addEventListener('touchmove', e => {
   if (!sw) return; const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
   if (sw.top && !ptrBusy && syncOn() && dy > 0 && dy > Math.abs(dx) * 1.4 && window.scrollY <= 0){
     sw.pull = Math.min(120, dy * .5); ptr.classList.remove('back');
-    ptr.style.opacity = Math.min(1, sw.pull / 50); ptr.style.transform = `translateY(${sw.pull - 20}px) rotate(${sw.pull * 3}deg)`;
+    ptr.style.opacity = Math.min(1, sw.pull / 50);
+    ptr.style.transform = reduceMotion() ? 'translateY(44px)' : `translateY(${sw.pull - 20}px) rotate(${sw.pull * 3}deg)`;
   }
 }, {passive:true});
 document.addEventListener('touchend', e => {

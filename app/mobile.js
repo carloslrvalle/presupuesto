@@ -333,14 +333,14 @@ function moveHomeSegIndicator(animate = true, active = mobileHomeSelector.queryS
 }
 new ResizeObserver(() => requestAnimationFrame(() => { if (!homeSegIndicator._motion) moveHomeSegIndicator(false); })).observe(mobileHomeSelector);
 // Las cifras indican su alcance: «Del mes» o «Del ciclo».
-for (const [card, icon] of [['.k-exp','arrow-down'],['.k-inc','arrow-up']]){
+for (const [card, icon] of [['.k-exp','arrow-up'],['.k-inc','arrow-down']]){
   const details = mobileHomeMetrics.querySelector(card);
   const summary = details.querySelector('summary');
   const value = summary.querySelector('.value');
   value.insertAdjacentHTML('afterend','<span class="home-scope mobile-only"></span>');
   // En Ambos, Gastos muestra qué parte de los ingresos del período se gastó (sin ahorro ni aportes).
   if (card === '.k-exp') summary.insertAdjacentHTML('beforeend','<span class="home-ratio mobile-only"></span>');
-  // Cada cifra lleva el icono de su rol: ↑ entra (ingreso), ↓ sale (gasto).
+  // El sentido de las flechas coincide con Análisis y Ambos.
   value.insertAdjacentHTML('beforebegin',`<span class="home-kind-ic mobile-only" aria-hidden="true">${ic(icon)}</span>`);
   const parts = [...summary.children].filter(part => !part.matches('.metric-chevron'));
   const mobileCard = document.createElement('div');
@@ -702,7 +702,9 @@ function renderMobileBudget(){
 
 let mobileBudgetChartKey = '', mobileBudgetPeriodKey = '';
 function resetMobileBudgetWeek(){
+  if (!mobileBudgetChart.querySelector('[aria-pressed=true]')) return;
   markMobileChartWeek(mobileBudgetChart, -1);
+  renderMobileBudgetSummary(false);
 }
 
 function renderMobileBudgetChart(txs, budget, cycle){
@@ -835,19 +837,18 @@ function updateInlinePanel(region,panel,animate,render){
       {height:to+'px',opacity:1,overflow:'clip'}
     ],'popup',MOTION.ease,{duration});
   };
-  if(smooth&&previous&&previous!==panel&&from>0){
+  if(smooth&&previous&&!panel&&from>0){
     region.inert=true;
-    const duration=panel?MOTION.popup/2:MOTION.popup;
+    const duration=MOTION.popup;
     const exit=motionAnimate(region,[
       {height:from+'px',opacity,overflow:'clip'},
-      {height:(panel?from:0)+'px',opacity:0,overflow:'clip'}
+      {height:'0px',opacity:0,overflow:'clip'}
     ],'popup',MOTION.ease,{duration,fill:'forwards'});
     exit.onfinish=()=>{
       if(region._motion!==exit)return;
       exit.cancel();
       region._motion=null;
       show();
-      if(panel&&!reduceMotion())animateTo(0,duration);
     };
     return;
   }
@@ -973,6 +974,12 @@ function mobileTrendSvg(width, height, lines, label){
   </svg>`;
 }
 
+function spinMobileHomeValues(){
+  if(activeTab()!=='dashboard')return;
+  const kind=mobileHomeMetrics.dataset.homeKind;
+  if(kind!=='income')spinValue($('#kExpense'));
+  if(kind!=='expense')spinValue($('#kIncome'));
+}
 function syncMobileHomeKind(){
   const kind = $('#fltType').value || 'both';
   const previous = mobileHomeMetrics.dataset.homeKind;
@@ -986,7 +993,7 @@ function syncMobileHomeKind(){
   }
   // Sin esperar un fotograma: así ninguna cifra conserva el tamaño del modo anterior.
   fitMetricValues();
-  mobileHomeMetrics.querySelectorAll('.home-metric>.value').forEach(spinValue);
+  spinMobileHomeValues();
   renderMobileHomeChart(planTx(currentMonth));
   return true;
 }
